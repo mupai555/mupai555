@@ -5,7 +5,6 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-import streamlit_authenticator as stauth
 import base64
 import io
 from PIL import Image
@@ -18,76 +17,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# ---------- AUTENTICACIÓN ----------
-AUTH_USERS = [
-    {"name": "Cliente de Prueba", "username": "cliente", "password": "$2b$12$SYdbuSXOAYIk/ydLR5T9IuLhL1K6.npxRzn6AuYGdVMpJDN/7bWTG"},  # contraseña: "mupai2025"
-]
 
-credentials = {
-    "usernames": {
-        user["username"]: {
-            "name": user["name"],
-            "password": user["password"]
-        } for user in AUTH_USERS
-    }
-}
-
-authenticator = stauth.Authenticate(
-    credentials,
-    "mupai_cuestionario",  # cookie_name
-    "abcdef",              # key
-    cookie_expiry_days=1
-)
-
-# ---------- AUTENTICACIÓN CON FALLBACK MANUAL ----------
-# Primero intentamos con streamlit-authenticator, luego con sistema manual
-name, authentication_status, username = None, None, None
-
-# Intentar autenticación con streamlit-authenticator
-try:
-    result = authenticator.login(location='main')
-    if result is not None and len(result) == 3:
-        name, authentication_status, username = result
-except Exception:
-    # Si streamlit-authenticator falla, usar sistema manual
-    pass
-
-# Si streamlit-authenticator no funciona, usar sistema manual
-if authentication_status is None:
-    # Inicializar session state para autenticación manual
-    if 'manual_auth' not in st.session_state:
-        st.session_state.manual_auth = {'authenticated': False, 'username': None, 'name': None}
-    
-    # Si no está autenticado manualmente, mostrar formulario
-    if not st.session_state.manual_auth['authenticated']:
-        with st.form("manual_login"):
-            st.subheader("🔐 Login")
-            manual_username = st.text_input("Usuario")
-            manual_password = st.text_input("Contraseña", type="password")
-            manual_submit = st.form_submit_button("Iniciar Sesión")
-            
-            if manual_submit:
-                # Verificar credenciales manualmente
-                hasher = stauth.Hasher()
-                user_data = AUTH_USERS[0]  # Solo tenemos un usuario
-                
-                if (manual_username == user_data['username'] and 
-                    hasher.check_pw(manual_password, user_data['password'])):
-                    st.session_state.manual_auth = {
-                        'authenticated': True,
-                        'username': user_data['username'],
-                        'name': user_data['name']
-                    }
-                    st.success("✅ ¡Autenticación exitosa!")
-                    st.rerun()
-                else:
-                    st.error("❌ Usuario o contraseña incorrectos")
-    
-    # Si está autenticado manualmente, usar esos datos
-    if st.session_state.manual_auth['authenticated']:
-        name = st.session_state.manual_auth['name']
-        username = st.session_state.manual_auth['username']
-        authentication_status = True
 
 # ---------- LOGO Y ESTILOS ----------
 # URL del logo (debes subir tu logo a un servicio de hosting de imágenes)
@@ -261,7 +191,7 @@ def generar_pdf(usuario, resumen, tabla_bf_txt, tabla_ffmi_txt, logo_image=None)
     pdf.set_font("Arial", size=10)
     for linea in tabla_ffmi_txt.splitlines()[2:]:
         pdf.cell(0, 8, linea, ln=True)
-    return pdf.output(dest='S').encode('latin1')
+    return pdf.output(dest='S')
 
 # ---------- ENVÍO DE EMAIL CON PDF ----------
 def enviar_email(remitente, password, destinatario, asunto, body, pdf_bytes, pdf_filename):
@@ -299,41 +229,12 @@ def corregir_grasa_omron_a_dexa(grasa_omron):
     return tabla.get(grasa_redondeada, grasa_omron)
 
 # ---------- APP PRINCIPAL ----------
-if authentication_status is False:
-    st.error("❌ Usuario o contraseña incorrectos")
-elif authentication_status is None:
-    st.info("🔐 Por favor, ingresa tus datos para continuar")
-    st.markdown("""
-    ### Credenciales de prueba:
-    - **Usuario:** cliente
-    - **Contraseña:** mupai2025
-    """)
-elif authentication_status:
-    # Botón de logout en sidebar
-    with st.sidebar:
-        st.write(f"Bienvenido, **{name}**")
-        
-        # Logout manual si usamos autenticación manual
-        if 'manual_auth' in st.session_state and st.session_state.manual_auth['authenticated']:
-            if st.button("Cerrar Sesión"):
-                st.session_state.manual_auth = {'authenticated': False, 'username': None, 'name': None}
-                st.rerun()
-        else:
-            # Usar logout de streamlit-authenticator si está disponible
-            try:
-                authenticator.logout(location="sidebar")
-            except:
-                # Fallback logout manual
-                if st.button("Cerrar Sesión"):
-                    st.session_state.clear()
-                    st.rerun()
+st.title("📋 Cuestionario Digital MUPAI")
+st.write("**Digital Training Science**")
+st.markdown("---")
 
-    st.title("📋 Cuestionario Digital MUPAI")
-    st.write("**Digital Training Science**")
-    st.markdown("---")
-
-    # --- FORMULARIO ---
-    with st.form("formulario_mupai"):
+# --- FORMULARIO ---
+with st.form("formulario_mupai"):
         st.subheader("📝 Información Personal")
         
         col1, col2 = st.columns(2)
@@ -361,172 +262,172 @@ elif authentication_status:
         
         enviar = st.form_submit_button("🚀 Enviar y ver mi resumen", use_container_width=True)
 
-    # Validación y procesamiento
-    if enviar:
-        campos_ok = all([nombre, edad, genero, estatura, peso, email_usuario, grasa_reportada, descargo])
-        
-        if campos_ok:
-            with st.spinner("🔄 Procesando tu información..."):
-                # --- LÓGICA Y CÁLCULOS ---
+# Validación y procesamiento
+if enviar:
+    campos_ok = all([nombre, edad, genero, estatura, peso, email_usuario, grasa_reportada, descargo])
+    
+    if campos_ok:
+        with st.spinner("🔄 Procesando tu información..."):
+            # --- LÓGICA Y CÁLCULOS ---
+            if metodo_grasa == "Omron HBF-516 (BIA)":
+                grasa_corregida = corregir_grasa_omron_a_dexa(grasa_reportada)
+            else:
+                grasa_corregida = grasa_reportada
+                
+            estatura_m = estatura / 100
+            mlg = peso * (1 - grasa_corregida / 100)
+            ffmi = mlg / (estatura_m ** 2)
+
+            # Clasificación % de grasa corporal
+            if genero == "Hombre":
+                if grasa_corregida < 6:
+                    nivel_grasa = "Preparación concurso"
+                elif grasa_corregida < 10:
+                    nivel_grasa = "Atlético/competidor"
+                elif grasa_corregida < 17:
+                    nivel_grasa = "Normal saludable"
+                elif grasa_corregida < 25:
+                    nivel_grasa = "Sobrepeso"
+                else:
+                    nivel_grasa = "Obesidad"
+            else:
+                if grasa_corregida < 14:
+                    nivel_grasa = "Preparación concurso"
+                elif grasa_corregida < 21:
+                    nivel_grasa = "Atlética/competidora"
+                elif grasa_corregida < 28:
+                    nivel_grasa = "Normal saludable"
+                elif grasa_corregida < 35:
+                    nivel_grasa = "Sobrepeso"
+                else:
+                    nivel_grasa = "Obesidad"
+
+            # Clasificación FFMI
+            if genero == "Hombre":
+                if ffmi < 18:
+                    nivel_ffmi = "Novato"
+                elif ffmi < 20:
+                    nivel_ffmi = "Intermedio"
+                elif ffmi < 22:
+                    nivel_ffmi = "Avanzado"
+                elif ffmi < 25:
+                    nivel_ffmi = "Elite (Natty max)"
+                else:
+                    nivel_ffmi = "Posible uso de anabólicos"
+            else:
+                if ffmi < 14:
+                    nivel_ffmi = "Novata"
+                elif ffmi < 16:
+                    nivel_ffmi = "Intermedia"
+                elif ffmi < 18:
+                    nivel_ffmi = "Avanzada"
+                elif ffmi < 20:
+                    nivel_ffmi = "Elite (Natty max)"
+                else:
+                    nivel_ffmi = "Posible uso de anabólicos"
+
+            usuario = {
+                "Nombre": nombre,
+                "Edad": f"{edad} años",
+                "Género": genero,
+                "Estatura": f"{estatura} cm",
+                "Peso": f"{peso} kg",
+                "Email": email_usuario,
+                "Teléfono": telefono if telefono else "No proporcionado",
+                "Método %BF": metodo_grasa,
+                "%BF reportado": f"{grasa_reportada:.1f}%",
+                "%BF corregido (DEXA)": f"{grasa_corregida:.1f}%",
+            }
+            
+            resumen = {
+                "Nivel de grasa corporal": nivel_grasa,
+                "FFMI": f"{ffmi:.2f} - {nivel_ffmi}",
+                "MLG (Masa Libre de Grasa)": f"{mlg:.1f} kg",
+            }
+            
+            tabla_bf_txt = render_tabla(tabla_bf(genero))
+            tabla_ffmi_txt = render_tabla(tabla_ffmi(genero))
+
+            # --- Generar PDF ---
+            pdf_bytes = generar_pdf(usuario, resumen, tabla_bf_txt, tabla_ffmi_txt, logo_image)
+
+            # --- Mostrar resumen al usuario ---
+            st.success("✅ ¡Análisis completado!")
+            st.markdown("## 📊 Resumen de tus resultados")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Peso", f"{peso} kg")
+                st.metric("Estatura", f"{estatura} cm")
+            
+            with col2:
+                st.metric("% Grasa Corporal", f"{grasa_corregida:.1f}%", 
+                         f"{grasa_corregida - grasa_reportada:.1f}%" if metodo_grasa == "Omron HBF-516 (BIA)" else None)
+                st.metric("MLG", f"{mlg:.1f} kg")
+            
+            with col3:
+                st.metric("FFMI", f"{ffmi:.2f}")
+                st.metric("Edad", f"{edad} años")
+            
+            # Información detallada
+            with st.expander("📋 Ver información detallada"):
+                st.markdown(f"**Clasificación de grasa corporal:** {nivel_grasa}")
+                st.markdown(f"**Clasificación FFMI:** {nivel_ffmi}")
+                
                 if metodo_grasa == "Omron HBF-516 (BIA)":
-                    grasa_corregida = corregir_grasa_omron_a_dexa(grasa_reportada)
-                else:
-                    grasa_corregida = grasa_reportada
-                    
-                estatura_m = estatura / 100
-                mlg = peso * (1 - grasa_corregida / 100)
-                ffmi = mlg / (estatura_m ** 2)
-
-                # Clasificación % de grasa corporal
-                if genero == "Hombre":
-                    if grasa_corregida < 6:
-                        nivel_grasa = "Preparación concurso"
-                    elif grasa_corregida < 10:
-                        nivel_grasa = "Atlético/competidor"
-                    elif grasa_corregida < 17:
-                        nivel_grasa = "Normal saludable"
-                    elif grasa_corregida < 25:
-                        nivel_grasa = "Sobrepeso"
-                    else:
-                        nivel_grasa = "Obesidad"
-                else:
-                    if grasa_corregida < 14:
-                        nivel_grasa = "Preparación concurso"
-                    elif grasa_corregida < 21:
-                        nivel_grasa = "Atlética/competidora"
-                    elif grasa_corregida < 28:
-                        nivel_grasa = "Normal saludable"
-                    elif grasa_corregida < 35:
-                        nivel_grasa = "Sobrepeso"
-                    else:
-                        nivel_grasa = "Obesidad"
-
-                # Clasificación FFMI
-                if genero == "Hombre":
-                    if ffmi < 18:
-                        nivel_ffmi = "Novato"
-                    elif ffmi < 20:
-                        nivel_ffmi = "Intermedio"
-                    elif ffmi < 22:
-                        nivel_ffmi = "Avanzado"
-                    elif ffmi < 25:
-                        nivel_ffmi = "Elite (Natty max)"
-                    else:
-                        nivel_ffmi = "Posible uso de anabólicos"
-                else:
-                    if ffmi < 14:
-                        nivel_ffmi = "Novata"
-                    elif ffmi < 16:
-                        nivel_ffmi = "Intermedia"
-                    elif ffmi < 18:
-                        nivel_ffmi = "Avanzada"
-                    elif ffmi < 20:
-                        nivel_ffmi = "Elite (Natty max)"
-                    else:
-                        nivel_ffmi = "Posible uso de anabólicos"
-
-                usuario = {
-                    "Nombre": nombre,
-                    "Edad": f"{edad} años",
-                    "Género": genero,
-                    "Estatura": f"{estatura} cm",
-                    "Peso": f"{peso} kg",
-                    "Email": email_usuario,
-                    "Teléfono": telefono if telefono else "No proporcionado",
-                    "Método %BF": metodo_grasa,
-                    "%BF reportado": f"{grasa_reportada:.1f}%",
-                    "%BF corregido (DEXA)": f"{grasa_corregida:.1f}%",
-                }
+                    st.info(f"**Nota:** Tu % de grasa fue ajustado de {grasa_reportada:.1f}% (Omron) a {grasa_corregida:.1f}% (equivalente DEXA)")
                 
-                resumen = {
-                    "Nivel de grasa corporal": nivel_grasa,
-                    "FFMI": f"{ffmi:.2f} — {nivel_ffmi}",
-                    "MLG (Masa Libre de Grasa)": f"{mlg:.1f} kg",
-                }
+                st.markdown("### 📊 Tablas de referencia")
                 
-                tabla_bf_txt = render_tabla(tabla_bf(genero))
-                tabla_ffmi_txt = render_tabla(tabla_ffmi(genero))
-
-                # --- Generar PDF ---
-                pdf_bytes = generar_pdf(usuario, resumen, tabla_bf_txt, tabla_ffmi_txt, logo_image)
-
-                # --- Mostrar resumen al usuario ---
-                st.success("✅ ¡Análisis completado!")
-                st.markdown("## 📊 Resumen de tus resultados")
-                
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Peso", f"{peso} kg")
-                    st.metric("Estatura", f"{estatura} cm")
+                    st.markdown("**Tabla de % Grasa Corporal**")
+                    st.markdown(tabla_bf_txt)
                 
                 with col2:
-                    st.metric("% Grasa Corporal", f"{grasa_corregida:.1f}%", 
-                             f"{grasa_corregida - grasa_reportada:.1f}%" if metodo_grasa == "Omron HBF-516 (BIA)" else None)
-                    st.metric("MLG", f"{mlg:.1f} kg")
-                
-                with col3:
-                    st.metric("FFMI", f"{ffmi:.2f}")
-                    st.metric("Edad", f"{edad} años")
-                
-                # Información detallada
-                with st.expander("📋 Ver información detallada"):
-                    st.markdown(f"**Clasificación de grasa corporal:** {nivel_grasa}")
-                    st.markdown(f"**Clasificación FFMI:** {nivel_ffmi}")
-                    
-                    if metodo_grasa == "Omron HBF-516 (BIA)":
-                        st.info(f"**Nota:** Tu % de grasa fue ajustado de {grasa_reportada:.1f}% (Omron) a {grasa_corregida:.1f}% (equivalente DEXA)")
-                    
-                    st.markdown("### 📊 Tablas de referencia")
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown("**Tabla de % Grasa Corporal**")
-                        st.markdown(tabla_bf_txt)
-                    
-                    with col2:
-                        st.markdown("**Tabla de FFMI**")
-                        st.markdown(tabla_ffmi_txt)
+                    st.markdown("**Tabla de FFMI**")
+                    st.markdown(tabla_ffmi_txt)
 
-                # Botón de descarga
-                st.download_button(
-                    label="📄 Descargar resumen completo en PDF",
-                    data=pdf_bytes,
-                    file_name=f"Resumen_MUPAI_{nombre.replace(' ','_')}_{date.today().strftime('%Y%m%d')}.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
+            # Botón de descarga
+            st.download_button(
+                label="📄 Descargar resumen completo en PDF",
+                data=pdf_bytes,
+                file_name=f"Resumen_MUPAI_{nombre.replace(' ','_')}_{date.today().strftime('%Y%m%d')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
 
-                # --- Enviar email ---
-                # Usar secrets de Streamlit para credenciales
-                try:
-                    # En Streamlit Cloud, configura estos valores en Settings > Secrets
-                    remitente = st.secrets.get("email_remitente", "administracion@muscleupgym.fitness")
-                    password = st.secrets.get("email_password", "")
-                    destinatario = st.secrets.get("email_destinatario", "administracion@muscleupgym.fitness")
+            # --- Enviar email ---
+            # Usar secrets de Streamlit para credenciales
+            try:
+                # En Streamlit Cloud, configura estos valores en Settings > Secrets
+                remitente = st.secrets.get("email_remitente", "administracion@muscleupgym.fitness")
+                password = st.secrets.get("email_password", "")
+                destinatario = st.secrets.get("email_destinatario", "administracion@muscleupgym.fitness")
+                
+                if password:  # Solo enviar si hay password configurado
+                    asunto = f"Nuevo cuestionario MUPAI: {nombre} ({date.today().strftime('%d/%m/%Y')})"
+                    body = f"""
+                    <h2>Nuevo cuestionario MUPAI recibido</h2>
+                    <h3>Datos del usuario:</h3>
+                    {"<br>".join([f"<b>{k}:</b> {v}" for k, v in usuario.items()])}
+                    <br><br>
+                    <h3>Resumen de composición corporal:</h3>
+                    {"<br>".join([f"<b>{k}:</b> {v}" for k, v in resumen.items()])}
+                    """
                     
-                    if password:  # Solo enviar si hay password configurado
-                        asunto = f"Nuevo cuestionario MUPAI: {nombre} ({date.today().strftime('%d/%m/%Y')})"
-                        body = f"""
-                        <h2>Nuevo cuestionario MUPAI recibido</h2>
-                        <h3>Datos del usuario:</h3>
-                        {"<br>".join([f"<b>{k}:</b> {v}" for k, v in usuario.items()])}
-                        <br><br>
-                        <h3>Resumen de composición corporal:</h3>
-                        {"<br>".join([f"<b>{k}:</b> {v}" for k, v in resumen.items()])}
-                        """
-                        
-                        if enviar_email(remitente, password, destinatario, asunto, body, pdf_bytes, f"{nombre}_MUPAI.pdf"):
-                            st.success("📧 ¡Tus datos han sido enviados a tu entrenador!")
-                        else:
-                            st.warning("⚠️ No se pudo enviar el email automáticamente. Por favor, envía el PDF descargado a tu entrenador.")
+                    if enviar_email(remitente, password, destinatario, asunto, body, pdf_bytes, f"{nombre}_MUPAI.pdf"):
+                        st.success("📧 ¡Tus datos han sido enviados a tu entrenador!")
                     else:
-                        st.info("💡 Recuerda enviar el PDF descargado a tu entrenador.")
-                        
-                except Exception as e:
+                        st.warning("⚠️ No se pudo enviar el email automáticamente. Por favor, envía el PDF descargado a tu entrenador.")
+                else:
                     st.info("💡 Recuerda enviar el PDF descargado a tu entrenador.")
+                    
+            except Exception as e:
+                st.info("💡 Recuerda enviar el PDF descargado a tu entrenador.")
 
-        else:
-            st.error("❌ Por favor, completa todos los campos obligatorios y acepta la política de privacidad.")
+    else:
+        st.error("❌ Por favor, completa todos los campos obligatorios y acepta la política de privacidad.")
 
-    # --- PIE DE PÁGINA ---
-    pie_streamlit()
+# --- PIE DE PÁGINA ---
+pie_streamlit()
