@@ -20,7 +20,7 @@ st.set_page_config(
 
 # ---------- AUTENTICACIÓN ----------
 AUTH_USERS = [
-    {"name": "Cliente de Prueba", "username": "cliente", "password": "$2b$12$YIYx/NsEqCwN6qF8y8s9Zep9Q7Ax8i5CQZp2pPj1KkDLiB9yFZqZa"},  # contraseña: "mupai2025"
+    {"name": "Cliente de Prueba", "username": "cliente", "password": "$2b$12$SYdbuSXOAYIk/ydLR5T9IuLhL1K6.npxRzn6AuYGdVMpJDN/7bWTG"},  # contraseña: "mupai2025"
 ]
 
 credentials = {
@@ -39,12 +39,55 @@ authenticator = stauth.Authenticate(
     cookie_expiry_days=1
 )
 
-# Updated login method call with proper error handling
-login_result = authenticator.login(location='main')
-if login_result is not None:
-    name, authentication_status, username = login_result
-else:
-    name, authentication_status, username = None, None, None
+# ---------- AUTENTICACIÓN CON FALLBACK MANUAL ----------
+# Primero intentamos con streamlit-authenticator, luego con sistema manual
+name, authentication_status, username = None, None, None
+
+# Intentar autenticación con streamlit-authenticator
+try:
+    result = authenticator.login(location='main')
+    if result is not None and len(result) == 3:
+        name, authentication_status, username = result
+except Exception:
+    # Si streamlit-authenticator falla, usar sistema manual
+    pass
+
+# Si streamlit-authenticator no funciona, usar sistema manual
+if authentication_status is None:
+    # Inicializar session state para autenticación manual
+    if 'manual_auth' not in st.session_state:
+        st.session_state.manual_auth = {'authenticated': False, 'username': None, 'name': None}
+    
+    # Si no está autenticado manualmente, mostrar formulario
+    if not st.session_state.manual_auth['authenticated']:
+        with st.form("manual_login"):
+            st.subheader("🔐 Login")
+            manual_username = st.text_input("Usuario")
+            manual_password = st.text_input("Contraseña", type="password")
+            manual_submit = st.form_submit_button("Iniciar Sesión")
+            
+            if manual_submit:
+                # Verificar credenciales manualmente
+                hasher = stauth.Hasher()
+                user_data = AUTH_USERS[0]  # Solo tenemos un usuario
+                
+                if (manual_username == user_data['username'] and 
+                    hasher.check_pw(manual_password, user_data['password'])):
+                    st.session_state.manual_auth = {
+                        'authenticated': True,
+                        'username': user_data['username'],
+                        'name': user_data['name']
+                    }
+                    st.success("✅ ¡Autenticación exitosa!")
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos")
+    
+    # Si está autenticado manualmente, usar esos datos
+    if st.session_state.manual_auth['authenticated']:
+        name = st.session_state.manual_auth['name']
+        username = st.session_state.manual_auth['username']
+        authentication_status = True
 
 # ---------- LOGO Y ESTILOS ----------
 # URL del logo (debes subir tu logo a un servicio de hosting de imágenes)
@@ -269,7 +312,21 @@ elif authentication_status:
     # Botón de logout en sidebar
     with st.sidebar:
         st.write(f"Bienvenido, **{name}**")
-        authenticator.logout(location="sidebar")
+        
+        # Logout manual si usamos autenticación manual
+        if 'manual_auth' in st.session_state and st.session_state.manual_auth['authenticated']:
+            if st.button("Cerrar Sesión"):
+                st.session_state.manual_auth = {'authenticated': False, 'username': None, 'name': None}
+                st.rerun()
+        else:
+            # Usar logout de streamlit-authenticator si está disponible
+            try:
+                authenticator.logout(location="sidebar")
+            except:
+                # Fallback logout manual
+                if st.button("Cerrar Sesión"):
+                    st.session_state.clear()
+                    st.rerun()
 
     st.title("📋 Cuestionario Digital MUPAI")
     st.write("**Digital Training Science**")
