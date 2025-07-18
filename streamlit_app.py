@@ -15,8 +15,11 @@ names = [u["name"] for u in AUTH_USERS]
 usernames = [u["username"] for u in AUTH_USERS]
 passwords = [u["password"] for u in AUTH_USERS]
 authenticator = stauth.Authenticate(
-    names, usernames, passwords, 
-    "mupai_cuestionario", "abcdef", 
+    names=names,
+    usernames=usernames,
+    passwords=passwords,
+    cookie_name="mupai_cuestionario",
+    key="abcdef",
     cookie_expiry_days=1
 )
 name, authentication_status, username = authenticator.login("Iniciar sesión", "main")
