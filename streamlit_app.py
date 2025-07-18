@@ -11,15 +11,21 @@ import streamlit_authenticator as stauth
 AUTH_USERS = [
     {"name": "Cliente de Prueba", "username": "cliente", "password": "$2b$12$YIYx/NsEqCwN6qF8y8s9Zep9Q7Ax8i5CQZp2pPj1KkDLiB9yFZqZa"},  # contraseña: "mupai2025"
 ]
-names = [u["name"] for u in AUTH_USERS]
-usernames = [u["username"] for u in AUTH_USERS]
-passwords = [u["password"] for u in AUTH_USERS]
+
+credentials = {
+    "usernames": {
+        user["username"]: {
+            "name": user["name"],
+            "password": user["password"]
+        } for user in AUTH_USERS
+    }
+}
+
+import streamlit_authenticator as stauth
 authenticator = stauth.Authenticate(
-    names=names,
-    usernames=usernames,
-    passwords=passwords,
-    cookie_name="mupai_cuestionario",
-    key="abcdef",
+    credentials,
+    "mupai_cuestionario",  # cookie_name
+    "abcdef",              # key
     cookie_expiry_days=1
 )
 name, authentication_status, username = authenticator.login("Iniciar sesión", "main")
