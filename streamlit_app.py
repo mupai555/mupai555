@@ -14,7 +14,11 @@ AUTH_USERS = [
 names = [u["name"] for u in AUTH_USERS]
 usernames = [u["username"] for u in AUTH_USERS]
 passwords = [u["password"] for u in AUTH_USERS]
-authenticator = stauth.Authenticate(names, usernames, passwords, "mupai_cuestionario", "abcdef", cookie_expiry_days=1)
+authenticator = stauth.Authenticate(
+    names, usernames, passwords, 
+    "mupai_cuestionario", "abcdef", 
+    cookie_expiry_days=1
+)
 name, authentication_status, username = authenticator.login("Iniciar sesión", "main")
 
 # ---------- ESTILOS PERSONALIZADOS Y LOGO ----------
@@ -312,6 +316,9 @@ elif authentication_status:
 # ---------- DISPLAY YOUR OWN CODE ----------
 st.markdown("---")
 st.header("Código fuente de la app")
-with open(__file__, "r", encoding="utf-8") as f:
-    code = f.read()
-st.code(code, language="python")
+try:
+    with open(__file__, "r", encoding="utf-8") as f:
+        code = f.read()
+    st.code(code, language="python")
+except Exception as e:
+    st.warning("No se pudo mostrar el código fuente. Este entorno no soporta `__file__`.")
