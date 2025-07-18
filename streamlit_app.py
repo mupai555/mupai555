@@ -39,8 +39,12 @@ authenticator = stauth.Authenticate(
     cookie_expiry_days=1
 )
 
-# Updated login method call
-name, authentication_status, username = authenticator.login(location='main')
+# Updated login method call with proper error handling
+login_result = authenticator.login(location='main')
+if login_result is not None:
+    name, authentication_status, username = login_result
+else:
+    name, authentication_status, username = None, None, None
 
 # ---------- LOGO Y ESTILOS ----------
 # URL del logo (debes subir tu logo a un servicio de hosting de imágenes)
