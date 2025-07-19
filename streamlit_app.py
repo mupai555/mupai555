@@ -34,43 +34,193 @@ def get_image_from_url(url):
         pass
     return None
 
-# ---------- ESTILOS PERSONALIZADOS ----------
+# ---------- ESTILOS PERSONALIZADOS MODERNOS ----------
 st.markdown("""
     <style>
-    .logo-container {text-align:center; margin-bottom: 10px;}
-    .logo-img {width: 340px; max-width:90vw;}
-    .main {background-color: #191b1f;}
+    /* === LAYOUT BASE === */
+    .logo-container {
+        text-align: center; 
+        margin-bottom: 20px;
+    }
+    .logo-img {
+        width: 340px; 
+        max-width: 90vw;
+    }
+    .main {
+        background-color: #191b1f;
+    }
     .block-container {
         background-color: #23262b; 
-        border-radius: 16px; 
-        padding: 2em;
-        max-width: 800px;
+        border-radius: 20px; 
+        padding: 2.5rem;
+        max-width: 900px;
         margin: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     }
+    
+    /* === TYPOGRAPHY === */
     h1, h2, h3, h4, h5, h6, p, .stTextInput > label, .stSelectbox > label, .stNumberInput > label {
         color: #fff !important;
-        font-family: 'Montserrat', 'Lato', 'Open Sans', 'Roboto', sans-serif;
+        font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
     }
-    .stButton>button {
-        background: #ffb300; 
+    h1 {
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    h2 {
+        font-weight: 600;
+        font-size: 2rem;
+        margin-bottom: 0.8rem;
+    }
+    h3 {
+        font-weight: 600;
+        font-size: 1.5rem;
+        margin-bottom: 0.6rem;
+    }
+    
+    /* === BUTTONS === */
+    .stButton > button {
+        background: linear-gradient(135deg, #ffb300 0%, #ff8f00 100%); 
         color: #191b1f; 
-        border-radius: 8px; 
-        font-weight: bold;
+        border-radius: 12px; 
+        font-weight: 600;
         width: 100%;
-        padding: 0.5rem 1rem;
+        padding: 0.75rem 1.5rem;
         font-size: 1.1rem;
+        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 179, 0, 0.3);
     }
-    .stButton>button:hover {
-        background: #fff; 
-        color: #ffb300;
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%); 
+        color: #ff8f00;
         border: 2px solid #ffb300;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 179, 0, 0.4);
     }
+    
+    /* === CONTAINERS AND CARDS === */
+    .info-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .metric-card {
+        background: linear-gradient(135deg, rgba(255, 179, 0, 0.1) 0%, rgba(255, 143, 0, 0.1) 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 179, 0, 0.2);
+        text-align: center;
+    }
+    
+    /* === ALERTS AND NOTIFICATIONS === */
     .stAlert, .stSuccess, .stInfo, .stWarning, .stError {
-        border-radius: 8px;
-        background-color: rgba(255,255,255,0.1);
+        border-radius: 12px;
+        background-color: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
     }
+    .stSuccess {
+        background-color: rgba(76, 175, 80, 0.1);
+        border-color: rgba(76, 175, 80, 0.3);
+    }
+    .stInfo {
+        background-color: rgba(33, 150, 243, 0.1);
+        border-color: rgba(33, 150, 243, 0.3);
+    }
+    .stWarning {
+        background-color: rgba(255, 152, 0, 0.1);
+        border-color: rgba(255, 152, 0, 0.3);
+    }
+    .stError {
+        background-color: rgba(244, 67, 54, 0.1);
+        border-color: rgba(244, 67, 54, 0.3);
+    }
+    
+    /* === FORM ELEMENTS === */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > div,
+    .stNumberInput > div > div > input {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #fff;
+    }
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div > div:focus,
+    .stNumberInput > div > div > input:focus {
+        border-color: #ffb300;
+        box-shadow: 0 0 0 2px rgba(255, 179, 0, 0.2);
+    }
+    
+    /* === PROGRESS BAR === */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #ffb300 0%, #ff8f00 100%);
+        border-radius: 10px;
+    }
+    
+    /* === CHECKBOXES === */
     .stCheckbox {
         color: #fff;
+    }
+    .stCheckbox > label > div {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* === METRICS === */
+    [data-testid="metric-container"] {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* === TABS === */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: #fff;
+        border-radius: 8px 8px 0 0;
+        margin-right: 4px;
+    }
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: #ffb300;
+        color: #191b1f;
+    }
+    
+    /* === EXPANDERS === */
+    .streamlit-expanderHeader {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .streamlit-expanderContent {
+        background-color: rgba(255, 255, 255, 0.02);
+        border-radius: 0 0 8px 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: none;
+    }
+    
+    /* === MULTISELECT === */
+    .stMultiSelect > div > div > div {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+    }
+    
+    /* === ANIMATIONS === */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .main > div {
+        animation: fadeIn 0.6s ease-out;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -260,393 +410,898 @@ def prev_step():
         st.session_state.current_step -= 1
         st.rerun()
 
-# ---------- PROGRESS INDICATOR ----------
+# ---------- ENHANCED PROGRESS INDICATOR ----------
 def render_progress_bar():
     current = st.session_state.current_step
     total = len(STEPS)
     
-    # Progress bar
+    # Modern progress bar with percentage
     progress = current / total
+    st.markdown(f"""
+        <div style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="margin: 0; color: #ffb300;">Progreso del Cuestionario</h4>
+                <span style="color: #ffb300; font-weight: 600; font-size: 1.1rem;">{current}/{total} pasos</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
     st.progress(progress)
     
-    # Step indicators
+    # Enhanced step indicators with better visual hierarchy
+    st.markdown("<div style='margin: 1.5rem 0;'>", unsafe_allow_html=True)
     cols = st.columns(total)
+    
     for i, (step_num, step_info) in enumerate(STEPS.items(), 1):
         with cols[i-1]:
             if i == current:
-                st.markdown(f"🔵 **{step_info['icon']}**")
-                st.markdown(f"<small><b>Paso {i}</b></small>", unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div style="text-align: center; padding: 0.5rem; background: linear-gradient(135deg, #ffb300, #ff8f00); 
+                                border-radius: 12px; color: #191b1f; font-weight: 600; margin-bottom: 0.5rem;">
+                        <div style="font-size: 1.5rem;">{step_info['icon']}</div>
+                    </div>
+                    <div style="text-align: center; color: #ffb300; font-weight: 600; font-size: 0.85rem;">
+                        Paso {i}
+                    </div>
+                """, unsafe_allow_html=True)
             elif i < current:
-                st.markdown(f"✅ {step_info['icon']}")
-                st.markdown(f"<small>Paso {i}</small>", unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div style="text-align: center; padding: 0.5rem; background: rgba(76, 175, 80, 0.2); 
+                                border-radius: 12px; color: #4caf50; font-weight: 600; margin-bottom: 0.5rem;">
+                        <div style="font-size: 1.5rem;">✅</div>
+                    </div>
+                    <div style="text-align: center; color: #4caf50; font-weight: 600; font-size: 0.85rem;">
+                        Completado
+                    </div>
+                """, unsafe_allow_html=True)
             else:
-                st.markdown(f"⭕ {step_info['icon']}")
-                st.markdown(f"<small>Paso {i}</small>", unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div style="text-align: center; padding: 0.5rem; background: rgba(255, 255, 255, 0.05); 
+                                border-radius: 12px; color: #888; margin-bottom: 0.5rem;">
+                        <div style="font-size: 1.5rem;">{step_info['icon']}</div>
+                    </div>
+                    <div style="text-align: center; color: #888; font-size: 0.85rem;">
+                        Paso {i}
+                    </div>
+                """, unsafe_allow_html=True)
     
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("---")
 
 # ---------- APP PRINCIPAL ----------
-st.title("📋 Cuestionario Digital MUPAI")
-st.write("**Digital Training Science**")
+# Enhanced header with better visual hierarchy
+st.markdown("""
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 3rem; font-weight: 700; margin-bottom: 0.5rem; 
+                   background: linear-gradient(135deg, #ffb300, #ff8f00); 
+                   -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+                   background-clip: text;">
+            📋 Cuestionario Digital MUPAI
+        </h1>
+        <p style="font-size: 1.3rem; color: #ffb300; font-weight: 600; margin-bottom: 0;">
+            Digital Training Science
+        </p>
+        <p style="color: #aaa; font-size: 1rem; margin-top: 0.5rem;">
+            Tu evaluación personalizada de composición corporal y nutrición
+        </p>
+    </div>
+""", unsafe_allow_html=True)
+
 st.markdown("---")
 
 # Show progress
 render_progress_bar()
 
-# Show current step title
+# Enhanced current step display
 current_step_info = STEPS[st.session_state.current_step]
-st.title(f"{current_step_info['icon']} {current_step_info['title']}")
-st.markdown("---")
+st.markdown(f"""
+    <div style="background: rgba(255, 179, 0, 0.1); border-radius: 16px; padding: 1.5rem; 
+                border: 1px solid rgba(255, 179, 0, 0.3); margin-bottom: 2rem;">
+        <h2 style="color: #ffb300; margin-bottom: 0.5rem; font-size: 2.2rem;">
+            {current_step_info['icon']} {current_step_info['title']}
+        </h2>
+        <p style="color: #ccc; margin: 0; font-size: 1.1rem;">
+            Paso {st.session_state.current_step} de {len(STEPS)}
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 
 # ---------- STEP CONTENT ----------
 if st.session_state.current_step == 1:
     # STEP 1: Personal Information
-    with st.form("step1_form"):
-        st.info("📝 Completa tu información personal básica para comenzar tu evaluación.")
+    with st.container():
+        # Enhanced intro section
+        st.markdown("""
+            <div class="info-card">
+                <h3 style="color: #ffb300; margin-bottom: 1rem;">👋 ¡Bienvenido/a a MUPAI!</h3>
+                <p style="color: #ccc; font-size: 1.1rem; margin: 0;">
+                    📝 Completa tu información personal básica para comenzar tu evaluación personalizada. 
+                    Todos los campos marcados con (*) son obligatorios.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        col1, col2 = st.columns(2)
-        with col1:
-            nombre = st.text_input("Nombre completo*", 
-                                 value=st.session_state.form_data.get('nombre', ''),
-                                 placeholder="Juan Pérez")
-            edad = st.number_input("Edad*", 
-                                 min_value=10, max_value=90, step=1, 
-                                 value=st.session_state.form_data.get('edad', 25))
-            genero = st.selectbox("Género*", 
-                                ["Hombre", "Mujer"],
-                                index=0 if st.session_state.form_data.get('genero', 'Hombre') == 'Hombre' else 1)
-        
-        with col2:
-            estatura = st.number_input("Estatura (cm)*", 
-                                     min_value=120, max_value=230, step=1, 
-                                     value=st.session_state.form_data.get('estatura', 170))
-            peso = st.number_input("Peso (kg)*", 
-                                 min_value=30.0, max_value=200.0, step=0.1, 
-                                 value=st.session_state.form_data.get('peso', 70.0))
-        
-        st.subheader("📧 Información de Contacto")
-        email_usuario = st.text_input("Tu correo electrónico*", 
-                                     value=st.session_state.form_data.get('email_usuario', ''),
-                                     placeholder="ejemplo@email.com")
-        telefono = st.text_input("Número de teléfono (opcional)", 
-                                value=st.session_state.form_data.get('telefono', ''),
-                                placeholder="+52 1234567890")
-        
-        st.markdown("---")
-        descargo = st.checkbox("✅ He leído y acepto la política de privacidad y términos de uso",
-                              value=st.session_state.form_data.get('descargo', False))
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            prev_disabled = True  # First step
-        with col2:
-            continue_step1 = st.form_submit_button("➡️ Continuar", use_container_width=True)
-        
-        if continue_step1:
-            # Validation
-            if not all([nombre, edad, genero, estatura, peso, email_usuario, descargo]):
-                st.error("❌ Por favor, completa todos los campos obligatorios y acepta los términos.")
-            else:
-                # Save data and go to next step
-                st.session_state.form_data.update({
-                    'nombre': nombre,
-                    'edad': edad,
-                    'genero': genero,
-                    'estatura': estatura,
-                    'peso': peso,
-                    'email_usuario': email_usuario,
-                    'telefono': telefono,
-                    'descargo': descargo
-                })
-                next_step()
+        with st.form("step1_form"):
+            # Personal data section
+            st.markdown("""
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">👤 Datos Personales</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2, gap="large")
+            with col1:
+                with st.container():
+                    nombre = st.text_input("Nombre completo*", 
+                                         value=st.session_state.form_data.get('nombre', ''),
+                                         placeholder="Juan Pérez",
+                                         help="Nombre completo como aparece en tu identificación")
+                    edad = st.number_input("Edad*", 
+                                         min_value=10, max_value=90, step=1, 
+                                         value=st.session_state.form_data.get('edad', 25),
+                                         help="Tu edad actual en años")
+                    genero = st.selectbox("Género*", 
+                                        ["Hombre", "Mujer"],
+                                        index=0 if st.session_state.form_data.get('genero', 'Hombre') == 'Hombre' else 1,
+                                        help="Selecciona tu género biológico para cálculos precisos")
+            
+            with col2:
+                with st.container():
+                    estatura = st.number_input("Estatura (cm)*", 
+                                             min_value=120, max_value=230, step=1, 
+                                             value=st.session_state.form_data.get('estatura', 170),
+                                             help="Tu altura en centímetros")
+                    peso = st.number_input("Peso (kg)*", 
+                                         min_value=30.0, max_value=200.0, step=0.1, 
+                                         value=st.session_state.form_data.get('peso', 70.0),
+                                         help="Tu peso actual en kilogramos")
+            
+            # Contact information section
+            st.markdown("""
+                <div style="margin: 2.5rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">📧 Información de Contacto</h3>
+                    <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 1rem;">
+                        Esta información nos permitirá enviarte tu reporte personalizado
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            email_usuario = st.text_input("Tu correo electrónico*", 
+                                         value=st.session_state.form_data.get('email_usuario', ''),
+                                         placeholder="ejemplo@email.com",
+                                         help="Dirección de email donde recibirás tu reporte")
+            telefono = st.text_input("Número de teléfono (opcional)", 
+                                    value=st.session_state.form_data.get('telefono', ''),
+                                    placeholder="+52 1234567890",
+                                    help="Número de contacto opcional")
+            
+            # Terms and conditions section
+            st.markdown("""
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">📋 Términos y Condiciones</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            with st.expander("📖 Leer Política de Privacidad y Términos de Uso"):
+                st.markdown("""
+                **Política de Privacidad:**
+                - Tus datos personales son tratados con absoluta confidencialidad
+                - La información se utiliza únicamente para generar tu reporte personalizado
+                - No compartimos tus datos con terceros sin tu consentimiento
+                - Puedes solicitar la eliminación de tus datos en cualquier momento
+                
+                **Términos de Uso:**
+                - Las recomendaciones son de carácter informativo y educativo
+                - Consulta siempre con un profesional de la salud antes de realizar cambios significativos
+                - MUPAI no se hace responsable por el mal uso de las recomendaciones
+                - Los resultados pueden variar según factores individuales
+                """)
+            
+            descargo = st.checkbox("✅ He leído y acepto la política de privacidad y términos de uso",
+                                  value=st.session_state.form_data.get('descargo', False),
+                                  help="Debes aceptar los términos para continuar")
+            
+            # Navigation buttons
+            st.markdown("<div style='margin-top: 2rem;'>", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                st.markdown("<div style='opacity: 0.5;'>⬅️ Primer paso</div>", unsafe_allow_html=True)
+            with col2:
+                continue_step1 = st.form_submit_button("➡️ Continuar", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            if continue_step1:
+                # Enhanced validation
+                missing_fields = []
+                if not nombre: missing_fields.append("Nombre completo")
+                if not edad: missing_fields.append("Edad")
+                if not genero: missing_fields.append("Género")
+                if not estatura: missing_fields.append("Estatura")
+                if not peso: missing_fields.append("Peso")
+                if not email_usuario: missing_fields.append("Correo electrónico")
+                if not descargo: missing_fields.append("Aceptación de términos")
+                
+                if missing_fields:
+                    st.error(f"❌ Por favor, completa los siguientes campos obligatorios: {', '.join(missing_fields)}")
+                else:
+                    # Save data and show success message
+                    st.session_state.form_data.update({
+                        'nombre': nombre,
+                        'edad': edad,
+                        'genero': genero,
+                        'estatura': estatura,
+                        'peso': peso,
+                        'email_usuario': email_usuario,
+                        'telefono': telefono,
+                        'descargo': descargo
+                    })
+                    st.success("✅ ¡Información guardada correctamente! Avanzando al siguiente paso...")
+                    next_step()
 
 elif st.session_state.current_step == 2:
     # STEP 2: Body Composition
-    with st.form("step2_form"):
-        st.info("⚖️ Proporciona información sobre tu composición corporal actual.")
+    with st.container():
+        # Enhanced intro section
+        st.markdown("""
+            <div class="info-card">
+                <h3 style="color: #ffb300; margin-bottom: 1rem;">⚖️ Análisis de Composición Corporal</h3>
+                <p style="color: #ccc; font-size: 1.1rem; margin: 0;">
+                    Proporciona información sobre tu composición corporal actual. Esta información es crucial 
+                    para calcular tus métricas de salud y generar recomendaciones precisas.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        metodo_grasa = st.selectbox("¿Qué método usaste para medir tu porcentaje de grasa?", 
-                                   ["Omron HBF-516 (BIA)", "DEXA (Gold Standard)"],
-                                   index=0 if st.session_state.form_data.get('metodo_grasa', 'Omron HBF-516 (BIA)') == 'Omron HBF-516 (BIA)' else 1)
-        grasa_reportada = st.number_input("Porcentaje de grasa reportado (%)", 
-                                        min_value=5.0, max_value=50.0, step=0.1, 
-                                        value=st.session_state.form_data.get('grasa_reportada', 20.0))
-        
-        # Educational content
-        with st.expander("ℹ️ ¿Cómo interpretar estos valores?"):
+        with st.form("step2_form"):
+            # Body composition measurement section
             st.markdown("""
-            **Métodos de medición de grasa corporal:**
-            - **Omron HBF-516 (BIA)**: Bioimpedancia eléctrica, conveniente pero puede sobreestimar
-            - **DEXA**: Considerado el estándar de oro para medición de composición corporal
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">📊 Medición de Grasa Corporal</h3>
+                </div>
+            """, unsafe_allow_html=True)
             
-            **Nota**: Si usas Omron, ajustaremos automáticamente el valor para mayor precisión.
-            """)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            prev_step2 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
-        with col2:
-            continue_step2 = st.form_submit_button("➡️ Continuar", use_container_width=True)
-        
-        if prev_step2:
-            prev_step()
-        elif continue_step2:
-            st.session_state.form_data.update({
-                'metodo_grasa': metodo_grasa,
-                'grasa_reportada': grasa_reportada
-            })
-            next_step()
+            col1, col2 = st.columns([2, 1], gap="large")
+            
+            with col1:
+                metodo_grasa = st.selectbox("¿Qué método usaste para medir tu porcentaje de grasa?", 
+                                           ["Omron HBF-516 (BIA)", "DEXA (Gold Standard)"],
+                                           index=0 if st.session_state.form_data.get('metodo_grasa', 'Omron HBF-516 (BIA)') == 'Omron HBF-516 (BIA)' else 1,
+                                           help="Selecciona el método que usaste para medir tu grasa corporal")
+                
+                grasa_reportada = st.number_input("Porcentaje de grasa reportado (%)", 
+                                                min_value=5.0, max_value=50.0, step=0.1, 
+                                                value=st.session_state.form_data.get('grasa_reportada', 20.0),
+                                                help="El valor exacto que te mostró tu dispositivo o estudio")
+            
+            with col2:
+                # Visual feedback based on method
+                if st.session_state.form_data.get('metodo_grasa', 'Omron HBF-516 (BIA)') == 'Omron HBF-516 (BIA)':
+                    st.markdown("""
+                        <div class="metric-card">
+                            <h4 style="color: #ffb300; margin-bottom: 0.5rem;">⚡ BIA</h4>
+                            <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                                Ajustaremos automáticamente tu valor para mayor precisión
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown("""
+                        <div class="metric-card">
+                            <h4 style="color: #4caf50; margin-bottom: 0.5rem;">🏆 DEXA</h4>
+                            <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                                El estándar de oro en medición corporal
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+            
+            # Educational content in expandable section
+            with st.expander("ℹ️ ¿Cómo interpretar estos valores? 📚"):
+                st.markdown("""
+                <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 12px; margin: 1rem 0;">
+                    <h4 style="color: #ffb300;">🔬 Métodos de medición de grasa corporal:</h4>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #ffb300;">⚡ Omron HBF-516 (BIA)</h5>
+                        <p style="color: #ccc;">
+                            <strong>Bioimpedancia eléctrica:</strong> Conveniente y accesible, pero puede sobreestimar 
+                            el porcentaje de grasa corporal. Factores como hidratación, hora del día y comidas recientes 
+                            pueden afectar los resultados.
+                        </p>
+                        <p style="color: #4caf50;"><strong>✅ Ventajas:</strong> Rápido, económico, fácil de usar</p>
+                        <p style="color: #ff9800;"><strong>⚠️ Limitaciones:</strong> Menos preciso, afectado por hidratación</p>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #ffb300;">🏆 DEXA (Densitometría)</h5>
+                        <p style="color: #ccc;">
+                            <strong>Estándar de oro:</strong> La medición más precisa disponible. Utiliza rayos X 
+                            de baja energía para distinguir entre hueso, músculo y grasa con alta precisión.
+                        </p>
+                        <p style="color: #4caf50;"><strong>✅ Ventajas:</strong> Máxima precisión, no afectado por hidratación</p>
+                        <p style="color: #ff9800;"><strong>⚠️ Limitaciones:</strong> Más costoso, requiere equipo especializado</p>
+                    </div>
+                    
+                    <div style="background: rgba(255, 179, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #ffb300;">
+                        <p style="color: #ffb300; margin: 0;"><strong>💡 Nota importante:</strong> 
+                        Si usaste Omron, aplicaremos automáticamente una corrección basada en estudios científicos 
+                        para obtener un valor más cercano al DEXA y darte recomendaciones más precisas.</p>
+                    </div>
+                </div>
+                """)
+            
+            # Navigation buttons
+            st.markdown("<div style='margin-top: 2rem;'>", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                prev_step2 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
+            with col2:
+                continue_step2 = st.form_submit_button("➡️ Continuar", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            if prev_step2:
+                prev_step()
+            elif continue_step2:
+                st.session_state.form_data.update({
+                    'metodo_grasa': metodo_grasa,
+                    'grasa_reportada': grasa_reportada
+                })
+                st.success("✅ ¡Datos de composición corporal guardados! Continuando...")
+                next_step()
 
 elif st.session_state.current_step == 3:
     # STEP 3: Activity Level
-    with st.form("step3_form"):
-        st.info("💪 Evalúa tu nivel de actividad física actual para personalizar tus recomendaciones.")
+    with st.container():
+        # Enhanced intro section
+        st.markdown("""
+            <div class="info-card">
+                <h3 style="color: #ffb300; margin-bottom: 1rem;">💪 Evaluación de Actividad Física</h3>
+                <p style="color: #ccc; font-size: 1.1rem; margin: 0;">
+                    Evalúa tu nivel de actividad física actual para personalizar tus recomendaciones calóricas 
+                    y nutricionales. Esta información es clave para calcular tu gasto energético total.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        # Activity level assessment
-        actividad_trabajo = st.selectbox("¿Cuál describe mejor tu trabajo/actividad diaria?",
-                                       ["Sedentario (oficina, computadora)", 
-                                        "Ligeramente activo (caminar ocasionalmente)",
-                                        "Moderadamente activo (de pie frecuentemente)",
-                                        "Muy activo (trabajo físico)"],
-                                       index=0)
-        
-        ejercicio_frecuencia = st.selectbox("¿Con qué frecuencia haces ejercicio?",
-                                          ["No hago ejercicio",
-                                           "1-2 veces por semana",
-                                           "3-4 veces por semana", 
-                                           "5-6 veces por semana",
-                                           "Todos los días"],
-                                          index=2)
-        
-        ejercicio_intensidad = st.selectbox("¿Cuál es la intensidad de tu ejercicio típico?",
-                                          ["Ligero (caminar, yoga suave)",
-                                           "Moderado (trotar, natación, pesas ligeras)",
-                                           "Vigoroso (correr, crossfit, pesas pesadas)",
-                                           "Muy intenso (deportes competitivos, entrenamiento atlético)"],
-                                          index=1)
-        
-        ejercicio_duracion = st.number_input("Duración promedio de cada sesión de ejercicio (minutos)", 
-                                           min_value=0, max_value=300, step=15, value=60)
-        
-        # Educational content
-        with st.expander("ℹ️ ¿Por qué es importante el nivel de actividad?"):
+        with st.form("step3_form"):
+            # Work activity section
             st.markdown("""
-            **El nivel de actividad afecta:**
-            - **Gasto calórico total**: Determina cuántas calorías quemas diariamente
-            - **Requerimientos nutricionales**: Necesidades de macronutrientes
-            - **Objetivos realistas**: Metas alcanzables según tu estilo de vida
-            - **Recomendaciones personalizadas**: Estrategias adaptadas a tu rutina
-            """)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            prev_step3 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
-        with col2:
-            continue_step3 = st.form_submit_button("➡️ Continuar", use_container_width=True)
-        
-        if prev_step3:
-            prev_step()
-        elif continue_step3:
-            st.session_state.form_data.update({
-                'actividad_trabajo': actividad_trabajo,
-                'ejercicio_frecuencia': ejercicio_frecuencia,
-                'ejercicio_intensidad': ejercicio_intensidad,
-                'ejercicio_duracion': ejercicio_duracion
-            })
-            next_step()
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">💼 Actividad Laboral</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            actividad_trabajo = st.selectbox("¿Cuál describe mejor tu trabajo/actividad diaria?",
+                                           ["Sedentario (oficina, computadora)", 
+                                            "Ligeramente activo (caminar ocasionalmente)",
+                                            "Moderadamente activo (de pie frecuentemente)",
+                                            "Muy activo (trabajo físico)"],
+                                           index=0,
+                                           help="Selecciona el nivel que mejor describe tu actividad durante las horas de trabajo")
+            
+            # Exercise section
+            st.markdown("""
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">🏋️‍♂️ Rutina de Ejercicio</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2, gap="large")
+            
+            with col1:
+                ejercicio_frecuencia = st.selectbox("¿Con qué frecuencia haces ejercicio?",
+                                                  ["No hago ejercicio",
+                                                   "1-2 veces por semana",
+                                                   "3-4 veces por semana", 
+                                                   "5-6 veces por semana",
+                                                   "Todos los días"],
+                                                  index=2,
+                                                  help="Incluye cualquier actividad física estructurada")
+                
+                ejercicio_intensidad = st.selectbox("¿Cuál es la intensidad de tu ejercicio típico?",
+                                                  ["Ligero (caminar, yoga suave)",
+                                                   "Moderado (trotar, natación, pesas ligeras)",
+                                                   "Vigoroso (correr, crossfit, pesas pesadas)",
+                                                   "Muy intenso (deportes competitivos, entrenamiento atlético)"],
+                                                  index=1,
+                                                  help="Considera la intensidad promedio de tus entrenamientos")
+            
+            with col2:
+                ejercicio_duracion = st.number_input("Duración promedio de cada sesión de ejercicio (minutos)", 
+                                                   min_value=0, max_value=300, step=15, value=60,
+                                                   help="Tiempo total incluyendo calentamiento y enfriamiento")
+                
+                # Visual activity summary
+                st.markdown("""
+                    <div class="metric-card" style="margin-top: 1rem;">
+                        <h4 style="color: #ffb300; margin-bottom: 0.5rem;">📊 Tu Perfil</h4>
+                        <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                            Usaremos esta información para calcular tu factor de actividad personalizado
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Educational content in expandable section
+            with st.expander("ℹ️ ¿Por qué es importante el nivel de actividad? 📚"):
+                st.markdown("""
+                <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 12px; margin: 1rem 0;">
+                    <h4 style="color: #ffb300;">🔥 El nivel de actividad afecta directamente:</h4>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #4caf50;">📈 Gasto calórico total (TDEE)</h5>
+                        <p style="color: #ccc;">
+                            Tu nivel de actividad determina cuántas calorías quemas diariamente. Esto incluye 
+                            tanto tu trabajo como tu ejercicio estructurado.
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #4caf50;">🥗 Requerimientos nutricionales</h5>
+                        <p style="color: #ccc;">
+                            Mayor actividad significa mayores necesidades de macronutrientes, especialmente 
+                            carbohidratos para energía y proteínas para recuperación.
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #4caf50;">🎯 Objetivos realistas</h5>
+                        <p style="color: #ccc;">
+                            Establecemos metas alcanzables según tu estilo de vida actual, evitando 
+                            cambios demasiado drásticos que son difíciles de mantener.
+                        </p>
+                    </div>
+                    
+                    <div style="background: rgba(255, 179, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #ffb300;">
+                        <p style="color: #ffb300; margin: 0;"><strong>💡 Consejo:</strong> 
+                        Sé honesto/a con tu nivel actual de actividad. Es mejor ser realista y construir 
+                        gradualmente que sobreestimar y frustrarse.</p>
+                    </div>
+                </div>
+                """)
+            
+            # Navigation buttons
+            st.markdown("<div style='margin-top: 2rem;'>", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                prev_step3 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
+            with col2:
+                continue_step3 = st.form_submit_button("➡️ Continuar", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            if prev_step3:
+                prev_step()
+            elif continue_step3:
+                st.session_state.form_data.update({
+                    'actividad_trabajo': actividad_trabajo,
+                    'ejercicio_frecuencia': ejercicio_frecuencia,
+                    'ejercicio_intensidad': ejercicio_intensidad,
+                    'ejercicio_duracion': ejercicio_duracion
+                })
+                st.success("✅ ¡Perfil de actividad guardado! Continuando...")
+                next_step()
 
 elif st.session_state.current_step == 4:
     # STEP 4: Training Goals and Experience
-    with st.form("step4_form"):
-        st.info("🎯 Define tus objetivos y experiencia para crear un plan personalizado.")
+    with st.container():
+        # Enhanced intro section
+        st.markdown("""
+            <div class="info-card">
+                <h3 style="color: #ffb300; margin-bottom: 1rem;">🎯 Objetivos y Experiencia de Entrenamiento</h3>
+                <p style="color: #ccc; font-size: 1.1rem; margin: 0;">
+                    Define tus objetivos principales y experiencia para crear un plan completamente personalizado. 
+                    Esta información nos ayuda a establecer expectativas realistas y estrategias efectivas.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        objetivo_principal = st.selectbox("¿Cuál es tu objetivo principal?",
-                                        ["Perder grasa corporal",
-                                         "Ganar masa muscular",
-                                         "Mantener peso actual",
-                                         "Mejorar rendimiento deportivo",
-                                         "Mejorar salud general"],
-                                        index=0)
-        
-        experiencia_entrenamiento = st.selectbox("¿Cuál es tu experiencia con el entrenamiento?",
-                                                ["Principiante (menos de 6 meses)",
-                                                 "Novato (6 meses - 2 años)",
-                                                 "Intermedio (2-5 años)",
-                                                 "Avanzado (más de 5 años)"],
-                                                index=1)
-        
-        tiempo_disponible = st.selectbox("¿Cuánto tiempo puedes dedicar al entrenamiento por semana?",
-                                       ["Menos de 3 horas",
-                                        "3-5 horas",
-                                        "5-8 horas",
-                                        "Más de 8 horas"],
-                                       index=1)
-        
-        limitaciones = st.multiselect("¿Tienes alguna limitación física o preferencia? (opcional)",
-                                    ["Lesión de rodilla",
-                                     "Lesión de espalda",
-                                     "Lesión de hombro",
-                                     "Problemas cardiovasculares",
-                                     "Prefiero entrenar en casa",
-                                     "Solo ejercicios de peso corporal",
-                                     "Ninguna"])
-        
-        # Timeline expectations
-        tiempo_objetivo = st.selectbox("¿En cuánto tiempo esperas ver resultados significativos?",
-                                     ["1-2 meses",
-                                      "3-4 meses", 
-                                      "5-6 meses",
-                                      "Más de 6 meses"],
-                                     index=1)
-        
-        with st.expander("ℹ️ Estableciendo expectativas realistas"):
+        with st.form("step4_form"):
+            # Goals section
             st.markdown("""
-            **Cronogramas típicos para resultados:**
-            - **Pérdida de grasa**: 0.5-1kg por semana es sostenible
-            - **Ganancia muscular**: 0.25-0.5kg por mes para principiantes
-            - **Cambios visibles**: 4-6 semanas con plan consistente
-            - **Transformaciones significativas**: 3-6 meses de dedicación
-            """)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            prev_step4 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
-        with col2:
-            continue_step4 = st.form_submit_button("➡️ Continuar", use_container_width=True)
-        
-        if prev_step4:
-            prev_step()
-        elif continue_step4:
-            st.session_state.form_data.update({
-                'objetivo_principal': objetivo_principal,
-                'experiencia_entrenamiento': experiencia_entrenamiento,
-                'tiempo_disponible': tiempo_disponible,
-                'limitaciones': limitaciones,
-                'tiempo_objetivo': tiempo_objetivo
-            })
-            next_step()
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">🎯 Tu Objetivo Principal</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns([2, 1], gap="large")
+            
+            with col1:
+                objetivo_principal = st.selectbox("¿Cuál es tu objetivo principal?",
+                                                ["Perder grasa corporal",
+                                                 "Ganar masa muscular",
+                                                 "Mantener peso actual",
+                                                 "Mejorar rendimiento deportivo",
+                                                 "Mejorar salud general"],
+                                                index=0,
+                                                help="Selecciona el objetivo más importante para ti en este momento")
+            
+            with col2:
+                # Visual goal indicator
+                goal_icons = {
+                    "Perder grasa corporal": "🔥",
+                    "Ganar masa muscular": "💪", 
+                    "Mantener peso actual": "⚖️",
+                    "Mejorar rendimiento deportivo": "🏃‍♂️",
+                    "Mejorar salud general": "❤️"
+                }
+                selected_goal = st.session_state.form_data.get('objetivo_principal', 'Perder grasa corporal')
+                st.markdown(f"""
+                    <div class="metric-card">
+                        <h2 style="color: #ffb300; margin-bottom: 0.5rem; font-size: 3rem;">
+                            {goal_icons.get(objetivo_principal, "🎯")}
+                        </h2>
+                        <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                            Tu objetivo seleccionado
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Experience and availability section
+            st.markdown("""
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">💡 Experiencia y Disponibilidad</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2, gap="large")
+            
+            with col1:
+                experiencia_entrenamiento = st.selectbox("¿Cuál es tu experiencia con el entrenamiento?",
+                                                        ["Principiante (menos de 6 meses)",
+                                                         "Novato (6 meses - 2 años)",
+                                                         "Intermedio (2-5 años)",
+                                                         "Avanzado (más de 5 años)"],
+                                                        index=1,
+                                                        help="Tu experiencia total con entrenamiento estructurado")
+                
+                tiempo_disponible = st.selectbox("¿Cuánto tiempo puedes dedicar al entrenamiento por semana?",
+                                               ["Menos de 3 horas",
+                                                "3-5 horas",
+                                                "5-8 horas",
+                                                "Más de 8 horas"],
+                                               index=1,
+                                               help="Tiempo total disponible para entrenamiento semanal")
+            
+            with col2:
+                tiempo_objetivo = st.selectbox("¿En cuánto tiempo esperas ver resultados significativos?",
+                                             ["1-2 meses",
+                                              "3-4 meses", 
+                                              "5-6 meses",
+                                              "Más de 6 meses"],
+                                             index=1,
+                                             help="Timeline realista para ver cambios notables")
+                
+                # Experience level indicator
+                exp_colors = {
+                    "Principiante (menos de 6 meses)": "#ff9800",
+                    "Novato (6 meses - 2 años)": "#ffb300",
+                    "Intermedio (2-5 años)": "#4caf50", 
+                    "Avanzado (más de 5 años)": "#2196f3"
+                }
+                exp_color = exp_colors.get(experiencia_entrenamiento, "#ffb300")
+                st.markdown(f"""
+                    <div class="metric-card" style="border-color: {exp_color};">
+                        <h4 style="color: {exp_color}; margin-bottom: 0.5rem;">📊 Nivel</h4>
+                        <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                            {experiencia_entrenamiento.split(' ')[0]}
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Limitations section  
+            st.markdown("""
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">⚠️ Limitaciones y Preferencias</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            limitaciones = st.multiselect("¿Tienes alguna limitación física o preferencia? (opcional)",
+                                        ["Lesión de rodilla",
+                                         "Lesión de espalda",
+                                         "Lesión de hombro",
+                                         "Problemas cardiovasculares",
+                                         "Prefiero entrenar en casa",
+                                         "Solo ejercicios de peso corporal",
+                                         "Ninguna"],
+                                        help="Selecciona todas las que apliquen para personalizar tu plan")
+            
+            # Educational content in expandable section
+            with st.expander("ℹ️ Estableciendo expectativas realistas 📚"):
+                st.markdown("""
+                <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 12px; margin: 1rem 0;">
+                    <h4 style="color: #ffb300;">⏰ Cronogramas típicos para resultados:</h4>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #ff9800;">🔥 Pérdida de grasa</h5>
+                        <p style="color: #ccc;">
+                            <strong>0.5-1kg por semana</strong> es sostenible y saludable. Pérdidas más rápidas 
+                            pueden comprometer la masa muscular y ser difíciles de mantener.
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #4caf50;">💪 Ganancia muscular</h5>
+                        <p style="color: #ccc;">
+                            <strong>Principiantes:</strong> 0.5-1kg por mes<br>
+                            <strong>Intermedios:</strong> 0.25-0.5kg por mes<br>
+                            <strong>Avanzados:</strong> 0.1-0.25kg por mes
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #2196f3;">👁️ Cambios visibles</h5>
+                        <p style="color: #ccc;">
+                            <strong>4-6 semanas</strong> para notar cambios con un plan consistente<br>
+                            <strong>8-12 semanas</strong> para cambios evidentes para otros
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <h5 style="color: #9c27b0;">🔄 Transformaciones significativas</h5>
+                        <p style="color: #ccc;">
+                            <strong>3-6 meses</strong> de dedicación constante para cambios dramáticos<br>
+                            <strong>1-2 años</strong> para transformaciones completas del physique
+                        </p>
+                    </div>
+                    
+                    <div style="background: rgba(255, 179, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #ffb300;">
+                        <p style="color: #ffb300; margin: 0;"><strong>🎯 Clave del éxito:</strong> 
+                        La consistencia supera a la perfección. Es mejor un plan bueno que sigas al 80% 
+                        que un plan perfecto que abandones a las 2 semanas.</p>
+                    </div>
+                </div>
+                """)
+            
+            # Navigation buttons
+            st.markdown("<div style='margin-top: 2rem;'>", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                prev_step4 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
+            with col2:
+                continue_step4 = st.form_submit_button("➡️ Continuar", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            if prev_step4:
+                prev_step()
+            elif continue_step4:
+                st.session_state.form_data.update({
+                    'objetivo_principal': objetivo_principal,
+                    'experiencia_entrenamiento': experiencia_entrenamiento,
+                    'tiempo_disponible': tiempo_disponible,
+                    'limitaciones': limitaciones,
+                    'tiempo_objetivo': tiempo_objetivo
+                })
+                st.success("✅ ¡Objetivos y experiencia guardados! Continuando...")
+                next_step()
 
 elif st.session_state.current_step == 5:
     # STEP 5: Caloric Requirements and Deficit/Surplus
-    with st.form("step5_form"):
-        st.info("🔥 Calculamos tus necesidades calóricas personalizadas.")
+    with st.container():
+        # Enhanced intro section
+        st.markdown("""
+            <div class="info-card">
+                <h3 style="color: #ffb300; margin-bottom: 1rem;">🔥 Cálculo de Necesidades Calóricas</h3>
+                <p style="color: #ccc; font-size: 1.1rem; margin: 0;">
+                    Calculamos tus necesidades calóricas personalizadas basadas en tu metabolismo, actividad 
+                    y objetivos. Estos cálculos forman la base de tu estrategia nutricional.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        # Calculate BMR and TDEE based on collected data
-        if st.session_state.form_data:
-            peso = st.session_state.form_data.get('peso', 70)
-            estatura = st.session_state.form_data.get('estatura', 170)
-            edad = st.session_state.form_data.get('edad', 25)
-            genero = st.session_state.form_data.get('genero', 'Hombre')
+        with st.form("step5_form"):
+            # Calculate BMR and TDEE based on collected data
+            if st.session_state.form_data:
+                peso = st.session_state.form_data.get('peso', 70)
+                estatura = st.session_state.form_data.get('estatura', 170)
+                edad = st.session_state.form_data.get('edad', 25)
+                genero = st.session_state.form_data.get('genero', 'Hombre')
+                
+                # Mifflin-St Jeor Equation
+                if genero == "Hombre":
+                    bmr = (10 * peso) + (6.25 * estatura) - (5 * edad) + 5
+                else:
+                    bmr = (10 * peso) + (6.25 * estatura) - (5 * edad) - 161
+                
+                # Activity multiplier based on step 3 data
+                actividad_trabajo = st.session_state.form_data.get('actividad_trabajo', 'Sedentario (oficina, computadora)')
+                ejercicio_frecuencia = st.session_state.form_data.get('ejercicio_frecuencia', '3-4 veces por semana')
+                
+                # Calculate activity factor
+                base_activity = {
+                    "Sedentario (oficina, computadora)": 1.2,
+                    "Ligeramente activo (caminar ocasionalmente)": 1.375,
+                    "Moderadamente activo (de pie frecuentemente)": 1.55,
+                    "Muy activo (trabajo físico)": 1.725
+                }.get(actividad_trabajo, 1.2)
+                
+                exercise_bonus = {
+                    "No hago ejercicio": 0,
+                    "1-2 veces por semana": 0.1,
+                    "3-4 veces por semana": 0.2,
+                    "5-6 veces por semana": 0.3,
+                    "Todos los días": 0.4
+                }.get(ejercicio_frecuencia, 0.2)
+                
+                activity_factor = base_activity + exercise_bonus
+                tdee = bmr * activity_factor
+                
+                # Enhanced metabolic calculations display
+                st.markdown("""
+                    <div style="margin: 2rem 0 1rem 0;">
+                        <h3 style="color: #ffb300;">📊 Tus Cálculos Metabólicos</h3>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Enhanced metrics display
+                col1, col2, col3 = st.columns(3, gap="large")
+                with col1:
+                    st.markdown(f"""
+                        <div class="metric-card" style="border-color: #4caf50;">
+                            <h2 style="color: #4caf50; margin-bottom: 0.5rem; font-size: 2.5rem;">{bmr:.0f}</h2>
+                            <h4 style="color: #ffb300; margin-bottom: 0.5rem;">BMR</h4>
+                            <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                                Metabolismo Basal<br>
+                                <small>Energía en reposo</small>
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                        <div class="metric-card" style="border-color: #2196f3;">
+                            <h2 style="color: #2196f3; margin-bottom: 0.5rem; font-size: 2.5rem;">{tdee:.0f}</h2>
+                            <h4 style="color: #ffb300; margin-bottom: 0.5rem;">TDEE</h4>
+                            <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                                Gasto Total Diario<br>
+                                <small>Incluye actividad</small>
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    factor_pct = (activity_factor - 1) * 100
+                    st.markdown(f"""
+                        <div class="metric-card" style="border-color: #ff9800;">
+                            <h2 style="color: #ff9800; margin-bottom: 0.5rem; font-size: 2.5rem;">+{factor_pct:.0f}%</h2>
+                            <h4 style="color: #ffb300; margin-bottom: 0.5rem;">Factor</h4>
+                            <p style="color: #ccc; font-size: 0.9rem; margin: 0;">
+                                Actividad<br>
+                                <small>Sobre BMR</small>
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
             
-            # Mifflin-St Jeor Equation
-            if genero == "Hombre":
-                bmr = (10 * peso) + (6.25 * estatura) - (5 * edad) + 5
+            # Goal-specific caloric adjustment
+            objetivo = st.session_state.form_data.get('objetivo_principal', 'Mantener peso actual')
+            
+            st.markdown("""
+                <div style="margin: 2rem 0 1rem 0;">
+                    <h3 style="color: #ffb300;">🎯 Estrategia Calórica</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Smart recommendations based on goal
+            if objetivo == "Perder grasa corporal":
+                st.info("🔥 **Para pérdida de grasa**: Recomendamos un déficit calórico moderado para preservar masa muscular")
+                deficit_surplus = st.selectbox("Ajuste calórico recomendado:", 
+                                             ["Déficit moderado (-300 kcal/día)", 
+                                              "Déficit agresivo (-500 kcal/día)",
+                                              "Déficit suave (-200 kcal/día)"], 
+                                             index=0,
+                                             help="Un déficit moderado es óptimo para la mayoría de personas")
+            elif objetivo == "Ganar masa muscular":
+                st.info("💪 **Para ganancia muscular**: Recomendamos un superávit controlado para minimizar ganancia de grasa")
+                deficit_surplus = st.selectbox("Ajuste calórico recomendado:",
+                                             ["Superávit moderado (+300 kcal/día)",
+                                              "Superávit suave (+200 kcal/día)",
+                                              "Superávit agresivo (+500 kcal/día)"], 
+                                             index=0,
+                                             help="Un superávit moderado maximiza ganancia muscular vs grasa")
             else:
-                bmr = (10 * peso) + (6.25 * estatura) - (5 * edad) - 161
+                deficit_surplus = st.selectbox("Ajuste calórico según tu objetivo:",
+                                             ["Déficit agresivo (-500 kcal/día)",
+                                              "Déficit moderado (-300 kcal/día)", 
+                                              "Déficit suave (-200 kcal/día)",
+                                              "Mantenimiento (0 kcal)",
+                                              "Superávit suave (+200 kcal/día)",
+                                              "Superávit moderado (+300 kcal/día)",
+                                              "Superávit agresivo (+500 kcal/día)"],
+                                             index=3,
+                                             help="Selecciona la estrategia que mejor se adapte a tu objetivo")
             
-            # Activity multiplier based on step 3 data
-            actividad_trabajo = st.session_state.form_data.get('actividad_trabajo', 'Sedentario (oficina, computadora)')
-            ejercicio_frecuencia = st.session_state.form_data.get('ejercicio_frecuencia', '3-4 veces por semana')
+            # Calculate target calories
+            adjustment = {
+                "Déficit agresivo (-500 kcal/día)": -500,
+                "Déficit moderado (-300 kcal/día)": -300,
+                "Déficit suave (-200 kcal/día)": -200,
+                "Mantenimiento (0 kcal)": 0,
+                "Superávit suave (+200 kcal/día)": 200,
+                "Superávit moderado (+300 kcal/día)": 300,
+                "Superávit agresivo (+500 kcal/día)": 500
+            }.get(deficit_surplus, 0)
             
-            # Calculate activity factor
-            base_activity = {
-                "Sedentario (oficina, computadora)": 1.2,
-                "Ligeramente activo (caminar ocasionalmente)": 1.375,
-                "Moderadamente activo (de pie frecuentemente)": 1.55,
-                "Muy activo (trabajo físico)": 1.725
-            }.get(actividad_trabajo, 1.2)
+            target_calories = tdee + adjustment
             
-            exercise_bonus = {
-                "No hago ejercicio": 0,
-                "1-2 veces por semana": 0.1,
-                "3-4 veces por semana": 0.2,
-                "5-6 veces por semana": 0.3,
-                "Todos los días": 0.4
-            }.get(ejercicio_frecuencia, 0.2)
-            
-            activity_factor = base_activity + exercise_bonus
-            tdee = bmr * activity_factor
-            
-            st.success(f"🔥 **Tus cálculos metabólicos:**")
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("BMR (Metabolismo Basal)", f"{bmr:.0f} kcal")
-            with col2:
-                st.metric("TDEE (Gasto Total)", f"{tdee:.0f} kcal")
-            with col3:
-                factor_pct = (activity_factor - 1) * 100
-                st.metric("Factor de Actividad", f"+{factor_pct:.0f}%")
-        
-        # Goal-specific caloric adjustment
-        objetivo = st.session_state.form_data.get('objetivo_principal', 'Mantener peso actual')
-        
-        deficit_surplus = st.selectbox("Ajuste calórico recomendado según tu objetivo:",
-                                     ["Déficit agresivo (-500 kcal/día)",
-                                      "Déficit moderado (-300 kcal/día)", 
-                                      "Déficit suave (-200 kcal/día)",
-                                      "Mantenimiento (0 kcal)",
-                                      "Superávit suave (+200 kcal/día)",
-                                      "Superávit moderado (+300 kcal/día)",
-                                      "Superávit agresivo (+500 kcal/día)"])
-        
-        # Auto-select based on goal
-        if objetivo == "Perder grasa corporal":
-            deficit_surplus = st.selectbox("Ajuste calórico recomendado:", 
-                                         ["Déficit moderado (-300 kcal/día)", 
-                                          "Déficit agresivo (-500 kcal/día)",
-                                          "Déficit suave (-200 kcal/día)"], index=0)
-        elif objetivo == "Ganar masa muscular":
-            deficit_surplus = st.selectbox("Ajuste calórico recomendado:",
-                                         ["Superávit moderado (+300 kcal/día)",
-                                          "Superávit suave (+200 kcal/día)",
-                                          "Superávit agresivo (+500 kcal/día)"], index=0)
-        
-        # Calculate target calories
-        adjustment = {
-            "Déficit agresivo (-500 kcal/día)": -500,
-            "Déficit moderado (-300 kcal/día)": -300,
-            "Déficit suave (-200 kcal/día)": -200,
-            "Mantenimiento (0 kcal)": 0,
-            "Superávit suave (+200 kcal/día)": 200,
-            "Superávit moderado (+300 kcal/día)": 300,
-            "Superávit agresivo (+500 kcal/día)": 500
-        }.get(deficit_surplus, 0)
-        
-        target_calories = tdee + adjustment
-        
-        st.info(f"🎯 **Calorías objetivo diarias: {target_calories:.0f} kcal**")
-        
-        with st.expander("ℹ️ Entendiendo tu gasto calórico"):
+            # Enhanced target calories display
             st.markdown(f"""
-            **Desglose de tu metabolismo:**
-            - **BMR ({bmr:.0f} kcal)**: Energía que tu cuerpo necesita en reposo
-            - **Actividad diaria**: +{(tdee-bmr):.0f} kcal por trabajo y ejercicio
-            - **TDEE total**: {tdee:.0f} kcal por día
+                <div style="background: linear-gradient(135deg, rgba(255, 179, 0, 0.2), rgba(255, 143, 0, 0.2)); 
+                            border-radius: 16px; padding: 2rem; margin: 2rem 0; text-align: center;
+                            border: 2px solid rgba(255, 179, 0, 0.5);">
+                    <h2 style="color: #ffb300; margin-bottom: 1rem;">🎯 Tu Objetivo Calórico Diario</h2>
+                    <h1 style="color: #fff; font-size: 3.5rem; margin: 0.5rem 0; font-weight: 700;">
+                        {target_calories:.0f} <span style="font-size: 2rem;">kcal</span>
+                    </h1>
+                    <p style="color: #ccc; font-size: 1.2rem; margin: 0;">
+                        {deficit_surplus} • {adjustment:+.0f} kcal del TDEE
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
             
-            **Tu estrategia ({deficit_surplus}):**
-            - Objetivo calórico: {target_calories:.0f} kcal/día
-            - Diferencia: {adjustment:+.0f} kcal/día
-            - Pérdida/ganancia semanal esperada: {abs(adjustment)*7/7700:.2f} kg/semana
-            """)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            prev_step5 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
-        with col2:
-            continue_step5 = st.form_submit_button("➡️ Continuar", use_container_width=True)
-        
-        if prev_step5:
-            prev_step()
-        elif continue_step5:
-            st.session_state.form_data.update({
-                'bmr': bmr,
-                'tdee': tdee,
-                'activity_factor': activity_factor,
-                'deficit_surplus': deficit_surplus,
-                'adjustment': adjustment,
-                'target_calories': target_calories
-            })
-            next_step()
+            # Educational content in expandable section
+            with st.expander("ℹ️ Entendiendo tu gasto calórico 📚"):
+                st.markdown(f"""
+                <div style="background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 12px; margin: 1rem 0;">
+                    <h4 style="color: #ffb300;">🔬 Desglose científico de tu metabolismo:</h4>
+                    
+                    <div style="margin: 1.5rem 0;">
+                        <h5 style="color: #4caf50;">🏠 BMR - Metabolismo Basal ({bmr:.0f} kcal)</h5>
+                        <p style="color: #ccc;">
+                            La energía que tu cuerpo necesita para funciones vitales en reposo absoluto: 
+                            respiración, circulación, producción celular, procesamiento de nutrientes.
+                        </p>
+                        <p style="color: #888; font-size: 0.9rem;">
+                            <strong>Representa ~{(bmr/tdee)*100:.0f}% de tu gasto total</strong>
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 1.5rem 0;">
+                        <h5 style="color: #2196f3;">🔥 Actividad Diaria (+{(tdee-bmr):.0f} kcal)</h5>
+                        <p style="color: #ccc;">
+                            Energía adicional por tu trabajo ({actividad_trabajo.split(' ')[0]}) 
+                            y ejercicio ({ejercicio_frecuencia}).
+                        </p>
+                        <p style="color: #888; font-size: 0.9rem;">
+                            <strong>Factor de actividad: {activity_factor:.2f}x del BMR</strong>
+                        </p>
+                    </div>
+                    
+                    <div style="margin: 1.5rem 0;">
+                        <h5 style="color: #ff9800;">🎯 Tu Estrategia ({deficit_surplus})</h5>
+                        <p style="color: #ccc;">
+                            Objetivo calórico: <strong>{target_calories:.0f} kcal/día</strong><br>
+                            Diferencia del TDEE: <strong>{adjustment:+.0f} kcal/día</strong><br>
+                            Cambio semanal esperado: <strong>{abs(adjustment)*7/7700:.2f} kg/semana</strong>
+                        </p>
+                    </div>
+                    
+                    <div style="background: rgba(255, 179, 0, 0.1); padding: 1rem; border-radius: 8px; border-left: 4px solid #ffb300;">
+                        <p style="color: #ffb300; margin: 0;"><strong>💡 Importante:</strong> 
+                        Estos cálculos son un punto de partida excelente. Tu cuerpo puede responder 
+                        ligeramente diferente, así que ajustaremos según tu progreso real.</p>
+                    </div>
+                </div>
+                """)
+            
+            # Navigation buttons
+            st.markdown("<div style='margin-top: 2rem;'>", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                prev_step5 = st.form_submit_button("⬅️ Anterior", use_container_width=True)
+            with col2:
+                continue_step5 = st.form_submit_button("➡️ Continuar", use_container_width=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            if prev_step5:
+                prev_step()
+            elif continue_step5:
+                st.session_state.form_data.update({
+                    'bmr': bmr,
+                    'tdee': tdee,
+                    'activity_factor': activity_factor,
+                    'deficit_surplus': deficit_surplus,
+                    'adjustment': adjustment,
+                    'target_calories': target_calories
+                })
+                st.success("✅ ¡Estrategia calórica establecida! Continuando...")
+                next_step()
 
 elif st.session_state.current_step == 6:
     # STEP 6: Macronutrient Recommendations
