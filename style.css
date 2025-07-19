@@ -1,0 +1,20 @@
+body, .stApp { background-color: #fffbe6 !important; }
+[data-testid="stSidebar"] { background-color: #1a1a1a !important; }
+[data-testid="stSidebar"] * { color: #ffd600 !important; }
+h1, h2, h3, h4, h5, h6, .stHeader, .stTitle { color: #1a1a1a !important; font-weight: bold; }
+.stApp { color: #1a1a1a; }
+.stButton>button {
+    background-color: #ffd600 !important; color: #1a1a1a !important;
+    border: none; font-weight: bold;
+}
+.stButton>button:hover {
+    background-color: #fffde7 !important; color: #1a1a1a !important;
+    border: 1px solid #ffd600 !important;
+}
+input, textarea, select, .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+    background-color: #fffde7 !important; color: #1a1a1a !important; border: 1px solid #ffd600 !important;
+}
+hr { border-top: 2px solid #ffd600 !important; }
+.stAlert {
+    background-color: #fffbe6 !important; color: #d32f2f !important; border: 1px solid #ffd600 !important;
+}
