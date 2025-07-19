@@ -175,6 +175,67 @@ if st.session_state["datos_personales_ok"]:
         else:
             st.info("Completa todos los campos antropométricos para ver tus resultados.")
 
+    # ====== BLOQUE INTEGRAL: NIVEL DE ENTRENAMIENTO (FFMI + TESTS + EXPERIENCIA) ======
+    with st.expander("Evaluación Integral de tu Nivel de Entrenamiento", expanded=False):
+        st.markdown("""
+        Para determinar tu nivel de entrenamiento de forma objetiva, combinamos tu desarrollo muscular (FFMI), tu mejor rendimiento funcional y tu experiencia cualitativa.
+        """)
+        experiencia = st.radio(
+            "¿Cuál de estas opciones describe mejor tu experiencia reciente en entrenamiento de fuerza y acondicionamiento físico?",
+            [
+                "A) Entreno solo ocasionalmente, sin un plan definido ni objetivos claros.",
+                "B) Entreno de manera regular (al menos 2 veces por semana), sigo rutinas generales pero no personalizadas, y a veces salto sesiones.",
+                "C) Entreno de forma constante y estructurada, sigo un programa adaptado a mis metas, progreso en cargas o dificultad, y registro mis avances.",
+                "D) Además de lo anterior, diseño (o ajusto) mis propios planes de entrenamiento, comprendo los principios de progresión y periodización y mantengo la constancia durante todo el año."
+            ]
+        )
+        grupos = [
+            ("Empuje superior", ["Flexiones", "Fondos", "Press banca"]),
+            ("Tracción superior", ["Dominadas", "Remo invertido"]),
+            ("Pierna", ["Sentadilla", "Peso muerto", "Hip thrust"]),
+            ("Core", ["Plancha", "Ab wheel", "L-sit"])
+        ]
+        resultados_tests = []
+        for grupo, ejercicios in grupos:
+            ejercicio = st.selectbox(f"{grupo} - Elige tu mejor ejercicio:", ["Ninguno"] + ejercicios, key=f"ej_{grupo}")
+            marca = st.text_input(f"Marca actual (reps/peso/tiempo) en {ejercicio}:", key=f"marca_{grupo}")
+            nivel_test = 2 if marca else 1  # Personaliza esta lógica según tus tablas
+            resultados_tests.append(nivel_test)
+        # FFMI a nivel numérico
+        if sexo == "Hombre":
+            if ffmi < 18:
+                nivel_ffmi = 1
+            elif ffmi < 20:
+                nivel_ffmi = 2
+            elif ffmi < 22:
+                nivel_ffmi = 3
+            elif ffmi < 25:
+                nivel_ffmi = 4
+            else:
+                nivel_ffmi = 5
+        else:
+            if ffmi < 14:
+                nivel_ffmi = 1
+            elif ffmi < 16:
+                nivel_ffmi = 2
+            elif ffmi < 18:
+                nivel_ffmi = 3
+            elif ffmi < 20:
+                nivel_ffmi = 4
+            else:
+                nivel_ffmi = 5
+        mapa_exp = {"A": 1, "B": 2, "C": 3, "D": 4}
+        nivel_exp = mapa_exp[experiencia[0]]
+        nivel_tests = sum(resultados_tests) / len(resultados_tests)
+        nivel_final = (nivel_ffmi * 0.4) + (nivel_tests * 0.4) + (nivel_exp * 0.2)
+        if nivel_final < 1.7:
+            nivel_entrenamiento = "novato"
+        elif nivel_final < 2.5:
+            nivel_entrenamiento = "intermedio"
+        else:
+            nivel_entrenamiento = "avanzado"
+        st.success(f"**Tu nivel de entrenamiento combinado es: {nivel_entrenamiento.capitalize()}**")
+
     # ====== PASO 2: ACTIVIDAD FÍSICA DIARIA (GEAF/PA) ======
     with st.expander("Paso 2: Nivel de Actividad Física Diaria (GEAF/PA)", expanded=False):
         st.markdown(
@@ -368,13 +429,7 @@ if st.session_state["datos_personales_ok"]:
             else:
                 return None
 
-        # Determinar el "fase" y porcentaje de modificación calórica
-        if ffmi < 20:
-            nivel_entrenamiento = "novato"
-        elif ffmi < 25:
-            nivel_entrenamiento = "intermedio"
-        else:
-            nivel_entrenamiento = "avanzado"
+        # Aquí YA NO está la lógica antigua de nivel_entrenamiento basada solo en ffmi
 
         if grasa_corregida > 18:
             objetivo = "deficit"
