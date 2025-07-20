@@ -1,4 +1,5 @@
 import streamlit as st
+from psmf_logic import calculate_psmf
 
 st.set_page_config(page_title="Cuestionario MUPAI", layout="centered")
 
@@ -136,6 +137,58 @@ if st.session_state["datos_personales_ok"]:
 - >20: Nivel "natty max" (genética top o posible uso de anabólicos)
 """
             st.markdown(ffmi_mensaje)
+            def calculate_psmf(sexo, peso_kg, grasa_corporal_pct, mlg=None, is_lean=False):
+    """
+    Calcula recomendaciones para PSMF (Protein Sparing Modified Fast).
+    Args:
+        sexo (str): "Hombre" o "Mujer"
+        peso_kg (float): Peso corporal en kilogramos
+        grasa_corporal_pct (float): Porcentaje de grasa corporal (0-100)
+        mlg (float, opcional): Masa libre de grasa (kg), si se desea calcular con LBM
+        is_lean (bool, opcional): True si el usuario es muy magro (abs visibles)
+    Returns:
+        dict: {
+            "psmf_aplicable": bool,
+            "proteina_g_dia": float,
+            "calorias_dia": float,
+            "calorias_piso_dia": float,
+            "criterio": str ("1.8g/kg peso" o "2.3g/kg MLG")
+        }
+    """
+    # Criterios PSMF
+    criterio_hombre = sexo.lower() == "hombre" and grasa_corporal_pct >= 35
+    criterio_mujer = sexo.lower() == "mujer" and grasa_corporal_pct >= 40
+
+    if not (criterio_hombre or criterio_mujer):
+        return {
+            "psmf_aplicable": False,
+            "proteina_g_dia": None,
+            "calorias_dia": None,
+            "calorias_piso_dia": None,
+            "criterio": None
+        }
+
+    # Menos agresivo: 1.8g/kg peso corporal
+    proteina_g_dia = 1.8 * peso_kg
+    criterio = "1.8g/kg peso"
+
+    # (Opcional) Más agresivo: 2.3g/kg masa libre de grasa (descomentar si se quiere usar por defecto)
+    # if mlg is not None:
+    #     proteina_g_dia = 2.3 * mlg
+    #     criterio = "2.3g/kg MLG"
+
+    # Calorías: 8.3 x gramos de proteína
+    calorias_dia = 8.3 * proteina_g_dia
+    # Piso si es muy magro: 9.7 x gramos de proteína
+    calorias_piso_dia = 9.7 * proteina_g_dia if is_lean else None
+
+    return {
+        "psmf_aplicable": True,
+        "proteina_g_dia": round(proteina_g_dia, 1),
+        "calorias_dia": round(calorias_dia),
+        "calorias_piso_dia": round(calorias_piso_dia) if calorias_piso_dia else None,
+        "criterio": criterio
+    }
             # Clasificación automática
             if sexo == "Hombre":
                 if ffmi < 18:
