@@ -17,11 +17,9 @@ st.markdown(
 with open("style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# Control de avance con session_state
 if "datos_personales_ok" not in st.session_state:
     st.session_state["datos_personales_ok"] = False
 
-# ====== BLOQUE 0: BIENVENIDA Y DATOS PERSONALES ======
 st.markdown(
     """
     <style>
@@ -42,7 +40,8 @@ with st.expander("Misión, Visión y Compromiso MUPAI", expanded=True):
         <b>Visión:</b> Ser referente global en entrenamiento digital personalizado, integrando ciencia, tecnología e innovación para transformar tu experiencia fitness.<br><br>
         <b>Política:</b> Nos guiamos por la ética, responsabilidad, transparencia y respeto, asegurando el trato personalizado y la protección de tus datos.
         </div>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
 
 st.markdown("<div class='bloque'><b>Por favor, completa tus datos personales para comenzar:</b></div>", unsafe_allow_html=True)
@@ -137,58 +136,19 @@ if st.session_state["datos_personales_ok"]:
 - >20: Nivel "natty max" (genética top o posible uso de anabólicos)
 """
             st.markdown(ffmi_mensaje)
-            def calculate_psmf(sexo, peso_kg, grasa_corporal_pct, mlg=None, is_lean=False):
-    """
-    Calcula recomendaciones para PSMF (Protein Sparing Modified Fast).
-    Args:
-        sexo (str): "Hombre" o "Mujer"
-        peso_kg (float): Peso corporal en kilogramos
-        grasa_corporal_pct (float): Porcentaje de grasa corporal (0-100)
-        mlg (float, opcional): Masa libre de grasa (kg), si se desea calcular con LBM
-        is_lean (bool, opcional): True si el usuario es muy magro (abs visibles)
-    Returns:
-        dict: {
-            "psmf_aplicable": bool,
-            "proteina_g_dia": float,
-            "calorias_dia": float,
-            "calorias_piso_dia": float,
-            "criterio": str ("1.8g/kg peso" o "2.3g/kg MLG")
-        }
-    """
-    # Criterios PSMF
-    criterio_hombre = sexo.lower() == "hombre" and grasa_corporal_pct >= 35
-    criterio_mujer = sexo.lower() == "mujer" and grasa_corporal_pct >= 40
 
-    if not (criterio_hombre or criterio_mujer):
-        return {
-            "psmf_aplicable": False,
-            "proteina_g_dia": None,
-            "calorias_dia": None,
-            "calorias_piso_dia": None,
-            "criterio": None
-        }
+            # INTEGRACIÓN PSMF
+            psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
+            if psmf_recs["psmf_aplicable"]:
+                st.warning(
+                    f"⚡️ Por tu % de grasa corporal, podrías beneficiarte de una fase rápida PSMF:"
+                    f"\n- Proteína: {psmf_recs['proteina_g_dia']} g/día"
+                    f"\n- Calorías: {psmf_recs['calorias_dia']} kcal/día"
+                    + (f"\n- Piso calórico (si eres muy magro): {psmf_recs['calorias_piso_dia']} kcal/día" if psmf_recs['calorias_piso_dia'] else "")
+                    + f"\n- ({psmf_recs['criterio']})"
+                )
+            # FIN INTEGRACIÓN PSMF
 
-    # Menos agresivo: 1.8g/kg peso corporal
-    proteina_g_dia = 1.8 * peso_kg
-    criterio = "1.8g/kg peso"
-
-    # (Opcional) Más agresivo: 2.3g/kg masa libre de grasa (descomentar si se quiere usar por defecto)
-    # if mlg is not None:
-    #     proteina_g_dia = 2.3 * mlg
-    #     criterio = "2.3g/kg MLG"
-
-    # Calorías: 8.3 x gramos de proteína
-    calorias_dia = 8.3 * proteina_g_dia
-    # Piso si es muy magro: 9.7 x gramos de proteína
-    calorias_piso_dia = 9.7 * proteina_g_dia if is_lean else None
-
-    return {
-        "psmf_aplicable": True,
-        "proteina_g_dia": round(proteina_g_dia, 1),
-        "calorias_dia": round(calorias_dia),
-        "calorias_piso_dia": round(calorias_piso_dia) if calorias_piso_dia else None,
-        "criterio": criterio
-    }
             # Clasificación automática
             if sexo == "Hombre":
                 if ffmi < 18:
@@ -228,11 +188,12 @@ if st.session_state["datos_personales_ok"]:
         else:
             st.info("Completa todos los campos antropométricos para ver tus resultados.")
 
-    # ====== BLOQUE INTEGRAL: NIVEL DE ENTRENAMIENTO (FFMI + TESTS + EXPERIENCIA) ======
+    # ====== BLOQUE 2: NIVEL DE ENTRENAMIENTO (FFMI + TESTS + EXPERIENCIA) ======
     with st.expander("Evaluación Integral de tu Nivel de Entrenamiento", expanded=False):
         st.markdown("""
         Para determinar tu nivel de entrenamiento de forma objetiva, combinamos tu desarrollo muscular (FFMI), tu mejor rendimiento funcional y tu experiencia cualitativa.
         """)
+
         experiencia = st.radio(
             "¿Cuál de estas opciones describe mejor tu experiencia reciente en entrenamiento de fuerza y acondicionamiento físico?",
             [
@@ -242,18 +203,21 @@ if st.session_state["datos_personales_ok"]:
                 "D) Además de lo anterior, diseño (o ajusto) mis propios planes de entrenamiento, comprendo los principios de progresión y periodización y mantengo la constancia durante todo el año."
             ]
         )
+
         grupos = [
             ("Empuje superior", ["Flexiones", "Fondos", "Press banca"]),
             ("Tracción superior", ["Dominadas", "Remo invertido"]),
             ("Pierna", ["Sentadilla", "Peso muerto", "Hip thrust"]),
             ("Core", ["Plancha", "Ab wheel", "L-sit"])
         ]
+
         resultados_tests = []
         for grupo, ejercicios in grupos:
             ejercicio = st.selectbox(f"{grupo} - Elige tu mejor ejercicio:", ["Ninguno"] + ejercicios, key=f"ej_{grupo}")
             marca = st.text_input(f"Marca actual (reps/peso/tiempo) en {ejercicio}:", key=f"marca_{grupo}")
             nivel_test = 2 if marca else 1  # Personaliza esta lógica según tus tablas
             resultados_tests.append(nivel_test)
+
         # FFMI a nivel numérico
         if sexo == "Hombre":
             if ffmi < 18:
@@ -277,6 +241,7 @@ if st.session_state["datos_personales_ok"]:
                 nivel_ffmi = 4
             else:
                 nivel_ffmi = 5
+
         mapa_exp = {"A": 1, "B": 2, "C": 3, "D": 4}
         nivel_exp = mapa_exp[experiencia[0]]
         nivel_tests = sum(resultados_tests) / len(resultados_tests)
@@ -289,7 +254,7 @@ if st.session_state["datos_personales_ok"]:
             nivel_entrenamiento = "avanzado"
         st.success(f"**Tu nivel de entrenamiento combinado es: {nivel_entrenamiento.capitalize()}**")
 
-    # ====== PASO 2: ACTIVIDAD FÍSICA DIARIA (GEAF/PA) ======
+    # ====== BLOQUE 3: ACTIVIDAD FÍSICA DIARIA (GEAF/PA) ======
     with st.expander("Paso 2: Nivel de Actividad Física Diaria (GEAF/PA)", expanded=False):
         st.markdown(
             """
@@ -338,7 +303,7 @@ if st.session_state["datos_personales_ok"]:
         geaf = obtener_geaf(sexo, nivel_actividad)
         st.info(f"Tu nivel de actividad física diaria es **{nivel_actividad}**. Se usará un factor GEAF/PA de **{geaf}** para tus cálculos energéticos.")
 
-    # ====== PASO 3: Efecto Térmico de los Alimentos (ETA) ======
+    # ====== BLOQUE 4: Efecto Térmico de los Alimentos (ETA) ======
     with st.expander("Paso 3: Efecto Térmico de los Alimentos (ETA)", expanded=False):
         st.markdown(
             """
@@ -370,7 +335,7 @@ if st.session_state["datos_personales_ok"]:
 
         st.info(f"Tu ETA estimado es **{eta}** ({detalle}). Esto se usará para tus cálculos energéticos.")
 
-    # ====== PASO 4: Entrenamiento de fuerza y gasto energético (GEE) ======
+    # ====== BLOQUE 5: Entrenamiento de fuerza y gasto energético (GEE) ======
     with st.expander("Paso 4: Entrenamiento de fuerza y gasto energético del ejercicio (GEE)", expanded=False):
         st.markdown(
             """
@@ -409,7 +374,7 @@ if st.session_state["datos_personales_ok"]:
         st.info(f"Según tu nivel de desarrollo muscular (**{nivel_fuerza}**), tu gasto energético estimado es de **{kcal_sesion} kcal/sesión**.")
         st.info(f"Gasto energético semanal por fuerza: **{gee_total:.0f} kcal/semana** (~{gee_prom_dia:.0f} kcal/día)")
 
-    # ====== PASO 5: DEFICIT Y SUPERAVIT PERSONALIZADO (UPGRADE VISUAL) ======
+    # ====== BLOQUE 6: DEFICIT Y SUPERAVIT PERSONALIZADO (UPGRADE VISUAL) ======
     with st.expander("Paso 5: Ingesta Calórica Promedio Total Diaria (Personalizado)", expanded=True):
         st.markdown(
             """
@@ -481,8 +446,6 @@ if st.session_state["datos_personales_ok"]:
                 return 2
             else:
                 return None
-
-        # Aquí YA NO está la lógica antigua de nivel_entrenamiento basada solo en ffmi
 
         if grasa_corregida > 18:
             objetivo = "deficit"
