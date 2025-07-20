@@ -1,5 +1,6 @@
 import streamlit as st
 from psmf_logic import calculate_psmf
+from referencias_rendimiento import referencias_funcionales
 
 st.set_page_config(page_title="Cuestionario MUPAI", layout="centered")
 
@@ -188,7 +189,7 @@ if st.session_state["datos_personales_ok"]:
         else:
             st.info("Completa todos los campos antropométricos para ver tus resultados.")
 
-    # ====== BLOQUE 2: NIVEL DE ENTRENAMIENTO (FFMI + TESTS + EXPERIENCIA) ======
+    # ====== BLOQUE 2: NIVEL DE ENTRENAMIENTO (FFMI + TESTS + EXPERIENCIA, NUEVA LÓGICA) ======
     with st.expander("Evaluación Integral de tu Nivel de Entrenamiento", expanded=False):
         st.markdown("""
         Para determinar tu nivel de entrenamiento de forma objetiva, combinamos tu desarrollo muscular (FFMI), tu mejor rendimiento funcional y tu experiencia cualitativa.
@@ -210,13 +211,55 @@ if st.session_state["datos_personales_ok"]:
             ("Pierna", ["Sentadilla", "Peso muerto", "Hip thrust"]),
             ("Core", ["Plancha", "Ab wheel", "L-sit"])
         ]
-
-        resultados_tests = []
+        puntajes_funcionales = []
         for grupo, ejercicios in grupos:
             ejercicio = st.selectbox(f"{grupo} - Elige tu mejor ejercicio:", ["Ninguno"] + ejercicios, key=f"ej_{grupo}")
-            marca = st.text_input(f"Marca actual (reps/peso/tiempo) en {ejercicio}:", key=f"marca_{grupo}")
-            nivel_test = 2 if marca else 1  # Personaliza esta lógica según tus tablas
-            resultados_tests.append(nivel_test)
+            nivel = "No evaluado"
+            puntaje = 1
+            if ejercicio != "Ninguno":
+                tipo = referencias_funcionales[sexo][ejercicio]["tipo"]
+                niveles = referencias_funcionales[sexo][ejercicio]["niveles"]
+                if tipo == "reps":
+                    reps = st.number_input(f"Repeticiones máximas en {ejercicio}:", min_value=0, step=1, key=f"reps_{ejercicio}")
+                    if reps > 0:
+                        for i, (nombre, umbral) in enumerate(niveles):
+                            if reps < umbral:
+                                nivel = nombre
+                                puntaje = i + 1
+                                break
+                        else:
+                            nivel = niveles[-1][0]
+                            puntaje = len(niveles)
+                    st.info(f"Nivel estimado para {ejercicio}: {nivel}")
+                    st.caption(f"Tabla de referencia: {niveles}")
+                elif tipo == "reps_peso":
+                    reps = st.number_input(f"Repeticiones máximas en {ejercicio}:", min_value=0, step=1, key=f"reps_{ejercicio}")
+                    peso_kg = st.number_input(f"Peso en kg usado en {ejercicio}:", min_value=0, step=1, key=f"peso_{ejercicio}")
+                    if reps > 0 and peso_kg > 0:
+                        for i, (nombre, (umbral_reps, umbral_peso)) in enumerate(niveles):
+                            if reps < umbral_reps or peso_kg < umbral_peso:
+                                nivel = nombre
+                                puntaje = i + 1
+                                break
+                        else:
+                            nivel = niveles[-1][0]
+                            puntaje = len(niveles)
+                    st.info(f"Nivel estimado para {ejercicio}: {nivel}")
+                    st.caption(f"Tabla de referencia: {niveles}")
+                elif tipo == "tiempo":
+                    tiempo = st.number_input(f"Tiempo máximo en {ejercicio} (segundos):", min_value=0, step=1, key=f"tiempo_{ejercicio}")
+                    if tiempo > 0:
+                        for i, (nombre, umbral) in enumerate(niveles):
+                            if tiempo < umbral:
+                                nivel = nombre
+                                puntaje = i + 1
+                                break
+                        else:
+                            nivel = niveles[-1][0]
+                            puntaje = len(niveles)
+                    st.info(f"Nivel estimado para {ejercicio}: {nivel}")
+                    st.caption(f"Tabla de referencia: {niveles}")
+            puntajes_funcionales.append(puntaje)
 
         # FFMI a nivel numérico
         if sexo == "Hombre":
@@ -244,15 +287,18 @@ if st.session_state["datos_personales_ok"]:
 
         mapa_exp = {"A": 1, "B": 2, "C": 3, "D": 4}
         nivel_exp = mapa_exp[experiencia[0]]
-        nivel_tests = sum(resultados_tests) / len(resultados_tests)
-        nivel_final = (nivel_ffmi * 0.4) + (nivel_tests * 0.4) + (nivel_exp * 0.2)
+
+        nivel_funcional = sum(puntajes_funcionales) / len(puntajes_funcionales)
+        nivel_final = (nivel_ffmi * 0.4) + (nivel_funcional * 0.4) + (nivel_exp * 0.2)
         if nivel_final < 1.7:
             nivel_entrenamiento = "novato"
         elif nivel_final < 2.5:
             nivel_entrenamiento = "intermedio"
         else:
             nivel_entrenamiento = "avanzado"
+
         st.success(f"**Tu nivel de entrenamiento combinado es: {nivel_entrenamiento.capitalize()}**")
+        st.info(f"- FFMI: {nivel_ffmi}/5\n- Funcional: {nivel_funcional:.2f}/4\n- Experiencia: {nivel_exp}/4\n- Ponderado: {nivel_final:.2f}/5")
 
     # ====== BLOQUE 3: ACTIVIDAD FÍSICA DIARIA (GEAF/PA) ======
     with st.expander("Paso 2: Nivel de Actividad Física Diaria (GEAF/PA)", expanded=False):
@@ -374,7 +420,7 @@ if st.session_state["datos_personales_ok"]:
         st.info(f"Según tu nivel de desarrollo muscular (**{nivel_fuerza}**), tu gasto energético estimado es de **{kcal_sesion} kcal/sesión**.")
         st.info(f"Gasto energético semanal por fuerza: **{gee_total:.0f} kcal/semana** (~{gee_prom_dia:.0f} kcal/día)")
 
-    # ====== BLOQUE 6: DEFICIT Y SUPERAVIT PERSONALIZADO (UPGRADE VISUAL) ======
+    # ====== BLOQUE 6: DEFICIT Y SUPERAVIT PERSONALIZADO ======
     with st.expander("Paso 5: Ingesta Calórica Promedio Total Diaria (Personalizado)", expanded=True):
         st.markdown(
             """
