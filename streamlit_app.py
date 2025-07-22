@@ -232,6 +232,24 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         font-weight: bold;
     }
+    /* LABELS y textos secundarios más blancos */
+.stTextInput label,
+.stNumberInput label,
+.stSelectbox label,
+.stDateInput label,
+.stRadio label,
+.stCheckbox label,
+.stForm label,
+.stForm legend,
+.stForm span,
+.stForm p,
+.stForm div,
+.stForm input::placeholder,
+.stTextInput input::placeholder,
+.stNumberInput input::placeholder {
+    color: var(--mupai-white) !important;
+    opacity: 0.95 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
