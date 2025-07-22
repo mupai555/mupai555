@@ -272,6 +272,31 @@ st.markdown("""
     color: var(--mupai-white) !important;
     opacity: 1 !important;
 }
+/* Refuerzo para texto de expanders y badges */
+.streamlit-expanderHeader,
+.stExpander .streamlit-expanderHeader,
+.stExpander span,
+.stExpander label,
+.stExpander p,
+.stExpander div,
+.stExpander .markdown-text-container,
+.stExpander .stMarkdown,
+.stExpander input[type="checkbox"] + label,
+.stExpander input[type="checkbox"] + span,
+.stExpander input[type="checkbox"] + p,
+.stExpander input[type="checkbox"] + div {
+    color: var(--mupai-white) !important;
+    opacity: 1 !important;
+}
+
+/* Checkbox de política en el formulario */
+.stCheckbox label,
+.stForm label,
+.stCheckbox span,
+.stCheckbox p {
+    color: var(--mupai-white) !important;
+    opacity: 1 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
