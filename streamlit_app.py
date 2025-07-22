@@ -1123,4 +1123,604 @@ if datos_personales_completos and st.session_state.datos_completos:
                 st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
                 st.markdown("#### ✅ Plan Tradicional")
                 st.metric("Déficit", f"{porcentaje}%", "Moderado")
-                st.metric("Calorías", f"{ingesta_calo
+                                st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
+                st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
+                st.markdown("""
+                **Ventajas:**
+                - ✅ Mayor adherencia
+                - ✅ Más energía para entrenar  
+                - ✅ Sostenible largo plazo
+                - ✅ Menor pérdida muscular
+                - ✅ Vida social normal
+                """)
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            with col2:
+                deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
+                st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
+                st.markdown("#### ⚡ Protocolo PSMF")
+                st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
+                st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
+                st.metric("Pérdida esperada", "0.8-1.2 kg/semana")
+                st.markdown("""
+                **Consideraciones:**
+                - ⚠️ Muy restrictivo
+                - ⚠️ Máximo 6-8 semanas
+                - ⚠️ Requiere supervisión
+                - ⚠️ Solo proteína + verduras
+                - ⚠️ Suplementación necesaria
+                """)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+# Continuación desde la línea ~1100 (Bloque 6 - Comparativa PSMF)
+
+            with col1:
+                st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
+                st.markdown("#### ✅ Plan Tradicional")
+                st.metric("Déficit", f"{porcentaje}%", "Moderado")
+                st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
+                st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
+                st.markdown("""
+                **Ventajas:**
+                - ✅ Mayor adherencia
+                - ✅ Más energía para entrenar  
+                - ✅ Sostenible largo plazo
+                - ✅ Menor pérdida muscular
+                - ✅ Vida social normal
+                """)
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            with col2:
+                deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
+                st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
+                st.markdown("#### ⚡ Protocolo PSMF")
+                st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
+                st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
+                st.metric("Pérdida esperada", "0.8-1.2 kg/semana")
+                st.markdown("""
+                **Consideraciones:**
+                - ⚠️ Muy restrictivo
+                - ⚠️ Máximo 6-8 semanas
+                - ⚠️ Requiere supervisión
+                - ⚠️ Solo proteína + verduras
+                - ⚠️ Suplementación necesaria
+                """)
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Aplicar plan elegido
+            if "PSMF" in plan_elegido:
+                ingesta_calorica = psmf_recs['calorias_dia']
+                proteina_g = psmf_recs['proteina_g_dia']
+                proteina_kcal = proteina_g * 4
+                carbo_g = 30
+                carbo_kcal = carbo_g * 4
+                grasa_kcal = max(ingesta_calorica - proteina_kcal - carbo_kcal, 90)
+                grasa_g = round(grasa_kcal / 9, 1)
+                fase = f"PSMF - Pérdida rápida (déficit ~{deficit_psmf}%)"
+                
+                st.error("""
+                ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF:**
+                - Es un protocolo **MUY RESTRICTIVO** diseñado para pérdida rápida
+                - **Duración máxima:** 6-8 semanas
+                - **Requiere:** Supervisión profesional y análisis de sangre
+                - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos
+                - **No apto para:** Personas con historial de TCA o problemas médicos
+                """)
+            else:
+                ingesta_calorica = ingesta_calorica_tradicional
+                # Cálculo de macros tradicional
+                proteina_factor = 2.5 if grasa_corregida < 15 else 2.2 if grasa_corregida < 25 else 2.0
+                proteina_g = round(mlg * proteina_factor, 1)
+                proteina_kcal = proteina_g * 4
+                
+                if porcentaje > 20:
+                    prop_grasa = 0.35
+                elif porcentaje > 0:
+                    prop_grasa = 0.30
+                else:
+                    prop_grasa = 0.25
+                
+                grasa_kcal = ingesta_calorica * prop_grasa
+                grasa_g = round(grasa_kcal / 9, 1)
+                carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
+                carbo_g = round(carbo_kcal / 4, 1)
+        else:
+            # Sin PSMF, cálculo tradicional directo
+            ingesta_calorica = ingesta_calorica_tradicional
+            proteina_factor = 2.5 if grasa_corregida < 15 else 2.2 if grasa_corregida < 25 else 2.0
+            proteina_g = round(mlg * proteina_factor, 1)
+            proteina_kcal = proteina_g * 4
+            
+            if porcentaje > 20:
+                prop_grasa = 0.35
+            elif porcentaje > 0:
+                prop_grasa = 0.30
+            else:
+                prop_grasa = 0.25
+            
+            grasa_kcal = ingesta_calorica * prop_grasa
+            grasa_g = round(grasa_kcal / 9, 1)
+            carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
+            carbo_g = round(carbo_kcal / 4, 1)
+        
+        # Mostrar cálculo detallado con diseño mejorado
+        st.markdown("### 🧮 Desglose del cálculo")
+        
+        with st.expander("Ver cálculo detallado", expanded=False):
+            st.code(f"""
+Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
+GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
+
+Factor de Balance Energético (FBEO) = 1 - (déficit/100)
+FBEO = 1 - ({porcentaje}/100) = {fbeo:.2f}
+
+Ingesta Calórica = GE × FBEO
+Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
+""")
+        
+        # Resultado final con diseño premium
+        st.markdown("### 🎯 Tu plan nutricional personalizado")
+        
+        # Métricas principales
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
+                     f"{ingesta_calorica/peso:.1f} kcal/kg")
+        with col2:
+            st.metric("🥩 Proteína", f"{proteina_g} g", 
+                     f"{proteina_g/peso:.1f} g/kg")
+        with col3:
+            st.metric("🥑 Grasas", f"{grasa_g} g", 
+                     f"{round(grasa_kcal/ingesta_calorica*100)}%")
+        with col4:
+            st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
+                     f"{round(carbo_kcal/ingesta_calorica*100)}%")
+        
+        # Visualización de distribución de macros
+        st.markdown("### 📊 Distribución de macronutrientes")
+        
+        # Crear dataframe para mostrar
+        macro_data = {
+            "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
+            "Gramos": [proteina_g, grasa_g, carbo_g],
+            "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
+            "% del total": [
+                f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
+                f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
+                f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
+            ]
+        }
+        df_macros = pd.DataFrame(macro_data)
+        
+        # Mostrar tabla estilizada
+        st.dataframe(
+            df_macros,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
+                "Gramos": st.column_config.TextColumn("Gramos/día", width="small"),
+                "Calorías": st.column_config.TextColumn("Calorías", width="small"),
+                "% del total": st.column_config.TextColumn("% Total", width="small"),
+            }
+        )
+        
+        # Recomendaciones adicionales
+        st.markdown("### 💡 Recomendaciones para optimizar resultados")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("""
+            **📅 Timing de comidas:**
+            - 3-4 comidas al día
+            - Proteína en cada comida
+            - Pre/post entreno con carbos
+            - Última comida 2-3h antes de dormir
+            """)
+        
+        with col2:
+            st.info("""
+            **💧 Hidratación y suplementos:**
+            - Agua: 35-40ml/kg peso
+            - Creatina: 5g/día
+            - Vitamina D: 2000-4000 UI
+            - Omega-3: 2-3g EPA+DHA
+            """)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # RESUMEN FINAL MEJORADO
+    st.markdown("---")
+    st.markdown('<div class="content-card" style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); color: #1E1E1E;">', unsafe_allow_html=True)
+    st.markdown("## 🎯 **Resumen Final de tu Evaluación MUPAI**")
+    st.markdown(f"*Fecha: {fecha_llenado} | Cliente: {nombre}*")
+    
+    # Crear resumen visual con métricas clave
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(f"""
+        ### 👤 Perfil Personal
+        - **Edad cronológica:** {edad} años
+        - **Edad metabólica:** {edad_metabolica} años
+        - **Diferencia:** {edad_metabolica - edad:+d} años
+        - **Evaluación:** {'⚠️ Mejorar' if edad_metabolica > edad + 2 else '✅ Excelente' if edad_metabolica < edad - 2 else '👍 Normal'}
+        """)
+    
+    with col2:
+        st.markdown(f"""
+        ### 💪 Composición Corporal
+        - **Peso:** {peso} kg | **Altura:** {estatura} cm
+        - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
+        - **FFMI:** {ffmi:.2f} ({nivel})
+        - **Potencial:** {porc_potencial:.0f}% alcanzado
+        """)
+    
+    with col3:
+        st.markdown(f"""
+        ### 🍽️ Plan Nutricional
+        - **Objetivo:** {fase}
+        - **Calorías:** {ingesta_calorica:.0f} kcal/día
+        - **Proteína:** {proteina_g}g ({proteina_g/peso:.1f}g/kg)
+        - **Estrategia:** {plan_elegido.split('(')[0].strip()}
+        """)
+    
+    # Mensaje motivacional personalizado
+    mensaje_motivacional = ""
+    if edad_metabolica > edad + 2:
+        mensaje_motivacional = "Tu edad metabólica indica que hay margen significativo de mejora. ¡Este plan te ayudará a rejuvenecer metabólicamente!"
+    elif edad_metabolica < edad - 2:
+        mensaje_motivacional = "¡Excelente! Tu edad metabólica es menor que tu edad real. Mantén este gran trabajo."
+    else:
+        mensaje_motivacional = "Tu edad metabólica está bien alineada con tu edad cronológica. Sigamos optimizando tu composición corporal."
+    
+    st.success(f"""
+    ### ✅ Evaluación completada exitosamente
+    
+    {mensaje_motivacional}
+    
+    **Tu plan personalizado** considera todos los factores evaluados: composición corporal, 
+    nivel de entrenamiento, actividad diaria y objetivos. La fase recomendada es **{fase}** 
+    con una ingesta de **{ingesta_calorica:.0f} kcal/día**.
+    
+    {'⚠️ **Nota:** Elegiste el protocolo PSMF. Recuerda que es temporal (6-8 semanas máximo) y requiere supervisión.' if 'PSMF' in plan_elegido else ''}
+    """)
+    
+    # Advertencias finales si aplican
+    if fuera_rango:
+        st.warning(f"""
+        ⚠️ **Consideración sobre el FFMI:** Tu % de grasa ({grasa_corregida:.1f}%) está fuera del 
+        rango ideal para máxima precisión ({rango_grasa_ok[0]}-{rango_grasa_ok[1]}%). 
+        Los valores de FFMI y potencial muscular son estimaciones que mejorarán su precisión 
+        cuando alcances el rango óptimo.
+        """)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Botones de acción
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📧 Reenviar Email", key="reenviar"):
+            st.session_state.correo_enviado = False
+    with col2:
+        if st.button("📄 Generar PDF", key="pdf"):
+            st.info("Función PDF próximamente...")
+    with col3:
+        if st.button("🔄 Nueva Evaluación", key="nueva"):
+            for key in st.session_state.keys():
+                del st.session_state[key]
+            st.rerun()
+    
+    # ENVÍO DE EMAIL MEJORADO
+    if not st.session_state.get("correo_enviado", False):
+        with st.spinner("📧 Enviando resumen por email..."):
+            # Construir comparativa si aplica PSMF
+            comparativa_psmf = ""
+            if psmf_recs["psmf_aplicable"]:
+                deficit_psmf_calc = int((1 - psmf_recs['calorias_dia']/GE) * 100)
+                comparativa_psmf = f"""
+
+=====================================
+COMPARATIVA DE PLANES NUTRICIONALES:
+=====================================
+CANDIDATO PARA PSMF: SÍ (% grasa: {grasa_corregida:.1f}%)
+
+1. PLAN TRADICIONAL (Sostenible):
+   - Déficit: {porcentaje}%
+   - Calorías: {ingesta_calorica_tradicional:.0f} kcal/día
+   - Proteína: {mlg * 2.2:.0f}g (2.2g/kg MLG)
+   - Grasas: ~{ingesta_calorica_tradicional * 0.3 / 9:.0f}g
+   - Carbohidratos: Balance restante
+   - Pérdida esperada: 0.5-0.7 kg/semana
+   - Adherencia: ALTA
+   - Duración: Según objetivo
+   
+2. PROTOCOLO PSMF (Rápido):
+   - Déficit: ~{deficit_psmf_calc}%
+   - Calorías: {psmf_recs['calorias_dia']:.0f} kcal/día
+   - Proteína: {psmf_recs['proteina_g_dia']}g
+   - Grasas: 10-15g (esenciales)
+   - Carbohidratos: 20-30g (verduras)
+   - Pérdida esperada: 0.8-1.2 kg/semana
+   - Adherencia: BAJA
+   - Duración máxima: 6-8 semanas
+   
+PLAN ELEGIDO POR EL USUARIO: {plan_elegido.split('(')[0].strip()}
+
+RECOMENDACIÓN PROFESIONAL:
+- Si elige PSMF: Monitoreo semanal obligatorio
+- Evaluar tolerancia y adherencia constantemente
+- Transición gradual al plan tradicional post-PSMF
+"""
+            
+            # Construir análisis de fortalezas
+            analisis_rendimiento = """
+
+=====================================
+EVALUACIÓN FUNCIONAL DETALLADA:
+====================================="""
+            
+            fortalezas = []
+            areas_mejora = []
+            
+            for ejercicio, nivel_ej in st.session_state.niveles_ejercicios.items():
+                valor = st.session_state.datos_ejercicios.get(ejercicio, "No evaluado")
+                if isinstance(valor, tuple):
+                    valor_str = f"{valor[0]} reps × {valor[1]}kg"
+                else:
+                    valor_str = f"{valor} {'segundos' if ejercicio == 'Plancha' else 'reps'}"
+                
+                linea = f"\n- {ejercicio}: {valor_str} → Nivel: {nivel_ej}"
+                analisis_rendimiento += linea
+                
+                if nivel_ej in ["Bueno", "Avanzado"]:
+                    fortalezas.append(f"{ejercicio} ({nivel_ej})")
+                elif nivel_ej == "Bajo":
+                    areas_mejora.append(f"{ejercicio} (Priorizar)")
+            
+            analisis_rendimiento += f"""
+
+FORTALEZAS IDENTIFICADAS:
+{chr(10).join(['- ' + f for f in fortalezas]) if fortalezas else '- No se identificaron fortalezas destacadas'}
+
+ÁREAS DE MEJORA PRIORITARIAS:
+{chr(10).join(['- ' + a for a in areas_mejora]) if areas_mejora else '- Buen nivel general, mantener progresión'}
+
+RECOMENDACIONES DE ENTRENAMIENTO:
+- Experiencia: {experiencia}
+- Nivel global: {nivel_entrenamiento.upper()}
+- Frecuencia actual: {dias_fuerza} días/semana
+- Enfoque sugerido: {'Mejorar tren inferior' if any('pierna' in a.lower() or 'sentadilla' in a.lower() or 'peso muerto' in a.lower() for a in areas_mejora) else 'Progresión balanceada'}
+"""
+            
+            # Mensaje sobre edad metabólica
+            analisis_edad = f"""
+
+=====================================
+ANÁLISIS DE EDAD METABÓLICA:
+=====================================
+- Edad cronológica: {edad} años
+- Edad metabólica: {edad_metabolica} años
+- Diferencia: {edad_metabolica - edad:+d} años
+
+INTERPRETACIÓN:
+"""
+            if edad_metabolica > edad + 2:
+                analisis_edad += """- Estado: ENVEJECIMIENTO METABÓLICO ACELERADO
+- Causa principal: Exceso de grasa corporal
+- Acción: Priorizar pérdida de grasa
+- Meta: Reducir edad metabólica en 3-5 años"""
+            elif edad_metabolica < edad - 2:
+                analisis_edad += """- Estado: EXCELENTE SALUD METABÓLICA
+- Interpretación: Composición corporal óptima
+- Acción: Mantener hábitos actuales
+- Enfoque: Optimización y rendimiento"""
+            else:
+                analisis_edad += """- Estado: NORMAL/ESPERADO
+- Interpretación: Salud metabólica adecuada
+- Acción: Optimizar composición corporal
+- Potencial: Mejorar 1-2 años con el plan"""
+            
+            # Resumen ejecutivo mostrado al usuario
+            resumen_usuario = f"""
+
+=====================================
+RESUMEN MOSTRADO AL USUARIO:
+=====================================
+📅 Fecha: {fecha_llenado}              
+👤 Nombre: {nombre}                    
+🎂 Edad cronológica: {edad} años       
+🔥 Edad metabólica: {edad_metabolica} años    
+⚖️ Peso: {peso} kg                    
+📏 Estatura: {estatura} cm             
+💪 % Grasa corporal: {grasa_corregida:.1f}%
+📊 FFMI: {ffmi:.2f} ({nivel})
+🎯 Nivel entrenamiento: {nivel_entrenamiento.capitalize()}
+📈 Potencial alcanzado: {porc_potencial:.0f}%
+🍽️ Calorías diarias: {ingesta_calorica:.0f} kcal
+
+PLAN NUTRICIONAL FINAL:
+- Objetivo: {fase}
+- Calorías: {ingesta_calorica:.0f} kcal/día
+- Proteína: {proteina_g}g ({proteina_g/peso:.1f}g/kg)
+- Grasas: {grasa_g}g
+- Carbohidratos: {carbo_g}g
+- Estrategia elegida: {plan_elegido.split('(')[0].strip()}
+"""
+            
+            # Tabla resumen completa para email
+            tabla_resumen = f"""
+=====================================
+EVALUACIÓN MUPAI - INFORME COMPLETO
+=====================================
+Generado: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence
+
+=====================================
+DATOS DEL CLIENTE:
+=====================================
+- Nombre completo: {nombre}
+- Edad: {edad} años
+- Sexo: {sexo}
+- Teléfono: {telefono}
+- Email: {email_cliente}
+- Fecha evaluación: {fecha_llenado}
+
+=====================================
+ANTROPOMETRÍA Y COMPOSICIÓN:
+=====================================
+- Peso: {peso} kg
+- Estatura: {estatura} cm
+- IMC: {peso/(estatura/100)**2:.1f} kg/m²
+- Método medición grasa: {metodo_grasa}
+- % Grasa medido: {grasa_corporal}%
+- % Grasa corregido (DEXA): {grasa_corregida:.1f}%
+- Masa Libre de Grasa: {mlg:.1f} kg
+- Masa Grasa: {peso - mlg:.1f} kg
+
+=====================================
+ÍNDICES METABÓLICOS:
+=====================================
+- TMB (Cunningham): {tmb:.0f} kcal
+- FFMI actual: {ffmi:.2f}
+- Clasificación FFMI: {nivel}
+- FFMI máximo estimado: {ffmi_genetico_max:.1f}
+- Potencial alcanzado: {porc_potencial:.0f}%
+- Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos FFMI
+
+=====================================
+FACTORES DE ACTIVIDAD:
+=====================================
+- Nivel actividad diaria: {nivel_actividad.split('(')[0].strip()}
+- Factor GEAF: {geaf}
+- Factor ETA: {eta}
+- Días entreno/semana: {dias_fuerza}
+- Gasto por sesión: {kcal_sesion} kcal
+- GEE promedio diario: {gee_prom_dia:.0f} kcal
+- Gasto Energético Total: {GE:.0f} kcal
+
+=====================================
+PLAN NUTRICIONAL CALCULADO:
+=====================================
+- Fase: {fase}
+- Factor FBEO: {fbeo:.2f}
+- Ingesta calórica: {ingesta_calorica:.0f} kcal/día
+- Ratio kcal/kg: {ingesta_calorica/peso:.1f}
+
+DISTRIBUCIÓN DE MACRONUTRIENTES:
+- Proteína: {proteina_g}g ({proteina_kcal:.0f} kcal) = {round(proteina_kcal/ingesta_calorica*100, 1)}%
+- Grasas: {grasa_g}g ({grasa_kcal:.0f} kcal) = {round(grasa_kcal/ingesta_calorica*100, 1)}%
+- Carbohidratos: {carbo_g}g ({carbo_kcal:.0f} kcal) = {round(carbo_kcal/ingesta_calorica*100, 1)}%
+
+{comparativa_psmf}
+
+{analisis_rendimiento}
+
+{analisis_edad}
+
+=====================================
+ADVERTENCIAS Y CONSIDERACIONES:
+=====================================
+{'- FFMI: % grasa fuera de rango ideal para máxima precisión' if fuera_rango else '- Sin advertencias especiales'}
+{'- PSMF: Protocolo muy restrictivo, requiere supervisión' if 'PSMF' in plan_elegido else ''}
+{'- Edad metabólica elevada: Priorizar pérdida de grasa' if edad_metabolica > edad + 2 else ''}
+
+{resumen_usuario}
+
+=====================================
+NOTAS INTERNAS PARA EL ENTRENADOR:
+=====================================
+- Usuario completó evaluación: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+- Tiempo estimado: 15-20 minutos
+- Datos validados correctamente
+- Email enviado automáticamente
+- Seguimiento recomendado: {'Semanal (PSMF)' if 'PSMF' in plan_elegido else 'Quincenal'}
+
+=====================================
+FIN DEL INFORME
+=====================================
+© 2025 MUPAI - Muscle Up Gym & Fitness
+Sistema desarrollado por el equipo técnico MUPAI
+Todos los derechos reservados
+"""
+            
+            # Enviar email
+            if enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono):
+                st.session_state["correo_enviado"] = True
+                st.success("✅ Email enviado exitosamente a administración")
+            else:
+                st.error("❌ Error al enviar email. Contacta a soporte técnico.")
+
+else:
+    # Si no hay datos completos, mostrar pantalla de bienvenida
+    st.markdown("""
+    <div class="content-card" style="text-align: center; padding: 3rem;">
+        <h2 style="color: var(--mupai-black);">🏋️ Bienvenido a MUPAI</h2>
+        <p style="font-size: 1.2rem; margin: 2rem 0; color: var(--mupai-gray);">
+            Sistema de Evaluación Fitness Inteligente
+        </p>
+        <p style="color: var(--mupai-gray);">
+            Por favor, completa tus datos personales y acepta los términos para comenzar tu evaluación personalizada.
+        </p>
+        
+        <div style="display: flex; justify-content: space-around; margin-top: 3rem;">
+            <div style="text-align: center;">
+                <h1 style="color: var(--mupai-yellow); margin: 0;">📊</h1>
+                <h4>Análisis Preciso</h4>
+                <p style="font-size: 0.9rem; color: var(--mupai-gray);">
+                    Composición corporal<br>con corrección DEXA
+                </p>
+            </div>
+            <div style="text-align: center;">
+                <h1 style="color: var(--mupai-yellow); margin: 0;">💪</h1>
+                <h4>Evaluación Completa</h4>
+                <p style="font-size: 0.9rem; color: var(--mupai-gray);">
+                    Nivel funcional y<br>potencial genético
+                </p>
+            </div>
+            <div style="text-align: center;">
+                <h1 style="color: var(--mupai-yellow); margin: 0;">🎯</h1>
+                <h4>Plan Personalizado</h4>
+                <p style="font-size: 0.9rem; color: var(--mupai-gray);">
+                    Nutrición adaptada<br>a tus objetivos
+                </p>
+            </div>
+        </div>
+        
+        <div style="margin-top: 3rem; padding: 1rem; background: #f8f9fa; border-radius: 10px;">
+            <p style="font-size: 0.9rem; color: var(--mupai-gray); margin: 0;">
+                ⏱️ Tiempo estimado: 15-20 minutos | 
+                📋 Tendrás un informe completo | 
+                🔒 Datos 100% confidenciales
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Footer profesional
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #1E1E1E 0%, #2D2D2D 100%); 
+     border-radius: 15px; color: white; margin-top: 2rem;">
+    <h4 style="color: var(--mupai-yellow); margin-bottom: 1rem;">MUPAI - Muscle Up Performance Assessment Intelligence</h4>
+    <p style="opacity: 0.9; margin-bottom: 1rem;">
+        © 2025 Muscle Up GYM/MUPAI | DIRIGIDO POR LIC. EN CIENCIAS DEL EJERCICIO (UANL) Y MAESTRO EN FUERZA Y ACONDICIONAMIENTO (FSI)
+        ERICK DE LUNA
+    </p>
+    <p style="font-size: 0.9rem; opacity: 0.7;">
+        Sistema basado en evidencia científica y validado por profesionales certificados<br>
+        Versión 2.0 | Última actualización: {datetime.now().strftime("%Y-%m-%d")}
+    </p>
+    <div style="margin-top: 1rem;">
+        <a href="#" style="color: var(--mupai-yellow); text-decoration: none; margin: 0 1rem;">Términos</a>
+        <a href="#" style="color: var(--mupai-yellow); text-decoration: none; margin: 0 1rem;">Privacidad</a>
+        <a href="#" style="color: var(--mupai-yellow); text-decoration: none; margin: 0 1rem;">Contacto</a>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Limpiar progress bar si existe
+if 'progress' in locals():
+    progress.empty()
+if 'progress_text' in locals():
+    progress_text.empty()
