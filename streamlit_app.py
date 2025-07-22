@@ -885,8 +885,6 @@ if st.session_state["datos_personales_ok"]:
         else:
             st.info("Completa todos los campos antropométricos para ver tus resultados.")
 
-    # ... (Aquí van todos los demás bloques, igual que tu código original) ...
-
     # ========== BLOQUE FINAL INTEGRADO: Edad metabólica, potencial genético, advertencia y email ==========
     porc_potencial = min(ffmi / ffmi_max * 100, 100)
     edad_metabolica = calcular_edad_metabolica(sexo, tmb)
@@ -933,4 +931,91 @@ st.info(
     f"El ajuste calórico sugerido es **{fase}**. "
     f"Tu ingesta calórica diaria sugerida es de aproximadamente **{ingesta_calorica:.0f} kcal/día**."
 )
-# --- PEGA AQUÍ EL BLOQUE INTEGRADO ---
+# === INTEGRACIÓN FINAL: Edad metabólica, potencial genético, advertencia de rango y envío por email ===
+def calcular_edad_metabolica(sexo, tmb):
+    if sexo == "Hombre":
+        tmb_tabla = {18: 1760, 25: 1710, 35: 1660, 45: 1610, 55: 1560, 65: 1510}
+    else:
+        tmb_tabla = {18: 1500, 25: 1460, 35: 1420, 45: 1380, 55: 1340, 65: 1300}
+    edades = sorted(tmb_tabla.keys())
+    if tmb >= tmb_tabla[edades[0]]:
+        return edades[0]
+    if tmb <= tmb_tabla[edades[-1]]:
+        return edades[-1]
+    for i in range(len(edades)-1):
+        e1, e2 = edades[i], edades[i+1]
+        t1, t2 = tmb_tabla[e1], tmb_tabla[e2]
+        if t1 >= tmb >= t2:
+            edad_metabolica = e1 + (e2-e1)*(t1-tmb)/(t1-t2)
+            return int(round(edad_metabolica))
+    return edades[-1]
+
+import smtplib
+from email.message import EmailMessage
+def enviar_email_resumen(tabla_resumen, nombre_cliente, email_cliente, fecha_llenado, edad, otros):
+    msg = EmailMessage()
+    msg['Subject'] = f'Resumen evaluación MUPAI - {nombre_cliente} ({fecha_llenado})'
+    msg['From'] = "administracion@muscleupgym.fitness"
+    msg['To'] = "administracion@muscleupgym.fitness"
+    msg.set_content(f"""
+Nombre completo: {nombre_cliente}
+Email cliente: {email_cliente}
+Fecha llenado: {fecha_llenado}
+Edad: {edad}
+---
+{tabla_resumen}
+---
+Otros datos:
+{otros}
+""")
+    smtp_server = "smtp.zoho.eu"
+    smtp_port = 465
+    smtp_user = "administracion@muscleupgym.fitness"
+    smtp_pass = "TU_CONTRASENA_APP"
+    try:
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+    except Exception as e:
+        print("Error enviando email:", e)
+
+# --- Calcula y muestra resumen final + envío profesional ---
+porc_potencial = min(ffmi / ffmi_max * 100, 100)
+edad_metabolica = calcular_edad_metabolica(sexo, tmb)
+if sexo == "Hombre":
+    rango_grasa_ok = (4, 12)
+else:
+    rango_grasa_ok = (10, 22)
+fuera_rango = not (rango_grasa_ok[0] <= grasa_corregida <= rango_grasa_ok[1])
+
+st.header("Resumen de tu evaluación MUPAI")
+st.markdown(f"""
+**Fecha:** {datetime.datetime.now().strftime("%Y-%m-%d")}  
+**Nombre:** {nombre}  
+**Edad cronológica:** {edad} años  
+**Edad metabólica estimada:** {edad_metabolica} años  
+**Peso:** {peso} kg  
+**Porcentaje de grasa corporal:** {grasa_corregida:.1f}%  
+**FFMI:** {ffmi:.2f}  
+**Nivel de desarrollo muscular:** {nivel}  
+**Nivel de entrenamiento:** {nivel_entrenamiento.capitalize()}  
+**Potencial genético muscular alcanzado (estimado):** {porc_potencial:.1f}%  
+""")
+if fuera_rango:
+    st.warning(f"Para mayor precisión, el rango recomendado de % de grasa corporal para estimar el FFMI es {rango_grasa_ok[0]}-{rango_grasa_ok[1]}%. Tu valor está fuera de este rango, la estimación podría no ser precisa.")
+
+tabla_resumen = f"""
+Sexo: {sexo}
+Peso: {peso} kg
+Estatura: {estatura} cm
+% Grasa (DEXA): {grasa_corregida:.1f}%
+FFMI: {ffmi:.2f} ({nivel})
+Nivel de entrenamiento: {nivel_entrenamiento.capitalize()}
+Potencial genético muscular alcanzado: {porc_potencial:.1f}%
+Edad metabólica: {edad_metabolica} años
+"""
+otros = f"Teléfono: {telefono}\nEmail cliente: {email}"
+
+if "correo_enviado" not in st.session_state:
+    enviar_email_resumen(tabla_resumen, nombre, email, datetime.datetime.now().strftime("%Y-%m-%d"), edad, otros)
+    st.session_state["correo_enviado"] = True
