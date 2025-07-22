@@ -312,7 +312,33 @@ st.markdown("""
     font-weight: bold !important;
     opacity: 1 !important;
 }
+/* Texto negro y remarcado (negrita) en recuadros blancos */
+.content-card,
+.content-card * {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
 
+/* Inputs en tarjetas blancas - negro y bold */
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stSelectbox > div > div > select,
+.stForm input,
+.stForm select,
+.stForm textarea {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
+
+/* Tablas blancas - texto negro y bold */
+.dataframe, .dataframe th, .dataframe td {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
+[data-testid="stTable"] {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
