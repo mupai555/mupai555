@@ -1,6 +1,9 @@
 import streamlit as st
 from psmf_logic import calculate_psmf
 from referencias_rendimiento import referencias_funcionales
+import datetime
+import smtplib
+from email.message import EmailMessage
 
 st.set_page_config(page_title="Cuestionario MUPAI", layout="centered")
 
@@ -584,11 +587,6 @@ if st.session_state["datos_personales_ok"]:
                 f"El ajuste calórico sugerido es **{fase}**. "
                 f"Tu ingesta calórica diaria sugerida es de aproximadamente **{ingesta_calorica:.0f} kcal/día**."
             )
-
-import streamlit as st
-import datetime
-import smtplib
-from email.message import EmailMessage
 
 # ========== Módulo de Referencias de Rendimiento ==========
 referencias_funcionales = {
