@@ -297,6 +297,21 @@ st.markdown("""
     color: var(--mupai-white) !important;
     opacity: 1 !important;
 }
+/* Texto negro y fuerte dentro de recuadros blancos (inputs, selects, cards, etc.) */
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stSelectbox > div > div > select,
+.stForm input,
+.stForm select,
+.stForm textarea,
+.content-card,
+.stForm input::placeholder,
+.stTextInput input::placeholder,
+.stNumberInput input::placeholder {
+    color: var(--mupai-black) !important;
+    font-weight: bold !important;
+    opacity: 1 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
