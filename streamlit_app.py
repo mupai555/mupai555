@@ -1123,7 +1123,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                 st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
                 st.markdown("#### ✅ Plan Tradicional")
                 st.metric("Déficit", f"{porcentaje}%", "Moderado")
-                                st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
+                st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
                 st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
                 st.markdown("""
                 **Ventajas:**
