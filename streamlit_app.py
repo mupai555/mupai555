@@ -312,6 +312,10 @@ st.markdown("""
     font-weight: bold !important;
     opacity: 1 !important;
 }
+    /* --- SOLUCIÓN CONTRASTE EN TARJETAS BLANCAS --- */
+    .content-card, .content-card * {
+        color: var(--mupai-black) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
