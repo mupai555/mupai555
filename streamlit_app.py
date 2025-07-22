@@ -584,3 +584,346 @@ if st.session_state["datos_personales_ok"]:
                 f"El ajuste calórico sugerido es **{fase}**. "
                 f"Tu ingesta calórica diaria sugerida es de aproximadamente **{ingesta_calorica:.0f} kcal/día**."
             )
+
+import streamlit as st
+import datetime
+import smtplib
+from email.message import EmailMessage
+
+# ========== Módulo de Referencias de Rendimiento ==========
+referencias_funcionales = {
+    "Hombre": {
+        "Flexiones": {"tipo": "reps", "niveles": [("Bajo", 10), ("Promedio", 20), ("Bueno", 35), ("Avanzado", 50)]},
+        "Fondos": {"tipo": "reps", "niveles": [("Bajo", 5), ("Promedio", 12), ("Bueno", 20), ("Avanzado", 30)]},
+        "Press banca": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 40)), ("Promedio", (8, 60)), ("Bueno", (10, 80)), ("Avanzado", (10, 100))]},
+        "Dominadas": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
+        "Remo invertido": {"tipo": "reps", "niveles": [("Bajo", 5), ("Promedio", 10), ("Bueno", 15), ("Avanzado", 20)]},
+        "Sentadilla": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 60)), ("Promedio", (8, 80)), ("Bueno", (10, 110)), ("Avanzado", (10, 140))]},
+        "Peso muerto": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 70)), ("Promedio", (8, 100)), ("Bueno", (10, 130)), ("Avanzado", (10, 180))]},
+        "Hip thrust": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 60)), ("Promedio", (8, 90)), ("Bueno", (10, 120)), ("Avanzado", (10, 150))]},
+        "Plancha": {"tipo": "tiempo", "niveles": [("Bajo", 20), ("Promedio", 40), ("Bueno", 60), ("Avanzado", 90)]},
+        "Ab wheel": {"tipo": "reps", "niveles": [("Bajo", 1), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
+        "L-sit": {"tipo": "tiempo", "niveles": [("Bajo", 5), ("Promedio", 10), ("Bueno", 20), ("Avanzado", 30)]}
+    },
+    "Mujer": {
+        "Flexiones": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 8), ("Bueno", 15), ("Avanzado", 25)]},
+        "Fondos": {"tipo": "reps", "niveles": [("Bajo", 1), ("Promedio", 4), ("Bueno", 10), ("Avanzado", 18)]},
+        "Press banca": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 15)), ("Promedio", (8, 25)), ("Bueno", (10, 35)), ("Avanzado", (10, 45))]},
+        "Dominadas": {"tipo": "reps", "niveles": [("Bajo", 0), ("Promedio", 1), ("Bueno", 3), ("Avanzado", 5)]},
+        "Remo invertido": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
+        "Sentadilla": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 30)), ("Promedio", (8, 50)), ("Bueno", (10, 70)), ("Avanzado", (10, 90))]},
+        "Peso muerto": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 30)), ("Promedio", (8, 50)), ("Bueno", (10, 70)), ("Avanzado", (10, 95))]},
+        "Hip thrust": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 30)), ("Promedio", (8, 60)), ("Bueno", (10, 90)), ("Avanzado", (10, 120))]},
+        "Plancha": {"tipo": "tiempo", "niveles": [("Bajo", 15), ("Promedio", 30), ("Bueno", 50), ("Avanzado", 70)]},
+        "Ab wheel": {"tipo": "reps", "niveles": [("Bajo", 0), ("Promedio", 3), ("Bueno", 7), ("Avanzado", 12)]},
+        "L-sit": {"tipo": "tiempo", "niveles": [("Bajo", 3), ("Promedio", 8), ("Bueno", 15), ("Avanzado", 25)]}
+    }
+}
+
+# ========== Módulo PSMF ==========
+def calculate_psmf(sexo, peso, grasa_corregida, mlg):
+    if sexo == "Hombre" and grasa_corregida > 18:
+        return {
+            "psmf_aplicable": True,
+            "proteina_g_dia": round(mlg * 2.2, 1),
+            "calorias_dia": round(mlg * 24, 0),
+            "calorias_piso_dia": 800,
+            "criterio": "PSMF recomendado por % grasa"
+        }
+    elif sexo == "Mujer" and grasa_corregida > 23:
+        return {
+            "psmf_aplicable": True,
+            "proteina_g_dia": round(mlg * 2, 1),
+            "calorias_dia": round(mlg * 22, 0),
+            "calorias_piso_dia": 700,
+            "criterio": "PSMF recomendado por % grasa"
+        }
+    else:
+        return {
+            "psmf_aplicable": False,
+            "proteina_g_dia": 0,
+            "calorias_dia": 0,
+            "calorias_piso_dia": 0,
+            "criterio": "No aplica"
+        }
+
+# ========== Módulo Edad Metabólica ==========
+def calcular_edad_metabolica(sexo, tmb):
+    if sexo == "Hombre":
+        tmb_tabla = {18: 1760, 25: 1710, 35: 1660, 45: 1610, 55: 1560, 65: 1510}
+    else:
+        tmb_tabla = {18: 1500, 25: 1460, 35: 1420, 45: 1380, 55: 1340, 65: 1300}
+    edades = sorted(tmb_tabla.keys())
+    if tmb >= tmb_tabla[edades[0]]:
+        return edades[0]
+    if tmb <= tmb_tabla[edades[-1]]:
+        return edades[-1]
+    for i in range(len(edades)-1):
+        e1, e2 = edades[i], edades[i+1]
+        t1, t2 = tmb_tabla[e1], tmb_tabla[e2]
+        if t1 >= tmb >= t2:
+            edad_metabolica = e1 + (e2-e1)*(t1-tmb)/(t1-t2)
+            return int(round(edad_metabolica))
+    return edades[-1]
+
+# ========== Módulo Email ==========
+def enviar_email_resumen(tabla_resumen, nombre_cliente, email_cliente, fecha_llenado, edad, otros):
+    msg = EmailMessage()
+    msg['Subject'] = f'Resumen evaluación MUPAI - {nombre_cliente} ({fecha_llenado})'
+    msg['From'] = "administracion@muscleupgym.fitness"
+    msg['To'] = "administracion@muscleupgym.fitness"
+    msg.set_content(f"""
+Nombre completo: {nombre_cliente}
+Email cliente: {email_cliente}
+Fecha llenado: {fecha_llenado}
+Edad: {edad}
+---
+{tabla_resumen}
+---
+Otros datos:
+{otros}
+""")
+    smtp_server = "smtp.zoho.eu"
+    smtp_port = 465
+    smtp_user = "administracion@muscleupgym.fitness"
+    smtp_pass = "TU_CONTRASENA_APP"
+    try:
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+    except Exception as e:
+        print("Error enviando email:", e)
+
+# ========== Streamlit App ==========
+st.set_page_config(page_title="Cuestionario MUPAI", layout="centered")
+
+st.markdown(
+    """
+    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 0.5em;">
+        <img src="Logo_url.png" width="180"/>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+with open("style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+if "datos_personales_ok" not in st.session_state:
+    st.session_state["datos_personales_ok"] = False
+
+st.markdown(
+    """
+    <style>
+    .titulo-mupai {text-align:center; font-size:2.3em; font-weight:bold; margin-bottom:0.2em;}
+    .subtitulo-mupai {text-align:center; font-size:1.15em; color:#444; margin-bottom:1.3em;}
+    .bloque {background-color: #f8f9fa; border-radius: 13px; padding: 1.2em 1.5em 1.1em 1.5em; margin-bottom: 1.6em;}
+    </style>
+    <div class="titulo-mupai">Bienvenido a MUPAI - Evaluación Personalizada</div>
+    <div class="subtitulo-mupai">Tu experiencia fitness basada en ciencia y profesionalismo</div>
+    """, unsafe_allow_html=True
+)
+
+with st.expander("Misión, Visión y Compromiso MUPAI", expanded=True):
+    st.markdown(
+        """
+        <div class="bloque">
+        <b>Misión:</b> Hacer accesible el entrenamiento basado en ciencia, ofreciendo planes personalizados a través de herramientas digitales y datos confiables, promoviendo tu bienestar integral.<br><br>
+        <b>Visión:</b> Ser referente global en entrenamiento digital personalizado, integrando ciencia, tecnología e innovación para transformar tu experiencia fitness.<br><br>
+        <b>Política:</b> Nos guiamos por la ética, responsabilidad, transparencia y respeto, asegurando el trato personalizado y la protección de tus datos.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+st.markdown("<div class='bloque'><b>Por favor, completa tus datos personales para comenzar:</b></div>", unsafe_allow_html=True)
+
+if not st.session_state["datos_personales_ok"]:
+    with st.form(key="form_datos_personales"):
+        col1, col2 = st.columns(2)
+        with col1:
+            nombre = st.text_input("👤 Nombre legal completo*", max_chars=60)
+            telefono = st.text_input("📱 Número de teléfono*", max_chars=20)
+            edad = st.number_input("🎂 Edad (años)*", min_value=10, max_value=99, step=1)
+        with col2:
+            email = st.text_input("📧 Correo electrónico*", max_chars=60)
+        descargo = st.checkbox(
+            "He leído y acepto la política de privacidad y el descargo de responsabilidad.",
+            value=False
+        )
+        submit = st.form_submit_button("Comenzar cuestionario")
+    if submit:
+        if not (nombre and telefono and email and edad and descargo):
+            st.error("⚠️ Debes llenar todos los campos y aceptar el descargo de responsabilidad para continuar.")
+        else:
+            st.session_state["datos_personales_ok"] = True
+            st.session_state["nombre"] = nombre
+            st.session_state["telefono"] = telefono
+            st.session_state["email"] = email
+            st.session_state["edad"] = edad
+            st.success("¡Datos personales registrados! Continúa con tu evaluación MUPAI.")
+
+if st.session_state["datos_personales_ok"]:
+    nombre = st.session_state["nombre"]
+    telefono = st.session_state["telefono"]
+    email_cliente = st.session_state["email"]
+    edad = st.session_state["edad"]
+    fecha_llenado = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    # ====== BLOQUE 1: DATOS ANTROPOMÉTRICOS, % GRASA, SEXO ======
+    with st.expander("Paso 1: Datos Antropométricos y Composición Corporal", expanded=True):
+        col_a, col_b = st.columns(2)
+        with col_a:
+            peso = st.number_input("⚖️ Peso corporal (kg)", min_value=30.0, max_value=200.0, step=0.1)
+            estatura = st.number_input("📏 Estatura (cm)", min_value=120, max_value=230, step=1)
+            sexo = st.selectbox("Sexo biológico", ["Hombre", "Mujer"])
+        with col_b:
+            metodo_grasa = st.selectbox(
+                "Método utilizado para determinar % de grasa corporal",
+                ("Omron HBF-516 (BIA)", "DEXA (Gold Standard)")
+            )
+            grasa_corporal = st.number_input(
+                "% de grasa corporal medido",
+                min_value=5.0, max_value=50.0, step=0.1
+            )
+
+        def corregir_grasa_omron_a_dexa(grasa_omron):
+            tabla = {
+                5.0: 2.5, 6.0: 3.5, 7.0: 4.5, 8.0: 5.5, 9.0: 6.5, 10.0: 7.5, 11.0: 8.5, 12.0: 9.5,
+                13.0: 10.5, 14.0: 11.5, 15.0: 13.5, 16.0: 14.5, 17.0: 15.5, 18.0: 16.5, 19.0: 17.5,
+                20.0: 20.5, 21.0: 21.5, 22.0: 22.5, 23.0: 23.5, 24.0: 24.5, 25.0: 27.0, 26.0: 28.0,
+                27.0: 29.0, 28.0: 30.0, 29.0: 31.0, 30.0: 33.5, 31.0: 34.5, 32.0: 35.5, 33.0: 36.5,
+                34.0: 37.5, 35.0: 40.0, 36.0: 41.0, 37.0: 42.0, 38.0: 43.0, 39.0: 44.0, 40.0: 45.0
+            }
+            grasa_redondeada = round(float(grasa_omron))
+            grasa_redondeada = min(max(grasa_redondeada, 5), 40)
+            return tabla.get(grasa_redondeada, grasa_omron)
+
+        if metodo_grasa == "Omron HBF-516 (BIA)":
+            grasa_corregida = corregir_grasa_omron_a_dexa(grasa_corporal)
+            st.info(f"% de grasa corregido (estimado DEXA): {grasa_corregida:.1f}%")
+        else:
+            grasa_corregida = grasa_corporal
+
+        if peso and estatura and grasa_corporal:
+            estatura_m = estatura / 100
+            mlg = peso * (1 - grasa_corregida / 100)
+            tmb = 370 + 21.6 * mlg
+            ffmi = mlg / (estatura_m ** 2)
+
+            st.markdown("<div class='bloque'><b>Resultados de composición corporal:</b></div>", unsafe_allow_html=True)
+            st.success(f"**Masa libre de grasa (MLG):** {mlg:.1f} kg")
+            st.success(f"**Tasa metabólica basal (TMB, fórmula Cunningham):** {tmb:.0f} kcal")
+            st.info(f"**Tu FFMI (Índice de Masa Libre de Grasa):** {ffmi:.2f}")
+
+            if sexo == "Hombre":
+                ffmi_max = 25
+                ffmi_mensaje = """**Referencia FFMI natural (hombres):**
+- <18: Bajo
+- 18-20: Promedio
+- 20-22: Bueno
+- 22-25: Avanzado
+- >25: Nivel "natty max" (genética top o posible uso de anabólicos)
+"""
+            else:
+                ffmi_max = 20
+                ffmi_mensaje = """**Referencia FFMI natural (mujeres):**
+- <14: Bajo
+- 14-16: Promedio
+- 16-18: Bueno
+- 18-20: Avanzado
+- >20: Nivel "natty max" (genética top o posible uso de anabólicos)
+"""
+            st.markdown(ffmi_mensaje)
+
+            # INTEGRACIÓN PSMF
+            psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
+            if psmf_recs["psmf_aplicable"]:
+                st.warning(
+                    f"⚡️ Por tu % de grasa corporal, podrías beneficiarte de una fase rápida PSMF:"
+                    f"\n- Proteína: {psmf_recs['proteina_g_dia']} g/día"
+                    f"\n- Calorías: {psmf_recs['calorias_dia']} kcal/día"
+                    + (f"\n- Piso calórico (si eres muy magro): {psmf_recs['calorias_piso_dia']} kcal/día" if psmf_recs['calorias_piso_dia'] else "")
+                    + f"\n- ({psmf_recs['criterio']})"
+                )
+
+            # Clasificación automática
+            if sexo == "Hombre":
+                if ffmi < 18:
+                    nivel = "Bajo"
+                elif ffmi < 20:
+                    nivel = "Promedio"
+                elif ffmi < 22:
+                    nivel = "Bueno"
+                elif ffmi < 25:
+                    nivel = "Avanzado"
+                else:
+                    nivel = "Nivel natty max (potencial genético extremo o indicio de uso de anabólicos)"
+                grasa_min, grasa_max = 4, 12
+            else:
+                if ffmi < 14:
+                    nivel = "Bajo"
+                elif ffmi < 16:
+                    nivel = "Promedio"
+                elif ffmi < 18:
+                    nivel = "Bueno"
+                elif ffmi < 20:
+                    nivel = "Avanzado"
+                else:
+                    nivel = "Nivel natty max (potencial genético extremo o indicio de uso de anabólicos)"
+                grasa_min, grasa_max = 10, 22
+
+            st.success(f"**Tu nivel de desarrollo muscular actual (FFMI):** {nivel}")
+
+            porc_potencial = min(ffmi / ffmi_max * 100, 100)
+            st.info(f"Actualmente has alcanzado aproximadamente el {porc_potencial:.0f}% del potencial muscular natural estimado para tu sexo.")
+
+            if not (grasa_min <= grasa_corregida <= grasa_max):
+                st.warning(
+                    f"Para estimar con mayor precisión el FFMI, tu porcentaje de grasa debería estar en el rango recomendado: "
+                    f"{grasa_min}-{grasa_max}%. El valor mostrado puede sobrestimar tu potencial muscular natural."
+                )
+        else:
+            st.info("Completa todos los campos antropométricos para ver tus resultados.")
+
+    # ... (Aquí van todos los demás bloques, igual que tu código original) ...
+
+    # ========== BLOQUE FINAL INTEGRADO: Edad metabólica, potencial genético, advertencia y email ==========
+    porc_potencial = min(ffmi / ffmi_max * 100, 100)
+    edad_metabolica = calcular_edad_metabolica(sexo, tmb)
+    if sexo == "Hombre":
+        rango_grasa_ok = (4, 12)
+    else:
+        rango_grasa_ok = (10, 22)
+    fuera_rango = not (rango_grasa_ok[0] <= grasa_corregida <= rango_grasa_ok[1])
+
+    st.header("Resumen de tu evaluación MUPAI")
+    st.markdown(f"""
+**Fecha:** {fecha_llenado}  
+**Nombre:** {nombre}  
+**Edad cronológica:** {edad} años  
+**Edad metabólica estimada:** {edad_metabolica} años  
+**Peso:** {peso} kg  
+**Porcentaje de grasa corporal:** {grasa_corregida:.1f}%  
+**FFMI:** {ffmi:.2f}  
+**Nivel de desarrollo muscular:** {nivel}  
+**Nivel de entrenamiento:** {nivel_entrenamiento.capitalize()}  
+**Potencial genético muscular alcanzado (estimado):** {porc_potencial:.1f}%  
+""")
+    if fuera_rango:
+        st.warning(f"Para mayor precisión, el rango recomendado de % de grasa corporal para estimar el FFMI es {rango_grasa_ok[0]}-{rango_grasa_ok[1]}%. Tu valor está fuera de este rango, la estimación podría no ser precisa.")
+
+    tabla_resumen = f"""
+Sexo: {sexo}
+Peso: {peso} kg
+Estatura: {estatura} cm
+% Grasa (DEXA): {grasa_corregida:.1f}%
+FFMI: {ffmi:.2f} ({nivel})
+Nivel de entrenamiento: {nivel_entrenamiento.capitalize()}
+Potencial genético muscular alcanzado: {porc_potencial:.1f}%
+Edad metabólica: {edad_metabolica} años
+"""
+    otros = f"Teléfono: {telefono}\nEmail cliente: {email_cliente}"
+
+    if "correo_enviado" not in st.session_state:
+        enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, otros)
+        st.session_state["correo_enviado"] = True
