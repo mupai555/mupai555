@@ -225,14 +225,15 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    /* Texto con gradiente */
-    .gradient-text {
-        background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: bold;
-    }
-    /* LABELS y textos secundarios más blancos */
+   /* Texto con gradiente */
+.gradient-text {
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+}
+
+/* LABELS y textos secundarios más blancos */
 .stTextInput label,
 .stNumberInput label,
 .stSelectbox label,
@@ -249,26 +250,27 @@ st.markdown("""
 .stNumberInput input::placeholder {
     color: var(--mupai-white) !important;
     opacity: 0.95 !important;
-    /* Subtítulos, ayuda y textos secundarios mucho más blancos */
+}
+
+/* Subtítulos, ayuda y textos secundarios mucho más blancos */
 .stMarkdown, .markdown-text-container, .stCheckbox label, .stRadio label, .stForm label, .stForm legend, 
 .stForm span, .stForm p, .stForm div, .stForm input::placeholder, .stTextInput input::placeholder, 
 .stNumberInput input::placeholder, .stDateInput label, .stDateInput span, .stDateInput p, 
 .stMarkdown p, .stMarkdown span, .stMarkdown div {
     color: var(--mupai-white) !important;
-    opacity: 0.98 !important;
+    opacity: 1 !important;
 }
 
 /* Texto de ayuda/descripción (como subtítulos en formularios) */
 .stForm p, .stForm span, .markdown-text-container, .stMarkdown p, .stMarkdown span {
     color: var(--mupai-white) !important;
-    opacity: 0.96 !important;
+    opacity: 1 !important;
 }
 
 /* Texto de la fecha en el datepicker */
 .stDateInput .stMarkdown, .stDateInput span, .stDateInput p {
     color: var(--mupai-white) !important;
-    opacity: 0.98 !important;
-}
+    opacity: 1 !important;
 }
 </style>
 """, unsafe_allow_html=True)
