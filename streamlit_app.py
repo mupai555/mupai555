@@ -927,3 +927,10 @@ Edad metabólica: {edad_metabolica} años
     if "correo_enviado" not in st.session_state:
         enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, otros)
         st.session_state["correo_enviado"] = True
+
+st.info(
+    f"Tu recomendación personalizada considera tu perfil actual, nivel de entrenamiento y composición corporal. "
+    f"El ajuste calórico sugerido es **{fase}**. "
+    f"Tu ingesta calórica diaria sugerida es de aproximadamente **{ingesta_calorica:.0f} kcal/día**."
+)
+# --- PEGA AQUÍ EL BLOQUE INTEGRADO ---
