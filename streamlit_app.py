@@ -260,7 +260,6 @@ if "datos_ejercicios" not in st.session_state:
 if "niveles_ejercicios" not in st.session_state:
     st.session_state.niveles_ejercicios = {}
 
-# Función para crear tarjetas de contenido
 def crear_tarjeta(titulo, contenido, tipo="info"):
     colores = {
         "info": "var(--mupai-yellow)",
@@ -272,8 +271,8 @@ def crear_tarjeta(titulo, contenido, tipo="info"):
     
     return f"""
     <div class="content-card" style="border-left-color: {color};">
-        <h3 style="color: var(--mupai-black); margin-bottom: 1rem;">{titulo}</h3>
-        <div style="color: var(--mupai-gray);">{contenido}</div>
+        <h3 style="color: var(--mupai-white); margin-bottom: 1rem;">{titulo}</h3>
+        <div style="color: rgba(255,255,255,0.92);">{contenido}</div>
     </div>
     """
 
