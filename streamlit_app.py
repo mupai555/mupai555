@@ -312,6 +312,17 @@ st.markdown("""
     font-weight: bold !important;
     opacity: 1 !important;
 }
+/* LETRA NEGRA dentro de recuadros blancos o claros: markdown y contenido de tarjetas */
+.content-card,
+.stMarkdown, 
+.markdown-text-container,
+.stBlock,
+.stMarkdown p,
+.markdown-text-container p {
+    color: var(--mupai-black) !important;
+    font-weight: bold !important;
+    opacity: 1 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
