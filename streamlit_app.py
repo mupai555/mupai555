@@ -1793,51 +1793,6 @@ Todos los derechos reservados
             else:
                 st.error("❌ Error al enviar email. Contacta a soporte técnico.")
 
-else:
-    # Si no hay datos completos, mostrar pantalla de bienvenida
-    st.markdown("""
-    <div class="content-card" style="text-align: center; padding: 3rem;">
-        <h2 style="color: var(--mupai-black);">🏋️ Bienvenido a MUPAI</h2>
-        <p style="font-size: 1.2rem; margin: 2rem 0; color: var(--mupai-gray);">
-            Sistema de Evaluación Fitness Inteligente
-        </p>
-        <p style="color: var(--mupai-gray);">
-            Por favor, completa tus datos personales y acepta los términos para comenzar tu evaluación personalizada.
-        </p>
-        
-        <div style="display: flex; justify-content: space-around; margin-top: 3rem;">
-            <div style="text-align: center;">
-                <h1 style="color: var(--mupai-yellow); margin: 0;">📊</h1>
-                <h4>Análisis Preciso</h4>
-                <p style="font-size: 0.9rem; color: var(--mupai-gray);">
-                    Composición corporal<br>con corrección DEXA
-                </p>
-            </div>
-            <div style="text-align: center;">
-                <h1 style="color: var(--mupai-yellow); margin: 0;">💪</h1>
-                <h4>Evaluación Completa</h4>
-                <p style="font-size: 0.9rem; color: var(--mupai-gray);">
-                    Nivel funcional y<br>potencial genético
-                </p>
-            </div>
-            <div style="text-align: center;">
-                <h1 style="color: var(--mupai-yellow); margin: 0;">🎯</h1>
-                <h4>Plan Personalizado</h4>
-                <p style="font-size: 0.9rem; color: var(--mupai-gray);">
-                    Nutrición adaptada<br>a tus objetivos
-                </p>
-            </div>
-        </div>
-        
-        <div style="margin-top: 3rem; padding: 1rem; background: #f8f9fa; border-radius: 10px;">
-            <p style="font-size: 0.9rem; color: var(--mupai-gray); margin: 0;">
-                ⏱️ Tiempo estimado: 15-20 minutos | 
-                📋 Tendrás un informe completo | 
-                🔒 Datos 100% confidenciales
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
 # Footer profesional
 st.markdown("---")
