@@ -312,7 +312,41 @@ st.markdown("""
     font-weight: bold !important;
     opacity: 1 !important;
 }
+/* --- RECUADROS BLANCOS: LETRA NEGRA Y NEGRITA --- */
 
+/* Para tarjetas personalizadas */
+.content-card,
+.content-card * {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
+
+/* Para inputs/textos dentro de tarjetas blancas */
+.stTextInput input,
+.stNumberInput input,
+.stSelectbox select,
+.stForm input,
+.stForm select,
+.stForm textarea {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
+
+/* Para tablas blancas */
+.dataframe, .dataframe th, .dataframe td {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
+[data-testid="stTable"] {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
+
+/* Para métricas, alertas y badges en cards blancas */
+.stMetric, .stAlert, .badge, .stMarkdown, .stCaption {
+    color: #1E1E1E !important;
+    font-weight: bold !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
