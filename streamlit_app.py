@@ -582,60 +582,60 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not acepto_terminos):
 st.markdown('</div>', unsafe_allow_html=True)
 if not st.session_state.datos_completos:
     st.markdown("""
-    <div class="content-card" style="margin-top:2rem; padding:3rem; background: #F5F5F5; color: #1E1E1E; border-left: 5px solid #F4C430;">
+    <div class="content-card" style="margin-top:2rem; padding:3rem; background: #181A1B; color: #F5F5F5; border-left: 5px solid #F4C430;">
         <div style="text-align:center;">
-            <h2 style="color: #1E1E1E; font-weight:900; margin:0;">
+            <h2 style="color: #F5C430; font-weight:900; margin:0;">
                 🏋️ Bienvenido a MUPAI
             </h2>
-            <p style="color: #1E1E1E; font-size:1.1rem; font-weight:600; margin-top:1.5rem;">
+            <p style="color: #F5F5F5; font-size:1.1rem; font-weight:600; margin-top:1.5rem;">
                 <span style="font-size:1.15rem; font-weight:700;">¿Cómo funciona el cuestionario?</span>
             </p>
             <div style="text-align:left;display:inline-block;max-width:650px;">
                 <ul style="list-style:none;padding:0;">
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">📝</span> <b>Paso 1:</b> Datos personales<br>
-                        <span style="color:#1E1E1E;font-size:1rem;">
+                        <span style="color:#F5F5F5;font-size:1rem;">
                             Recopilamos tu nombre, edad, sexo y contacto para personalizar el análisis.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">⚖️</span> <b>Paso 2:</b> Composición corporal<br>
-                        <span style="color:#1E1E1E;font-size:1rem;">
-                            Medidas científicas de peso, estatura y porcentaje de grasa corporal usando métodos validados (DEXA, BIA, BodPod).
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Medidas científicas de peso, estatura y % de grasa corporal usando métodos validados (DEXA, BIA, BodPod).
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">💪</span> <b>Paso 3:</b> Experiencia y rendimiento funcional<br>
-                        <span style="color:#1E1E1E;font-size:1rem;">
-                            Indicas tu experiencia y tus mejores resultados en ejercicios clave para estimar tu nivel muscular y funcional.
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Indicas tu experiencia y tus mejores resultados en ejercicios clave.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">🚶</span> <b>Paso 4:</b> Actividad física diaria<br>
-                        <span style="color:#1E1E1E;font-size:1rem;">
+                        <span style="color:#F5F5F5;font-size:1rem;">
                             Clasificamos tu nivel de actividad habitual para ajustar el cálculo energético.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">🍽️</span> <b>Paso 5:</b> Efecto térmico de los alimentos (ETA)<br>
-                        <span style="color:#1E1E1E;font-size:1rem;">
+                        <span style="color:#F5F5F5;font-size:1rem;">
                             Calculamos el gasto energético extra por digestión, según tu composición corporal y evidencia científica.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">🏋️</span> <b>Paso 6:</b> Entrenamiento de fuerza<br>
-                        <span style="color:#1E1E1E;font-size:1rem;">
+                        <span style="color:#F5F5F5;font-size:1rem;">
                             Ajustamos tu gasto según frecuencia y nivel de entrenamiento de resistencia.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">📈</span> <b>Resultado final:</b> Plan nutricional personalizado<br>
-                        <span style="color:#1E1E1E;font-size:1rem;">
-                            Recibes tus métricas clave, diagnóstico y recomendaciones basadas en ciencia, para mejorar salud y rendimiento.
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Recibes tus métricas clave, diagnóstico y recomendaciones basadas en ciencia.
                         </span>
                     </li>
                 </ul>
-                <div style="margin-top:1.2em; font-size:1rem;color:#DAA520;">
+                <div style="margin-top:1.2em; font-size:1rem; color:#F4C430;">
                     <b>Finalidad:</b> Este cuestionario integra principios científicos y experiencia práctica para ofrecerte un diagnóstico preciso y recomendaciones útiles. <br>
                     <b>Tiempo estimado:</b> Menos de 5 minutos.
                 </div>
