@@ -601,7 +601,7 @@ if not st.session_state.datos_completos:
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">⚖️</span> <b>Paso 2:</b> Composición corporal<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
-                            Medidas científicas de peso, estatura y % de grasa corporal usando métodos validados (DEXA, BIA, BodPod).
+                            Medidas científicas de peso, estatura y % de grasa corporal usando métodos validados (DEXA, BIA.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
