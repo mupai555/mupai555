@@ -949,6 +949,7 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     st.markdown('</div>', unsafe_allow_html=True)
 
 
+
     # BLOQUE 4: ETA
     with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
         progress.progress(70)
