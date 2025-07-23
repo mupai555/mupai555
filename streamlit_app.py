@@ -297,50 +297,11 @@ st.markdown("""
     color: var(--mupai-white) !important;
     opacity: 1 !important;
 }
-/* Texto negro y fuerte dentro de recuadros blancos (inputs, selects, cards, etc.) */
-.stTextInput > div > div > input,
-.stNumberInput > div > div > input,
-.stSelectbox > div > div > select,
-.stForm input,
-.stForm select,
-.stForm textarea,
-.content-card,
-.stForm input::placeholder,
-.stTextInput input::placeholder,
-.stNumberInput input::placeholder {
+
+/* --- SOLUCIÓN CONTRASTE EN TARJETAS BLANCAS --- */
+.card-blanca, .card-blanca * {
     color: var(--mupai-black) !important;
-    font-weight: bold !important;
-    opacity: 1 !important;
 }
-    /* --- SOLUCIÓN CONTRASTE EN TARJETAS BLANCAS --- */
-    .content-card, .content-card * {
-        color: var(--mupai-black) !important;
-    }
-    st.markdown("""
-<style>
-    /* ... tu CSS actual ... */
-
-    /* --- SOLUCIÓN CONTRASTE EN TARJETAS BLANCAS --- */
-    .card-blanca, .card-blanca * {
-        color: var(--mupai-black) !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Ejemplo tarjeta blanca con texto negro
-st.markdown('<div class="content-card card-blanca">', unsafe_allow_html=True)
-st.markdown("Tu contenido aquí, ahora se verá negro sobre blanco.")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Ejemplo tarjeta de bienvenida con fondo oscuro y texto blanco, SIN card-blanca
-st.markdown("""
-<div class="content-card" style="background: #181A1B; color: #F5F5F5; border-left: 5px solid #F4C430;">
-    <h2 style="color: #F5C430; font-weight:900; margin:0;">
-        🏋️ Bienvenido a MUPAI
-    </h2>
-    <p style="color: #F5F5F5;">Texto en blanco sobre fondo oscuro.</p>
-</div>
-""", unsafe_allow_html=True)
 </style>
 """, unsafe_allow_html=True)
 
@@ -356,6 +317,21 @@ st.markdown("""
     <p style="font-size: 1rem; margin: 0; opacity: 0.8;">
         Tu evaluación fitness personalizada basada en ciencia
     </p>
+</div>
+""", unsafe_allow_html=True)
+
+# Ejemplo tarjeta blanca con texto negro
+st.markdown('<div class="content-card card-blanca">', unsafe_allow_html=True)
+st.markdown("Este texto se verá negro sobre fondo blanco.")
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Ejemplo tarjeta de bienvenida con fondo oscuro y texto blanco, SIN card-blanca
+st.markdown("""
+<div class="content-card" style="background: #181A1B; color: #F5F5F5; border-left: 5px solid #F4C430;">
+    <h2 style="color: #F5C430; font-weight:900; margin:0;">
+        🏋️ Bienvenido a MUPAI
+    </h2>
+    <p style="color: #F5F5F5;">Texto en blanco sobre fondo oscuro.</p>
 </div>
 """, unsafe_allow_html=True)
 
