@@ -345,7 +345,7 @@ if "datos_ejercicios" not in st.session_state:
 if "niveles_ejercicios" not in st.session_state:
     st.session_state.niveles_ejercicios = {}
 
-def crear_tarjeta(titulo, contenido, tipo="info"):
+def crear_tarjeta(titulo, contenido, tipo="info", blanca=False):
     colores = {
         "info": "var(--mupai-yellow)",
         "success": "var(--mupai-success)",
@@ -353,11 +353,12 @@ def crear_tarjeta(titulo, contenido, tipo="info"):
         "danger": "var(--mupai-danger)"
     }
     color = colores.get(tipo, "var(--mupai-yellow)")
-    
+    card_class = "content-card card-blanca" if blanca else "content-card"
+    texto_color = "var(--mupai-black)" if blanca else "var(--mupai-white)"
     return f"""
-    <div class="content-card" style="border-left-color: {color};">
-        <h3 style="color: var(--mupai-white); margin-bottom: 1rem;">{titulo}</h3>
-        <div style="color: rgba(255,255,255,0.92);">{contenido}</div>
+    <div class="{card_class}" style="border-left-color: {color};">
+        <h3 style="color: {texto_color}; margin-bottom: 1rem;">{titulo}</h3>
+        <div style="color: {texto_color};">{contenido}</div>
     </div>
     """
 
