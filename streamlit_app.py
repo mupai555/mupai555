@@ -903,71 +903,71 @@ if datos_personales_completos and st.session_state.datos_completos:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
- # BLOQUE 3: Actividad física diaria
-with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
-     progress.progress(60)
-     progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+     # BLOQUE 3: Actividad física diaria
+    with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
+        progress.progress(60)
+        progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
+        st.markdown('<div class="content-card">', unsafe_allow_html=True)
+        st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
 
-    nivel_actividad = st.radio(
-        "Selecciona el nivel que mejor te describe:",
-        [
-            "Sedentario (trabajo de oficina, <5,000 pasos/día)",
-            "Moderadamente-activo (trabajo mixto, 5,000-10,000 pasos/día)",
-            "Activo (trabajo físico, 10,000-12,500 pasos/día)",
-            "Muy-activo (trabajo muy físico, >12,500 pasos/día)"
-        ],
-        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
-    )
+        nivel_actividad = st.radio(
+            "Selecciona el nivel que mejor te describe:",
+            [
+                "Sedentario (trabajo de oficina, <5,000 pasos/día)",
+                "Moderadamente-activo (trabajo mixto, 5,000-10,000 pasos/día)",
+                "Activo (trabajo físico, 10,000-12,500 pasos/día)",
+                "Muy-activo (trabajo muy físico, >12,500 pasos/día)"
+            ],
+            help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
+        )
 
-    # Procesa el texto para obtener el nivel simple
-    niveles = ["Sedentario", "Moderadamente-activo", "Activo", "Muy-activo"]
-    niveles_ui = ["🪑 Sedentario", "🚶 Moderadamente-activo", "🏃 Activo", "💪 Muy-activo"]
+        # Procesa el texto para obtener el nivel simple
+        niveles = ["Sedentario", "Moderadamente-activo", "Activo", "Muy-activo"]
+        niveles_ui = ["🪑 Sedentario", "🚶 Moderadamente-activo", "🏃 Activo", "💪 Muy-activo"]
 
-    nivel_actividad_text = nivel_actividad.split('(')[0].strip()
-    nivel_idx = niveles.index(nivel_actividad_text)  # Este truco garantiza que siempre se seleccione bien
+        nivel_actividad_text = nivel_actividad.split('(')[0].strip()
+        nivel_idx = niveles.index(nivel_actividad_text)  # Este truco garantiza que siempre se seleccione bien
 
-    cols = st.columns(4)
-    for i, niv in enumerate(niveles_ui):
-        with cols[i]:
-            if i == nivel_idx:
-                st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
-                         background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); 
-                         border-radius: 10px; color: #1E1E1E; font-weight: bold; font-size: 1.1rem;">
-                        <strong>{niv}</strong>
-                    </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
-                         background: #f8f9fa; border-radius: 10px; opacity: 0.5; color: #222;">
-                        {niv}
-                    </div>
-                    """, unsafe_allow_html=True)
+        cols = st.columns(4)
+        for i, niv in enumerate(niveles_ui):
+            with cols[i]:
+                if i == nivel_idx:
+                    st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; 
+                             background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); 
+                             border-radius: 10px; color: #1E1E1E; font-weight: bold; font-size: 1.1rem;">
+                            <strong>{niv}</strong>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; 
+                             background: #f8f9fa; border-radius: 10px; opacity: 0.5; color: #222;">
+                            {niv}
+                        </div>
+                        """, unsafe_allow_html=True)
 
-    # Factores de actividad corregidos
-    def obtener_geaf(nivel):
-        valores = {
-            "Sedentario": 1.00,
-            "Moderadamente-activo": 1.11,
-            "Activo": 1.25,
-            "Muy-activo": 1.45
-        }
-        return valores[nivel]
+        # Factores de actividad corregidos
+        def obtener_geaf(nivel):
+            valores = {
+                "Sedentario": 1.00,
+                "Moderadamente-activo": 1.11,
+                "Activo": 1.25,
+                "Muy-activo": 1.45
+            }
+            return valores[nivel]
 
-    geaf = obtener_geaf(nivel_actividad_text)
+        geaf = obtener_geaf(nivel_actividad_text)
 
-    st.success(f"""
-        ✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**
+        st.success(f"""
+            ✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**
 
-        - Factor GEAF: **{geaf}**
-        - Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%
-    """)
+            - Factor GEAF: **{geaf}**
+            - Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%
+        """)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
