@@ -15,254 +15,156 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS personalizado con paleta de colores MUPAI
+# CSS personalizado con paleta de colores MUPAI (CORREGIDO)
 st.markdown("""
 <style>
-    :root {
-        --mupai-yellow: #F4C430;
-        --mupai-dark-yellow: #DAA520;
-        --mupai-black: #1E1E1E;
-        --mupai-gray: #2D2D2D;
-        --mupai-light-gray: #F5F5F5;
-        --mupai-white: #FFFFFF;
-        --mupai-success: #27AE60;
-        --mupai-warning: #F39C12;
-        --mupai-danger: #E74C3C;
-    }
-
-    .stApp {
-        background: linear-gradient(135deg, #1E1E1E 0%, #2D2D2D 100%);
-    }
-
-    .main-header {
-        background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
-        color: var(--mupai-black);
-        padding: 2rem;
-        border-radius: 15px;
-        text-align: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(244, 196, 48, 0.3);
-        animation: fadeIn 0.5s ease-out;
-    }
-
-    .content-card {
-        background: var(--mupai-white);
-        padding: 2rem;
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        margin-bottom: 1.5rem;
-        border-left: 5px solid var(--mupai-yellow);
-        animation: slideIn 0.5s ease-out;
-    }
-    .content-card, .content-card * {
-        color: var(--mupai-black) !important;
-    }
-    .card-psmf { border-left-color: var(--mupai-warning) !important; }
-    .card-success { border-left-color: var(--mupai-success) !important; }
-
-    .stButton > button {
-        background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
-        color: var(--mupai-black);
-        border: none;
-        padding: 0.75rem 2rem;
-        font-weight: bold;
-        border-radius: 25px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(244, 196, 48, 0.3);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(244, 196, 48, 0.4);
-    }
-
-    .stTextInput > div > div > input,
-    .stNumberInput > div > div > input,
-    .stSelectbox > div > div > select {
-        border: 2px solid var(--mupai-light-gray);
-        border-radius: 10px;
-        padding: 0.5rem;
-        transition: all 0.3s ease;
-        background: var(--mupai-white);
-    }
-    .stTextInput > div > div > input:focus,
-    .stNumberInput > div > div > input:focus,
-    .stSelectbox > div > div > select:focus {
-        border-color: var(--mupai-yellow);
-        box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.2);
-    }
-
-    [data-testid="metric-container"] {
-        background: linear-gradient(135deg, var(--mupai-light-gray) 0%, var(--mupai-white) 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid var(--mupai-yellow);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-
-    .streamlit-expanderHeader {
-        background: linear-gradient(135deg, var(--mupai-light-gray) 0%, var(--mupai-white) 100%);
-        border-radius: 10px;
-        font-weight: bold;
-        padding: 1rem !important;
-        border: 2px solid var(--mupai-yellow);
-    }
-
-    .stAlert > div {
-        border-radius: 10px;
-        padding: 1rem;
-        border-left: 5px solid;
-    }
-
-    .stProgress > div > div > div {
-        background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
-        border-radius: 10px;
-        animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
-    }
-
-    .stRadio > div {
-        background: var(--mupai-light-gray);
-        padding: 1rem;
-        border-radius: 10px;
-        border: 2px solid transparent;
-        transition: all 0.3s ease;
-    }
-    .stRadio > div:hover { border-color: var(--mupai-yellow); }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-20px); }
-        to { opacity: 1; transform: translateX(0); }
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: bold;
-        margin: 0.25rem;
-    }
-    .badge-success { background: var(--mupai-success); color: white;}
-    .badge-warning { background: var(--mupai-warning); color: white;}
-    .badge-danger { background: var(--mupai-danger); color: white;}
-    .badge-info { background: var(--mupai-yellow); color: var(--mupai-black);}
-
-    .dataframe {
-        border-radius: 10px !important;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    hr {
-        border: none;
-        height: 2px;
-        background: linear-gradient(to right, transparent, var(--mupai-yellow), transparent);
-        margin: 2rem 0;
-    }
-
-    @media (max-width: 768px) {
-        .main-header { padding: 1rem;}
-        .content-card { padding: 1rem;}
-        .stButton > button { padding: 0.5rem 1rem; font-size: 0.9rem;}
-    }
-    .content-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        transition: all 0.3s ease;
-    }
-
-    .gradient-text {
-        background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: bold;
-    }
-
-    /* TITULOS Y LABELS EN BLANCO */
-    .stTextInput label,
-    .stNumberInput label,
-    .stSelectbox label,
-    .stDateInput label,
-    .stRadio label,
-    .stCheckbox label,
-    .stForm label,
-    .stForm legend,
-    .stForm span,
-    .stForm p,
-    .stForm div {
-        color: var(--mupai-white) !important;
-        opacity: 0.95 !important;
-    }
-    .stMarkdown, .markdown-text-container, .stCheckbox label, .stRadio label, .stForm label, .stForm legend, 
-    .stForm span, .stForm p, .stForm div, .stDateInput label, .stDateInput span, .stDateInput p, 
-    .stMarkdown p, .stMarkdown span, .stMarkdown div {
-        color: var(--mupai-white) !important;
-        opacity: 1 !important;
-    }
-    .stForm p, .stForm span, .markdown-text-container, .stMarkdown p, .stMarkdown span {
-        color: var(--mupai-white) !important;
-        opacity: 1 !important;
-    }
-    .stDateInput .stMarkdown, .stDateInput span, .stDateInput p {
-        color: var(--mupai-white) !important;
-        opacity: 1 !important;
-    }
-    .streamlit-expanderHeader,
-    .stExpander .streamlit-expanderHeader,
-    .stExpander span,
-    .stExpander label,
-    .stExpander p,
-    .stExpander div,
-    .stExpander .markdown-text-container,
-    .stExpander .stMarkdown,
-    .stExpander input[type="checkbox"] + label,
-    .stExpander input[type="checkbox"] + span,
-    .stExpander input[type="checkbox"] + p,
-    .stExpander input[type="checkbox"] + div {
-        color: var(--mupai-white) !important;
-        opacity: 1 !important;
-    }
-    .stCheckbox label,
-    .stForm label,
-    .stCheckbox span,
-    .stCheckbox p {
-        color: var(--mupai-white) !important;
-        opacity: 1 !important;
-    }
-
-    /* =========================
-       TEXTO OSCURO EN CAMPOS DE ENTRADA (FIX MUPAI)
-       ========================= */
-    .stTextInput input,
-    .stNumberInput input,
-    .stSelectbox select,
-    .stDateInput input,
-    .stSlider input {
-        color: var(--mupai-black) !important;
-        background: var(--mupai-white) !important;
-    }
-    .stTextInput input::placeholder,
-    .stNumberInput input::placeholder,
-    .stSelectbox select:invalid,
-    .stDateInput input::placeholder {
-        color: #444 !important;
-        opacity: 1 !important;
-    }
-    .stSelectbox select:invalid {
-        color: #444 !important;
-    }
+:root {
+    --mupai-yellow: #F4C430;
+    --mupai-dark-yellow: #DAA520;
+    --mupai-black: #1E1E1E;
+    --mupai-gray: #2D2D2D;
+    --mupai-light-gray: #F5F5F5;
+    --mupai-white: #FFFFFF;
+    --mupai-success: #27AE60;
+    --mupai-warning: #F39C12;
+    --mupai-danger: #E74C3C;
+}
+.stApp {
+    background: linear-gradient(135deg, #1E1E1E 0%, #2D2D2D 100%);
+}
+h1, h2, h3, h4, h5, h6,
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+.stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+    color: var(--mupai-yellow) !important;
+}
+.stMarkdown, .markdown-text-container, .stMarkdown p, .stMarkdown span, .stMarkdown div {
+    color: var(--mupai-white) !important;
+    opacity: 1 !important;
+}
+body, p, label, .stTextInput label, .stNumberInput label, .stSelectbox label, .stDateInput label,
+.stRadio label, .stCheckbox label, .stForm label, .stForm legend, .stForm span, .stForm p, .stForm div {
+    color: var(--mupai-white) !important;
+    opacity: 1 !important;
+}
+/* Inputs y selects texto oscuro */
+.stTextInput input, .stNumberInput input, .stSelectbox select, .stDateInput input, .stSlider input {
+    color: var(--mupai-black) !important;
+    background: var(--mupai-white) !important;
+}
+.stTextInput input::placeholder,
+.stNumberInput input::placeholder,
+.stSelectbox select:invalid,
+.stDateInput input::placeholder {
+    color: #444 !important;
+    opacity: 1 !important;
+}
+/* Select actual */
+.stSelectbox div[data-baseweb="select"] > div,
+.stSelectbox div[data-baseweb="select"] input,
+.stSelectbox div[data-baseweb="select"] span {
+    color: var(--mupai-black) !important;
+}
+/* Checkboxes y radios */
+.stCheckbox > label, .stRadio > label {
+    color: var(--mupai-white) !important;
+    opacity: 1 !important;
+}
+.stCheckbox span, .stRadio span {
+    color: var(--mupai-white) !important;
+    opacity: 1 !important;
+}
+/* Metric containers */
+[data-testid="metric-container"] * {
+    color: var(--mupai-black) !important;
+}
+/* Tabs */
+[data-testid="stTabs"] > div > div > div > button,
+[data-testid="stTabs"] > div > div > div > button span {
+    color: var(--mupai-yellow) !important;
+    font-weight: bold;
+}
+/* Expander header */
+.streamlit-expanderHeader, .stExpander .streamlit-expanderHeader,
+.stExpander span, .stExpander label, .stExpander p, .stExpander div {
+    color: var(--mupai-white) !important;
+    opacity: 1 !important;
+}
+/* Alertas info, warning, error */
+.stAlert > div {
+    color: var(--mupai-black) !important;
+    background: var(--mupai-warning) !important;
+    border-radius: 10px;
+    border-left: 5px solid var(--mupai-warning);
+}
+/* Badges y tablas */
+.badge, .badge-success, .badge-warning, .badge-danger, .badge-info {
+    color: var(--mupai-white) !important;
+    font-weight: bold;
+}
+.dataframe td, .dataframe th {
+    color: var(--mupai-black) !important;
+    background: var(--mupai-white) !important;
+}
+/* Tooltips/ayudas */
+.stTooltipContent {
+    color: var(--mupai-black) !important;
+    background: var(--mupai-yellow) !important;
+}
+/* Botones */
+.stButton > button {
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    color: var(--mupai-black);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: bold;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(244, 196, 48, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(244, 196, 48, 0.4);
+}
+/* Content cards */
+.content-card {
+    background: var(--mupai-white);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+    border-left: 5px solid var(--mupai-yellow);
+    animation: slideIn 0.5s ease-out;
+}
+.content-card, .content-card * {
+    color: var(--mupai-black) !important;
+}
+.card-psmf { border-left-color: var(--mupai-warning) !important; }
+.card-success { border-left-color: var(--mupai-success) !important; }
+/* Progress bar */
+.stProgress > div > div > div {
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    border-radius: 10px;
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@media (max-width: 768px) {
+    .main-header { padding: 1rem;}
+    .content-card { padding: 1rem;}
+    .stButton > button { padding: 0.5rem 1rem; font-size: 0.9rem;}
+}
 </style>
-
 """, unsafe_allow_html=True)
+
 
 # Header principal con logo y título
 st.markdown("""
