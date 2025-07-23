@@ -195,6 +195,10 @@ st.markdown("""
         overflow: hidden;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
+    /* TEXTO NEGRO EN TABLAS STREAMLIT */
+    .dataframe, .dataframe * {
+        color: var(--mupai-black) !important;
+    }
     
     /* Divisores */
     hr {
@@ -324,16 +328,6 @@ st.markdown("""
 st.markdown('<div class="content-card card-blanca">', unsafe_allow_html=True)
 st.markdown("Este texto se verá negro sobre fondo blanco.")
 st.markdown('</div>', unsafe_allow_html=True)
-
-# Ejemplo tarjeta de bienvenida con fondo oscuro y texto blanco, SIN card-blanca
-st.markdown("""
-<div class="content-card" style="background: #181A1B; color: #F5F5F5; border-left: 5px solid #F4C430;">
-    <h2 style="color: #F5C430; font-weight:900; margin:0;">
-        🏋️ Bienvenido a MUPAI
-    </h2>
-    <p style="color: #F5F5F5;">Texto en blanco sobre fondo oscuro.</p>
-</div>
-""", unsafe_allow_html=True)
 
 # Inicializar estado de sesión
 if "datos_completos" not in st.session_state:
