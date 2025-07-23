@@ -293,7 +293,8 @@ referencias_funcionales = {
     }
 }
 
-# Funciones auxiliares mejoradas
+# === Funciones auxiliares para cálculos ===
+
 def calcular_tmb_cunningham(mlg):
     return 370 + (21.6 * mlg)
 
@@ -376,11 +377,9 @@ def sugerir_deficit(porcentaje_grasa, sexo):
         (31.6, 35, 30), (35.1, 37.5, 35), (37.6, 40, 40), (40.1, 42.5, 45), 
         (42.6, 100, 50)
     ]
-    
     tabla = rangos_hombre if sexo == "Hombre" else rangos_mujer
     tope = 30
     limite_extra = 30 if sexo == "Hombre" else 35
-    
     for minimo, maximo, deficit in tabla:
         if minimo <= porcentaje_grasa <= maximo:
             return min(deficit, tope) if porcentaje_grasa <= limite_extra else deficit
@@ -392,11 +391,9 @@ def calcular_edad_metabolica(edad_cronologica, porcentaje_grasa, sexo):
         grasa_ideal = 15
     else:
         grasa_ideal = 22
-    
     diferencia_grasa = porcentaje_grasa - grasa_ideal
     ajuste_edad = diferencia_grasa * 0.3
     edad_metabolica = edad_cronologica + ajuste_edad
-    
     return max(18, min(80, round(edad_metabolica)))
 
 def obtener_geaf(nivel):
@@ -405,7 +402,7 @@ def obtener_geaf(nivel):
         "Sedentario": 1.1,
         "Moderadamente": 1.15,
         "Activo": 1.25,
-        "Muy": 1.35
+        "Muy Activo": 1.35
     }
     return valores.get(nivel, 1.1)
 
@@ -434,24 +431,23 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
         st.error(f"Error al enviar email: {str(e)}")
         return False
 
+# ==================== VISUALES INICIALES ====================
+
 # Misión, Visión y Compromiso con diseño mejorado
 with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
     col1, col2, col3 = st.columns(3)
-    
     with col1:
         st.markdown(crear_tarjeta(
             "🎯 Misión",
             "Hacer accesible el entrenamiento basado en ciencia, ofreciendo planes personalizados que se adaptan a todos los niveles de condición física.",
             "info"
         ), unsafe_allow_html=True)
-    
     with col2:
         st.markdown(crear_tarjeta(
             "👁️ Visión",
             "Ser el referente global en evaluación y entrenamiento digital personalizado, uniendo investigación científica con experiencia práctica.",
             "success"
         ), unsafe_allow_html=True)
-    
     with col3:
         st.markdown(crear_tarjeta(
             "🤝 Compromiso",
@@ -486,6 +482,7 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not acepto_terminos):
         st.error("⚠️ Por favor completa todos los campos obligatorios")
 
 st.markdown('</div>', unsafe_allow_html=True)
+
 if not st.session_state.datos_completos:
     st.markdown("""
     <div class="content-card" style="margin-top:2rem; padding:3rem; background: #181A1B; color: #F5F5F5; border-left: 5px solid #F4C430;">
@@ -493,7 +490,7 @@ if not st.session_state.datos_completos:
             <h2 style="color: #F5C430; font-weight:900; margin:0;">
                 🏋️ Bienvenido a MUPAI
             </h2>
-            <p style="color: #F5F5F5; font-size:1.1rem; font-weight:600; margin-top:1.5rem;">
+            <p style="color: #F5F5F5;font-size:1.1rem;font-weight:600;margin-top:1.5rem;">
                 <span style="font-size:1.15rem; font-weight:700;">¿Cómo funciona el cuestionario?</span>
             </p>
             <div style="text-align:left;display:inline-block;max-width:650px;">
@@ -550,7 +547,7 @@ if not st.session_state.datos_completos:
     </div>
     """, unsafe_allow_html=True)
 
-# Validación de datos personales
+ VALIDACIÓN DATOS PERSONALES PARA CONTINUAR
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
 
 if datos_personales_completos and st.session_state.datos_completos:
