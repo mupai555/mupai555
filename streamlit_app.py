@@ -886,58 +886,72 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.markdown('</div>', unsafe_allow_html=True)
     
     # BLOQUE 3: Actividad física diaria
-    with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
-        progress.progress(60)
-        progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
-        
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
-        
-        st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
-        
-        nivel_actividad = st.radio(
-            "Selecciona el nivel que mejor te describe:",
-            ["Sedentario (trabajo de oficina, <5,000 pasos/día)",
-             "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
-             "Activo (trabajo físico, 10,000-12,500 pasos/día)",
-             "Muy activo (trabajo muy físico, >12,500 pasos/día)"],
-            help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
-        )
-        
-        # Visualización del nivel
-        nivel_simple = nivel_actividad.split()[0]
-        geaf = obtener_geaf(nivel_simple)
-        
-        # Gráfico visual del nivel de actividad
-        niveles = ["Sedentario", "Moderadamente", "Activo", "Muy"]
-        nivel_idx = next((i for i, n in enumerate(niveles) if n in nivel_actividad), 0)
-        
-        cols = st.columns(4)
-        for i, niv in enumerate(["🪑 Sedentario", "🚶 Moderado", "🏃 Activo", "💪 Muy Activo"]):
-            with cols[i]:
-                if i <= nivel_idx:
-                    st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
-                         background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); 
-                         border-radius: 10px; color: #1E1E1E;">
-                        <strong>{niv}</strong>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
-                         background: #f8f9fa; border-radius: 10px; opacity: 0.5;">
-                        {niv}
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        st.success(f"""
-        ✅ **Tu nivel de actividad física diaria: {nivel_simple}**
-        
-        - Factor GEAF: **{geaf}**
-        - Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%
-        """)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
+    progress.progress(60)
+    progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+    
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
+    
+    nivel_actividad = st.radio(
+        "Selecciona el nivel que mejor te describe:",
+        [
+            "Sedentario (trabajo de oficina, <5,000 pasos/día)",
+            "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
+            "Activo (trabajo físico, 10,000-12,500 pasos/día)",
+            "Muy activo (trabajo muy físico, >12,500 pasos/día)"
+        ],
+        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
+    )
+    
+    nivel_simple = nivel_actividad.split()[0]
+    geaf = obtener_geaf(nivel_simple)
+
+    # Identifica el índice del seleccionado
+    opciones = [
+        "Sedentario (trabajo de oficina, <5,000 pasos/día)",
+        "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
+        "Activo (trabajo físico, 10,000-12,500 pasos/día)",
+        "Muy activo (trabajo muy físico, >12,500 pasos/día)"
+    ]
+    idx_seleccionado = opciones.index(nivel_actividad)
+    etiquetas = ["🪑 Sedentario", "🚶 Moderado", "🏃 Activo", "💪 Muy Activo"]
+
+    cols = st.columns(4)
+    for i, niv in enumerate(etiquetas):
+        estilo = """
+            text-align: center; 
+            padding: 1rem; 
+            background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%);
+            border-radius: 10px; 
+            color: #1E1E1E; 
+            font-weight: bold;
+        """
+        # Si está seleccionado, agrega borde y sombra extra
+        if i == idx_seleccionado:
+            estilo += """
+                border: 3px solid #222; 
+                box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+                filter: brightness(1.05);
+            """
+        else:
+            estilo += """
+                border: 2px solid #F4C430;
+                opacity: 0.8;
+            """
+        with cols[i]:
+            st.markdown(
+                f'<div style="{estilo}"><strong>{niv}</strong></div>',
+                unsafe_allow_html=True
+            )
+    
+    st.success(f"""
+    ✅ **Tu nivel de actividad física diaria: {nivel_simple}**
+    - Factor GEAF: **{geaf}**
+    - Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%
+    """)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # BLOQUE 4: ETA
     with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
