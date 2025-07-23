@@ -59,6 +59,10 @@ st.markdown("""
         animation: slideIn 0.5s ease-out;
     }
     
+    .content-card, .content-card * {
+        color: var(--mupai-black) !important;
+    }
+    
     .card-psmf {
         border-left-color: var(--mupai-warning) !important;
     }
@@ -133,6 +137,13 @@ st.markdown("""
     .stProgress > div > div > div {
         background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
         border-radius: 10px;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
     }
     
     /* Radio buttons estilizados */
@@ -194,10 +205,6 @@ st.markdown("""
         border-radius: 10px !important;
         overflow: hidden;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    /* TEXTO NEGRO EN TABLAS STREAMLIT */
-    .dataframe, .dataframe * {
-        color: var(--mupai-black) !important;
     }
     
     /* Divisores */
@@ -301,11 +308,6 @@ st.markdown("""
     color: var(--mupai-white) !important;
     opacity: 1 !important;
 }
-
-/* --- SOLUCIÓN CONTRASTE EN TARJETAS BLANCAS --- */
-.card-blanca, .card-blanca * {
-    color: var(--mupai-black) !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -324,11 +326,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Ejemplo tarjeta blanca con texto negro
-st.markdown('<div class="content-card card-blanca">', unsafe_allow_html=True)
-st.markdown("Este texto se verá negro sobre fondo blanco.")
-st.markdown('</div>', unsafe_allow_html=True)
-
 # Inicializar estado de sesión
 if "datos_completos" not in st.session_state:
     st.session_state.datos_completos = False
@@ -339,7 +336,7 @@ if "datos_ejercicios" not in st.session_state:
 if "niveles_ejercicios" not in st.session_state:
     st.session_state.niveles_ejercicios = {}
 
-def crear_tarjeta(titulo, contenido, tipo="info", blanca=False):
+def crear_tarjeta(titulo, contenido, tipo="info"):
     colores = {
         "info": "var(--mupai-yellow)",
         "success": "var(--mupai-success)",
@@ -347,16 +344,14 @@ def crear_tarjeta(titulo, contenido, tipo="info", blanca=False):
         "danger": "var(--mupai-danger)"
     }
     color = colores.get(tipo, "var(--mupai-yellow)")
-    card_class = "content-card card-blanca" if blanca else "content-card"
-    texto_color = "var(--mupai-black)" if blanca else "var(--mupai-white)"
     return f"""
-    <div class="{card_class}" style="border-left-color: {color};">
-        <h3 style="color: {texto_color}; margin-bottom: 1rem;">{titulo}</h3>
-        <div style="color: {texto_color};">{contenido}</div>
+    <div class="content-card" style="border-left-color: {color};">
+        <h3 style="margin-bottom: 1rem;">{titulo}</h3>
+        <div>{contenido}</div>
     </div>
     """
 
-# Referencias funcionales mejoradas
+# Referencias funcionales mejoradas (CORREGIDO PARA MUJERES)
 referencias_funcionales = {
     "Hombre": {
         "Flexiones": {"tipo": "reps", "niveles": [("Bajo", 10), ("Promedio", 20), ("Bueno", 35), ("Avanzado", 50)]},
@@ -374,7 +369,7 @@ referencias_funcionales = {
     "Mujer": {
         "Flexiones": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 8), ("Bueno", 15), ("Avanzado", 25)]},
         "Fondos": {"tipo": "reps", "niveles": [("Bajo", 1), ("Promedio", 4), ("Bueno", 10), ("Avanzado", 18)]},
-        "Press banca": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 15)), ("Promedio", (8, 25)), ("Bueno", (10, 35)), ("Avanzado", (10, 45))]},
+        "Press banca": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 20)), ("Promedio", (8, 30)), ("Bueno", (10, 40)), ("Avanzado", (10, 50))]},  # CORREGIDO
         "Dominadas": {"tipo": "reps", "niveles": [("Bajo", 0), ("Promedio", 1), ("Bueno", 3), ("Avanzado", 5)]},
         "Remo invertido": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
         "Sentadilla": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 30)), ("Promedio", (8, 50)), ("Bueno", (10, 70)), ("Avanzado", (10, 90))]},
@@ -394,18 +389,18 @@ def calcular_mlg(peso, porcentaje_grasa):
     return peso * (1 - porcentaje_grasa / 100)
 
 def corregir_porcentaje_grasa(medido, metodo, sexo):
-    """Corrige el porcentaje de grasa según el método de medición"""
+    """Corrige el porcentaje de grasa según el método de medición (CORREGIDO)"""
     if metodo == "Omron HBF-516 (BIA)":
-        # Tabla de corrección Omron a DEXA
+        # Tabla de corrección Omron a DEXA (claves como enteros)
         tabla = {
-            5.0: 2.5, 6.0: 3.5, 7.0: 4.5, 8.0: 5.5, 9.0: 6.5,
-            10.0: 7.5, 11.0: 8.5, 12.0: 9.5, 13.0: 10.5, 14.0: 11.5,
-            15.0: 13.5, 16.0: 14.5, 17.0: 15.5, 18.0: 16.5, 19.0: 17.5,
-            20.0: 20.5, 21.0: 21.5, 22.0: 22.5, 23.0: 23.5, 24.0: 24.5,
-            25.0: 27.0, 26.0: 28.0, 27.0: 29.0, 28.0: 30.0, 29.0: 31.0,
-            30.0: 33.5, 31.0: 34.5, 32.0: 35.5, 33.0: 36.5, 34.0: 37.5,
-            35.0: 40.0, 36.0: 41.0, 37.0: 42.0, 38.0: 43.0, 39.0: 44.0,
-            40.0: 45.0
+            5: 2.5, 6: 3.5, 7: 4.5, 8: 5.5, 9: 6.5,
+            10: 7.5, 11: 8.5, 12: 9.5, 13: 10.5, 14: 11.5,
+            15: 13.5, 16: 14.5, 17: 15.5, 18: 16.5, 19: 17.5,
+            20: 20.5, 21: 21.5, 22: 22.5, 23: 23.5, 24: 24.5,
+            25: 27.0, 26: 28.0, 27: 29.0, 28: 30.0, 29: 31.0,
+            30: 33.5, 31: 34.5, 32: 35.5, 33: 36.5, 34: 37.5,
+            35: 40.0, 36: 41.0, 37: 42.0, 38: 43.0, 39: 44.0,
+            40: 45.0
         }
         grasa_redondeada = round(float(medido))
         grasa_redondeada = min(max(grasa_redondeada, 5), 40)
@@ -496,9 +491,9 @@ def obtener_geaf(nivel):
     """Obtiene el factor de actividad física"""
     valores = {
         "Sedentario": 1.1,
-        "Moderadamente activo": 1.15,
+        "Moderadamente": 1.15,
         "Activo": 1.25,
-        "Muy activo": 1.35
+        "Muy": 1.35
     }
     return valores.get(nivel, 1.1)
 
@@ -600,7 +595,7 @@ if not st.session_state.datos_completos:
                     <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">⚖️</span> <b>Paso 2:</b> Composición corporal<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
-                            Medidas científicas de peso, estatura y % de grasa corporal usando métodos validados (DEXA, BIA.
+                            Medidas científicas de peso, estatura y % de grasa corporal usando métodos validados (DEXA, BIA).
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
@@ -642,6 +637,7 @@ if not st.session_state.datos_completos:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
 # Validación de datos personales
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
 
@@ -685,7 +681,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         mlg = calcular_mlg(peso, grasa_corregida)
         tmb = calcular_tmb_cunningham(mlg)
         ffmi = calcular_ffmi(mlg, estatura)
-        nivel = clasificar_ffmi(ffmi, sexo)
+        nivel_ffmi = clasificar_ffmi(ffmi, sexo)
         edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
         
         # Mostrar corrección si aplica
@@ -721,11 +717,11 @@ if datos_personales_completos and st.session_state.datos_completos:
                 "Bueno": "success",
                 "Avanzado": "info",
                 "Élite": "info"
-            }.get(nivel, "info")
+            }.get(nivel_ffmi, "info")
             
             st.markdown(f"""
             <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
-            <span class="badge badge-{color_nivel}">{nivel}</span></h2>
+            <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
             """, unsafe_allow_html=True)
             
             # Barra de progreso visual
@@ -958,7 +954,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.session_state.datos_ejercicios = ejercicios_data
         
         # Cálculo del nivel de entrenamiento combinado
-        puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}[nivel]
+        puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}[nivel_ffmi]
         puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}[experiencia[0:2]]
         
         puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
@@ -981,7 +977,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel}")
+            st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel_ffmi}")
         with col2:
             st.metric("Rendimiento", f"{puntos_funcional:.1f}/4", "Capacidad funcional")
         with col3:
@@ -1155,11 +1151,11 @@ if datos_personales_completos and st.session_state.datos_completos:
         )
         
         # Cálculo del GEE según nivel muscular
-        if nivel in ["Bajo", "Promedio"]:
+        if nivel_ffmi in ["Bajo", "Promedio"]:
             kcal_sesion = 300
             nivel_gee = "300 kcal/sesión"
             gee_color = "warning"
-        elif nivel in ["Bueno", "Avanzado"]:
+        elif nivel_ffmi in ["Bueno", "Avanzado"]:
             kcal_sesion = 400
             nivel_gee = "400 kcal/sesión"
             gee_color = "info"
@@ -1178,7 +1174,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                      "Sin entrenar" if dias_fuerza == 0 else "Activo")
         with col2:
             st.metric("Gasto/sesión", f"{kcal_sesion} kcal", 
-                     f"Nivel {nivel}")
+                     f"Nivel {nivel_ffmi}")
         with col3:
             st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día",
                      f"Total: {gee_semanal} kcal/sem")
@@ -1186,7 +1182,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.markdown(f"""
         <div class="content-card" style="background: #f8f9fa;">
             💡 <strong>Cálculo personalizado:</strong> Tu gasto por sesión ({nivel_gee}) 
-            se basa en tu nivel muscular ({nivel}), no solo en el tiempo de entrenamiento.
+            se basa en tu nivel muscular ({nivel_ffmi}), no solo en el tiempo de entrenamiento.
             Esto proporciona una estimación más precisa de tu gasto energético real.
         </div>
         """, unsafe_allow_html=True)
@@ -1231,7 +1227,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         with col1:
             st.write(f"• **Sexo:** {sexo}")
             st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
-            st.write(f"• **FFMI:** {ffmi:.2f} ({nivel})")
+            st.write(f"• **FFMI:** {ffmi:.2f} ({nivel_ffmi})")
         with col2:
             st.write(f"• **Nivel:** {nivel_entrenamiento.capitalize()}")
             st.write(f"• **Edad metabólica:** {edad_metabolica} años")
@@ -1293,41 +1289,6 @@ if datos_personales_completos and st.session_state.datos_completos:
                 """)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-# Continuación desde la línea ~1100 (Bloque 6 - Comparativa PSMF)
-
-            with col1:
-                st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-                st.markdown("#### ✅ Plan Tradicional")
-                st.metric("Déficit", f"{porcentaje}%", "Moderado")
-                st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
-                st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
-                st.markdown("""
-                **Ventajas:**
-                - ✅ Mayor adherencia
-                - ✅ Más energía para entrenar  
-                - ✅ Sostenible largo plazo
-                - ✅ Menor pérdida muscular
-                - ✅ Vida social normal
-                """)
-                st.markdown('</div>', unsafe_allow_html=True)
-            
-            with col2:
-                deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
-                st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-                st.markdown("#### ⚡ Protocolo PSMF")
-                st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
-                st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
-                st.metric("Pérdida esperada", "0.8-1.2 kg/semana")
-                st.markdown("""
-                **Consideraciones:**
-                - ⚠️ Muy restrictivo
-                - ⚠️ Máximo 6-8 semanas
-                - ⚠️ Requiere supervisión
-                - ⚠️ Solo proteína + verduras
-                - ⚠️ Suplementación necesaria
-                """)
-                st.markdown('</div>', unsafe_allow_html=True)
-            
             # Aplicar plan elegido
             if "PSMF" in plan_elegido:
                 ingesta_calorica = psmf_recs['calorias_dia']
@@ -1349,7 +1310,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                 """)
             else:
                 ingesta_calorica = ingesta_calorica_tradicional
-                # Cálculo de macros tradicional
+                # Cálculo de macros tradicional (CORREGIDO)
                 proteina_factor = 2.5 if grasa_corregida < 15 else 2.2 if grasa_corregida < 25 else 2.0
                 proteina_g = round(mlg * proteina_factor, 1)
                 proteina_kcal = proteina_g * 4
@@ -1493,7 +1454,7 @@ Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
         ### 💪 Composición Corporal
         - **Peso:** {peso} kg | **Altura:** {estatura} cm
         - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
-        - **FFMI:** {ffmi:.2f} ({nivel})
+        - **FFMI:** {ffmi:.2f} ({nivel_ffmi})
         - **Potencial:** {porc_potencial:.0f}% alcanzado
         """)
     
@@ -1548,7 +1509,7 @@ Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
             st.info("Función PDF próximamente...")
     with col3:
         if st.button("🔄 Nueva Evaluación", key="nueva"):
-            for key in st.session_state.keys():
+            for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.rerun()
     
@@ -1675,7 +1636,7 @@ RESUMEN MOSTRADO AL USUARIO:
 ⚖️ Peso: {peso} kg                    
 📏 Estatura: {estatura} cm             
 💪 % Grasa corporal: {grasa_corregida:.1f}%
-📊 FFMI: {ffmi:.2f} ({nivel})
+📊 FFMI: {ffmi:.2f} ({nivel_ffmi})
 🎯 Nivel entrenamiento: {nivel_entrenamiento.capitalize()}
 📈 Potencial alcanzado: {porc_potencial:.0f}%
 🍽️ Calorías diarias: {ingesta_calorica:.0f} kcal
@@ -1724,7 +1685,7 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 =====================================
 - TMB (Cunningham): {tmb:.0f} kcal
 - FFMI actual: {ffmi:.2f}
-- Clasificación FFMI: {nivel}
+- Clasificación FFMI: {nivel_ffmi}
 - FFMI máximo estimado: {ffmi_genetico_max:.1f}
 - Potencial alcanzado: {porc_potencial:.0f}%
 - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos FFMI
@@ -1791,7 +1752,6 @@ Todos los derechos reservados
                 st.success("✅ Email enviado exitosamente a administración")
             else:
                 st.error("❌ Error al enviar email. Contacta a soporte técnico.")
-
 
 # Footer profesional
 st.markdown("---")
