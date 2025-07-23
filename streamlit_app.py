@@ -884,7 +884,11 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
-    
+        
+# Inicializa barra de progreso y texto para los pasos
+progress = st.progress(0)
+progress_text = st.empty()
+
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
