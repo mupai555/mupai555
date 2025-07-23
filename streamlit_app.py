@@ -885,7 +885,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-  # BLOQUE 3: Actividad física diaria
+ # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
     progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
@@ -926,7 +926,7 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
             padding: 1.1rem 0.5rem;
             background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%);
             border-radius: 16px; 
-            color: #fff; 
+            color: #fff !important; 
             font-weight: bold;
             font-size: 1.13rem;
             letter-spacing: 0.5px;
@@ -953,7 +953,6 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     """)
     
     st.markdown('</div>', unsafe_allow_html=True)
-
 
     # BLOQUE 4: ETA
     with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
