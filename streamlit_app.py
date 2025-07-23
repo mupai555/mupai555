@@ -905,7 +905,7 @@ if datos_personales_completos and st.session_state.datos_completos:
 
  # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
-    st.progress(60)
+     progress.progress(60)
      progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
