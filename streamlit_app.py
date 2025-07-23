@@ -18,7 +18,6 @@ st.set_page_config(
 # CSS personalizado con paleta de colores MUPAI
 st.markdown("""
 <style>
-    /* Variables de color MUPAI */
     :root {
         --mupai-yellow: #F4C430;
         --mupai-dark-yellow: #DAA520;
@@ -30,13 +29,11 @@ st.markdown("""
         --mupai-warning: #F39C12;
         --mupai-danger: #E74C3C;
     }
-    
-    /* Fondo principal */
+
     .stApp {
         background: linear-gradient(135deg, #1E1E1E 0%, #2D2D2D 100%);
     }
-    
-    /* Header principal */
+
     .main-header {
         background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
         color: var(--mupai-black);
@@ -47,8 +44,7 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(244, 196, 48, 0.3);
         animation: fadeIn 0.5s ease-out;
     }
-    
-    /* Tarjetas de contenido */
+
     .content-card {
         background: var(--mupai-white);
         padding: 2rem;
@@ -58,20 +54,12 @@ st.markdown("""
         border-left: 5px solid var(--mupai-yellow);
         animation: slideIn 0.5s ease-out;
     }
-    
     .content-card, .content-card * {
         color: var(--mupai-black) !important;
     }
-    
-    .card-psmf {
-        border-left-color: var(--mupai-warning) !important;
-    }
-    
-    .card-success {
-        border-left-color: var(--mupai-success) !important;
-    }
-    
-    /* Botones personalizados */
+    .card-psmf { border-left-color: var(--mupai-warning) !important; }
+    .card-success { border-left-color: var(--mupai-success) !important; }
+
     .stButton > button {
         background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
         color: var(--mupai-black);
@@ -84,13 +72,11 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    
     .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(244, 196, 48, 0.4);
     }
-    
-    /* Inputs estilizados */
+
     .stTextInput > div > div > input,
     .stNumberInput > div > div > input,
     .stSelectbox > div > div > select {
@@ -100,15 +86,13 @@ st.markdown("""
         transition: all 0.3s ease;
         background: var(--mupai-white);
     }
-    
     .stTextInput > div > div > input:focus,
     .stNumberInput > div > div > input:focus,
     .stSelectbox > div > div > select:focus {
         border-color: var(--mupai-yellow);
         box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.2);
     }
-    
-    /* Métricas estilizadas */
+
     [data-testid="metric-container"] {
         background: linear-gradient(135deg, var(--mupai-light-gray) 0%, var(--mupai-white) 100%);
         padding: 1rem;
@@ -116,8 +100,7 @@ st.markdown("""
         border-left: 4px solid var(--mupai-yellow);
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    
-    /* Expander personalizado */
+
     .streamlit-expanderHeader {
         background: linear-gradient(135deg, var(--mupai-light-gray) 0%, var(--mupai-white) 100%);
         border-radius: 10px;
@@ -125,28 +108,24 @@ st.markdown("""
         padding: 1rem !important;
         border: 2px solid var(--mupai-yellow);
     }
-    
-    /* Alertas personalizadas */
+
     .stAlert > div {
         border-radius: 10px;
         padding: 1rem;
         border-left: 5px solid;
     }
-    
-    /* Progress bar MUPAI */
+
     .stProgress > div > div > div {
         background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
         border-radius: 10px;
         animation: pulse 1.5s infinite;
     }
-    
     @keyframes pulse {
         0% { opacity: 1; }
         50% { opacity: 0.7; }
         100% { opacity: 1; }
     }
-    
-    /* Radio buttons estilizados */
+
     .stRadio > div {
         background: var(--mupai-light-gray);
         padding: 1rem;
@@ -154,23 +133,17 @@ st.markdown("""
         border: 2px solid transparent;
         transition: all 0.3s ease;
     }
-    
-    .stRadio > div:hover {
-        border-color: var(--mupai-yellow);
-    }
-    
-    /* Animaciones */
+    .stRadio > div:hover { border-color: var(--mupai-yellow); }
+
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    
     @keyframes slideIn {
         from { opacity: 0; transform: translateX(-20px); }
         to { opacity: 1; transform: translateX(0); }
     }
-    
-    /* Badges personalizados */
+
     .badge {
         display: inline-block;
         padding: 0.25rem 0.75rem;
@@ -179,136 +152,116 @@ st.markdown("""
         font-weight: bold;
         margin: 0.25rem;
     }
-    
-    .badge-success {
-        background: var(--mupai-success);
-        color: white;
-    }
-    
-    .badge-warning {
-        background: var(--mupai-warning);
-        color: white;
-    }
-    
-    .badge-danger {
-        background: var(--mupai-danger);
-        color: white;
-    }
-    
-    .badge-info {
-        background: var(--mupai-yellow);
-        color: var(--mupai-black);
-    }
-    
-    /* Tablas estilizadas */
+    .badge-success { background: var(--mupai-success); color: white;}
+    .badge-warning { background: var(--mupai-warning); color: white;}
+    .badge-danger { background: var(--mupai-danger); color: white;}
+    .badge-info { background: var(--mupai-yellow); color: var(--mupai-black);}
+
     .dataframe {
         border-radius: 10px !important;
         overflow: hidden;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    
-    /* Divisores */
     hr {
         border: none;
         height: 2px;
         background: linear-gradient(to right, transparent, var(--mupai-yellow), transparent);
         margin: 2rem 0;
     }
-    
-    /* Responsive */
+
     @media (max-width: 768px) {
-        .main-header {
-            padding: 1rem;
-        }
-        .content-card {
-            padding: 1rem;
-        }
-        .stButton > button {
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
-        }
+        .main-header { padding: 1rem;}
+        .content-card { padding: 1rem;}
+        .stButton > button { padding: 0.5rem 1rem; font-size: 0.9rem;}
     }
-    
-    /* Efectos hover para cards */
     .content-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         transition: all 0.3s ease;
     }
-    
-   /* Texto con gradiente */
-.gradient-text {
-    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: bold;
-}
 
-/* LABELS y textos secundarios más blancos */
-.stTextInput label,
-.stNumberInput label,
-.stSelectbox label,
-.stDateInput label,
-.stRadio label,
-.stCheckbox label,
-.stForm label,
-.stForm legend,
-.stForm span,
-.stForm p,
-.stForm div,
-.stForm input::placeholder,
-.stTextInput input::placeholder,
-.stNumberInput input::placeholder {
-    color: var(--mupai-white) !important;
-    opacity: 0.95 !important;
-}
+    .gradient-text {
+        background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+    }
 
-/* Subtítulos, ayuda y textos secundarios mucho más blancos */
-.stMarkdown, .markdown-text-container, .stCheckbox label, .stRadio label, .stForm label, .stForm legend, 
-.stForm span, .stForm p, .stForm div, .stForm input::placeholder, .stTextInput input::placeholder, 
-.stNumberInput input::placeholder, .stDateInput label, .stDateInput span, .stDateInput p, 
-.stMarkdown p, .stMarkdown span, .stMarkdown div {
-    color: var(--mupai-white) !important;
-    opacity: 1 !important;
-}
+    /* TITULOS Y LABELS EN BLANCO */
+    .stTextInput label,
+    .stNumberInput label,
+    .stSelectbox label,
+    .stDateInput label,
+    .stRadio label,
+    .stCheckbox label,
+    .stForm label,
+    .stForm legend,
+    .stForm span,
+    .stForm p,
+    .stForm div {
+        color: var(--mupai-white) !important;
+        opacity: 0.95 !important;
+    }
+    .stMarkdown, .markdown-text-container, .stCheckbox label, .stRadio label, .stForm label, .stForm legend, 
+    .stForm span, .stForm p, .stForm div, .stDateInput label, .stDateInput span, .stDateInput p, 
+    .stMarkdown p, .stMarkdown span, .stMarkdown div {
+        color: var(--mupai-white) !important;
+        opacity: 1 !important;
+    }
+    .stForm p, .stForm span, .markdown-text-container, .stMarkdown p, .stMarkdown span {
+        color: var(--mupai-white) !important;
+        opacity: 1 !important;
+    }
+    .stDateInput .stMarkdown, .stDateInput span, .stDateInput p {
+        color: var(--mupai-white) !important;
+        opacity: 1 !important;
+    }
+    .streamlit-expanderHeader,
+    .stExpander .streamlit-expanderHeader,
+    .stExpander span,
+    .stExpander label,
+    .stExpander p,
+    .stExpander div,
+    .stExpander .markdown-text-container,
+    .stExpander .stMarkdown,
+    .stExpander input[type="checkbox"] + label,
+    .stExpander input[type="checkbox"] + span,
+    .stExpander input[type="checkbox"] + p,
+    .stExpander input[type="checkbox"] + div {
+        color: var(--mupai-white) !important;
+        opacity: 1 !important;
+    }
+    .stCheckbox label,
+    .stForm label,
+    .stCheckbox span,
+    .stCheckbox p {
+        color: var(--mupai-white) !important;
+        opacity: 1 !important;
+    }
 
-/* Texto de ayuda/descripción (como subtítulos en formularios) */
-.stForm p, .stForm span, .markdown-text-container, .stMarkdown p, .stMarkdown span {
-    color: var(--mupai-white) !important;
-    opacity: 1 !important;
-}
-
-/* Texto de la fecha en el datepicker */
-.stDateInput .stMarkdown, .stDateInput span, .stDateInput p {
-    color: var(--mupai-white) !important;
-    opacity: 1 !important;
-}
-/* Refuerzo para texto de expanders y badges */
-.streamlit-expanderHeader,
-.stExpander .streamlit-expanderHeader,
-.stExpander span,
-.stExpander label,
-.stExpander p,
-.stExpander div,
-.stExpander .markdown-text-container,
-.stExpander .stMarkdown,
-.stExpander input[type="checkbox"] + label,
-.stExpander input[type="checkbox"] + span,
-.stExpander input[type="checkbox"] + p,
-.stExpander input[type="checkbox"] + div {
-    color: var(--mupai-white) !important;
-    opacity: 1 !important;
-}
-
-/* Checkbox de política en el formulario */
-.stCheckbox label,
-.stForm label,
-.stCheckbox span,
-.stCheckbox p {
-    color: var(--mupai-white) !important;
-    opacity: 1 !important;
-}
+    /* =========================
+       TEXTO OSCURO EN CAMPOS DE ENTRADA (FIX MUPAI)
+       ========================= */
+    .stTextInput input,
+    .stNumberInput input,
+    .stSelectbox select,
+    .stDateInput input,
+    .stSlider input {
+        color: var(--mupai-black) !important;
+        background: var(--mupai-white) !important;
+    }
+    .stTextInput input::placeholder,
+    .stNumberInput input::placeholder,
+    .stSelectbox select:invalid,
+    .stDateInput input::placeholder {
+        color: #444 !important;
+        opacity: 1 !important;
+    }
+    .stSelectbox select:invalid {
+        color: #444 !important;
+    }
 </style>
+
 """, unsafe_allow_html=True)
 
 # Header principal con logo y título
