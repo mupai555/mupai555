@@ -547,7 +547,8 @@ if not st.session_state.datos_completos:
     </div>
     """, unsafe_allow_html=True)
 
- VALIDACIÓN DATOS PERSONALES PARA CONTINUAR
+ # VALIDACIÓN DATOS PERSONALES PARA CONTINUAR
+
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
 
 if datos_personales_completos and st.session_state.datos_completos:
