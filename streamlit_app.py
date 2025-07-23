@@ -915,9 +915,9 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
         "Selecciona el nivel que mejor te describe:",
         [
             "Sedentario (trabajo de oficina, <5,000 pasos/día)",
-            "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
+            "Moderadamente-activo (trabajo mixto, 5,000-10,000 pasos/día)",
             "Activo (trabajo físico, 10,000-12,500 pasos/día)",
-            "Muy activo (trabajo muy físico, >12,500 pasos/día)"
+            "Muy-activo (trabajo muy físico, >12,500 pasos/día)"
         ],
         help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
     )
