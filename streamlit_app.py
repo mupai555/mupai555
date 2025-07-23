@@ -889,6 +889,32 @@ if datos_personales_completos and st.session_state.datos_completos:
 progress = st.progress(0)
 progress_text = st.empty()
 
+def mostrar_nivel_actividad(emoji, texto, seleccionado=False):
+    fondo = "linear-gradient(135deg, #F4C430 0%, #DAA520 100%)"
+    borde = "3px solid #222" if seleccionado else "2px solid #DAA520"
+    sombra = "0 6px 24px rgba(0,0,0,0.20)" if seleccionado else "0 2px 12px rgba(0,0,0,0.10)"
+    brillo = "filter: brightness(1.10);" if seleccionado else ""
+    st.markdown(f"""
+        <div style="
+            text-align: center;
+            padding: 1.1rem 0.5rem 1rem 0.5rem;
+            background: {fondo};
+            border-radius: 16px;
+            color: #fff !important;
+            font-weight: bold;
+            font-size: 1.15rem;
+            letter-spacing: 0.4px;
+            box-shadow: {sombra};
+            border: {borde};
+            user-select: none;
+            {brillo}
+            margin-bottom: 0.7rem;
+        ">
+            <span style="font-size:2em; line-height:1.3;">{emoji}</span><br>
+            {texto}
+        </div>
+    """, unsafe_allow_html=True)
+
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
