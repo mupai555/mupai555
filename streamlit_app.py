@@ -829,16 +829,16 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.session_state.datos_ejercicios = ejercicios_data
 
         
-        # Cálculo del nivel de entrenamiento combinado
+                # Cálculo del nivel de entrenamiento combinado
         puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}[nivel_ffmi]
         puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}[experiencia[0:2]]
-        
+
         puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
         puntos_funcional = sum([puntos_por_nivel.get(n, 1) for n in niveles_ejercicios.values()]) / len(niveles_ejercicios) if niveles_ejercicios else 1
-        
+
         # Ponderación: 40% FFMI, 40% funcional, 20% experiencia
         puntaje_total = (puntos_ffmi/5 * 0.4) + (puntos_funcional/4 * 0.4) + (puntos_exp/4 * 0.2)
-        
+
         if puntaje_total < 0.3:
             nivel_entrenamiento = "principiante"
         elif puntaje_total < 0.5:
@@ -847,10 +847,10 @@ if datos_personales_completos and st.session_state.datos_completos:
             nivel_entrenamiento = "avanzado"
         else:
             nivel_entrenamiento = "élite"
-        
+
         # Mostrar resumen con diseño atractivo
         st.markdown("### 🎯 Análisis integral de tu nivel")
-        
+
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel_ffmi}")
@@ -865,7 +865,6 @@ if datos_personales_completos and st.session_state.datos_completos:
                 "avanzado": "success",
                 "élite": "success"
             }.get(nivel_entrenamiento, "info")
-            
             st.markdown(f"""
             <div style="text-align: center;">
                 <h3 style="margin: 0;">Nivel Global</h3>
@@ -875,7 +874,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                 <small>Score: {puntaje_total:.2f}/1.0</small>
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Potencial genético
         if sexo == "Hombre":
             ffmi_genetico_max = {
@@ -887,49 +886,48 @@ if datos_personales_completos and st.session_state.datos_completos:
                 "principiante": 19, "intermedio": 20,
                 "avanzado": 20.5, "élite": 21
             }[nivel_entrenamiento]
-        
         porc_potencial = min((ffmi / ffmi_genetico_max) * 100, 100)
-        
+
         st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
         st.success(f"""
         📈 **Análisis de tu potencial muscular**
-        
+
         Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
-        
+
         - FFMI actual: {ffmi:.2f}
         - FFMI máximo estimado: {ffmi_genetico_max:.1f}
         - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
         """)
         st.markdown('</div>', unsafe_allow_html=True)
-        
+
         st.markdown('</div>', unsafe_allow_html=True)
-    
+
     # BLOQUE 3: Actividad física diaria
     with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
         progress.progress(60)
         progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
-        
+
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
-        
+
         st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
-        
+
         nivel_actividad = st.radio(
             "Selecciona el nivel que mejor te describe:",
-            ["Sedentario (trabajo de oficina, <5,000 pasos/día)",
-             "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
-             "Activo (trabajo físico, 10,000-12,500 pasos/día)",
-             "Muy activo (trabajo muy físico, >12,500 pasos/día)"],
+            [
+                "Sedentario (trabajo de oficina, <5,000 pasos/día)",
+                "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
+                "Activo (trabajo físico, 10,000-12,500 pasos/día)",
+                "Muy activo (trabajo muy físico, >12,500 pasos/día)"
+            ],
             help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
         )
-        
-        # Visualización del nivel
+
         nivel_simple = nivel_actividad.split()[0]
         geaf = obtener_geaf(nivel_simple)
-        
-        # Gráfico visual del nivel de actividad
-        niveles = ["Sedentario", "Moderadamente", "Activo", "Muy"]
+
+        niveles = ["Sedentario", "Moderadamente", "Activo", "Muy Activo"]
         nivel_idx = next((i for i, n in enumerate(niveles) if n in nivel_actividad), 0)
-        
+
         cols = st.columns(4)
         for i, niv in enumerate(["🪑 Sedentario", "🚶 Moderado", "🏃 Activo", "💪 Muy Activo"]):
             with cols[i]:
@@ -948,26 +946,24 @@ if datos_personales_completos and st.session_state.datos_completos:
                         {niv}
                     </div>
                     """, unsafe_allow_html=True)
-        
+
         st.success(f"""
         ✅ **Tu nivel de actividad física diaria: {nivel_simple}**
-        
+
         - Factor GEAF: **{geaf}**
         - Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%
         """)
-        
+
         st.markdown('</div>', unsafe_allow_html=True)
-    
-    # BLOQUE 4: ETA
+
+    # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
     with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
         progress.progress(70)
         progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
-        
+
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
-        
+
         st.markdown("### 🔥 Determinación automática del ETA")
-        
-        # ETA basado en composición corporal
         if grasa_corregida <= 10 and sexo == "Hombre":
             eta = 1.15
             eta_desc = "ETA alto (muy magro, ≤10% grasa)"
@@ -988,8 +984,7 @@ if datos_personales_completos and st.session_state.datos_completos:
             eta = 1.10
             eta_desc = f"ETA estándar (>{20 if sexo == 'Hombre' else 30}% grasa)"
             eta_color = "warning"
-        
-        # Visualización mejorada
+
         col1, col2 = st.columns([2, 1])
         with col1:
             st.markdown(f"""
@@ -998,34 +993,31 @@ if datos_personales_completos and st.session_state.datos_completos:
                 <span class="badge badge-{eta_color}">{eta_desc}</span>
             </div>
             """, unsafe_allow_html=True)
-        
         with col2:
             st.info(f"""
             **¿Qué es el ETA?**
-            
-            Es la energía que tu cuerpo gasta 
-            digiriendo y procesando alimentos.
-            
+
+            Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
+
             Aumenta tu gasto total en un {(eta-1)*100:.0f}%
             """)
-        
+
         st.markdown('</div>', unsafe_allow_html=True)
-    
+
     # BLOQUE 5: Entrenamiento de fuerza
     with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
         progress.progress(80)
         progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
-        
+
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
-        
         st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
-        
+
         dias_fuerza = st.slider(
             "¿Cuántos días por semana entrenas con pesas/resistencia?",
             min_value=0, max_value=7, value=3,
             help="Solo cuenta entrenamientos de fuerza, no cardio"
         )
-        
+
         # Cálculo del GEE según nivel muscular
         if nivel_ffmi in ["Bajo", "Promedio"]:
             kcal_sesion = 300
@@ -1039,22 +1031,18 @@ if datos_personales_completos and st.session_state.datos_completos:
             kcal_sesion = 500
             nivel_gee = "500 kcal/sesión"
             gee_color = "success"
-        
+
         gee_semanal = dias_fuerza * kcal_sesion
         gee_prom_dia = gee_semanal / 7
-        
-        # Visualización mejorada
+
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Días/semana", f"{dias_fuerza} días", 
-                     "Sin entrenar" if dias_fuerza == 0 else "Activo")
+            st.metric("Días/semana", f"{dias_fuerza} días", "Sin entrenar" if dias_fuerza == 0 else "Activo")
         with col2:
-            st.metric("Gasto/sesión", f"{kcal_sesion} kcal", 
-                     f"Nivel {nivel_ffmi}")
+            st.metric("Gasto/sesión", f"{kcal_sesion} kcal", f"Nivel {nivel_ffmi}")
         with col3:
-            st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día",
-                     f"Total: {gee_semanal} kcal/sem")
-        
+            st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día", f"Total: {gee_semanal} kcal/sem")
+
         st.markdown(f"""
         <div class="content-card" style="background: #f8f9fa;">
             💡 <strong>Cálculo personalizado:</strong> Tu gasto por sesión ({nivel_gee}) 
@@ -1062,8 +1050,8 @@ if datos_personales_completos and st.session_state.datos_completos:
             Esto proporciona una estimación más precisa de tu gasto energético real.
         </div>
         """, unsafe_allow_html=True)
-        
         st.markdown('</div>', unsafe_allow_html=True)
+
     
     # BLOQUE 6: Cálculo final con comparativa PSMF
     with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
