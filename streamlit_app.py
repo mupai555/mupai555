@@ -885,6 +885,31 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         st.markdown('</div>', unsafe_allow_html=True)
     
+def mostrar_nivel_actividad(emoji, texto, seleccionado=False):
+    fondo = "linear-gradient(135deg, #F4C430 0%, #DAA520 100%)"
+    borde = "3px solid #222" if seleccionado else "2px solid #DAA520"
+    sombra = "0 6px 24px rgba(0,0,0,0.20)" if seleccionado else "0 2px 12px rgba(0,0,0,0.10)"
+    brillo = "filter: brightness(1.10);" if seleccionado else ""
+    st.markdown(f"""
+        <div style="
+            text-align: center;
+            padding: 1.1rem 0.5rem 1rem 0.5rem;
+            background: {fondo};
+            border-radius: 16px;
+            color: #fff !important;
+            font-weight: bold;
+            font-size: 1.15rem;
+            letter-spacing: 0.4px;
+            box-shadow: {sombra};
+            border: {borde};
+            user-select: none;
+            {brillo}
+            margin-bottom: 0.7rem;
+        ">
+            <span style="font-size:2em; line-height:1.3;">{emoji}</span><br>
+            {texto}
+        </div>
+    """, unsafe_allow_html=True)
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
@@ -899,7 +924,6 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
         "🏃 Activo (trabajo físico, 10,000-12,500 pasos/día)",
         "💪 Muy activo (trabajo muy físico, >12,500 pasos/día)"
     ]
-    # La radio ahora incluye el emoji ¡así el split nunca falla y el emoji SIEMPRE aparece!
     nivel_actividad = st.radio(
         "Selecciona el nivel que mejor te describe:",
         opciones,
@@ -907,38 +931,19 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     )
 
     idx_seleccionado = opciones.index(nivel_actividad)
-
-    # Para GEAF, obtén la palabra después del emoji (usa split máximo de 1)
     nivel_simple = nivel_actividad.split(' ', 1)[1].split(' ')[0]  # Ej: "Sedentario", "Moderadamente", etc.
     geaf = obtener_geaf(nivel_simple)
 
-    # Recuadros uniformes para todos, con emoji y texto bien visibles
+    niveles_emojis = [
+        ("🪑", "Sedentario"),
+        ("🚶", "Moderadamente activo"),
+        ("🏃", "Activo"),
+        ("💪", "Muy activo"),
+    ]
     cols = st.columns(4)
-    for i, opcion in enumerate(opciones):
-        estilo = """
-            text-align: center; 
-            padding: 1.15rem 0.5rem;
-            background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%);
-            border-radius: 16px; 
-            color: #fff !important; 
-            font-weight: bold;
-            font-size: 1.15rem;
-            letter-spacing: 0.4px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-            border: 2px solid #DAA520;
-            user-select: none;
-        """
-        if i == idx_seleccionado:
-            estilo += """
-                border: 3px solid #222;
-                box-shadow: 0 6px 24px rgba(0,0,0,0.20);
-                filter: brightness(1.10);
-            """
+    for i, (emoji, texto) in enumerate(niveles_emojis):
         with cols[i]:
-            st.markdown(
-                f'<div style="{estilo}">{opcion.split(" ", 1)[0]}<br>{opcion.split(" ", 1)[1]}</div>',
-                unsafe_allow_html=True
-            )
+            mostrar_nivel_actividad(emoji, texto, seleccionado=(i == idx_seleccionado))
 
     st.success(f"""
     ✅ **Tu nivel de actividad física diaria: {nivel_simple}**
