@@ -377,30 +377,32 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
         st.error(f"Error al enviar email: {str(e)}")
         return False
 
-# Misión, Visión y Compromiso con diseño mejorado
+# Misión, Visión y Compromiso con fondo negro SOLO para este expander
 with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
     col1, col2, col3 = st.columns(3)
-    
+    negro = "background:#181A1B; color:white; padding:1.1rem; border-radius:10px;"
+
     with col1:
         st.markdown(crear_tarjeta(
             "🎯 Misión",
-            "Hacer accesible el entrenamiento basado en ciencia, ofreciendo planes personalizados que se adaptan a todos los niveles de condición física.",
+            f"<div style='{negro}'>Hacer accesible el entrenamiento basado en ciencia, ofreciendo planes personalizados que se adaptan a todos los niveles de condición física.</div>",
             "info"
         ), unsafe_allow_html=True)
-    
+
     with col2:
         st.markdown(crear_tarjeta(
             "👁️ Visión",
-            "Ser el referente global en evaluación y entrenamiento digital personalizado, uniendo investigación científica con experiencia práctica.",
+            f"<div style='{negro}'>Ser el referente global en evaluación y entrenamiento digital personalizado, uniendo investigación científica con experiencia práctica.</div>",
             "success"
         ), unsafe_allow_html=True)
-    
+
     with col3:
         st.markdown(crear_tarjeta(
             "🤝 Compromiso",
-            "Nos guiamos por la ética, transparencia y precisión científica para ofrecer resultados reales, medibles y sostenibles.",
+            f"<div style='{negro}'>Nos guiamos por la ética, transparencia y precisión científica para ofrecer resultados reales, medibles y sostenibles.</div>",
             "warning"
         ), unsafe_allow_html=True)
+
 
 # BLOQUE 0: Datos personales con diseño mejorado
 st.markdown('<div class="content-card">', unsafe_allow_html=True)
