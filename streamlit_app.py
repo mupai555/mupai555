@@ -885,7 +885,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # BLOQUE 3: Actividad física diaria
+   # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
     progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
@@ -907,6 +907,9 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     nivel_simple = nivel_actividad.split()[0]
     geaf = obtener_geaf(nivel_simple)
 
+    # Etiquetas para mostrar (puedes cambiarlas si gustas)
+    etiquetas = ["🪑 Sedentario", "🚶 Moderado", "🏃 Activo", "💪 Muy Activo"]
+
     # Identifica el índice del seleccionado
     opciones = [
         "Sedentario (trabajo de oficina, <5,000 pasos/día)",
@@ -915,33 +918,36 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
         "Muy activo (trabajo muy físico, >12,500 pasos/día)"
     ]
     idx_seleccionado = opciones.index(nivel_actividad)
-    etiquetas = ["🪑 Sedentario", "🚶 Moderado", "🏃 Activo", "💪 Muy Activo"]
 
     cols = st.columns(4)
     for i, niv in enumerate(etiquetas):
+        # Todos tienen el mismo fondo gradiente y letra blanca
         estilo = """
             text-align: center; 
-            padding: 1rem; 
+            padding: 1.1rem 0.5rem;
             background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%);
-            border-radius: 10px; 
-            color: #1E1E1E; 
+            border-radius: 16px; 
+            color: #fff; 
             font-weight: bold;
+            font-size: 1.17rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         """
-        # Si está seleccionado, agrega borde y sombra extra
+        # Si está seleccionado, resalta con borde extra y sombra
         if i == idx_seleccionado:
             estilo += """
                 border: 3px solid #222; 
-                box-shadow: 0 6px 24px rgba(0,0,0,0.25);
-                filter: brightness(1.05);
+                box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+                filter: brightness(1.08);
             """
         else:
             estilo += """
                 border: 2px solid #F4C430;
-                opacity: 0.8;
+                opacity: 0.93;
             """
         with cols[i]:
             st.markdown(
-                f'<div style="{estilo}"><strong>{niv}</strong></div>',
+                f'<div style="{estilo}"><span style="font-size:1.6em;">{niv.split()[0]}</span><br>{niv.split(" ", 1)[1]}</div>',
                 unsafe_allow_html=True
             )
     
@@ -952,7 +958,7 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     """)
     
     st.markdown('</div>', unsafe_allow_html=True)
-    
+
     # BLOQUE 4: ETA
     with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
         progress.progress(70)
