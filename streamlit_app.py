@@ -885,74 +885,69 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         st.markdown('</div>', unsafe_allow_html=True)
     
- # BLOQUE 3: Actividad física diaria
+# BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
     progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
-    
+
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
-    
-    nivel_actividad = st.radio(
-        "Selecciona el nivel que mejor te describe:",
-        [
-            "Sedentario (trabajo de oficina, <5,000 pasos/día)",
-            "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
-            "Activo (trabajo físico, 10,000-12,500 pasos/día)",
-            "Muy activo (trabajo muy físico, >12,500 pasos/día)"
-        ],
-        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
-    )
-    
-    nivel_simple = nivel_actividad.split()[0]
-    geaf = obtener_geaf(nivel_simple)
-
-    # Etiquetas visuales
-    etiquetas = ["🪑 Sedentario", "🚶 Moderado", "🏃 Activo", "💪 Muy Activo"]
 
     opciones = [
-        "Sedentario (trabajo de oficina, <5,000 pasos/día)",
-        "Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
-        "Activo (trabajo físico, 10,000-12,500 pasos/día)",
-        "Muy activo (trabajo muy físico, >12,500 pasos/día)"
+        "🪑 Sedentario (trabajo de oficina, <5,000 pasos/día)",
+        "🚶 Moderadamente activo (trabajo mixto, 5,000-10,000 pasos/día)",
+        "🏃 Activo (trabajo físico, 10,000-12,500 pasos/día)",
+        "💪 Muy activo (trabajo muy físico, >12,500 pasos/día)"
     ]
+    # La radio ahora incluye el emoji ¡así el split nunca falla y el emoji SIEMPRE aparece!
+    nivel_actividad = st.radio(
+        "Selecciona el nivel que mejor te describe:",
+        opciones,
+        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
+    )
+
     idx_seleccionado = opciones.index(nivel_actividad)
 
+    # Para GEAF, obtén la palabra después del emoji (usa split máximo de 1)
+    nivel_simple = nivel_actividad.split(' ', 1)[1].split(' ')[0]  # Ej: "Sedentario", "Moderadamente", etc.
+    geaf = obtener_geaf(nivel_simple)
+
+    # Recuadros uniformes para todos, con emoji y texto bien visibles
     cols = st.columns(4)
-    for i, niv in enumerate(etiquetas):
-        # Mismo fondo amarillo para todos, letra blanca y negrita
+    for i, opcion in enumerate(opciones):
         estilo = """
             text-align: center; 
-            padding: 1.1rem 0.5rem;
+            padding: 1.15rem 0.5rem;
             background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%);
             border-radius: 16px; 
             color: #fff !important; 
             font-weight: bold;
-            font-size: 1.13rem;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            font-size: 1.15rem;
+            letter-spacing: 0.4px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.10);
             border: 2px solid #DAA520;
+            user-select: none;
         """
-        # Si está seleccionado, resalta el borde y sombra extra
         if i == idx_seleccionado:
             estilo += """
-                border: 3px solid #222; 
-                box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+                border: 3px solid #222;
+                box-shadow: 0 6px 24px rgba(0,0,0,0.20);
                 filter: brightness(1.10);
             """
         with cols[i]:
             st.markdown(
-                f'<div style="{estilo}"><span style="font-size:1.6em;">{niv.split()[0]}</span><br>{niv.split(" ", 1)[1]}</div>',
+                f'<div style="{estilo}">{opcion.split(" ", 1)[0]}<br>{opcion.split(" ", 1)[1]}</div>',
                 unsafe_allow_html=True
             )
-    
+
     st.success(f"""
     ✅ **Tu nivel de actividad física diaria: {nivel_simple}**
     - Factor GEAF: **{geaf}**
     - Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%
     """)
-    
+
     st.markdown('</div>', unsafe_allow_html=True)
+
 
     # BLOQUE 4: ETA
     with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
