@@ -705,7 +705,17 @@ st.session_state.grasa_corporal = grasa_corporal
 # st.session_state.sexo = sexo
 # st.session_state.edad = edad
 
-       # Cálculo PSMF
+# --- Actualiza session_state con los valores actuales ---
+st.session_state.peso = peso
+st.session_state.estatura = estatura
+st.session_state.grasa_corporal = grasa_corporal
+st.session_state.sexo = sexo  # Descomenta si usas session_state para sexo
+
+# --- Recalcula variables críticas para PSMF ---
+grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+mlg = calcular_mlg(peso, grasa_corregida)
+
+# --- Cálculo PSMF ---
 psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
 if psmf_recs["psmf_aplicable"]:
     st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
@@ -719,6 +729,7 @@ if psmf_recs["psmf_aplicable"]:
     *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
     """)
     st.markdown('</div>', unsafe_allow_html=True)
+
     
 rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
 fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
