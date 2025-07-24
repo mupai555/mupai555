@@ -1623,15 +1623,39 @@ FIN DEL INFORME
 Sistema desarrollado por el equipo técnico MUPAI
 Todos los derechos reservados
 """
-            
-            # Enviar email
+     # --- Recupera los datos de session_state antes del botón ---
+peso = st.session_state.get("peso", None)
+estatura = st.session_state.get("estatura", None)
+nombre = st.session_state.get("nombre", None)
+edad = st.session_state.get("edad", None)
+telefono = st.session_state.get("telefono", None)
+email_cliente = st.session_state.get("email_cliente", None)
+fecha_llenado = st.session_state.get("fecha_llenado", None)
+grasa_corporal = st.session_state.get("grasa_corporal", None)
+metodo_grasa = st.session_state.get("metodo_grasa", None)
+
+# --- Botón para enviar email manualmente y con validación ---
+if st.button("📧 Enviar Resumen por Email", key="enviar_email"):
+    datos_faltantes = []
+    if not nombre: datos_faltantes.append("Nombre")
+    if not peso: datos_faltantes.append("Peso")
+    if not estatura: datos_faltantes.append("Estatura")
+    if not edad: datos_faltantes.append("Edad")
+    if not email_cliente: datos_faltantes.append("Email")
+    if not telefono: datos_faltantes.append("Teléfono")
+    # Puedes agregar más validaciones aquí si necesitas
+
+    if datos_faltantes:
+        st.error(f"No se puede enviar el email. Faltan los siguientes datos: {', '.join(datos_faltantes)}")
+    else:
+        with st.spinner("📧 Enviando resumen por email..."):
             if enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono):
                 st.session_state["correo_enviado"] = True
                 st.success("✅ Email enviado exitosamente a administración")
             else:
                 st.error("❌ Error al enviar email. Contacta a soporte técnico.")
 
-# Footer profesional
+# --- Footer profesional ---
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #1E1E1E 0%, #2D2D2D 100%); 
