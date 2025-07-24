@@ -217,7 +217,6 @@ hr {
 }
 </style>
 """, unsafe_allow_html=True)
-
 # Header principal visual
 st.markdown("""
 <div class="main-header">
@@ -266,6 +265,7 @@ def crear_tarjeta(titulo, contenido, tipo="info"):
         <div>{contenido}</div>
     </div>
     """
+
 # Referencias funcionales mejoradas (CORREGIDO PARA MUJERES)
 referencias_funcionales = {
     "Hombre": {
@@ -429,6 +429,7 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
     except Exception as e:
         st.error(f"Error al enviar email: {str(e)}")
         return False
+
 # ==================== VISUALES INICIALES ====================
 
 # Misión, Visión y Compromiso con diseño mejorado
@@ -620,7 +621,7 @@ if datos_personales_completos and st.session_state.datos_completos:
     nivel_ffmi = clasificar_ffmi(ffmi, sexo)
     edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
 
-  # Mostrar corrección si aplica
+# Mostrar corrección si aplica
 if 'metodo_grasa' in locals() and 'grasa_corregida' in locals() and 'grasa_corporal' in locals():
     if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
         st.info(
@@ -630,7 +631,7 @@ if 'metodo_grasa' in locals() and 'grasa_corregida' in locals() and 'grasa_corpo
 
 # Validar que las variables clave estén definidas antes de mostrar resultados
 variables_necesarias = ['st.session_state', 'datos_completos', 'grasa_corregida', 'mlg', 'tmb', 
-                       'edad_metabolica', 'edad', 'nivel_ffmi', 'ffmi', 'sexo']
+                        'edad_metabolica', 'edad', 'nivel_ffmi', 'ffmi', 'sexo']
 
 if (hasattr(st, 'session_state') and
     st.session_state.get("datos_completos", False) and
@@ -686,7 +687,6 @@ if (hasattr(st, 'session_state') and
 else:
     st.info("Por favor completa los datos personales para comenzar la evaluación.")
 
-
 # === ACTUALIZA VARIABLES CLAVE DESDE session_state ANTES DE CUALQUIER CÁLCULO CRÍTICO ===
 # Esto fuerza que SIEMPRE se use el último dato capturado por el usuario
 
@@ -731,7 +731,6 @@ if psmf_recs["psmf_aplicable"]:
     *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
     """)
     st.markdown('</div>', unsafe_allow_html=True)
-
     
 rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
 fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
@@ -743,15 +742,12 @@ if fuera_rango:
     {'subestimar' if grasa_corregida < rango_grasa_ok[0] else 'sobrestimar'} 
     ligeramente tu potencial muscular.
     """)
-
-
-
     st.markdown('</div>', unsafe_allow_html=True)
 
 progress = st.progress(0)
 progress_text = st.empty()
 
- # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
+# BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
 with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
     progress.progress(40)
     progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
@@ -927,7 +923,7 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                     </div>
                     """, unsafe_allow_html=True)
 
-   # Guardar datos
+# Guardar datos
 st.session_state.datos_ejercicios = ejercicios_data
 
 if 'nivel_ffmi' not in locals() or nivel_ffmi is None:
@@ -955,8 +951,6 @@ else:
 
 # Mostrar resumen del nivel global
 st.markdown("### 🎯 Análisis integral de tu nivel")
-
-
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -987,7 +981,7 @@ with col4:
     </div>
     """, unsafe_allow_html=True)
 
-      # Potencial genético
+# Potencial genético
 if 'ffmi' in locals() and 'nivel_entrenamiento' in locals():
     if sexo == "Hombre":
         ffmi_genetico_max = {
@@ -1217,31 +1211,29 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
     fbeo = 1 - porcentaje / 100
 
-  # Perfil del usuario
-st.markdown("### 📋 Tu perfil nutricional")
-col1, col2 = st.columns(2)
-with col1:
-    st.write(f"• **Sexo:** {sexo}")
-    st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
-    try:
-        st.write(f"• **FFMI:** {ffmi:.2f} ({nivel_ffmi})")
-    except Exception:
-        st.write("• **FFMI:** – (completa todos los datos para calcular)")
-with col2:
-    try:
-        st.write(f"• **Nivel:** {nivel_entrenamiento.capitalize()}")
-    except Exception:
-        st.write("• **Nivel:** –")
-    try:
-        st.write(f"• **Edad metabólica:** {edad_metabolica} años")
-    except Exception:
-        st.write("• **Edad metabólica:** –")
-    try:
-        st.write(f"• **Objetivo:** {fase}")
-    except Exception:
-        st.write("• **Objetivo:** –")
-
-
+    # Perfil del usuario
+    st.markdown("### 📋 Tu perfil nutricional")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"• **Sexo:** {sexo}")
+        st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
+        try:
+            st.write(f"• **FFMI:** {ffmi:.2f} ({nivel_ffmi})")
+        except Exception:
+            st.write("• **FFMI:** – (completa todos los datos para calcular)")
+    with col2:
+        try:
+            st.write(f"• **Nivel:** {nivel_entrenamiento.capitalize()}")
+        except Exception:
+            st.write("• **Nivel:** –")
+        try:
+            st.write(f"• **Edad metabólica:** {edad_metabolica} años")
+        except Exception:
+            st.write("• **Edad metabólica:** –")
+        try:
+            st.write(f"• **Objetivo:** {fase}")
+        except Exception:
+            st.write("• **Objetivo:** –")
 
     # Cálculo del gasto energético
     GE = tmb * geaf * eta + gee_prom_dia
@@ -1295,7 +1287,7 @@ with col2:
             - ⚠️ Suplementación necesaria
             """)
             st.markdown('</div>', unsafe_allow_html=True)
-            
+
 # --- FORZAR actualización de variables clave desde session_state ---
 peso = st.session_state.get("peso", peso if 'peso' in locals() else 0)
 estatura = st.session_state.get("estatura", estatura if 'estatura' in locals() else 0)
@@ -1332,9 +1324,7 @@ else:
     proteina_g = round(peso * 1.8, 1)
     proteina_kcal = proteina_g * 4
 
-
-
-         # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
+    # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
     grasa_min_kcal = ingesta_calorica * 0.20
     grasa_ideal_kcal = tmb * 0.40
     grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
@@ -1350,8 +1340,6 @@ else:
     carbo_g = round(carbo_kcal / 4, 1)
     if carbo_g < 50:
         st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
-
-
 
     # --- DESGLOSE FINAL VISUAL ---
     st.markdown("### 🍽️ Distribución de macronutrientes")
