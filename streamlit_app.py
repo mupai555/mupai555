@@ -681,7 +681,8 @@ if fuera_rango:
 
 
 
-        st.markdown('</div>', unsafe_allow_html=True)
+      st.markdown('</div>', unsafe_allow_html=True)
+
 
     # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
     with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
