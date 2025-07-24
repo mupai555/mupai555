@@ -553,24 +553,48 @@ if datos_personales_completos and st.session_state.datos_completos:
     progress = st.progress(0)
     progress_text = st.empty()
 
-    # BLOQUE 1: Datos antropométricos con diseño mejorado
-    with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
-        progress.progress(20)
-        progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
+  # BLOQUE 1: Datos antropométricos con diseño mejorado
+with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
+    progress.progress(20)
+    progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
 
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            peso = st.number_input("⚖️ Peso corporal (kg)", min_value=30.0, max_value=200.0, value=70.0, step=0.1, key="peso", help="Peso en ayunas, sin ropa")
-        with col2:
-            estatura = st.number_input("📏 Estatura (cm)", min_value=120, max_value=220, value=170, key="estatura", help="Medida sin zapatos")
-        with col3:
-            metodo_grasa = st.selectbox(
-                "📊 Método de medición de grasa",
-                ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
-                help="Selecciona el método utilizado"
-            )
-
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        peso = st.number_input(
+            "⚖️ Peso corporal (kg)",
+            min_value=30.0,
+            max_value=200.0,
+            value=70.0,
+            step=0.1,
+            key="peso",
+            help="Peso en ayunas, sin ropa"
+        )
+    with col2:
+        estatura = st.number_input(
+            "📏 Estatura (cm)",
+            min_value=120,
+            max_value=220,
+            value=170,
+            key="estatura",
+            help="Medida sin zapatos"
+        )
+    with col3:
+        metodo_grasa = st.selectbox(
+            "📊 Método de medición de grasa",
+            ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
+            help="Selecciona el método utilizado"
+        )
+    
+    # Número input para % de grasa corporal, usando metodo_grasa definido arriba
+    grasa_corporal = st.number_input(
+        f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
+        min_value=3.0,
+        max_value=60.0,
+        value=20.0,
+        step=0.1,
+        help="Valor medido con el método seleccionado"
+    )
 # Input % de grasa corporal
 grasa_corporal = st.number_input(
     f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
