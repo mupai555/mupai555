@@ -548,7 +548,7 @@ if not st.session_state.datos_completos:
 # VALIDACIÓN DATOS PERSONALES PARA CONTINUAR
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
 
-iif datos_personales_completos and st.session_state.datos_completos:
+if datos_personales_completos and st.session_state.datos_completos:
     # Progress bar general
     progress = st.progress(0)
     progress_text = st.empty()
