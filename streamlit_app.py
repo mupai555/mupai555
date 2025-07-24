@@ -548,104 +548,99 @@ if not st.session_state.datos_completos:
 # VALIDACIÓN DATOS PERSONALES PARA CONTINUAR
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
 
-if datos_personales_completos and st.session_state.datos_completos:
+iif datos_personales_completos and st.session_state.datos_completos:
     # Progress bar general
     progress = st.progress(0)
     progress_text = st.empty()
 
-  # BLOQUE 1: Datos antropométricos con diseño mejorado
-with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
-    progress.progress(20)
-    progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
+    # BLOQUE 1: Datos antropométricos con diseño mejorado
+    with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
+        progress.progress(20)
+        progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        peso = st.number_input(
-            "⚖️ Peso corporal (kg)",
-            min_value=30.0,
-            max_value=200.0,
-            value=70.0,
+        st.markdown('<div class="content-card">', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            peso = st.number_input(
+                "⚖️ Peso corporal (kg)",
+                min_value=30.0,
+                max_value=200.0,
+                value=70.0,
+                step=0.1,
+                key="peso",
+                help="Peso en ayunas, sin ropa"
+            )
+        with col2:
+            estatura = st.number_input(
+                "📏 Estatura (cm)",
+                min_value=120,
+                max_value=220,
+                value=170,
+                key="estatura",
+                help="Medida sin zapatos"
+            )
+        with col3:
+            metodo_grasa = st.selectbox(
+                "📊 Método de medición de grasa",
+                ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
+                help="Selecciona el método utilizado"
+            )
+
+        # Número input para % de grasa corporal, usando metodo_grasa definido arriba
+        grasa_corporal = st.number_input(
+            f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
+            min_value=3.0,
+            max_value=60.0,
+            value=20.0,
             step=0.1,
-            key="peso",
-            help="Peso en ayunas, sin ropa"
+            help="Valor medido con el método seleccionado"
         )
+
+    # Validar que las variables estén definidas (por si no lo están)
+    if 'peso' not in locals():
+        peso = 70.0
+    if 'estatura' not in locals():
+        estatura = 170
+    if 'sexo' not in locals():
+        sexo = "Hombre"
+    if 'edad' not in locals():
+        edad = 25
+
+    # Cálculos antropométricos
+    grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+    mlg = calcular_mlg(peso, grasa_corregida)
+    tmb = calcular_tmb_cunningham(mlg)
+
+    if estatura <= 0:
+        st.error("Error: La estatura debe ser mayor que cero para calcular FFMI.")
+        ffmi = 0
+    else:
+        ffmi = calcular_ffmi(mlg, estatura)
+
+    nivel_ffmi = clasificar_ffmi(ffmi, sexo)
+    edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
+
+    # Mostrar corrección si aplica
+    if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
+        st.info(
+            f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
+            f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
+        )
+
+    # Resultados principales visuales
+    st.markdown("### 📈 Resultados de tu composición corporal")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", "Normal" if 10 <= grasa_corregida <= 25 else "Revisar")
     with col2:
-        estatura = st.number_input(
-            "📏 Estatura (cm)",
-            min_value=120,
-            max_value=220,
-            value=170,
-            key="estatura",
-            help="Medida sin zapatos"
-        )
+        st.metric("MLG", f"{mlg:.1f} kg", "Masa Libre de Grasa")
     with col3:
-        metodo_grasa = st.selectbox(
-            "📊 Método de medición de grasa",
-            ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
-            help="Selecciona el método utilizado"
-        )
-    
-    # Número input para % de grasa corporal, usando metodo_grasa definido arriba
-    grasa_corporal = st.number_input(
-        f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-        min_value=3.0,
-        max_value=60.0,
-        value=20.0,
-        step=0.1,
-        help="Valor medido con el método seleccionado"
-    )
-# Input % de grasa corporal
-grasa_corporal = st.number_input(
-    f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-    min_value=3.0, max_value=60.0, value=20.0, step=0.1,
-    help="Valor medido con el método seleccionado"
-)
+        st.metric("TMB", f"{tmb:.0f} kcal", "Metabolismo Basal")
+    with col4:
+        diferencia_edad = edad_metabolica - edad
+        st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
 
-# Asegúrate que peso, estatura, sexo y edad estén definidos antes
-# Ejemplo (si no están definidos, asignar valores por defecto)
-if 'peso' not in locals():
-    peso = 70.0
-if 'estatura' not in locals():
-    estatura = 170
-if 'sexo' not in locals():
-    sexo = "Hombre"
-if 'edad' not in locals():
-    edad = 25
-
-# Cálculos antropométricos
-grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
-mlg = calcular_mlg(peso, grasa_corregida)
-tmb = calcular_tmb_cunningham(mlg)
-
-if estatura <= 0:
-    st.error("Error: La estatura debe ser mayor que cero para calcular FFMI.")
-    ffmi = 0
-else:
-    ffmi = calcular_ffmi(mlg, estatura)
-
-nivel_ffmi = clasificar_ffmi(ffmi, sexo)
-edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
-
-# Mostrar corrección si aplica
-if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
-    st.info(
-        f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
-        f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
-    )
-        # Resultados principales visuales
-st.markdown("### 📈 Resultados de tu composición corporal")
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", "Normal" if 10 <= grasa_corregida <= 25 else "Revisar")
-with col2:
-    st.metric("MLG", f"{mlg:.1f} kg", "Masa Libre de Grasa")
-with col3:
-    st.metric("TMB", f"{tmb:.0f} kcal", "Metabolismo Basal")
-with col4:
-    diferencia_edad = edad_metabolica - edad
-    st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
-        # FFMI con visualización mejorada
+# FFMI con visualización mejorada
 st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
 col1, col2 = st.columns([2, 1])
 with col1:
