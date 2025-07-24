@@ -578,14 +578,20 @@ if datos_personales_completos and st.session_state.datos_completos:
         )
 
         # Cálculos antropométricos
-        grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
-        mlg = calcular_mlg(peso, grasa_corregida)
-        tmb = calcular_tmb_cunningham(mlg)
-        ffmi = calcular_ffmi(mlg, estatura)
-        nivel_ffmi = clasificar_ffmi(ffmi, sexo)
-        edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
+grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+mlg = calcular_mlg(peso, grasa_corregida)
+tmb = calcular_tmb_cunningham(mlg)
 
-        # Mostrar corrección si aplica
+if estatura <= 0:
+    st.error("Error: La estatura debe ser mayor que cero para calcular FFMI.")
+    ffmi = 0
+else:
+    ffmi = calcular_ffmi(mlg, estatura)
+
+nivel_ffmi = clasificar_ffmi(ffmi, sexo)
+edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
+
+# Mostrar corrección si aplica
         if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
             st.info(f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
                    f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)")
