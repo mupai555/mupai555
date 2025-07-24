@@ -1224,13 +1224,14 @@ st.error("""
         - **No apto para:** Personas con historial de TCA o problemas médicos
         """)
 
-    else:
+else:
     # ----------- TRADICIONAL -----------
     ingesta_calorica = ingesta_calorica_tradicional
 
     # PROTEÍNA: 1.8g/kg peso corporal total
     proteina_g = round(peso * 1.8, 1)
     proteina_kcal = proteina_g * 4
+
 
 
         # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
