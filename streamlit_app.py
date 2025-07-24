@@ -610,38 +610,38 @@ with col4:
     diferencia_edad = edad_metabolica - edad
     st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
         # FFMI con visualización mejorada
-        st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            color_nivel = {
-                "Bajo": "danger",
-                "Promedio": "warning",
-                "Bueno": "success",
-                "Avanzado": "info",
-                "Élite": "info"
-            }.get(nivel_ffmi, "info")
-            st.markdown(f"""
-            <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
-            <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
-            """, unsafe_allow_html=True)
-            if sexo == "Hombre":
-                ffmi_max = 25
-                rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
-            else:
-                ffmi_max = 21
-                rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
-            progreso_ffmi = min(ffmi / ffmi_max, 1.0)
-            st.progress(progreso_ffmi)
-            st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
-        with col2:
-            st.info(f"""
-            **Referencia FFMI ({sexo}):**
-            - Bajo: <{rangos_ffmi['Bajo']}
-            - Promedio: {rangos_ffmi['Bajo']}-{rangos_ffmi['Promedio']}
-            - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
-            - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
-            - Élite: >{rangos_ffmi['Avanzado']}
-            """)
+st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
+col1, col2 = st.columns([2, 1])
+with col1:
+    color_nivel = {
+        "Bajo": "danger",
+        "Promedio": "warning",
+        "Bueno": "success",
+        "Avanzado": "info",
+        "Élite": "info"
+    }.get(nivel_ffmi, "info")
+    st.markdown(f"""
+    <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
+    <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
+    """, unsafe_allow_html=True)
+    if sexo == "Hombre":
+        ffmi_max = 25
+        rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
+    else:
+        ffmi_max = 21
+        rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
+    progreso_ffmi = min(ffmi / ffmi_max, 1.0)
+    st.progress(progreso_ffmi)
+    st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
+with col2:
+    st.info(f"""
+    **Referencia FFMI ({sexo}):**
+    - Bajo: <{rangos_ffmi['Bajo']}
+    - Promedio: {rangos_ffmi['Bajo']}-{rangos_ffmi['Promedio']}
+    - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
+    - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
+    - Élite: >{rangos_ffmi['Avanzado']}
+    """)
 # === ACTUALIZA VARIABLES CLAVE DESDE session_state ANTES DE CUALQUIER CÁLCULO CRÍTICO ===
 # Esto fuerza que SIEMPRE se use el último dato capturado por el usuario
 
