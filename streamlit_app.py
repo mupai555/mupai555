@@ -1220,14 +1220,27 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
     # Perfil del usuario
     st.markdown("### 📋 Tu perfil nutricional")
     col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"• **Sexo:** {sexo}")
-        st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
+   with col1:
+    st.write(f"• **Sexo:** {sexo}")
+    st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
+    try:
         st.write(f"• **FFMI:** {ffmi:.2f} ({nivel_ffmi})")
-    with col2:
+    except Exception:
+        st.write("• **FFMI:** — (completa todos los datos para calcular)")
+with col2:
+    try:
         st.write(f"• **Nivel:** {nivel_entrenamiento.capitalize()}")
+    except Exception:
+        st.write("• **Nivel:** —")
+    try:
         st.write(f"• **Edad metabólica:** {edad_metabolica} años")
+    except Exception:
+        st.write("• **Edad metabólica:** —")
+    try:
         st.write(f"• **Objetivo:** {fase}")
+    except Exception:
+        st.write("• **Objetivo:** —")
+
 
     # Cálculo del gasto energético
     GE = tmb * geaf * eta + gee_prom_dia
