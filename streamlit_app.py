@@ -988,21 +988,31 @@ with col4:
     """, unsafe_allow_html=True)
 
         # Potencial genético
-        if sexo == "Hombre":
-            ffmi_genetico_max = {
-                "principiante": 22, "intermedio": 23.5,
-                "avanzado": 24.5, "élite": 25
-            }[nivel_entrenamiento]
-        else:
-            ffmi_genetico_max = {
-                "principiante": 19, "intermedio": 20,
-                "avanzado": 20.5, "élite": 21
-            }[nivel_entrenamiento]
+if sexo == "Hombre":
+    ffmi_genetico_max = {
+        "principiante": 22, "intermedio": 23.5,
+        "avanzado": 24.5, "élite": 25
+    }[nivel_entrenamiento]
+else:
+    ffmi_genetico_max = {
+        "principiante": 19, "intermedio": 20,
+        "avanzado": 20.5, "élite": 21
+    }[nivel_entrenamiento]
 
-        porc_potencial = min((ffmi / ffmi_genetico_max) * 100, 100)
+porc_potencial = min((ffmi / ffmi_genetico_max) * 100, 100)
 
-        st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-        st.success(f"""
+st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
+st.success(f"""
+📈 **Análisis de tu potencial muscular**
+
+Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
+
+- FFMI actual: {ffmi:.2f}
+- FFMI máximo estimado: {ffmi_genetico_max:.1f}
+- Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
+""")
+st.markdown('</div>', unsafe_allow_html=True)
+
         📈 **Análisis de tu potencial muscular**
 
         Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
