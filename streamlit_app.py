@@ -1203,7 +1203,7 @@ grasa_corporal = st.session_state.get("grasa_corporal", grasa_corporal if 'grasa
 sexo = st.session_state.get("sexo", sexo if 'sexo' in locals() else "Hombre")
 edad = st.session_state.get("edad", edad if 'edad' in locals() else 0)
 
- # --- Cálculo de macros para plan elegido ---
+# --- Cálculo de macros para plan elegido ---
 if psmf_recs["psmf_aplicable"] and "PSMF" in plan_elegido:
     # ----------- PSMF -----------
     ingesta_calorica = psmf_recs['calorias_dia']
@@ -1215,15 +1215,14 @@ if psmf_recs["psmf_aplicable"] and "PSMF" in plan_elegido:
     grasa_g = round(grasa_kcal / 9, 1)
     fase = f"PSMF - Pérdida rápida (déficit ~{deficit_psmf}%)"
 
-st.error("""
-        ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF:**
-        - Es un protocolo **MUY RESTRICTIVO** diseñado para pérdida rápida
-        - **Duración máxima:** 6-8 semanas
-        - **Requiere:** Supervisión profesional y análisis de sangre
-        - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos
-        - **No apto para:** Personas con historial de TCA o problemas médicos
-        """)
-
+    st.error("""
+    ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF:**
+    - Es un protocolo **MUY RESTRICTIVO** diseñado para pérdida rápida
+    - **Duración máxima:** 6-8 semanas
+    - **Requiere:** Supervisión profesional y análisis de sangre
+    - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos
+    - **No apto para:** Personas con historial de TCA o problemas médicos
+    """)
 else:
     # ----------- TRADICIONAL -----------
     ingesta_calorica = ingesta_calorica_tradicional
