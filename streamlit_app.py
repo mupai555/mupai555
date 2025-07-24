@@ -751,132 +751,132 @@ if fuera_rango:
 progress = st.progress(0)
 progress_text = st.empty()
 
-    # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
-    with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
-        progress.progress(40)
-        progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
+ # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
+with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
+    progress.progress(40)
+    progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
 
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-        st.markdown("### 📋 Experiencia en entrenamiento")
-        experiencia = st.radio(
-            "¿Cuál de las siguientes afirmaciones describe con mayor precisión tu hábito de entrenamiento en las últimas 12 semanas?",
-            [
-                "A) He entrenado de forma irregular, con semanas sin entrenar y sin un plan estructurado.",
-                "B) He entrenado al menos 2 veces por semana siguiendo rutinas generales sin mucha progresión planificada.",
-                "C) He seguido un programa de entrenamiento estructurado con objetivos claros y progresión semanal.",
-                "D) He diseñado o ajustado personalmente mis planes de entrenamiento, monitoreando variables como volumen, intensidad y recuperación."
-            ],
-            help="Tu respuesta debe reflejar tu consistencia y planificación real."
-        )
+    st.markdown("### 📋 Experiencia en entrenamiento")
+    experiencia = st.radio(
+        "¿Cuál de las siguientes afirmaciones describe con mayor precisión tu hábito de entrenamiento en las últimas 12 semanas?",
+        [
+            "A) He entrenado de forma irregular, con semanas sin entrenar y sin un plan estructurado.",
+            "B) He entrenado al menos 2 veces por semana siguiendo rutinas generales sin mucha progresión planificada.",
+            "C) He seguido un programa de entrenamiento estructurado con objetivos claros y progresión semanal.",
+            "D) He diseñado o ajustado personalmente mis planes de entrenamiento, monitoreando variables como volumen, intensidad y recuperación."
+        ],
+        help="Tu respuesta debe reflejar tu consistencia y planificación real."
+    )
 
-        st.markdown("### 🏋️ Evaluación de rendimiento por categoría")
-        st.info("💡 Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
+    st.markdown("### 🏆 Evaluación de rendimiento por categoría")
+    st.info("💡 Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
 
-        ejercicios_data = {}
-        niveles_ejercicios = {}
+    ejercicios_data = {}
+    niveles_ejercicios = {}
 
-        tab1, tab2, tab3, tab4 = st.tabs(["💪 Empuje", "🏋️ Tracción", "🦵 Pierna", "🧘 Core"])
+    tab1, tab2, tab3, tab4 = st.tabs(["💪 Empuje", "🏋️ Tracción", "🦵 Pierna", "🧘 Core"])
 
-        with tab1:
-            st.markdown("#### Empuje superior")
-            col1, col2 = st.columns(2)
-            with col1:
-                empuje = st.selectbox(
-                    "Elige tu mejor ejercicio de empuje:",
-                    ["Flexiones", "Fondos", "Press banca"],
-                    help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
+    with tab1:
+        st.markdown("#### Empuje superior")
+        col1, col2 = st.columns(2)
+        with col1:
+            empuje = st.selectbox(
+                "Elige tu mejor ejercicio de empuje:",
+                ["Flexiones", "Fondos", "Press banca"],
+                help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
+            )
+        with col2:
+            if empuje in ["Flexiones", "Fondos"]:
+                empuje_reps = st.number_input(
+                    f"¿Cuántas repeticiones continuas realizas con buena forma en {empuje}?",
+                    min_value=0, max_value=100, value=10,
+                    help="Sin pausas, sin perder rango completo de movimiento."
                 )
-            with col2:
-                if empuje in ["Flexiones", "Fondos"]:
-                    empuje_reps = st.number_input(
-                        f"¿Cuántas repeticiones continuas realizas con buena forma en {empuje}?",
-                        min_value=0, max_value=100, value=10,
-                        help="Sin pausas, sin perder rango completo de movimiento."
-                    )
-                    ejercicios_data[empuje] = empuje_reps
-                else:  # Press banca
-                    col2a, col2b = st.columns(2)
-                    with col2a:
-                        press_reps = st.number_input(
-                            "¿Cuántas repeticiones completas (6-10) haces en Press banca con buena técnica?",
-                            min_value=1, max_value=30, value=8,
-                            help="Repeticiones con técnica estricta y controlada."
-                        )
-                    with col2b:
-                        press_peso = st.number_input(
-                            "¿Cuál es el máximo peso (kg) que levantas en Press banca para esas repeticiones?",
-                            min_value=20, max_value=300, value=60,
-                            help="Peso controlado, sin compensaciones ni trampas."
-                        )
-                    ejercicios_data[empuje] = (press_reps, press_peso)
-
-        with tab2:
-            st.markdown("#### Tracción superior")
-            col1, col2 = st.columns(2)
-            with col1:
-                traccion = st.selectbox(
-                    "Elige tu mejor ejercicio de tracción:",
-                    ["Dominadas", "Remo invertido"],
-                    help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
-                )
-            with col2:
-                traccion_reps = st.number_input(
-                    f"¿Cuántas repeticiones continuas realizas con buena forma en {traccion}?",
-                    min_value=0, max_value=50, value=5,
-                    help="Sin balanceo ni uso de impulso; técnica estricta."
-                )
-                ejercicios_data[traccion] = traccion_reps
-
-        with tab3:
-            st.markdown("#### Tren inferior")
-            col1, col2 = st.columns(2)
-            with col1:
-                pierna = st.selectbox(
-                    "Elige tu mejor ejercicio de pierna:",
-                    ["Sentadilla", "Peso muerto", "Hip thrust"],
-                    help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
-                )
-            with col2:
+                ejercicios_data[empuje] = empuje_reps
+            else:  # Press banca
                 col2a, col2b = st.columns(2)
                 with col2a:
-                    pierna_reps = st.number_input(
-                        f"¿Cuántas repeticiones completas (6-10) haces en {pierna} con buena técnica?",
+                    press_reps = st.number_input(
+                        "¿Cuántas repeticiones completas (6-10) haces en Press banca con buena técnica?",
                         min_value=1, max_value=30, value=8,
-                        help="Repeticiones con técnica controlada y profundidad adecuada."
+                        help="Repeticiones con técnica estricta y controlada."
                     )
                 with col2b:
-                    pierna_peso = st.number_input(
-                        f"¿Cuál es el máximo peso (kg) que levantas en {pierna} para esas repeticiones?",
-                        min_value=0, max_value=400, value=80,
-                        help="Peso manejado sin comprometer postura ni seguridad."
+                    press_peso = st.number_input(
+                        "¿Cuál es el máximo peso (kg) que levantas en Press banca para esas repeticiones?",
+                        min_value=20, max_value=300, value=60,
+                        help="Peso controlado, sin compensaciones ni trampas."
                     )
-                ejercicios_data[pierna] = (pierna_reps, pierna_peso)
+                ejercicios_data[empuje] = (press_reps, press_peso)
 
-        with tab4:
-            st.markdown("#### Core y estabilidad")
-            col1, col2 = st.columns(2)
-            with col1:
-                core = st.selectbox(
-                    "Elige tu mejor ejercicio de core:",
-                    ["Plancha", "Ab wheel", "L-sit"],
-                    help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
+    with tab2:
+        st.markdown("#### Tracción superior")
+        col1, col2 = st.columns(2)
+        with col1:
+            traccion = st.selectbox(
+                "Elige tu mejor ejercicio de tracción:",
+                ["Dominadas", "Remo invertido"],
+                help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
+            )
+        with col2:
+            traccion_reps = st.number_input(
+                f"¿Cuántas repeticiones continuas realizas con buena forma en {traccion}?",
+                min_value=0, max_value=50, value=5,
+                help="Sin balanceo ni uso de impulso; técnica estricta."
+            )
+            ejercicios_data[traccion] = traccion_reps
+
+    with tab3:
+        st.markdown("#### Tren inferior")
+        col1, col2 = st.columns(2)
+        with col1:
+            pierna = st.selectbox(
+                "Elige tu mejor ejercicio de pierna:",
+                ["Sentadilla", "Peso muerto", "Hip thrust"],
+                help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
+            )
+        with col2:
+            col2a, col2b = st.columns(2)
+            with col2a:
+                pierna_reps = st.number_input(
+                    f"¿Cuántas repeticiones completas (6-10) haces en {pierna} con buena técnica?",
+                    min_value=1, max_value=30, value=8,
+                    help="Repeticiones con técnica controlada y profundidad adecuada."
                 )
-            with col2:
-                if core == "Plancha":
-                    core_tiempo = st.number_input(
-                        "¿Cuál es el máximo tiempo (segundos) que mantienes la posición de plancha con técnica correcta?",
-                        min_value=0, max_value=600, value=60,
-                        help="Mantén la posición sin perder alineación corporal."
-                    )
-                    ejercicios_data[core] = core_tiempo
-                else:
-                    core_reps = st.number_input(
-                        f"¿Cuántas repeticiones completas realizas en {core} con buena forma?",
-                        min_value=0, max_value=100, value=10,
-                        help="Repeticiones con control y sin compensaciones."
-                    )
-                    ejercicios_data[core] = core_reps
+            with col2b:
+                pierna_peso = st.number_input(
+                    f"¿Cuál es el máximo peso (kg) que levantas en {pierna} para esas repeticiones?",
+                    min_value=0, max_value=400, value=80,
+                    help="Peso manejado sin comprometer postura ni seguridad."
+                )
+            ejercicios_data[pierna] = (pierna_reps, pierna_peso)
+
+    with tab4:
+        st.markdown("#### Core y estabilidad")
+        col1, col2 = st.columns(2)
+        with col1:
+            core = st.selectbox(
+                "Elige tu mejor ejercicio de core:",
+                ["Plancha", "Ab wheel", "L-sit"],
+                help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
+            )
+        with col2:
+            if core == "Plancha":
+                core_tiempo = st.number_input(
+                    "¿Cuál es el máximo tiempo (segundos) que mantienes la posición de plancha con técnica correcta?",
+                    min_value=0, max_value=600, value=60,
+                    help="Mantén la posición sin perder alineación corporal."
+                )
+                ejercicios_data[core] = core_tiempo
+            else:
+                core_reps = st.number_input(
+                    f"¿Cuántas repeticiones completas realizas en {core} con buena forma?",
+                    min_value=0, max_value=100, value=10,
+                    help="Repeticiones con control y sin compensaciones."
+                )
+                ejercicios_data[core] = core_reps
 
         # Evaluar niveles según referencias
         st.markdown("### 📊 Tu nivel en cada ejercicio")
