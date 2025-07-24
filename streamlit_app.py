@@ -1013,18 +1013,6 @@ Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial mu
 """)
 st.markdown('</div>', unsafe_allow_html=True)
 
-        📈 **Análisis de tu potencial muscular**
-
-        Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
-
-        - FFMI actual: {ffmi:.2f}
-        - FFMI máximo estimado: {ffmi_genetico_max:.1f}
-        - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
-        """)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
@@ -1033,24 +1021,32 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
 
-    nivel_actividad = st.radio(
-        "Selecciona el nivel que mejor te describe:",
-        [
-            "Sedentario (trabajo de oficina, <5,000 pasos/día)",
-            "Moderadamente-activo (trabajo mixto, 5,000-10,000 pasos/día)",
-            "Activo (trabajo físico, 10,000-12,500 pasos/día)",
-            "Muy-activo (trabajo muy físico, >12,500 pasos/día)"
-        ],
-        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
-    )
-
-    # Procesa el texto para obtener el nivel simple
+    # Opciones para el usuario (debe coincidir el orden con 'niveles')
+    opciones_radio = [
+        "Sedentario (trabajo de oficina, <5,000 pasos/día)",
+        "Moderadamente-activo (trabajo mixto, 5,000-10,000 pasos/día)",
+        "Activo (trabajo físico, 10,000-12,500 pasos/día)",
+        "Muy-activo (trabajo muy físico, >12,500 pasos/día)"
+    ]
     niveles = ["Sedentario", "Moderadamente-activo", "Activo", "Muy-activo"]
     niveles_ui = ["🪑 Sedentario", "🚶 Moderadamente-activo", "🏃 Activo", "💪 Muy-activo"]
 
-    nivel_actividad_text = nivel_actividad.split('(')[0].strip()
-    nivel_idx = niveles.index(nivel_actividad_text)  # Este truco garantiza que siempre se seleccione bien
+    nivel_actividad = st.radio(
+        "Selecciona el nivel que mejor te describe:",
+        opciones_radio,
+        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
+    )
 
+    # Extraer el texto base del nivel seleccionado (antes del paréntesis)
+    nivel_actividad_text = nivel_actividad.split('(')[0].strip()
+
+    # Garantiza coincidencia usando el índice (más robusto si cambias el orden)
+    try:
+        nivel_idx = niveles.index(nivel_actividad_text)
+    except ValueError:
+        nivel_idx = 0  # Default: Sedentario
+
+    # Visualización gráfica del nivel seleccionado
     cols = st.columns(4)
     for i, niv in enumerate(niveles_ui):
         with cols[i]:
@@ -1061,15 +1057,16 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
                          border-radius: 10px; color: #1E1E1E; font-weight: bold; font-size: 1.1rem;">
                         <strong>{niv}</strong>
                     </div>
-                    """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
                     <div style="text-align: center; padding: 1rem; 
                          background: #f8f9fa; border-radius: 10px; opacity: 0.5; color: #222;">
                         {niv}
                     </div>
-                    """, unsafe_allow_html=True)
-    # Factores de actividad corregidos
+                """, unsafe_allow_html=True)
+
+    # Factores de actividad según nivel seleccionado
     def obtener_geaf(nivel):
         valores = {
             "Sedentario": 1.00,
@@ -1077,16 +1074,16 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
             "Activo": 1.25,
             "Muy-activo": 1.45
         }
-        return valores[nivel]
+        return valores.get(nivel, 1.00)
 
     geaf = obtener_geaf(nivel_actividad_text)
 
-    st.success(f"""
-        ✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**
-
-        - Factor GEAF: **{geaf}**
-        - Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%
-    """)
+    # Mensaje resumen
+    st.success(
+        f"✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**\n\n"
+        f"- Factor GEAF: **{geaf}**\n"
+        f"- Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%"
+    )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
