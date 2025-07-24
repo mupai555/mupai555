@@ -1306,6 +1306,12 @@ Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
         """)
 
     st.markdown('</div>', unsafe_allow_html=True)
+
+# --- FORZAR actualización de variables clave desde session_state ---
+peso = st.session_state.get("peso", 0)
+estatura = st.session_state.get("estatura", 0)
+grasa_corporal = st.session_state.get("grasa_corporal", 0)
+
 # RESUMEN FINAL MEJORADO
 st.markdown("---")
 st.markdown('<div class="content-card" style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); color: #1E1E1E;">', unsafe_allow_html=True)
