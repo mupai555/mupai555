@@ -653,20 +653,20 @@ st.session_state.grasa_corporal = grasa_corporal
 # st.session_state.sexo = sexo
 # st.session_state.edad = edad
 
-        # Cálculo PSMF
-        psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
-        if psmf_recs["psmf_aplicable"]:
-            st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-            st.warning(f"""
-            ⚡ **CANDIDATO PARA PROTOCOLO PSMF**
-            Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
-            - 🥩 **Proteína:** {psmf_recs['proteina_g_dia']} g/día
-            - 🔥 **Calorías:** {psmf_recs['calorias_dia']} kcal/día
-            - ⚠️ **Mínimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/día
-            - 📋 **Criterio:** {psmf_recs['criterio']}
-            *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+       # Cálculo PSMF
+psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
+if psmf_recs["psmf_aplicable"]:
+    st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
+    st.warning(f"""
+    ⚡ **CANDIDATO PARA PROTOCOLO PSMF**
+    Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
+    - 🥩 **Proteína:** {psmf_recs['proteina_g_dia']} g/día
+    - 🔥 **Calorías:** {psmf_recs['calorias_dia']} kcal/día
+    - ⚠️ **Mínimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/día
+    - 📋 **Criterio:** {psmf_recs['criterio']}
+    *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
 
         rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
         fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
