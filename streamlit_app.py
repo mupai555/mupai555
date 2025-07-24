@@ -1233,22 +1233,24 @@ else:
 
 
 
-        # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
-        grasa_min_kcal = ingesta_calorica * 0.20
-        grasa_ideal_kcal = tmb * 0.40
-        grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
-        grasa_min_g = round(grasa_min_kcal / 9, 1)
-        grasa_max_kcal = ingesta_calorica * 0.40
-        grasa_g = max(grasa_min_g, grasa_ideal_g)
-        if grasa_g * 9 > grasa_max_kcal:
-            grasa_g = round(grasa_max_kcal / 9, 1)
-        grasa_kcal = grasa_g * 9
+         # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
+    grasa_min_kcal = ingesta_calorica * 0.20
+    grasa_ideal_kcal = tmb * 0.40
+    grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
+    grasa_min_g = round(grasa_min_kcal / 9, 1)
+    grasa_max_kcal = ingesta_calorica * 0.40
+    grasa_g = max(grasa_min_g, grasa_ideal_g)
+    if grasa_g * 9 > grasa_max_kcal:
+        grasa_g = round(grasa_max_kcal / 9, 1)
+    grasa_kcal = grasa_g * 9
 
-        # CARBOHIDRATOS: el resto de las calorías
-        carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
-        carbo_g = round(carbo_kcal / 4, 1)
-        if carbo_g < 50:
-            st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
+    # CARBOHIDRATOS: el resto de las calorías
+    carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
+    carbo_g = round(carbo_kcal / 4, 1)
+    if carbo_g < 50:
+        st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
+
+
 
     # --- DESGLOSE FINAL VISUAL ---
     st.markdown("### 🍽️ Distribución de macronutrientes")
