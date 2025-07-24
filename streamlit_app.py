@@ -667,8 +667,8 @@ if psmf_recs["psmf_aplicable"]:
     *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
     """)
     st.markdown('</div>', unsafe_allow_html=True)
-
-        rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
+    
+rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
 fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
 if fuera_rango:
     st.info(f"""
@@ -678,6 +678,7 @@ if fuera_rango:
     {'subestimar' if grasa_corregida < rango_grasa_ok[0] else 'sobrestimar'} 
     ligeramente tu potencial muscular.
     """)
+
 
 
         st.markdown('</div>', unsafe_allow_html=True)
