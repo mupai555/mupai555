@@ -1363,12 +1363,12 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         st.metric("Carbohidratos", f"{carbo_g} g", f"{carbo_g*4:.0f} kcal")
     st.metric("Total calorías", f"{ingesta_calorica:.0f} kcal/día")
     st.markdown('</div>', unsafe_allow_html=True)
-
- # --- DESGLOSE FINAL VISUAL ---
-        st.markdown("### 🍽️ Distribución de macronutrientes")
-        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
+    
+# --- DESGLOSE FINAL VISUAL ---
+st.markdown("### 🍽️ Distribución de macronutrientes")
+st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)")
+st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
+st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
 
         # Mostrar cálculo detallado con diseño mejorado
         st.markdown("### 🧮 Desglose del cálculo")
