@@ -620,12 +620,21 @@ if datos_personales_completos and st.session_state.datos_completos:
     nivel_ffmi = clasificar_ffmi(ffmi, sexo)
     edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
 
-    # Mostrar corrección si aplica
+  # Mostrar corrección si aplica
+if 'metodo_grasa' in locals() and 'grasa_corregida' in locals() and 'grasa_corporal' in locals():
     if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
         st.info(
             f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
             f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
         )
+
+# Validar que las variables clave estén definidas antes de mostrar resultados
+variables_necesarias = ['st.session_state', 'datos_completos', 'grasa_corregida', 'mlg', 'tmb', 
+                       'edad_metabolica', 'edad', 'nivel_ffmi', 'ffmi', 'sexo']
+
+if (hasattr(st, 'session_state') and
+    st.session_state.get("datos_completos", False) and
+    all(var in locals() or var in globals() or (var == 'st.session_state' and True) for var in variables_necesarias)):
 
     # Resultados principales visuales
     st.markdown("### 📈 Resultados de tu composición corporal")
@@ -640,39 +649,44 @@ if datos_personales_completos and st.session_state.datos_completos:
         diferencia_edad = edad_metabolica - edad
         st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
 
-# FFMI con visualización mejorada
-st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
-col1, col2 = st.columns([2, 1])
-with col1:
-    color_nivel = {
-        "Bajo": "danger",
-        "Promedio": "warning",
-        "Bueno": "success",
-        "Avanzado": "info",
-        "Élite": "info"
-    }.get(nivel_ffmi, "info")
-    st.markdown(f"""
-    <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
-    <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
-    """, unsafe_allow_html=True)
-    if sexo == "Hombre":
-        ffmi_max = 25
-        rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
-    else:
-        ffmi_max = 21
-        rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
-    progreso_ffmi = min(ffmi / ffmi_max, 1.0)
-    st.progress(progreso_ffmi)
-    st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
-with col2:
-    st.info(f"""
-    **Referencia FFMI ({sexo}):**
-    - Bajo: <{rangos_ffmi['Bajo']}
-    - Promedio: {rangos_ffmi['Bajo']}-{rangos_ffmi['Promedio']}
-    - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
-    - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
-    - Élite: >{rangos_ffmi['Avanzado']}
-    """)
+    # FFMI con visualización mejorada
+    st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        color_nivel = {
+            "Bajo": "danger",
+            "Promedio": "warning",
+            "Bueno": "success",
+            "Avanzado": "info",
+            "Élite": "success"  # Cambié a success para diferenciar mejor
+        }.get(nivel_ffmi, "info")
+        st.markdown(f"""
+        <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
+        <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
+        """, unsafe_allow_html=True)
+        if sexo == "Hombre":
+            ffmi_max = 25
+            rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
+        else:
+            ffmi_max = 21
+            rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
+        progreso_ffmi = min(ffmi / ffmi_max, 1.0)
+        st.progress(progreso_ffmi)
+        st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
+    with col2:
+        st.info(f"""
+        **Referencia FFMI ({sexo}):**
+        - Bajo: <{rangos_ffmi['Bajo']}
+        - Promedio: {rangos_ffmi['Bajo']}-{rangos_ffmi['Promedio']}
+        - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
+        - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
+        - Élite: >{rangos_ffmi['Avanzado']}
+        """)
+
+else:
+    st.info("Por favor completa los datos personales para comenzar la evaluación.")
+
+
 # === ACTUALIZA VARIABLES CLAVE DESDE session_state ANTES DE CUALQUIER CÁLCULO CRÍTICO ===
 # Esto fuerza que SIEMPRE se use el último dato capturado por el usuario
 
