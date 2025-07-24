@@ -681,7 +681,7 @@ if fuera_rango:
 
 
 
-      st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
     # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
