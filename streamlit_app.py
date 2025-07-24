@@ -987,31 +987,34 @@ with col4:
     </div>
     """, unsafe_allow_html=True)
 
-        # Potencial genético
-if sexo == "Hombre":
-    ffmi_genetico_max = {
-        "principiante": 22, "intermedio": 23.5,
-        "avanzado": 24.5, "élite": 25
-    }[nivel_entrenamiento]
+      # Potencial genético
+if 'ffmi' in locals() and 'nivel_entrenamiento' in locals():
+    if sexo == "Hombre":
+        ffmi_genetico_max = {
+            "principiante": 22, "intermedio": 23.5,
+            "avanzado": 24.5, "élite": 25
+        }[nivel_entrenamiento]
+    else:
+        ffmi_genetico_max = {
+            "principiante": 19, "intermedio": 20,
+            "avanzado": 20.5, "élite": 21
+        }[nivel_entrenamiento]
+
+    porc_potencial = min((ffmi / ffmi_genetico_max) * 100, 100)
+
+    st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
+    st.success(f"""
+    📈 **Análisis de tu potencial muscular**
+
+    Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
+
+    - FFMI actual: {ffmi:.2f}
+    - FFMI máximo estimado: {ffmi_genetico_max:.1f}
+    - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
 else:
-    ffmi_genetico_max = {
-        "principiante": 19, "intermedio": 20,
-        "avanzado": 20.5, "élite": 21
-    }[nivel_entrenamiento]
-
-porc_potencial = min((ffmi / ffmi_genetico_max) * 100, 100)
-
-st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-st.success(f"""
-📈 **Análisis de tu potencial muscular**
-
-Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
-
-- FFMI actual: {ffmi:.2f}
-- FFMI máximo estimado: {ffmi_genetico_max:.1f}
-- Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
-""")
-st.markdown('</div>', unsafe_allow_html=True)
+    st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
