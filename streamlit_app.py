@@ -1375,10 +1375,10 @@ with st.expander("Ver cálculo detallado", expanded=False):
     st.code(f"""
 Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
 GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
-""")
+
 Factor de Balance Energético (FBEO) = 1 - (déficit/100)
 FBEO = 1 - ({porcentaje}/100) = {fbeo:.2f}
-
+""")
 Ingesta Calórica = GE × FBEO
 Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
 """)
