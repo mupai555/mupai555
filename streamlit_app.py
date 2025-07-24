@@ -669,15 +669,16 @@ if psmf_recs["psmf_aplicable"]:
     st.markdown('</div>', unsafe_allow_html=True)
 
         rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
-        fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
-        if fuera_rango:
-            st.info(f"""
-            ℹ️ **Nota sobre precisión**: Para máxima precisión en la estimación del FFMI, 
-            el % de grasa ideal está entre {rango_grasa_ok[0]}-{rango_grasa_ok[1]}%. 
-            Tu valor actual ({grasa_corregida:.1f}%) puede 
-            {'subestimar' if grasa_corregida < rango_grasa_ok[0] else 'sobrestimar'} 
-            ligeramente tu potencial muscular.
-            """)
+fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
+if fuera_rango:
+    st.info(f"""
+    ℹ️ **Nota sobre precisión**: Para máxima precisión en la estimación del FFMI, 
+    el % de grasa ideal está entre {rango_grasa_ok[0]}-{rango_grasa_ok[1]}%. 
+    Tu valor actual ({grasa_corregida:.1f}%) puede 
+    {'subestimar' if grasa_corregida < rango_grasa_ok[0] else 'sobrestimar'} 
+    ligeramente tu potencial muscular.
+    """)
+
 
         st.markdown('</div>', unsafe_allow_html=True)
 
