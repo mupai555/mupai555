@@ -565,9 +565,9 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1:
-            peso = st.number_input("⚖️ Peso corporal (kg)", min_value=30.0, max_value=200.0, value=70.0, step=0.1, help="Peso en ayunas, sin ropa")
+            peso = st.number_input("⚖️ Peso corporal (kg)", min_value=30.0, max_value=200.0, value=70.0, step=0.1, key="peso", help="Peso en ayunas, sin ropa")
         with col2:
-            estatura = st.number_input("📏 Estatura (cm)", min_value=120, max_value=220, value=170, help="Medida sin zapatos")
+         estatura = st.number_input("📏 Estatura (cm)", min_value=120, max_value=220, value=170, key="estatura", help="Medida sin zapatos")
         with col3:
             metodo_grasa = st.selectbox(
                 "📊 Método de medición de grasa",
