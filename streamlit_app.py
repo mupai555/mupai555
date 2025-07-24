@@ -635,6 +635,23 @@ if datos_personales_completos and st.session_state.datos_completos:
             - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
             - Élite: >{rangos_ffmi['Avanzado']}
             """)
+# === ACTUALIZA VARIABLES CLAVE DESDE session_state ANTES DE CUALQUIER CÁLCULO CRÍTICO ===
+# Esto fuerza que SIEMPRE se use el último dato capturado por el usuario
+
+peso = st.session_state.get("peso", peso if 'peso' in locals() else 0)
+estatura = st.session_state.get("estatura", estatura if 'estatura' in locals() else 0)
+grasa_corporal = st.session_state.get("grasa_corporal", grasa_corporal if 'grasa_corporal' in locals() else 0)
+# Si tienes otros campos importantes, agrega aquí:
+# sexo = st.session_state.get("sexo", sexo if 'sexo' in locals() else "Hombre")
+# edad = st.session_state.get("edad", edad if 'edad' in locals() else 0)
+# método de grasa y otros igual si lo manejas en session_state
+
+# Opcionalmente: Actualiza el session_state también por si usas los valores más adelante
+st.session_state.peso = peso
+st.session_state.estatura = estatura
+st.session_state.grasa_corporal = grasa_corporal
+# st.session_state.sexo = sexo
+# st.session_state.edad = edad
 
         # Cálculo PSMF
         psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
@@ -1174,6 +1191,14 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             - ⚠️ Suplementación necesaria
             """)
             st.markdown('</div>', unsafe_allow_html=True)
+            
+# --- FORZAR actualización de variables clave desde session_state ---
+peso = st.session_state.get("peso", peso if 'peso' in locals() else 0)
+estatura = st.session_state.get("estatura", estatura if 'estatura' in locals() else 0)
+grasa_corporal = st.session_state.get("grasa_corporal", grasa_corporal if 'grasa_corporal' in locals() else 0)
+# (Si quieres proteger también sexo y edad, agrega:)
+sexo = st.session_state.get("sexo", sexo if 'sexo' in locals() else "Hombre")
+edad = st.session_state.get("edad", edad if 'edad' in locals() else 0)
 
     # --- Cálculo de macros para plan elegido ---
     if psmf_recs["psmf_aplicable"] and "PSMF" in plan_elegido:
