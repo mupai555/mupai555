@@ -592,10 +592,11 @@ nivel_ffmi = clasificar_ffmi(ffmi, sexo)
 edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
 
 # Mostrar corrección si aplica
-        if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
-            st.info(f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
-                   f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)")
-
+if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
+    st.info(
+        f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
+        f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
+    )
         # Resultados principales visuales
         st.markdown("### 📈 Resultados de tu composición corporal")
         col1, col2, col3, col4 = st.columns(4)
