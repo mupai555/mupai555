@@ -711,6 +711,8 @@ st.session_state.estatura = estatura
 st.session_state.grasa_corporal = grasa_corporal
 st.session_state.sexo = sexo  # Descomenta si usas session_state para sexo
 
+metodo_grasa = st.session_state.get("metodo_grasa", "Omron HBF-516 (BIA)")
+
 # --- Recalcula variables críticas para PSMF ---
 grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
 mlg = calcular_mlg(peso, grasa_corregida)
