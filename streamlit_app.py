@@ -1391,8 +1391,18 @@ st.markdown('</div>', unsafe_allow_html=True)
 # Botones de acción
 col1, col2, col3 = st.columns(3)
 with col1:
-    if st.button("📧 Reenviar Email", key="reenviar"):
-        st.session_state.correo_enviado = False
+    if st.button("📧 Enviar Resumen por Email", key="enviar_email"):
+        faltantes = datos_completos_para_email()
+        if faltantes:
+            st.error(f"❌ No se puede enviar el email. Faltan: {', '.join(faltantes)}")
+        else:
+            with st.spinner("📧 Enviando resumen por email..."):
+                ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
+                if ok:
+                    st.session_state["correo_enviado"] = True
+                    st.success("✅ Email enviado exitosamente a administración")
+                else:
+                    st.error("❌ Error al enviar email. Contacta a soporte técnico.")
 with col2:
     if st.button("📄 Generar PDF", key="pdf"):
         st.info("Función PDF próximamente...")
@@ -1402,14 +1412,21 @@ with col3:
             del st.session_state[key]
         st.rerun()
 
-# ENVÍO DE EMAIL MEJORADO
-if not st.session_state.get("correo_enviado", False):
-    with st.spinner("📧 Enviando resumen por email..."):
-        # Construir comparativa si aplica PSMF
-        comparativa_psmf = ""
-        if psmf_recs["psmf_aplicable"]:
-            deficit_psmf_calc = int((1 - psmf_recs['calorias_dia']/GE) * 100)
-            comparativa_psmf = f"""
+# Opción para reenviar manualmente el email
+if st.session_state.get("correo_enviado", False):
+    if st.button("📧 Reenviar Email", key="reenviar_email"):
+        faltantes = datos_completos_para_email()
+        if faltantes:
+            st.error(f"❌ No se puede reenviar el email. Faltan: {', '.join(faltantes)}")
+        else:
+            with st.spinner("📧 Reenviando resumen por email..."):
+                ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
+                if ok:
+                    st.success("✅ Email reenviado exitosamente a administración")
+                else:
+                    st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
+else:
+    st.info("ℹ️ El resumen aún no ha sido enviado. Usa el botón 'Enviar Resumen por Email' para enviarlo.")
 
 =====================================
 COMPARATIVA DE PLANES NUTRICIONALES:
