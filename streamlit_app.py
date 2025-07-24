@@ -958,30 +958,34 @@ st.markdown("### 🎯 Análisis integral de tu nivel")
 
 
 
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel_ffmi}")
-        with col2:
-            st.metric("Rendimiento", f"{puntos_funcional:.1f}/4", "Capacidad funcional")
-        with col3:
-            st.metric("Experiencia", f"{puntos_exp}/4", experiencia[3:20] + "...")
-        with col4:
-            color_nivel_entrenamiento = {
-                "principiante": "warning",
-                "intermedio": "info",
-                "avanzado": "success",
-                "élite": "success"
-            }.get(nivel_entrenamiento, "info")
+col1, col2, col3, col4 = st.columns(4)
 
-            st.markdown(f"""
-            <div style="text-align: center;">
-                <h3 style="margin: 0;">Nivel Global</h3>
-                <span class="badge badge-{color_nivel_entrenamiento}" style="font-size: 1.2rem;">
-                    {nivel_entrenamiento.upper()}
-                </span><br>
-                <small>Score: {puntaje_total:.2f}/1.0</small>
-            </div>
-            """, unsafe_allow_html=True)
+with col1:
+    st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel_ffmi}")
+
+with col2:
+    st.metric("Rendimiento", f"{puntos_funcional:.1f}/4", "Capacidad funcional")
+
+with col3:
+    st.metric("Experiencia", f"{puntos_exp}/4", experiencia[3:20] + "...")
+
+with col4:
+    color_nivel_entrenamiento = {
+        "principiante": "warning",
+        "intermedio": "info",
+        "avanzado": "success",
+        "élite": "success"
+    }.get(nivel_entrenamiento, "info")
+
+    st.markdown(f"""
+    <div style="text-align: center;">
+        <h3 style="margin: 0;">Nivel Global</h3>
+        <span class="badge badge-{color_nivel_entrenamiento}" style="font-size: 1.2rem;">
+            {nivel_entrenamiento.upper()}
+        </span><br>
+        <small>Score: {puntaje_total:.2f}/1.0</small>
+    </div>
+    """, unsafe_allow_html=True)
 
         # Potencial genético
         if sexo == "Hombre":
