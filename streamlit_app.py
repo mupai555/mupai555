@@ -927,30 +927,36 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                     </div>
                     """, unsafe_allow_html=True)
 
-        # Guardar datos
-        st.session_state.datos_ejercicios = ejercicios_data
+   # Guardar datos
+st.session_state.datos_ejercicios = ejercicios_data
 
-        # Calcular nivel global con ponderación
-        puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}[nivel_ffmi]
-        puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}[experiencia[0:2]]
+if 'nivel_ffmi' not in locals() or nivel_ffmi is None:
+    nivel_ffmi = "Bajo"  # o cualquier valor por defecto válido
 
-        puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
-        puntos_funcional = sum([puntos_por_nivel.get(n, 1) for n in niveles_ejercicios.values()]) / len(niveles_ejercicios) if niveles_ejercicios else 1
+# Calcular nivel global con ponderación
+puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}.get(nivel_ffmi, 1)
 
-        # Ponderación: 40% FFMI, 40% funcional, 20% experiencia
-        puntaje_total = (puntos_ffmi / 5 * 0.4) + (puntos_funcional / 4 * 0.4) + (puntos_exp / 4 * 0.2)
+puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}.get(experiencia[0:2] if experiencia and len(experiencia) >= 2 else "", 1)
 
-        if puntaje_total < 0.3:
-            nivel_entrenamiento = "principiante"
-        elif puntaje_total < 0.5:
-            nivel_entrenamiento = "intermedio"
-        elif puntaje_total < 0.7:
-            nivel_entrenamiento = "avanzado"
-        else:
-            nivel_entrenamiento = "élite"
+puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
+puntos_funcional = sum([puntos_por_nivel.get(n, 1) for n in niveles_ejercicios.values()]) / len(niveles_ejercicios) if niveles_ejercicios else 1
 
-        # Mostrar resumen del nivel global
-        st.markdown("### 🎯 Análisis integral de tu nivel")
+# Ponderación: 40% FFMI, 40% funcional, 20% experiencia
+puntaje_total = (puntos_ffmi / 5 * 0.4) + (puntos_funcional / 4 * 0.4) + (puntos_exp / 4 * 0.2)
+
+if puntaje_total < 0.3:
+    nivel_entrenamiento = "principiante"
+elif puntaje_total < 0.5:
+    nivel_entrenamiento = "intermedio"
+elif puntaje_total < 0.7:
+    nivel_entrenamiento = "avanzado"
+else:
+    nivel_entrenamiento = "élite"
+
+# Mostrar resumen del nivel global
+st.markdown("### 🎯 Análisis integral de tu nivel")
+
+
 
         col1, col2, col3, col4 = st.columns(4)
         with col1:
