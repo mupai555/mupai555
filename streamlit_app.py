@@ -571,13 +571,25 @@ if datos_personales_completos and st.session_state.datos_completos:
                 help="Selecciona el método utilizado"
             )
 
-        grasa_corporal = st.number_input(
-            f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-            min_value=3.0, max_value=60.0, value=20.0, step=0.1,
-            help="Valor medido con el método seleccionado"
-        )
+# Input % de grasa corporal
+grasa_corporal = st.number_input(
+    f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
+    min_value=3.0, max_value=60.0, value=20.0, step=0.1,
+    help="Valor medido con el método seleccionado"
+)
 
-        # Cálculos antropométricos
+# Asegúrate que peso, estatura, sexo y edad estén definidos antes
+# Ejemplo (si no están definidos, asignar valores por defecto)
+if 'peso' not in locals():
+    peso = 70.0
+if 'estatura' not in locals():
+    estatura = 170
+if 'sexo' not in locals():
+    sexo = "Hombre"
+if 'edad' not in locals():
+    edad = 25
+
+# Cálculos antropométricos
 grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
 mlg = calcular_mlg(peso, grasa_corregida)
 tmb = calcular_tmb_cunningham(mlg)
