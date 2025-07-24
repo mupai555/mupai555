@@ -598,17 +598,17 @@ if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corpor
         f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
     )
         # Resultados principales visuales
-        st.markdown("### 📈 Resultados de tu composición corporal")
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", "Normal" if 10 <= grasa_corregida <= 25 else "Revisar")
-        with col2:
-            st.metric("MLG", f"{mlg:.1f} kg", "Masa Libre de Grasa")
-        with col3:
-            st.metric("TMB", f"{tmb:.0f} kcal", "Metabolismo Basal")
-        with col4:
-            diferencia_edad = edad_metabolica - edad
-            st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
+st.markdown("### 📈 Resultados de tu composición corporal")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", "Normal" if 10 <= grasa_corregida <= 25 else "Revisar")
+with col2:
+    st.metric("MLG", f"{mlg:.1f} kg", "Masa Libre de Grasa")
+with col3:
+    st.metric("TMB", f"{tmb:.0f} kcal", "Metabolismo Basal")
+with col4:
+    diferencia_edad = edad_metabolica - edad
+    st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
         # FFMI con visualización mejorada
         st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
         col1, col2 = st.columns([2, 1])
