@@ -1400,7 +1400,7 @@ with col4:
     st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
               f"{round(carbo_kcal/ingesta_calorica*100)}%")
 
- # Visualización de distribución de macros
+# Visualización de distribución de macros
 st.markdown("### 📊 Distribución de macronutrientes")
 import pandas as pd
 macro_data = {
@@ -1412,7 +1412,7 @@ macro_data = {
         f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
         f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
     ]
-}        }
+}
         df_macros = pd.DataFrame(macro_data)
         st.dataframe(
             df_macros,
