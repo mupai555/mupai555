@@ -531,11 +531,19 @@ col1, col2 = st.columns(2)
 with col1:
     pass  # Inputs están arriba
 with col2:
-    edad = st.number_input("Edad (años)*", 
-        min_value=15, 
-        max_value=80, 
-        value=st.session_state.get("edad", 25), 
-        help="Tu edad actual")
+   try:
+    edad_valor = int(st.session_state.get("edad", 25))
+except (TypeError, ValueError):
+    edad_valor = 25
+
+edad = st.number_input(
+    "Edad (años)*",
+    min_value=15,
+    max_value=80,
+    value=edad_valor,
+    help="Tu edad actual"
+)
+st.session_state.edad = int(edad)
     sexo = st.selectbox("Sexo biológico*", 
         ["Hombre", "Mujer"], 
         index=0 if st.session_state.get("sexo", "Hombre") == "Hombre" else 1, 
@@ -642,24 +650,36 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1:
-            peso = st.number_input(
-                "⚖️ Peso corporal (kg)",
-                min_value=30.0,
-                max_value=200.0,
-                value=st.session_state.get("peso", 70.0),
-                step=0.1,
-                key="peso",
-                help="Peso en ayunas, sin ropa"
-            )
-        with col2:
-            estatura = st.number_input(
-                "📏 Estatura (cm)",
-                min_value=120,
-                max_value=220,
-                value=st.session_state.get("estatura", 170),
-                key="estatura",
-                help="Medida sin zapatos"
-            )
+    try:
+        peso_valor = float(st.session_state.get("peso", 70.0))
+    except (TypeError, ValueError):
+        peso_valor = 70.0
+
+    peso = st.number_input(
+        "⚖️ Peso corporal (kg)",
+        min_value=30.0,
+        max_value=200.0,
+        value=peso_valor,
+        step=0.1,
+        key="peso",
+        help="Peso en ayunas, sin ropa"
+    )
+    st.session_state.peso = float(peso)
+     with col2:
+    try:
+        estatura_valor = int(st.session_state.get("estatura", 170))
+    except (TypeError, ValueError):
+        estatura_valor = 170
+
+    estatura = st.number_input(
+        "📏 Estatura (cm)",
+        min_value=120,
+        max_value=220,
+        value=estatura_valor,
+        key="estatura",
+        help="Medida sin zapatos"
+    )
+    st.session_state.estatura = int(estatura)
         with col3:
             metodo_grasa = st.selectbox(
                 "📊 Método de medición de grasa",
