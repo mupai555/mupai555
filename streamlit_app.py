@@ -1413,19 +1413,19 @@ macro_data = {
         f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
     ]
 }
-        df_macros = pd.DataFrame(macro_data)
-        st.dataframe(
-            df_macros,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
-                "Gramos": st.column_config.TextColumn("Gramos/día", width="small"),
-                "Calorías": st.column_config.TextColumn("Calorías", width="small"),
-                "% del total": st.column_config.TextColumn("% Total", width="small"),
-            }
-        )
-
+    # Visualización de distribución de macros
+st.markdown("### 📊 Distribución de macronutrientes")
+import pandas as pd
+macro_data = {
+    "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
+    "Gramos": [proteina_g, grasa_g, carbo_g],
+    "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
+    "% del total": [
+        f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
+        f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
+        f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
+    ]
+}
         # Recomendaciones adicionales
         st.markdown("### 💡 Recomendaciones para optimizar resultados")
         col1, col2 = st.columns(2)
