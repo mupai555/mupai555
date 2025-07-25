@@ -688,7 +688,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                 help="Selecciona el método utilizado"
             )
 
-       try:
+      try:
     grasa_valor = float(st.session_state.get("grasa_corporal", 20.0))
 except (TypeError, ValueError):
     grasa_valor = 20.0
