@@ -247,6 +247,253 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# Aquí siguen tus funciones completas: calcular_tmb_cunningham, calcular_mlg, corregir_porcentaje_grasa, calcular_ffmi, etc.
-# (Coloca aquí el bloque de funciones de tu código, sin saltar ninguna).
+# ==================== FUNCIONES AUXILIARES Y REFERENCIAS ====================
+
+def crear_tarjeta(titulo, contenido, tipo="info"):
+    colores = {
+        "info": "var(--mupai-yellow)",
+        "success": "var(--mupai-success)",
+        "warning": "var(--mupai-warning)",
+        "danger": "var(--mupai-danger)"
+    }
+    color = colores.get(tipo, "var(--mupai-yellow)")
+    return f"""
+    <div class="content-card" style="border-left-color: {color};">
+        <h3 style="margin-bottom: 1rem;">{titulo}</h3>
+        <div>{contenido}</div>
+    </div>
+    """
+
+# Referencias funcionales (Hombre/Mujer)
+referencias_funcionales = {
+    "Hombre": {
+        "Flexiones": {"tipo": "reps", "niveles": [("Bajo", 10), ("Promedio", 20), ("Bueno", 35), ("Avanzado", 50)]},
+        "Fondos": {"tipo": "reps", "niveles": [("Bajo", 5), ("Promedio", 12), ("Bueno", 20), ("Avanzado", 30)]},
+        "Press banca": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 40)), ("Promedio", (8, 60)), ("Bueno", (10, 80)), ("Avanzado", (10, 100))]},
+        "Dominadas": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
+        "Remo invertido": {"tipo": "reps", "niveles": [("Bajo", 5), ("Promedio", 10), ("Bueno", 15), ("Avanzado", 20)]},
+        "Sentadilla": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 60)), ("Promedio", (8, 80)), ("Bueno", (10, 110)), ("Avanzado", (10, 140))]},
+        "Peso muerto": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 70)), ("Promedio", (8, 100)), ("Bueno", (10, 130)), ("Avanzado", (10, 180))]},
+        "Hip thrust": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 60)), ("Promedio", (8, 90)), ("Bueno", (10, 120)), ("Avanzado", (10, 150))]},
+        "Plancha": {"tipo": "tiempo", "niveles": [("Bajo", 20), ("Promedio", 40), ("Bueno", 60), ("Avanzado", 90)]},
+        "Ab wheel": {"tipo": "reps", "niveles": [("Bajo", 1), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
+        "L-sit": {"tipo": "tiempo", "niveles": [("Bajo", 5), ("Promedio", 10), ("Bueno", 20), ("Avanzado", 30)]}
+    },
+    "Mujer": {
+        "Flexiones": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 8), ("Bueno", 15), ("Avanzado", 25)]},
+        "Fondos": {"tipo": "reps", "niveles": [("Bajo", 1), ("Promedio", 4), ("Bueno", 10), ("Avanzado", 18)]},
+        "Press banca": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 20)), ("Promedio", (8, 30)), ("Bueno", (10, 40)), ("Avanzado", (10, 50))]},
+        "Dominadas": {"tipo": "reps", "niveles": [("Bajo", 0), ("Promedio", 1), ("Bueno", 3), ("Avanzado", 5)]},
+        "Remo invertido": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
+        "Sentadilla": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 30)), ("Promedio", (8, 50)), ("Bueno", (10, 70)), ("Avanzado", (10, 90))]},
+        "Peso muerto": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 30)), ("Promedio", (8, 50)), ("Bueno", (10, 70)), ("Avanzado", (10, 95))]},
+        "Hip thrust": {"tipo": "reps_peso", "niveles": [("Bajo", (5, 30)), ("Promedio", (8, 60)), ("Bueno", (10, 90)), ("Avanzado", (10, 120))]},
+        "Plancha": {"tipo": "tiempo", "niveles": [("Bajo", 15), ("Promedio", 30), ("Bueno", 50), ("Avanzado", 70)]},
+        "Ab wheel": {"tipo": "reps", "niveles": [("Bajo", 0), ("Promedio", 3), ("Bueno", 7), ("Avanzado", 12)]},
+        "L-sit": {"tipo": "tiempo", "niveles": [("Bajo", 3), ("Promedio", 8), ("Bueno", 15), ("Avanzado", 25)]}
+    }
+}
+
+def calcular_tmb_cunningham(mlg):
+    try:
+        mlg = float(mlg)
+    except (TypeError, ValueError):
+        mlg = 0.0
+    return 370 + (21.6 * mlg)
+
+def calcular_mlg(peso, porcentaje_grasa):
+    try:
+        peso = float(peso)
+        porcentaje_grasa = float(porcentaje_grasa)
+    except (TypeError, ValueError):
+        peso = 0.0
+        porcentaje_grasa = 0.0
+    return peso * (1 - porcentaje_grasa / 100)
+
+def corregir_porcentaje_grasa(medido, metodo, sexo):
+    try:
+        medido = float(medido)
+    except (TypeError, ValueError):
+        medido = 0.0
+    if metodo == "Omron HBF-516 (BIA)":
+        tabla = {
+            5: 2.5, 6: 3.5, 7: 4.5, 8: 5.5, 9: 6.5,
+            10: 7.5, 11: 8.5, 12: 9.5, 13: 10.5, 14: 11.5,
+            15: 13.5, 16: 14.5, 17: 15.5, 18: 16.5, 19: 17.5,
+            20: 20.5, 21: 21.5, 22: 22.5, 23: 23.5, 24: 24.5,
+            25: 27.0, 26: 28.0, 27: 29.0, 28: 30.0, 29: 31.0,
+            30: 33.5, 31: 34.5, 32: 35.5, 33: 36.5, 34: 37.5,
+            35: 40.0, 36: 41.0, 37: 42.0, 38: 43.0, 39: 44.0,
+            40: 45.0
+        }
+        grasa_redondeada = int(round(medido))
+        grasa_redondeada = min(max(grasa_redondeada, 5), 40)
+        return tabla.get(grasa_redondeada, medido)
+    elif metodo == "InBody 270 (BIA profesional)":
+        return medido * 1.02
+    elif metodo == "Bod Pod (Pletismografía)":
+        factor = 1.0 if sexo == "Mujer" else 1.03
+        return medido * factor
+    else:
+        return medido
+
+def calcular_ffmi(mlg, estatura_cm):
+    try:
+        mlg = float(mlg)
+        estatura_m = float(estatura_cm) / 100
+    except (TypeError, ValueError):
+        mlg = 0.0
+        estatura_m = 1.80
+    if estatura_m <= 0:
+        estatura_m = 1.80
+    ffmi = mlg / (estatura_m ** 2)
+    ffmi_normalizado = ffmi + 6.3 * (1.8 - estatura_m)
+    return ffmi_normalizado
+
+def clasificar_ffmi(ffmi, sexo):
+    try:
+        ffmi = float(ffmi)
+    except (TypeError, ValueError):
+        ffmi = 0.0
+    if sexo == "Hombre":
+        limites = [(18, "Bajo"), (20, "Promedio"), (22, "Bueno"), (25, "Avanzado"), (100, "Élite")]
+    else:
+        limites = [(15, "Bajo"), (17, "Promedio"), (19, "Bueno"), (21, "Avanzado"), (100, "Élite")]
+    for limite, clasificacion in limites:
+        if ffmi < limite:
+            return clasificacion
+    return "Élite"
+
+def calcular_edad_metabolica(edad_cronologica, porcentaje_grasa, sexo):
+    try:
+        edad_cronologica = float(edad_cronologica)
+        porcentaje_grasa = float(porcentaje_grasa)
+    except (TypeError, ValueError):
+        edad_cronologica = 18
+        porcentaje_grasa = 0.0
+    if sexo == "Hombre":
+        grasa_ideal = 15
+    else:
+        grasa_ideal = 22
+    diferencia_grasa = porcentaje_grasa - grasa_ideal
+    ajuste_edad = diferencia_grasa * 0.3
+    edad_metabolica = edad_cronologica + ajuste_edad
+    return max(18, min(80, round(edad_metabolica)))
+
+def obtener_geaf(nivel):
+    valores = {
+        "Sedentario": 1.00,
+        "Moderadamente-activo": 1.11,
+        "Activo": 1.25,
+        "Muy-activo": 1.45
+    }
+    return valores.get(nivel, 1.00)
+
+# ==================== DATOS PERSONALES Y BIENVENIDA ====================
+
+st.markdown('<div class="content-card">', unsafe_allow_html=True)
+st.markdown("### 👤 Información Personal")
+st.markdown("Por favor, completa todos los campos para comenzar tu evaluación personalizada.")
+
+nombre = st.text_input("Nombre completo*", value=st.session_state.get("nombre", ""), placeholder="Ej: Juan Pérez García", help="Tu nombre legal completo")
+telefono = st.text_input("Teléfono*", value=st.session_state.get("telefono", ""), placeholder="Ej: 8661234567", help="10 dígitos sin espacios")
+email_cliente = st.text_input("Email*", value=st.session_state.get("email_cliente", ""), placeholder="correo@ejemplo.com", help="Email válido para recibir resultados")
+
+col1, col2 = st.columns(2)
+with col1:
+    pass
+with col2:
+    try:
+        edad_valor = int(st.session_state.get("edad", 25))
+    except (TypeError, ValueError):
+        edad_valor = 25
+    edad = st.number_input("Edad (años)*", min_value=15, max_value=80, value=edad_valor, help="Tu edad actual")
+    st.session_state.edad = int(edad)
+
+sexo = st.selectbox("Sexo biológico*", ["Hombre", "Mujer"], index=0 if st.session_state.get("sexo", "Hombre") == "Hombre" else 1, help="Necesario para cálculos precisos")
+fecha_llenado = st.session_state.get("fecha_llenado", datetime.now().strftime("%Y-%m-%d"))
+st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
+
+acepto_terminos = st.checkbox("He leído y acepto la política de privacidad y el descargo de responsabilidad", value=st.session_state.get("acepto_terminos", False))
+
+if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not acepto_terminos):
+    if all([nombre, telefono, email_cliente]):
+        st.session_state.datos_completos = True
+        st.session_state.nombre = nombre
+        st.session_state.telefono = telefono
+        st.session_state.email_cliente = email_cliente
+        st.session_state.edad = edad
+        st.session_state.sexo = sexo
+        st.session_state.fecha_llenado = fecha_llenado
+        st.session_state.acepto_terminos = acepto_terminos
+        st.success("✅ Datos registrados correctamente. ¡Continuemos con tu evaluación!")
+    else:
+        st.error("⚠️ Por favor completa todos los campos obligatorios")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+if not st.session_state.datos_completos:
+    st.markdown("""
+    <div class="content-card" style="margin-top:2rem; padding:3rem; background: #181A1B; color: #F5F5F5; border-left: 5px solid #F4C430;">
+        <div style="text-align:center;">
+            <h2 style="color: #F5C430; font-weight:900; margin:0;">
+                🏋️ Bienvenido a MUPAI
+            </h2>
+            <p style="color: #F5F5F5;font-size:1.1rem;font-weight:600;margin-top:1.5rem;">
+                <span style="font-size:1.15rem; font-weight:700;">¿Cómo funciona el cuestionario?</span>
+            </p>
+            <div style="text-align:left;display:inline-block;max-width:650px;">
+                <ul style="list-style:none;padding:0;">
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">📝</span> <b>Paso 1:</b> Datos personales<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Recopilamos tu nombre, edad, sexo y contacto para personalizar el análisis.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">⚖️</span> <b>Paso 2:</b> Composición corporal<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Medidas científicas de peso, estatura y % de grasa corporal usando métodos validados (DEXA, BIA).
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">💪</span> <b>Paso 3:</b> Experiencia y rendimiento funcional<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Indicas tu experiencia y tus mejores resultados en ejercicios clave.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">🚶</span> <b>Paso 4:</b> Actividad física diaria<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Clasificamos tu nivel de actividad habitual para ajustar el cálculo energético.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">🍽️</span> <b>Paso 5:</b> Efecto térmico de los alimentos (ETA)<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Calculamos el gasto energético extra por digestión, según tu composición corporal y evidencia científica.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">🏋️</span> <b>Paso 6:</b> Entrenamiento de fuerza<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Ajustamos tu gasto según frecuencia y nivel de entrenamiento de resistencia.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">📈</span> <b>Resultado final:</b> Plan nutricional personalizado<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Recibes tus métricas clave, diagnóstico y recomendaciones basadas en ciencia.
+                        </span>
+                    </li>
+                </ul>
+                <div style="margin-top:1.2em; font-size:1rem; color:#F4C430;">
+                    <b>Finalidad:</b> Este cuestionario integra principios científicos y experiencia práctica para ofrecerte un diagnóstico preciso y recomendaciones útiles. <br>
+                    <b>Tiempo estimado:</b> Menos de 5 minutos.
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 
