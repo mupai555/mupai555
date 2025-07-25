@@ -1385,21 +1385,20 @@ Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
 
 # Resultado final con diseño premium
 st.markdown("### 🎯 Tu plan nutricional personalizado")
-
-        # Métricas principales
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
-                     f"{ingesta_calorica/peso:.1f} kcal/kg")
-        with col2:
-            st.metric("🥩 Proteína", f"{proteina_g} g", 
-                     f"{proteina_g/peso:.2f} g/kg")
-        with col3:
-            st.metric("🥑 Grasas", f"{grasa_g} g", 
-                     f"{round(grasa_kcal/ingesta_calorica*100)}%")
-        with col4:
-            st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
-                     f"{round(carbo_kcal/ingesta_calorica*100)}%")
+# Métricas principales
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
+              f"{ingesta_calorica/peso:.1f} kcal/kg")
+with col2:
+    st.metric("🥩 Proteína", f"{proteina_g} g", 
+              f"{proteina_g/peso:.2f} g/kg")
+with col3:
+    st.metric("🥑 Grasas", f"{grasa_g} g", 
+              f"{round(grasa_kcal/ingesta_calorica*100)}%")
+with col4:
+    st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
+              f"{round(carbo_kcal/ingesta_calorica*100)}%")
 
         # Visualización de distribución de macros
         st.markdown("### 📊 Distribución de macronutrientes")
