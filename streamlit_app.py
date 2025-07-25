@@ -1370,7 +1370,8 @@ st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_k
 st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
 st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
 
-        st.markdown("### 🧮 Desglose del cálculo")with st.expander("Ver cálculo detallado", expanded=False):
+  st.markdown("### 🧮 Desglose del cálculo")
+with st.expander("Ver cálculo detallado", expanded=False):
     st.code(f"""
 Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
 GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
@@ -1378,7 +1379,7 @@ GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
 Factor de Balance Energético (FBEO) = 1 - (déficit/100)
 FBEO = 1 - ({porcentaje}/100) = {fbeo:.2f}
 """)
-Ingesta Calórica = GE × FBEO
+    Ingesta Calórica = GE × FBEO
 Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
 """)
 
