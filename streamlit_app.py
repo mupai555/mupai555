@@ -360,7 +360,7 @@ if not st.session_state.authenticated:
     st.markdown("""
     <div class="content-card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
         <h2 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">
-            🔐 Acceso Exclusivo
+            🔐 Acceso      Exclusivo
         </h2>
         <p style="margin-bottom: 2rem; color: #CCCCCC;">
             Ingresa la contraseña para acceder al sistema de evaluación MUPAI
@@ -397,7 +397,8 @@ if not st.session_state.authenticated:
             personalizadas de composición corporal, rendimiento y planificación nutricional.
         </p>
         <p style="color: #999999; font-size: 0.9rem; margin-top: 1.5rem;">
-            © 2025 MUPAI - Muscle Up Performance Assessment Intelligence
+            © 2025 MUPAI - Muscle up  GYM        
+            Performance Assessment Intelligence
         </p>
     </div>
     """, unsafe_allow_html=True)
