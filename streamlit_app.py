@@ -1400,19 +1400,19 @@ with col4:
     st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
               f"{round(carbo_kcal/ingesta_calorica*100)}%")
 
-        # Visualización de distribución de macros
-        st.markdown("### 📊 Distribución de macronutrientes")
-        import pandas as pd
-        macro_data = {
-            "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
-            "Gramos": [proteina_g, grasa_g, carbo_g],
-            "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
-            "% del total": [
-                f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
-            ]
-        }
+ # Visualización de distribución de macros
+st.markdown("### 📊 Distribución de macronutrientes")
+import pandas as pd
+macro_data = {
+    "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
+    "Gramos": [proteina_g, grasa_g, carbo_g],
+    "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
+    "% del total": [
+        f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
+        f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
+        f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
+    ]
+}        }
         df_macros = pd.DataFrame(macro_data)
         st.dataframe(
             df_macros,
