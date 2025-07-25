@@ -688,17 +688,21 @@ if datos_personales_completos and st.session_state.datos_completos:
                 help="Selecciona el método utilizado"
             )
 
-        grasa_corporal = st.number_input(
-            f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-            min_value=3.0,
-            max_value=60.0,
-            value=st.session_state.get("grasa_corporal", 20.0),
-            step=0.1,
-            key="grasa_corporal",
-            help="Valor medido con el método seleccionado"
-        )
+       try:
+    grasa_valor = float(st.session_state.get("grasa_corporal", 20.0))
+except (TypeError, ValueError):
+    grasa_valor = 20.0
 
-        st.markdown('</div>', unsafe_allow_html=True)
+grasa_corporal = st.number_input(
+    f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
+    min_value=3.0,
+    max_value=60.0,
+    value=grasa_valor,
+    step=0.1,
+    key="grasa_corporal",
+    help="Valor medido con el método seleccionado"
+)
+st.session_state.grasa_corporal = float(grasa_corporal)
 
     # --- Guardar en session_state SIEMPRE después de inputs ---
     st.session_state.peso = peso
