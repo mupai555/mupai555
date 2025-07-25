@@ -1383,8 +1383,8 @@ Ingesta Calórica = GE × FBEO
 Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
 """)
 
-        # Resultado final con diseño premium
-        st.markdown("### 🎯 Tu plan nutricional personalizado")
+# Resultado final con diseño premium
+st.markdown("### 🎯 Tu plan nutricional personalizado")
 
         # Métricas principales
         col1, col2, col3, col4 = st.columns(4)
