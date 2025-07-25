@@ -1427,26 +1427,26 @@ macro_data = {
     ]
 }
         # Recomendaciones adicionales
-        st.markdown("### 💡 Recomendaciones para optimizar resultados")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info("""
-            **📅 Timing de comidas:**
-            - 3-4 comidas al día
-            - Proteína en cada comida
-            - Pre/post entreno con carbos
-            - Última comida 2-3h antes de dormir
-            """)
-        with col2:
-            st.info("""
-            **💧 Hidratación y suplementos:**
-            - Agua: 35-40ml/kg peso
-            - Creatina: 5g/día
-            - Vitamina D: 2000-4000 UI
-            - Omega-3: 2-3g EPA+DHA
-            """)
+st.markdown("### 💡 Recomendaciones para optimizar resultados")
+col1, col2 = st.columns(2)
+with col1:
+    st.info("""
+    **📅 Timing de comidas:**
+    - 3-4 comidas al día
+    - Proteína en cada comida
+    - Pre/post entreno con carbos
+    - Última comida 2-3h antes de dormir
+    """)
+with col2:
+    st.info("""
+    **💧 Hidratación y suplementos:**
+    - Agua: 35-40ml/kg peso
+    - Creatina: 5g/día
+    - Vitamina D: 2000-4000 UI
+    - Omega-3: 2-3g EPA+DHA
+    """)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- FORZAR actualización de variables clave desde session_state ---
 peso = st.session_state.get("peso", 0)
