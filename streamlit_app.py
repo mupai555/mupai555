@@ -397,7 +397,8 @@ if not st.session_state.authenticated:
             personalizadas de composición corporal, rendimiento y planificación nutricional.
         </p>
         <p style="color: #999999; font-size: 0.9rem; margin-top: 1.5rem;">
-            © 2025 MUPAI - Muscle up  GYM  Digital/Training/Science      
+            © 2025 MUPAI - Muscle up  GYM  
+            Digital/Training/Science      
             Performance Assessment Intelligence
         </p>
     </div>
