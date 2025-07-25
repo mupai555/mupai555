@@ -324,7 +324,7 @@ st.markdown(f"""
         <img src="data:image/png;base64,{logo_mupai_b64}" alt="LOGO MUPAI" />
     </div>
     <div class="header-center">
-        <h1 class="header-title">CUESTIONARIO MUPAI/NUTRICIÓN BASADA EN CIENCIA</h1>
+        <h1 class="header-title">TEST MUPAI: BODY AND ENERGY A</h1>
         <p class="header-subtitle">Tu evaluación fitness personalizada basada en ciencia</p>
     </div>
     <div class="logo-right">
