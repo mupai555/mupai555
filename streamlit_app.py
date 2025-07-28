@@ -552,15 +552,36 @@ def clasificar_ffmi(ffmi, sexo):
 
 def calculate_psmf(sexo, peso, grasa_corregida, mlg):
     """
-    Calcula los parámetros para PSMF (Very Low Calorie Diet) actualizada
-    según el nuevo protocolo basado en proteína total y multiplicadores.
+    Calcula los parámetros para PSMF (Very Low Calorie Diet) con automatización científica.
     
-    Requisitos actualizados:
-    - Proteína mínima: 1.8g/kg peso corporal total
-    - Calorías = proteína (g) × multiplicador según % grasa
-    - Multiplicadores: 8.3 (alto % grasa), 9.0 (moderado), 9.5-9.7 (magro)
-    - Grasas: Fijas entre 30-50g (seleccionables por usuario, default 40g)
-    - Carbohidratos: Resto de calorías de vegetales fibrosos únicamente
+    REQUISITOS AUTOMÁTICOS IMPLEMENTADOS:
+    ====================================
+    
+    1. MULTIPLICADOR CALÓRICO AUTOMÁTICO según % grasa corporal (NO MODIFICABLE):
+       - >31% grasa corporal: multiplicador = 8.3 (protocolo tradicional PSMF)
+       - 25%-30% grasa corporal: multiplicador = 9.0 (nivel moderado)
+       - <25% grasa corporal: multiplicador = 9.5 (nivel bajo/magro)
+    
+    2. GRASAS FIJAS: 40g diarios (VALOR NO MODIFICABLE por el usuario)
+    
+    3. PROTEÍNA: 1.8g/kg peso corporal total (consistente con literatura científica)
+    
+    4. CARBOHIDRATOS: Resto de calorías de vegetales fibrosos únicamente
+    
+    LÓGICA DEL MULTIPLICADOR:
+    ========================
+    - Personas con más grasa (>31%) pueden tolerar déficits más agresivos → multiplicador menor (8.3)
+    - Nivel moderado (25-30%) necesita enfoque balanceado → multiplicador medio (9.0)
+    - Personas más magras (<25%) requieren enfoque más conservador → multiplicador mayor (9.5)
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        peso: Peso corporal en kg
+        grasa_corregida: % de grasa corporal corregido a equivalente DEXA
+        mlg: Masa libre de grasa en kg (no se usa actualmente pero se mantiene por compatibilidad)
+    
+    Returns:
+        dict: Diccionario con todos los parámetros PSMF calculados automáticamente
     """
     try:
         peso = float(peso)
@@ -585,27 +606,29 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         # PROTEÍNA: Mínimo 1.8g/kg peso corporal total
         proteina_g_dia = round(peso * 1.8, 1)
         
-        # MULTIPLICADOR CALÓRICO según % grasa corporal
-        if grasa_corregida > 35:  # Alto % grasa - PSMF tradicional
+        # MULTIPLICADOR CALÓRICO AUTOMÁTICO según % grasa corporal (REQUERIMIENTOS EXACTOS)
+        # Esta es la lógica central de automatización solicitada
+        if grasa_corregida > 30:  # >30% grasa corporal (incluye 31% como especificado)
             multiplicador = 8.3
-            perfil_grasa = "alto % grasa (PSMF tradicional)"
-        elif grasa_corregida >= 25 and sexo == "Hombre":  # Moderado para hombres
+            perfil_grasa = "alto % grasa (>30%)"
+        elif grasa_corregida >= 25:  # 25%-30% grasa corporal
             multiplicador = 9.0
-            perfil_grasa = "% grasa moderado"
-        elif grasa_corregida >= 30 and sexo == "Mujer":  # Moderado para mujeres
-            multiplicador = 9.0
-            perfil_grasa = "% grasa moderado"
-        else:  # Casos más magros - visible abdominals/lower %
-            # Usar 9.6 como punto medio del rango 9.5-9.7
-            multiplicador = 9.6
-            perfil_grasa = "más magro (abdominales visibles)"
+            perfil_grasa = "% grasa moderado (25-30%)"
+        else:  # <25% grasa corporal
+            multiplicador = 9.5
+            perfil_grasa = "% grasa bajo (<25%)"
         
-        # CALORÍAS = proteína (g) × multiplicador
+        # CALORÍAS = proteína (g) × multiplicador automático
+        # Esta fórmula garantiza consistencia científica
         calorias_dia = round(proteina_g_dia * multiplicador, 0)
         
         # Verificar que no esté por debajo del piso mínimo
         if calorias_dia < calorias_piso_dia:
             calorias_dia = calorias_piso_dia
+        
+        # GRASAS: VALOR FIJO 40g (no modificable por usuario)
+        # Cumple con el requisito de automatización y consistencia
+        grasa_g_fija = 40.0
         
         # Calcular rango de pérdida semanal proyectada (estimación conservadora)
         if sexo == "Hombre":
@@ -622,8 +645,9 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
             "calorias_piso_dia": calorias_piso_dia,
             "multiplicador": multiplicador,
             "perfil_grasa": perfil_grasa,
+            "grasa_g_fija": grasa_g_fija,  # Valor fijo de 40g
             "perdida_semanal_kg": (perdida_semanal_min, perdida_semanal_max),
-            "criterio": f"{criterio} - Nuevo protocolo: {perfil_grasa}"
+            "criterio": f"{criterio} - Multiplicador automático: {multiplicador} ({perfil_grasa})"
         }
     else:
         return {"psmf_aplicable": False}
@@ -762,6 +786,116 @@ def calcular_proyeccion_cientifica(sexo, grasa_corregida, nivel_entrenamiento, p
         "rango_total_6sem_kg": (rango_total_min_6sem, rango_total_max_6sem),
         "explicacion_textual": explicacion
     }
+
+def calcular_macros_centralizados(plan_elegido, psmf_recs, peso, ingesta_calorica_tradicional, tmb):
+    """
+    Función centralizada para calcular macros de manera consistente.
+    
+    PROPÓSITO DE CENTRALIZACIÓN:
+    ===========================
+    Esta función garantiza que todos los bloques de la app muestren exactamente los mismos valores:
+    - Advertencia/warning blocks
+    - Resumen visual de macros
+    - Proyección científica
+    - Email de resumen
+    - Comparativas de planes
+    
+    LÓGICA DE CÁLCULO:
+    =================
+    
+    PARA PSMF (Plan automatizado):
+    - Proteína: 1.8g/kg peso total (consistente)
+    - Grasas: FIJAS 40g (no modificables, cumple requisito)
+    - Carbohidratos: Resto de calorías (solo vegetales fibrosos)
+    - Multiplicador: Automático según % grasa corporal
+    
+    PARA PLAN TRADICIONAL:
+    - Proteína: 1.8g/kg peso total (misma base que PSMF)
+    - Grasas: 40% TMB, limitado entre 20-40% de calorías totales
+    - Carbohidratos: Resto de calorías
+    
+    Args:
+        plan_elegido: Plan seleccionado por el usuario
+        psmf_recs: Diccionario con recomendaciones PSMF automáticas
+        peso: Peso corporal en kg
+        ingesta_calorica_tradicional: Calorías del plan tradicional
+        tmb: Tasa metabólica basal
+    
+    Returns:
+        dict: Diccionario con todos los valores de macros y metadata
+    """
+    if psmf_recs.get("psmf_aplicable") and "PSMF" in str(plan_elegido):
+        # ============ PSMF AUTOMATIZADO ============
+        # Valores ya calculados automáticamente por calculate_psmf()
+        
+        ingesta_calorica = psmf_recs['calorias_dia']
+        proteina_g = psmf_recs['proteina_g_dia']
+        proteina_kcal = proteina_g * 4
+        
+        # GRASAS: VALOR FIJO 40g (cumple requisito de no modificabilidad)
+        grasa_g = psmf_recs['grasa_g_fija']  # Siempre 40g
+        grasa_kcal = grasa_g * 9
+        
+        # CARBOHIDRATOS: El resto de calorías de vegetales fibrosos únicamente
+        carbo_kcal = max(ingesta_calorica - proteina_kcal - grasa_kcal, 0)
+        carbo_g = round(carbo_kcal / 4, 1)
+        
+        # Información adicional para mostrar consistencia automática
+        multiplicador = psmf_recs.get('multiplicador', 8.3)
+        perfil_grasa = psmf_recs.get('perfil_grasa', 'automatizado')
+        perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
+        
+        return {
+            "tipo_plan": "PSMF",
+            "ingesta_calorica": ingesta_calorica,
+            "proteina_g": proteina_g,
+            "proteina_kcal": proteina_kcal,
+            "grasa_g": grasa_g,
+            "grasa_kcal": grasa_kcal,
+            "carbo_g": carbo_g,
+            "carbo_kcal": carbo_kcal,
+            "multiplicador": multiplicador,
+            "perfil_grasa": perfil_grasa,
+            "perdida_rango": (perdida_min, perdida_max),
+            "grasa_fija": True  # Indica que la grasa es fija y no modificable
+        }
+    else:
+        # ============ PLAN TRADICIONAL ============
+        # Cálculo estándar con flexibilidad en grasas
+        
+        ingesta_calorica = ingesta_calorica_tradicional
+
+        # PROTEÍNA: 1.8g/kg peso corporal total (consistencia con PSMF)
+        proteina_g = round(peso * 1.8, 1)
+        proteina_kcal = proteina_g * 4
+
+        # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
+        # Esta lógica permite flexibilidad mientras mantiene límites saludables
+        grasa_min_kcal = ingesta_calorica * 0.20  # Mínimo 20% de calorías
+        grasa_ideal_kcal = tmb * 0.40  # Ideal: 40% del TMB
+        grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
+        grasa_min_g = round(grasa_min_kcal / 9, 1)
+        grasa_max_kcal = ingesta_calorica * 0.40  # Máximo 40% de calorías
+        grasa_g = max(grasa_min_g, grasa_ideal_g)
+        if grasa_g * 9 > grasa_max_kcal:
+            grasa_g = round(grasa_max_kcal / 9, 1)
+        grasa_kcal = grasa_g * 9
+
+        # CARBOHIDRATOS: el resto de las calorías
+        carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
+        carbo_g = round(carbo_kcal / 4, 1)
+        
+        return {
+            "tipo_plan": "Tradicional",
+            "ingesta_calorica": ingesta_calorica,
+            "proteina_g": proteina_g,
+            "proteina_kcal": proteina_kcal,
+            "grasa_g": grasa_g,
+            "grasa_kcal": grasa_kcal,
+            "carbo_g": carbo_g,
+            "carbo_kcal": carbo_kcal,
+            "grasa_fija": False  # En plan tradicional la grasa es calculada, no fija
+        }
 
 def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
     """
@@ -917,6 +1051,18 @@ if not st.session_state.datos_completos:
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">🍽️</span> <b>Paso 6:</b> Cuestionario de patrones alimenticios<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Evaluamos tus hábitos alimentarios actuales, frecuencia de comidas, horarios y tipos de alimentos.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">😋</span> <b>Paso 7:</b> Cuestionario de alimentación emocional<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Analizamos tu relación emocional con la comida y patrones de comportamiento alimentario.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">📈</span> <b>Resultado final:</b> Plan nutricional personalizado<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
                             Recibes tus métricas clave, diagnóstico y recomendaciones basadas en ciencia.
@@ -943,7 +1089,7 @@ if datos_personales_completos and st.session_state.datos_completos:
     # BLOQUE 1: Datos antropométricos con diseño mejorado
     with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
         progress.progress(20)
-        progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
+        progress_text.text("Paso 1 de 7: Evaluación de composición corporal")
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
@@ -1191,7 +1337,7 @@ progress_text = st.empty()
 # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
 with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
     progress.progress(40)
-    progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
+    progress_text.text("Paso 2 de 7: Evaluación de capacidades funcionales")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -1496,7 +1642,7 @@ else:
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
-    progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+    progress_text.text("Paso 3 de 7: Evaluación de actividad diaria")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
@@ -1562,7 +1708,7 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
 with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
     progress.progress(70)
-    progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
+    progress_text.text("Paso 4 de 7: Cálculo del efecto térmico")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -1614,7 +1760,7 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
     progress.progress(80)
-    progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
+    progress_text.text("Paso 5 de 7: Cálculo del gasto por ejercicio")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
@@ -1674,7 +1820,152 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     </div>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
-    # BLOQUE 6: Cálculo final con comparativa PSMF
+
+    # BLOQUE 6: Cuestionario de Patrones Alimenticios
+with st.expander("🍽️ **Paso 6: Cuestionario de Patrones Alimenticios**", expanded=True):
+    progress.progress(85)
+    progress_text.text("Paso 6 de 7: Evaluación de patrones alimenticios")
+
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    st.markdown("### 🥗 Evalúa tus hábitos alimentarios actuales")
+    
+    # Initialize session state for dietary patterns
+    if 'patrones_alimenticios' not in st.session_state:
+        st.session_state.patrones_alimenticios = {}
+    
+    # Dietary patterns questions
+    patrones_preguntas = {
+        "frecuencia_comidas": {
+            "pregunta": "¿Con qué frecuencia comes al día?",
+            "opciones": ["1-2 comidas", "3 comidas", "4-5 comidas", "Más de 5 comidas", "Como constantemente/picoteo"]
+        },
+        "horarios_regulares": {
+            "pregunta": "¿Mantienes horarios regulares de comida?",
+            "opciones": ["Siempre, muy regulares", "Casi siempre", "A veces", "Raramente", "Nunca, como cuando puedo"]
+        },
+        "desayuno": {
+            "pregunta": "¿Qué tan frecuentemente desayunas?",
+            "opciones": ["Todos los días", "5-6 días/semana", "3-4 días/semana", "1-2 días/semana", "Nunca o casi nunca"]
+        },
+        "cena_tardía": {
+            "pregunta": "¿Con qué frecuencia cenas después de las 9 PM?",
+            "opciones": ["Nunca", "1-2 veces/semana", "3-4 veces/semana", "5-6 veces/semana", "Todos los días"]
+        },
+        "comida_procesada": {
+            "pregunta": "¿Qué porcentaje de tu alimentación proviene de comida procesada/empaquetada?",
+            "opciones": ["Menos del 10%", "10-25%", "25-50%", "50-75%", "Más del 75%"]
+        },
+        "preparación_comida": {
+            "pregunta": "¿Con qué frecuencia preparas tu propia comida?",
+            "opciones": ["Todos los días", "5-6 días/semana", "3-4 días/semana", "1-2 días/semana", "Nunca, siempre compro hecha"]
+        },
+        "verduras_frutas": {
+            "pregunta": "¿Cuántas porciones de verduras y frutas consumes diariamente?",
+            "opciones": ["5 o más porciones", "3-4 porciones", "2 porciones", "1 porción", "Menos de 1 porción"]
+        },
+        "agua_diaria": {
+            "pregunta": "¿Cuántos litros de agua pura tomas al día?",
+            "opciones": ["Más de 2.5 litros", "2-2.5 litros", "1.5-2 litros", "1-1.5 litros", "Menos de 1 litro"]
+        },
+        "alcohol": {
+            "pregunta": "¿Con qué frecuencia consumes bebidas alcohólicas?",
+            "opciones": ["Nunca", "Ocasionalmente (fiestas)", "1-2 veces/semana", "3-4 veces/semana", "Diariamente"]
+        },
+        "planificación": {
+            "pregunta": "¿Planificas tus comidas con anticipación?",
+            "opciones": ["Siempre, planifico toda la semana", "Casi siempre", "A veces", "Raramente", "Nunca, improviso"]
+        }
+    }
+    
+    # Display questions
+    for key, pregunta_data in patrones_preguntas.items():
+        respuesta = st.radio(
+            pregunta_data["pregunta"],
+            pregunta_data["opciones"],
+            key=f"patron_{key}",
+            help="Selecciona la opción que mejor describe tu situación actual"
+        )
+        st.session_state.patrones_alimenticios[key] = {
+            "pregunta": pregunta_data["pregunta"],
+            "respuesta": respuesta
+        }
+    
+    st.success("✅ Cuestionario de patrones alimenticios completado")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # BLOQUE 7: Cuestionario de Alimentación Emocional
+with st.expander("😋 **Paso 7: Cuestionario de Alimentación Emocional**", expanded=True):
+    progress.progress(90)
+    progress_text.text("Paso 7 de 7: Evaluación de alimentación emocional")
+
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    st.markdown("### 🧠 Evalúa tu relación emocional con la comida")
+    
+    # Initialize session state for emotional eating
+    if 'alimentacion_emocional' not in st.session_state:
+        st.session_state.alimentacion_emocional = {}
+    
+    # Emotional eating questions
+    emocional_preguntas = {
+        "comer_estresado": {
+            "pregunta": "¿Comes más cuando te sientes estresado/a o ansioso/a?",
+            "opciones": ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
+        },
+        "comer_aburrido": {
+            "pregunta": "¿Comes cuando te aburres, aunque no tengas hambre?",
+            "opciones": ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
+        },
+        "comer_triste": {
+            "pregunta": "¿Recurres a la comida cuando te sientes triste o deprimido/a?",
+            "opciones": ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
+        },
+        "comer_celebrar": {
+            "pregunta": "¿Usas la comida para celebrar o premiarte?",
+            "opciones": ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
+        },
+        "control_porciones": {
+            "pregunta": "¿Qué tan difícil te resulta controlar las porciones cuando comes?",
+            "opciones": ["Muy fácil, siempre controlo", "Fácil, casi siempre", "Moderado, a veces", "Difícil, raramente", "Muy difícil, nunca controlo"]
+        },
+        "comer_rapido": {
+            "pregunta": "¿Con qué frecuencia comes muy rápido?",
+            "opciones": ["Nunca, siempre despacio", "Raramente", "A veces", "Frecuentemente", "Siempre como rápido"]
+        },
+        "hambre_fisica": {
+            "pregunta": "¿Puedes distinguir entre hambre física y hambre emocional?",
+            "opciones": ["Siempre, muy claramente", "Casi siempre", "A veces", "Raramente", "Nunca, no distingo"]
+        },
+        "culpa_comer": {
+            "pregunta": "¿Sientes culpa después de comer ciertos alimentos?",
+            "opciones": ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
+        },
+        "comida_consuelo": {
+            "pregunta": "¿Tienes alimentos específicos que consideras 'de consuelo'?",
+            "opciones": ["No, no tengo", "Tengo pocos", "Tengo algunos", "Tengo varios", "Tengo muchos"]
+        },
+        "comer_social": {
+            "pregunta": "¿Comes más de lo planeado en situaciones sociales?",
+            "opciones": ["Nunca", "Raramente", "A veces", "Frecuentemente", "Siempre"]
+        }
+    }
+    
+    # Display questions
+    for key, pregunta_data in emocional_preguntas.items():
+        respuesta = st.radio(
+            pregunta_data["pregunta"],
+            pregunta_data["opciones"],
+            key=f"emocional_{key}",
+            help="Responde con honestidad sobre tu comportamiento habitual"
+        )
+        st.session_state.alimentacion_emocional[key] = {
+            "pregunta": pregunta_data["pregunta"],
+            "respuesta": respuesta
+        }
+    
+    st.success("✅ Cuestionario de alimentación emocional completado")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # BLOQUE 8: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
     progress.progress(100)
     progress_text.text("Paso final: Calculando tu plan nutricional personalizado")
@@ -1746,21 +2037,8 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             ["Plan Tradicional (déficit moderado, más sostenible)",
              "Protocolo PSMF (pérdida rápida, más restrictivo)"],
             index=0,
-            help="PSMF es muy efectivo pero requiere mucha disciplina"
+            help="PSMF es muy efectivo pero requiere mucha disciplina. Las grasas están fijas en 40g diarios."
         )
-        
-        # Opción para seleccionar grasa en PSMF (30-50g)
-        grasa_psmf_seleccionada = 40.0  # Valor por defecto
-        if "PSMF" in plan_elegido:
-            st.markdown("#### 🥑 Configuración de grasas para PSMF")
-            grasa_psmf_seleccionada = st.slider(
-                "Selecciona la cantidad de grasa diaria (en gramos):",
-                min_value=30.0,
-                max_value=50.0,
-                value=40.0,
-                step=1.0,
-                help="Rango permitido para PSMF: 30-50g de grasas de fuentes magras (pescado, aceite de oliva mínimo)"
-            )
 
         # Mostrar comparativa visual
         st.markdown("### 📊 Comparativa de planes")
@@ -1781,25 +2059,26 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             """)
             st.markdown('</div>', unsafe_allow_html=True)
         with col2:
-            deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
+            deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100) if GE > 0 else 40
             perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
             multiplicador = psmf_recs.get('multiplicador', 8.3)
-            perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
+            perfil_grasa = psmf_recs.get('perfil_grasa', 'automatizado')
+            grasa_fija = psmf_recs.get('grasa_g_fija', 40.0)
             
             st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-            st.markdown("#### ⚡ Protocolo PSMF Actualizado")
+            st.markdown("#### ⚡ Protocolo PSMF Automatizado")
             st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
             st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
             st.metric("Multiplicador", f"{multiplicador}", f"Perfil: {perfil_grasa}")
             st.metric("Pérdida esperada", f"{perdida_min}-{perdida_max} kg/semana")
             st.markdown(f"""
-            **Consideraciones:**
-            - ⚠️ Muy restrictivo
-            - ⚠️ Máximo 6-8 semanas
-            - ⚠️ Requiere supervisión médica
+            **Características automáticas:**
+            - 🔒 **Multiplicador automático:** {multiplicador} (según % grasa)
+            - 🔒 **Grasas fijas:** {grasa_fija}g diarios (no modificables)
             - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día (1.8g/kg mínimo)
-            - ⚠️ Grasas: 30-50g (seleccionable, fuentes magras)
             - ⚠️ Carbos: resto de calorías (solo vegetales fibrosos)
+            - ⚠️ Máximo 6-8 semanas de duración
+            - ⚠️ Requiere supervisión médica
             - ⚠️ Suplementación necesaria
             """)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -1811,75 +2090,80 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
     sexo = st.session_state.get("sexo", "Hombre")
     edad = st.session_state.get("edad", 0)
 
-    # --- Cálculo de macros para plan elegido ---
-    if psmf_recs.get("psmf_aplicable") and "PSMF" in plan_elegido:
-        # ----------- PSMF ACTUALIZADO -----------
-        ingesta_calorica = psmf_recs['calorias_dia']
-        proteina_g = psmf_recs['proteina_g_dia']
-        proteina_kcal = proteina_g * 4
+    # ========================================================================
+    # CÁLCULO DE MACROS CENTRALIZADO - GARANTIZA CONSISTENCIA TOTAL
+    # ========================================================================
+    # 
+    # Este enfoque centralizado asegura que todos los bloques de la aplicación 
+    # muestren exactamente los mismos valores:
+    # - Comparativa de planes
+    # - Resumen de macronutrientes  
+    # - Advertencias PSMF
+    # - Email de resumen
+    # - Proyecciones científicas
+    #
+    # AUTOMATIZACIÓN IMPLEMENTADA:
+    # - PSMF: Multiplicador automático según % grasa + grasas fijas 40g
+    # - Tradicional: Cálculo estándar con flexibilidad
+    # ========================================================================
+    
+    macros = calcular_macros_centralizados(
+        plan_elegido, 
+        psmf_recs, 
+        peso, 
+        ingesta_calorica_tradicional, 
+        tmb
+    )
+    
+    # Extraer valores centralizados
+    ingesta_calorica = macros['ingesta_calorica']
+    proteina_g = macros['proteina_g']
+    proteina_kcal = macros['proteina_kcal']
+    grasa_g = macros['grasa_g']
+    grasa_kcal = macros['grasa_kcal']
+    carbo_g = macros['carbo_g']
+    carbo_kcal = macros['carbo_kcal']
+    
+    # Mostrar advertencia específica según el tipo de plan
+    if macros['tipo_plan'] == "PSMF":
+        multiplicador = macros['multiplicador']
+        perfil_grasa = macros['perfil_grasa']
+        perdida_min, perdida_max = macros['perdida_rango']
+        deficit_psmf = int((1 - ingesta_calorica/GE) * 100) if GE > 0 else 40
         
-        # GRASAS: Usar el valor seleccionado por el usuario (30-50g)
-        grasa_g = grasa_psmf_seleccionada if 'grasa_psmf_seleccionada' in locals() else 40.0
-        grasa_kcal = grasa_g * 9
-        
-        # CARBOHIDRATOS: El resto de calorías de vegetales fibrosos únicamente
-        carbo_kcal = max(ingesta_calorica - proteina_kcal - grasa_kcal, 0)
-        carbo_g = round(carbo_kcal / 4, 1)
-        
-        multiplicador = psmf_recs.get('multiplicador', 8.3)
-        perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
-        perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
-        
-        fase = f"PSMF Actualizado - Pérdida rápida (déficit ~{deficit_psmf}%, multiplicador {multiplicador})"
+        fase = f"PSMF Automatizado - Pérdida rápida (déficit ~{deficit_psmf}%, multiplicador {multiplicador})"
 
         st.error(f"""
-        ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
-        - Es un protocolo **MUY RESTRICTIVO** con nuevo cálculo basado en proteína total
+        ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF AUTOMATIZADO:**
+        - Es un protocolo **MUY RESTRICTIVO** con cálculo automatizado basado en % grasa corporal
         - **Duración máxima:** 6-8 semanas
-        - **Proteína:** {proteina_g}g/día (1.8g/kg peso total mínimo)
-        - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
+        - **Multiplicador automático:** {multiplicador} (perfil: {perfil_grasa})
+        - **Proteína:** {proteina_g}g/día (1.8g/kg peso total)
+        - **Grasas fijas:** {grasa_g}g/día (valor fijo, no modificable)
+        - **Carbohidratos:** {carbo_g}g (solo de vegetales fibrosos)
         - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
         - **Requiere:** Supervisión médica y análisis de sangre regulares
-        - **Carbohidratos:** Solo de vegetales fibrosos ({carbo_g}g calculados según calorías restantes)
-        - **Grasas:** {grasa_g}g (rango 30-50g, fuentes magras como pescado, aceite de oliva mínimo)
         - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
         - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
         """)
     else:
-        # ----------- TRADICIONAL -----------
-        ingesta_calorica = ingesta_calorica_tradicional
-
-        # PROTEÍNA: 1.8g/kg peso corporal total
-        proteina_g = round(peso * 1.8, 1)
-        proteina_kcal = proteina_g * 4
-
-        # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
-        grasa_min_kcal = ingesta_calorica * 0.20
-        grasa_ideal_kcal = tmb * 0.40
-        grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
-        grasa_min_g = round(grasa_min_kcal / 9, 1)
-        grasa_max_kcal = ingesta_calorica * 0.40
-        grasa_g = max(grasa_min_g, grasa_ideal_g)
-        if grasa_g * 9 > grasa_max_kcal:
-            grasa_g = round(grasa_max_kcal / 9, 1)
-        grasa_kcal = grasa_g * 9
-
-        # CARBOHIDRATOS: el resto de las calorías
-        carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
-        carbo_g = round(carbo_kcal / 4, 1)
+        # Plan tradicional - verificar carbohidratos bajos
         if carbo_g < 50:
             st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
 
-        # --- DESGLOSE FINAL VISUAL ---
-        st.markdown("### 🍽️ Distribución de macronutrientes")
-        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)")
+    # --- DESGLOSE FINAL VISUAL CENTRALIZADO ---
+    st.markdown("### 🍽️ Distribución de macronutrientes")
+    st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)")
+    if macros['grasa_fija']:
+        st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%) 🔒 *FIJAS*")
+    else:
         st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
+    st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
 
-        # Mostrar cálculo detallado con diseño mejorado
-        st.markdown("### 🧮 Desglose del cálculo")
-        with st.expander("Ver cálculo detallado", expanded=False):
-            st.code(f"""
+# Mostrar cálculo detallado con diseño mejorado
+st.markdown("### 🧮 Desglose del cálculo")
+with st.expander("Ver cálculo detallado", expanded=False):
+    st.code(f"""
 Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
 GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
 
@@ -1890,69 +2174,69 @@ Ingesta Calórica = GE × FBEO
 Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
 """)
 
-        # Resultado final con diseño premium
-        st.markdown("### 🎯 Tu plan nutricional personalizado")
+# Resultado final con diseño premium
+st.markdown("### 🎯 Tu plan nutricional personalizado")
 
-        # Métricas principales
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
-                     f"{ingesta_calorica/peso:.1f} kcal/kg" if peso > 0 else "– kcal/kg")
-        with col2:
-            st.metric("🥩 Proteína", f"{proteina_g} g", 
-                     f"{proteina_g/peso:.2f} g/kg" if peso > 0 else "– g/kg")
-        with col3:
-            st.metric("🥑 Grasas", f"{grasa_g} g", 
-                     f"{round(grasa_kcal/ingesta_calorica*100)}%" if ingesta_calorica > 0 else "–%")
-        with col4:
-            st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
-                     f"{round(carbo_kcal/ingesta_calorica*100)}%")
+# Métricas principales
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
+             f"{ingesta_calorica/peso:.1f} kcal/kg" if peso > 0 else "– kcal/kg")
+with col2:
+    st.metric("🥩 Proteína", f"{proteina_g} g", 
+             f"{proteina_g/peso:.2f} g/kg" if peso > 0 else "– g/kg")
+with col3:
+    st.metric("🥑 Grasas", f"{grasa_g} g", 
+             f"{round(grasa_kcal/ingesta_calorica*100)}%" if ingesta_calorica > 0 else "–%")
+with col4:
+    st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
+             f"{round(carbo_kcal/ingesta_calorica*100)}%")
 
-        # Visualización de distribución de macros
-        st.markdown("### 📊 Distribución de macronutrientes")
-        import pandas as pd
-        macro_data = {
-            "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
-            "Gramos": [proteina_g, grasa_g, carbo_g],
-            "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
-            "% del total": [
-                f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
-            ]
-        }
-        df_macros = pd.DataFrame(macro_data)
-        st.dataframe(
-            df_macros,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
-                "Gramos": st.column_config.TextColumn("Gramos/día", width="small"),
-                "Calorías": st.column_config.TextColumn("Calorías", width="small"),
-                "% del total": st.column_config.TextColumn("% Total", width="small"),
-            }
-        )
+# Visualización de distribución de macros
+st.markdown("### 📊 Distribución de macronutrientes")
+import pandas as pd
+macro_data = {
+    "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
+    "Gramos": [proteina_g, grasa_g, carbo_g],
+    "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
+    "% del total": [
+    f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
+    f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
+    f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
+    ]
+}
+df_macros = pd.DataFrame(macro_data)
+st.dataframe(
+    df_macros,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
+        "Gramos": st.column_config.TextColumn("Gramos/día", width="small"),
+        "Calorías": st.column_config.TextColumn("Calorías", width="small"),
+        "% del total": st.column_config.TextColumn("% Total", width="small"),
+    }
+)
 
-        # Recomendaciones adicionales
-        st.markdown("### 💡 Recomendaciones para optimizar resultados")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info("""
-            **📅 Timing de comidas:**
-            - 3-4 comidas al día
-            - Proteína en cada comida
-            - Pre/post entreno con carbos
-            - Última comida 2-3h antes de dormir
-            """)
-        with col2:
-            st.info("""
-            **💧 Hidratación y suplementos:**
-            - Agua: 35-40ml/kg peso
-            - Creatina: 5g/día
-            - Vitamina D: 2000-4000 UI
-            - Omega-3: 2-3g EPA+DHA
-            """)
+# Recomendaciones adicionales
+st.markdown("### 💡 Recomendaciones para optimizar resultados")
+col1, col2 = st.columns(2)
+with col1:
+    st.info("""
+    **📅 Timing de comidas:**
+    - 3-4 comidas al día
+    - Proteína en cada comida
+    - Pre/post entreno con carbos
+    - Última comida 2-3h antes de dormir
+    """)
+with col2:
+    st.info("""
+    **💧 Hidratación y suplementos:**
+    - Agua: 35-40ml/kg peso
+    - Creatina: 5g/día
+    - Vitamina D: 2000-4000 UI
+    - Omega-3: 2-3g EPA+DHA
+    """)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -2062,25 +2346,63 @@ def datos_completos_para_email():
     return faltantes
 
 # Construir tabla_resumen robusta para el email (idéntica a tu estructura, NO resumida)
-# Calculate safe values
+# Usar macros centralizados para el email (garantiza consistencia total)
+try:
+    # Recalcular macros usando la función centralizada para el email
+    macros_email = calcular_macros_centralizados(
+        plan_elegido if 'plan_elegido' in locals() else "",
+        psmf_recs if 'psmf_recs' in locals() else {},
+        peso,
+        ingesta_calorica_tradicional if 'ingesta_calorica_tradicional' in locals() else 2000,
+        tmb
+    )
+    
+    # Extraer valores centralizados para el email
+    ingesta_calorica_email = macros_email['ingesta_calorica']
+    proteina_g_email = macros_email['proteina_g']
+    proteina_kcal_email = macros_email['proteina_kcal']
+    grasa_g_email = macros_email['grasa_g']
+    grasa_kcal_email = macros_email['grasa_kcal']
+    carbo_g_email = macros_email['carbo_g']
+    carbo_kcal_email = macros_email['carbo_kcal']
+    
+    # Calcular porcentajes
+    ratio_kcal_kg = ingesta_calorica_email/peso if peso > 0 else 0
+    proteina_percent = round(proteina_kcal_email/ingesta_calorica_email*100, 1) if ingesta_calorica_email > 0 else 0
+    grasa_percent = round(grasa_kcal_email/ingesta_calorica_email*100, 1) if ingesta_calorica_email > 0 else 0
+    carbo_percent = round(carbo_kcal_email/ingesta_calorica_email*100, 1) if ingesta_calorica_email > 0 else 0
+    
+    # Información adicional para PSMF
+    info_psmf = ""
+    if macros_email['tipo_plan'] == "PSMF":
+        multiplicador_email = macros_email['multiplicador']
+        perfil_grasa_email = macros_email['perfil_grasa']
+        info_psmf = f"""
+- PROTOCOLO PSMF AUTOMATIZADO:
+  * Multiplicador automático: {multiplicador_email} ({perfil_grasa_email})
+  * Grasas fijas: {grasa_g_email}g (valor no modificable)
+  * Pérdida proyectada: {macros_email['perdida_rango'][0]}-{macros_email['perdida_rango'][1]} kg/semana"""
+        
+except Exception as e:
+    # Fallback a valores existentes en caso de error
+    ingesta_calorica_email = ingesta_calorica if 'ingesta_calorica' in locals() else 2000
+    proteina_g_email = proteina_g if 'proteina_g' in locals() else 100
+    proteina_kcal_email = proteina_g_email * 4
+    grasa_g_email = grasa_g if 'grasa_g' in locals() else 60
+    grasa_kcal_email = grasa_g_email * 9
+    carbo_g_email = carbo_g if 'carbo_g' in locals() else 200
+    carbo_kcal_email = carbo_g_email * 4
+    ratio_kcal_kg = ingesta_calorica_email/peso if peso > 0 else 0
+    proteina_percent = round(proteina_kcal_email/ingesta_calorica_email*100, 1) if ingesta_calorica_email > 0 else 0
+    grasa_percent = round(grasa_kcal_email/ingesta_calorica_email*100, 1) if ingesta_calorica_email > 0 else 0
+    carbo_percent = round(carbo_kcal_email/ingesta_calorica_email*100, 1) if ingesta_calorica_email > 0 else 0
+    info_psmf = ""
+
+# Calculate additional safe values for email
 try:
     imc = peso/(estatura/100)**2 if estatura > 0 else 0
-    ratio_kcal_kg = ingesta_calorica/peso if peso > 0 else 0
-    proteina_percent = round(proteina_kcal/ingesta_calorica*100, 1) if ingesta_calorica > 0 else 0
-    grasa_percent = round(grasa_kcal/ingesta_calorica*100, 1) if ingesta_calorica > 0 else 0
-    carbo_percent = round(carbo_kcal/ingesta_calorica*100, 1) if ingesta_calorica > 0 else 0
-    proteina_kcal_safe = proteina_g * 4 if 'proteina_g' in locals() else 0
-    grasa_kcal_safe = grasa_g * 9 if 'grasa_g' in locals() else 0
-    carbo_kcal_safe = carbo_g * 4 if 'carbo_g' in locals() else 0
 except:
     imc = 0
-    ratio_kcal_kg = 0
-    proteina_percent = 0
-    grasa_percent = 0
-    carbo_percent = 0
-    proteina_kcal_safe = 0
-    grasa_kcal_safe = 0
-    carbo_kcal_safe = 0
 
 # Initialize missing variables
 if 'fbeo' not in locals():
@@ -2137,17 +2459,19 @@ FACTORES DE ACTIVIDAD:
 - Gasto Energético Total: {GE:.0f} kcal
 
 =====================================
-PLAN NUTRICIONAL CALCULADO:
+PLAN NUTRICIONAL CALCULADO (CENTRALIZADO):
 =====================================
 - Fase: {fase}
 - Factor FBEO: {fbeo:.2f}
-- Ingesta calórica: {ingesta_calorica:.0f} kcal/día
+- Ingesta calórica: {ingesta_calorica_email:.0f} kcal/día
 - Ratio kcal/kg: {ratio_kcal_kg:.1f}
 
-DISTRIBUCIÓN DE MACRONUTRIENTES:
-- Proteína: {proteina_g}g ({proteina_kcal_safe:.0f} kcal) = {proteina_percent}%
-- Grasas: {grasa_g}g ({grasa_kcal_safe:.0f} kcal) = {grasa_percent}%
-- Carbohidratos: {carbo_g}g ({carbo_kcal_safe:.0f} kcal) = {carbo_percent}%
+DISTRIBUCIÓN DE MACRONUTRIENTES (AUTOMATIZADA):
+- Proteína: {proteina_g_email}g ({proteina_kcal_email:.0f} kcal) = {proteina_percent}%
+- Grasas: {grasa_g_email}g ({grasa_kcal_email:.0f} kcal) = {grasa_percent}%
+- Carbohidratos: {carbo_g_email}g ({carbo_kcal_email:.0f} kcal) = {carbo_percent}%
+
+{info_psmf}
 
 =====================================
 RESUMEN PERSONALIZADO Y PROYECCIÓN
@@ -2213,6 +2537,104 @@ RECOMENDACIÓN: Utiliza estas proyecciones como guía inicial y ajusta
 según tu progreso real. Se recomienda evaluación periódica cada 2-3 
 semanas para optimizar resultados.
 
+=====================================
+PLAN TRADICIONAL - CÁLCULO DETALLADO:
+=====================================
+- Ingesta calórica tradicional: {ingesta_calorica_tradicional if 'ingesta_calorica_tradicional' in locals() else 'No calculado':.0f} kcal/día
+- Déficit/Superávit: {porcentaje if 'porcentaje' in locals() else 0:+.0f}%
+- Factor FBEO tradicional: {fbeo:.2f}
+
+MACRONUTRIENTES PLAN TRADICIONAL:
+"""
+
+# Calculate traditional plan macros for email
+try:
+    macros_tradicional = calcular_macros_centralizados(
+        "Plan Tradicional",
+        {},  # No PSMF recommendations
+        peso,
+        ingesta_calorica_tradicional if 'ingesta_calorica_tradicional' in locals() else 2000,
+        tmb
+    )
+    
+    tabla_resumen += f"""- Proteína tradicional: {macros_tradicional['proteina_g']}g ({macros_tradicional['proteina_kcal']:.0f} kcal) = {round(macros_tradicional['proteina_kcal']/macros_tradicional['ingesta_calorica']*100, 1)}%
+- Grasas tradicionales: {macros_tradicional['grasa_g']}g ({macros_tradicional['grasa_kcal']:.0f} kcal) = {round(macros_tradicional['grasa_kcal']/macros_tradicional['ingesta_calorica']*100, 1)}%
+- Carbohidratos tradicionales: {macros_tradicional['carbo_g']}g ({macros_tradicional['carbo_kcal']:.0f} kcal) = {round(macros_tradicional['carbo_kcal']/macros_tradicional['ingesta_calorica']*100, 1)}%
+"""
+except:
+    tabla_resumen += "- Error calculando macros tradicionales\n"
+
+if psmf_recs.get("psmf_aplicable"):
+    tabla_resumen += f"""
+=====================================
+PLAN PSMF - CÁLCULO DETALLADO:
+=====================================
+- Ingesta calórica PSMF: {psmf_recs['calorias_dia']:.0f} kcal/día
+- Déficit PSMF: ~{int((1 - psmf_recs['calorias_dia']/GE) * 100) if GE > 0 else 40}%
+- Multiplicador automático: {psmf_recs.get('multiplicador', 8.3)} ({psmf_recs.get('perfil_grasa', 'automatizado')})
+
+MACRONUTRIENTES PLAN PSMF:
+- Proteína PSMF: {psmf_recs['proteina_g_dia']}g ({psmf_recs['proteina_g_dia'] * 4:.0f} kcal) = {round(psmf_recs['proteina_g_dia'] * 4 / psmf_recs['calorias_dia'] * 100, 1)}%
+- Grasas PSMF (FIJAS): {psmf_recs['grasa_g_fija']}g ({psmf_recs['grasa_g_fija'] * 9:.0f} kcal) = {round(psmf_recs['grasa_g_fija'] * 9 / psmf_recs['calorias_dia'] * 100, 1)}%
+- Carbohidratos PSMF: {round((psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia'] * 4 - psmf_recs['grasa_g_fija'] * 9) / 4, 1)}g ({psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia'] * 4 - psmf_recs['grasa_g_fija'] * 9:.0f} kcal) = {round((psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia'] * 4 - psmf_recs['grasa_g_fija'] * 9) / psmf_recs['calorias_dia'] * 100, 1)}%
+- Pérdida proyectada PSMF: {psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[0]}-{psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[1]} kg/semana
+"""
+else:
+    tabla_resumen += f"""
+=====================================
+PLAN PSMF NO APLICABLE:
+=====================================
+- Razón: % grasa corporal no cumple criterios mínimos
+- Criterio hombre: >18% grasa | Criterio mujer: >23% grasa
+- Tu % grasa actual: {grasa_corregida:.1f}%
+"""
+
+# Indicate which plan was selected
+plan_seleccionado_texto = plan_elegido if 'plan_elegido' in locals() and plan_elegido else "Plan tradicional"
+tabla_resumen += f"""
+=====================================
+PLAN FINALMENTE ELEGIDO:
+=====================================
+** {plan_seleccionado_texto.upper()} **
+
+=====================================
+CUESTIONARIO DE PATRONES ALIMENTICIOS:
+=====================================
+"""
+
+# Add dietary patterns questionnaire results
+if hasattr(st.session_state, 'patrones_alimenticios') and st.session_state.patrones_alimenticios:
+    for i, (key, data) in enumerate(st.session_state.patrones_alimenticios.items(), 1):
+        tabla_resumen += f"{i}. {data['pregunta']}\n   Respuesta: {data['respuesta']}\n\n"
+else:
+    tabla_resumen += "No se completó el cuestionario de patrones alimenticios.\n\n"
+
+tabla_resumen += f"""
+=====================================
+CUESTIONARIO DE ALIMENTACIÓN EMOCIONAL:
+=====================================
+"""
+
+# Add emotional eating questionnaire results
+if hasattr(st.session_state, 'alimentacion_emocional') and st.session_state.alimentacion_emocional:
+    for i, (key, data) in enumerate(st.session_state.alimentacion_emocional.items(), 1):
+        tabla_resumen += f"{i}. {data['pregunta']}\n   Respuesta: {data['respuesta']}\n\n"
+else:
+    tabla_resumen += "No se completó el cuestionario de alimentación emocional.\n\n"
+
+tabla_resumen += """
+
+=====================================
+FECHA Y HORA DE EVALUACIÓN:
+=====================================
+Evaluación completada el: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """
+
+¡Gracias por completar la evaluación MUPAI!
+Para cualquier consulta adicional, contacta con el equipo técnico.
+
+=====================================
+FIN DEL REPORTE
+=====================================
 """
 
 # ==================== RESUMEN PERSONALIZADO ====================
@@ -2378,7 +2800,7 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
 
 # --- Botón para enviar email (solo si no se ha enviado y todo completo) ---
 if not st.session_state.get("correo_enviado", False):
-    if st.button("📧 Enviar Resumen por Email", key="enviar_email"):
+    if st.button("📧 Terminar cuestionario y enviar resumen por email", key="enviar_email"):
         faltantes = datos_completos_para_email()
         if faltantes:
             st.error(f"❌ No se puede enviar el email. Faltan: {', '.join(faltantes)}")
