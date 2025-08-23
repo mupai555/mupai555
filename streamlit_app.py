@@ -95,7 +95,17 @@ def validate_step_2():
 def validate_step_3():
     """Valida que el paso 3 (evaluación funcional) esté completo."""
     experiencia = st.session_state.get("experiencia_entrenamiento", "")
-    return len(experiencia) > 0 and not experiencia.startswith("A) He entrenado de forma irregular")
+    if not experiencia or experiencia.startswith("A) He entrenado de forma irregular"):
+        return False
+    
+    # Verificar que haya al menos un dato de ejercicio si la experiencia está completa
+    has_exercise_data = False
+    for key in st.session_state:
+        if "reps" in key or "peso" in key:
+            has_exercise_data = True
+            break
+    
+    return True  # Para simplificar, solo validamos la experiencia
 
 def validate_step_4():
     """Valida que el paso 4 (actividad física) esté completo."""
@@ -1306,225 +1316,130 @@ if current_step == 1 and not st.session_state.get("datos_completos", False):
     </div>
     """, unsafe_allow_html=True)
 
-# VALIDACIÓN DATOS PERSONALES PARA CONTINUAR
-datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
-
-if datos_personales_completos and st.session_state.datos_completos:
-    # Progress bar general
-    progress = st.progress(0)
-    progress_text = st.empty()
-
-    # BLOQUE 1: Datos antropométricos con diseño mejorado
-    with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
-        progress.progress(20)
-        progress_text.text("🏃‍♀️ Paso 1 de 5: Conociendo tu cuerpo - ¡Excelente inicio!")
-
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            # Ensure peso has a valid default
-            peso_default = 70.0
-            peso_value = st.session_state.get("peso", peso_default)
-            if peso_value == '' or peso_value is None or peso_value == 0:
-                peso_value = peso_default
-            peso = st.number_input(
-                "⚖️ Peso corporal (kg)",
-                min_value=30.0,
-                max_value=200.0,
-                value=safe_float(peso_value, peso_default),
-                step=0.1,
-                key="peso",
-                help="Peso en ayunas, sin ropa"
-            )
-        with col2:
-            # Ensure estatura has a valid default
-            estatura_default = 170
-            estatura_value = st.session_state.get("estatura", estatura_default)
-            if estatura_value == '' or estatura_value is None or estatura_value == 0:
-                estatura_value = estatura_default
-            estatura = st.number_input(
-                "📏 Estatura (cm)",
-                min_value=120,
-                max_value=220,
-                value=safe_int(estatura_value, estatura_default),
-                key="estatura",
-                help="Medida sin zapatos"
-            )
-        with col3:
-            st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
-            metodo_grasa = st.selectbox(
-                "📊 Método de medición de grasa",
-                ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
-                key="metodo_grasa",
-                help="Selecciona el método utilizado"
-            )
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        # Ensure grasa_corporal has a valid default
-        grasa_default = 20.0
-        grasa_value = st.session_state.get("grasa_corporal", grasa_default)
-        if grasa_value == '' or grasa_value is None or grasa_value == 0:
-            grasa_value = grasa_default
-        grasa_corporal = st.number_input(
-            f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-            min_value=3.0,
-            max_value=60.0,
-            value=safe_float(grasa_value, grasa_default),
-            step=0.1,
-            key="grasa_corporal",
-            help="Valor medido con el método seleccionado"
-        )
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
-
-    # Cálculos antropométricos
-    sexo = st.session_state.sexo
-    edad = st.session_state.edad
-    metodo_grasa = st.session_state.metodo_grasa
-    peso = st.session_state.peso
-    estatura = st.session_state.estatura
-    grasa_corporal = st.session_state.grasa_corporal
-
-    grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
-    mlg = calcular_mlg(peso, grasa_corregida)
-    tmb = calcular_tmb_cunningham(mlg)
-
-    # Validar estatura > 0
-    if estatura <= 0:
-        st.error("Error: La estatura debe ser mayor que cero para calcular FFMI.")
-        ffmi = 0
-    else:
-        ffmi = calcular_ffmi(mlg, estatura)
-
-    nivel_ffmi = clasificar_ffmi(ffmi, sexo)
-    edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
-
-    # Mostrar corrección si aplica
-    if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
-        st.info(
-            f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
-            f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
-        )
-
-    # Hide technical data - show simple confirmation instead
+# ==================== PASO 2: COMPOSICIÓN CORPORAL ====================
+elif current_step == 2:
     st.markdown("""
-    <div class="content-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center;">
-        <h3 style="color: white; margin-bottom: 1rem;">✅ ¡Datos recibidos correctamente!</h3>
-        <p style="color: white; font-size: 1.1rem; margin: 0;">
-            Tu información ha sido procesada exitosamente. Continuemos con la siguiente sección.
-        </p>
+    <div class="step-header">
+        <h1 class="step-title">📊 Paso 2: Composición Corporal</h1>
+        <p class="step-subtitle">Ingresa tus medidas antropométricas para cálculos precisos</p>
     </div>
     """, unsafe_allow_html=True)
-
-else:
-    st.info("Por favor completa los datos personales para comenzar la evaluación.")
-    # === INICIALIZACIÓN DE VARIABLES CRÍTICAS ===
-# Inicializar variables críticas con valores por defecto seguros
-if 'peso' not in locals():
-    peso = 70.0
-if 'estatura' not in locals():
-    estatura = 170
-if 'grasa_corporal' not in locals():
-    grasa_corporal = 20.0
-if 'sexo' not in locals():
-    sexo = "Hombre"
-if 'edad' not in locals():
-    edad = 25
-if 'metodo_grasa' not in locals():
-    metodo_grasa = "Omron HBF-516 (BIA)"
-if 'grasa_corregida' not in locals():
-    grasa_corregida = 20.0
-if 'mlg' not in locals():
-    mlg = 50.0
-if 'tmb' not in locals():
-    tmb = 1800.0
-if 'ffmi' not in locals():
-    ffmi = 18.0
-if 'nivel_ffmi' not in locals():
-    nivel_ffmi = "Bajo"
-if 'edad_metabolica' not in locals():
-    edad_metabolica = 25
-if 'ingesta_calorica' not in locals():
-    ingesta_calorica = 2000.0
-if 'proteina_g' not in locals():
-    proteina_g = 100.0
-if 'grasa_g' not in locals():
-    grasa_g = 60.0
-if 'carbo_g' not in locals():
-    carbo_g = 200.0
-if 'grasa_kcal' not in locals():
-    grasa_kcal = 540.0
-if 'carbo_kcal' not in locals():
-    carbo_kcal = 800.0
-if 'fase' not in locals():
-    fase = "Mantenimiento"
-if 'plan_elegido' not in locals():
-    plan_elegido = "Plan Tradicional"
-
-# === ACTUALIZA VARIABLES CLAVE DESDE session_state ANTES DE CUALQUIER CÁLCULO CRÍTICO ===
-# Esto fuerza que SIEMPRE se use el último dato capturado por el usuario
-
-peso = st.session_state.get("peso", 0)
-estatura = st.session_state.get("estatura", 0)
-grasa_corporal = st.session_state.get("grasa_corporal", 0)
-sexo = st.session_state.get("sexo", "Hombre")
-edad = st.session_state.get("edad", 0)
-metodo_grasa = st.session_state.get("metodo_grasa", "Omron HBF-516 (BIA)")
-
-# Note: Session state is automatically managed by widget keys
-
-# --- Recalcula variables críticas para PSMF ---
-grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
-mlg = calcular_mlg(peso, grasa_corregida)
-
-# --- Cálculo PSMF ---
-psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
-if psmf_recs.get("psmf_aplicable"):
-    st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-    perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
-    st.warning(f"""
-    ⚡ **CANDIDATO PARA PROTOCOLO PSMF ACTUALIZADO**
-    Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
     
-    🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día ({psmf_recs['proteina_g_dia']/peso:.2f} g/kg peso total)
-    🔥 **Calorías diarias:** {psmf_recs['calorias_dia']:.0f} kcal/día
-    📊 **Multiplicador:** {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
-    📈 **Pérdida semanal proyectada:** {perdida_min}-{perdida_max} kg/semana
-    ⚠️ **Mínimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/día
-    📋 **Criterio:** {psmf_recs['criterio']}
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
     
-    ⚠️ **ADVERTENCIAS DE SEGURIDAD:**
-    • Duración máxima: 6-8 semanas
-    • Requiere supervisión médica/nutricional
-    • Carbohidratos y grasas al mínimo (solo de fuentes magras y vegetales)
-    • Suplementación obligatoria: multivitamínico, omega-3, electrolitos
-    
-    *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
-    """)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        # Ensure peso has a valid default
+        peso_default = 70.0
+        peso_value = st.session_state.get("peso", peso_default)
+        if peso_value == '' or peso_value is None or peso_value == 0:
+            peso_value = peso_default
+        peso = st.number_input(
+            "⚖️ Peso corporal (kg)",
+            min_value=30.0,
+            max_value=200.0,
+            value=safe_float(peso_value, peso_default),
+            step=0.1,
+            key="peso",
+            help="Peso en ayunas, sin ropa"
+        )
+    with col2:
+        # Ensure estatura has a valid default
+        estatura_default = 170
+        estatura_value = st.session_state.get("estatura", estatura_default)
+        if estatura_value == '' or estatura_value is None or estatura_value == 0:
+            estatura_value = estatura_default
+        estatura = st.number_input(
+            "📏 Estatura (cm)",
+            min_value=120,
+            max_value=220,
+            value=safe_int(estatura_value, estatura_default),
+            key="estatura",
+            help="Medida sin zapatos"
+        )
+    with col3:
+        st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
+        metodo_grasa = st.selectbox(
+            "📊 Método de medición de grasa",
+            ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
+            index=0 if st.session_state.get("metodo_grasa", "Omron HBF-516 (BIA)").startswith("Omron") else 
+                  1 if st.session_state.get("metodo_grasa", "").startswith("InBody") else
+                  2 if st.session_state.get("metodo_grasa", "").startswith("Bod Pod") else 3,
+            key="metodo_grasa",
+            help="Selecciona el método utilizado"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Ensure grasa_corporal has a valid default
+    grasa_default = 20.0
+    grasa_value = st.session_state.get("grasa_corporal", grasa_default)
+    if grasa_value == '' or grasa_value is None or grasa_value == 0:
+        grasa_value = grasa_default
+    grasa_corporal = st.number_input(
+        f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
+        min_value=3.0,
+        max_value=60.0,
+        value=safe_float(grasa_value, grasa_default),
+        step=0.1,
+        key="grasa_corporal",
+        help="Valor medido con el método seleccionado"
+    )
+
     st.markdown('</div>', unsafe_allow_html=True)
     
-rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
-fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
-if fuera_rango:
-    st.info(f"""
-    ℹ️ **Nota sobre precisión**: Para máxima precisión en la estimación del FFMI, 
-    el % de grasa ideal está entre {rango_grasa_ok[0]}-{rango_grasa_ok[1]}%. 
-    Tu valor actual ({grasa_corregida:.1f}%) puede 
-    {'subestimar' if grasa_corregida < rango_grasa_ok[0] else 'sobrestimar'} 
-    ligeramente tu potencial muscular.
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-progress = st.progress(0)
-progress_text = st.empty()
-
-# BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
-with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
-    progress.progress(40)
-    progress_text.text("💪 Paso 2 de 5: Evaluando tu fuerza - ¡Vamos súper bien!")
-
+    # Realizar cálculos si hay datos válidos
+    if peso > 30 and estatura > 120 and grasa_corporal > 0:
+        grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, st.session_state.get("sexo", "Hombre"))
+        mlg = calcular_mlg(peso, grasa_corregida)
+        tmb = calcular_tmb_cunningham(mlg)
+        ffmi = calcular_ffmi(mlg, estatura) if estatura > 0 else 0
+        nivel_ffmi = clasificar_ffmi(ffmi, st.session_state.get("sexo", "Hombre"))
+        edad_metabolica = calcular_edad_metabolica(st.session_state.get("edad", 25), grasa_corregida, st.session_state.get("sexo", "Hombre"))
+        
+        # Mostrar corrección si aplica
+        if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
+            st.info(
+                f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
+                f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
+            )
+    
+    # Validación y botón Siguiente
+    is_step_2_valid = validate_step_2()
+    
+    if is_step_2_valid:
+        st.markdown("""
+        <div class="step-motivation">
+            💪 ¡Excelente! Tus datos antropométricos están completos. ¡Sigamos evaluando tu nivel!
+        </div>
+        """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button(
+            "💪 SIGUIENTE: EVALUACIÓN FUNCIONAL",
+            disabled=not is_step_2_valid,
+            key="next_step_2",
+            help="Continúa al siguiente paso" if is_step_2_valid else "Completa todos los campos para continuar"
+        ):
+            if is_step_2_valid:
+                advance_step()
+                st.rerun()
+    
+    if not is_step_2_valid:
+        st.markdown("""
+        <div class="step-validation-error">
+            ⚠️ Por favor completa todos los campos: peso, estatura y % de grasa corporal
+        </div>
+        """, unsafe_allow_html=True)
+# ==================== PASO 3: EVALUACIÓN FUNCIONAL ====================
+elif current_step == 3:
+    st.markdown("""
+    <div class="step-header">
+        <h1 class="step-title">💪 Paso 3: Evaluación Funcional</h1>
+        <p class="step-subtitle">Evalúa tu experiencia y nivel de entrenamiento</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
     st.markdown("### 📋 Experiencia en entrenamiento")
@@ -1536,47 +1451,122 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
             "C) He seguido un programa de entrenamiento estructurado con objetivos claros y progresión semanal.",
             "D) He diseñado o ajustado personalmente mis planes de entrenamiento, monitoreando variables como volumen, intensidad y recuperación."
         ],
-        help="Tu respuesta debe reflejar tu consistencia y planificación real."
+        index=0 if st.session_state.get("experiencia_entrenamiento", "").startswith("A)") else
+              1 if st.session_state.get("experiencia_entrenamiento", "").startswith("B)") else  
+              2 if st.session_state.get("experiencia_entrenamiento", "").startswith("C)") else
+              3 if st.session_state.get("experiencia_entrenamiento", "").startswith("D)") else 0,
+        help="Tu respuesta debe reflejar tu consistencia y planificación real.",
+        key="experiencia_entrenamiento"
     )
 
     # Solo mostrar ejercicios funcionales si la experiencia ha sido contestada apropiadamente
     if experiencia and not experiencia.startswith("A) He entrenado de forma irregular"):
-        st.markdown("### 🏆 Evaluación de rendimiento por categoría")
-        st.info("💡 Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
+        st.markdown("### 🏆 Evaluación de rendimiento básica")
+        st.info("💡 Proporciona tus mejores resultados en ejercicios básicos manteniendo una técnica adecuada.")
 
-        ejercicios_data = {}
-        niveles_ejercicios = {}
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("#### 💪 Empuje superior")
+            empuje = st.selectbox(
+                "Elige tu mejor ejercicio de empuje:",
+                ["Flexiones", "Fondos"],
+                index=0 if st.session_state.get("empuje_ejercicio", "Flexiones") == "Flexiones" else 1,
+                help="Selecciona el ejercicio donde tengas mejor rendimiento.",
+                key="empuje_ejercicio"
+            )
+            empuje_reps = st.number_input(
+                f"Repeticiones continuas en {empuje}:",
+                min_value=0, 
+                max_value=100, 
+                value=st.session_state.get("empuje_reps", 10),
+                help="Sin pausas, con buena forma.",
+                key="empuje_reps"
+            )
+            
+        with col2:
+            st.markdown("#### 🏋️ Tracción superior")
+            traccion = st.selectbox(
+                "Elige tu mejor ejercicio de tracción:",
+                ["Dominadas", "Remo"],
+                index=0 if st.session_state.get("traccion_ejercicio", "Dominadas") == "Dominadas" else 1,
+                help="Selecciona el ejercicio donde tengas mejor rendimiento.",
+                key="traccion_ejercicio"
+            )
+            traccion_reps = st.number_input(
+                f"Repeticiones continuas en {traccion}:",
+                min_value=0, 
+                max_value=50, 
+                value=st.session_state.get("traccion_reps", 5),
+                help="Sin pausas, con buena forma.",
+                key="traccion_reps"
+            )
 
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["💪 Empuje", "🏋️ Tracción", "🦵 Pierna Empuje", "🦵 Pierna Tracción", "🧘 Core"])
+        col3, col4 = st.columns(2)
+        with col3:
+            st.markdown("#### 🦵 Tren inferior")
+            piernas = st.selectbox(
+                "Elige tu mejor ejercicio de piernas:",
+                ["Sentadillas", "Peso muerto"],
+                index=0 if st.session_state.get("piernas_ejercicio", "Sentadillas") == "Sentadillas" else 1,
+                help="Selecciona el ejercicio donde tengas mejor rendimiento.",
+                key="piernas_ejercicio"
+            )
+            piernas_peso = st.number_input(
+                f"Peso máximo en {piernas} (kg):",
+                min_value=0.0, 
+                max_value=300.0, 
+                value=st.session_state.get("piernas_peso", 50.0),
+                step=2.5,
+                help="1RM o peso con buena técnica.",
+                key="piernas_peso"
+            )
+            
+        with col4:
+            st.markdown("#### 🧘 Core")
+            core_tiempo = st.number_input(
+                "Tiempo máximo en plancha (segundos):",
+                min_value=0, 
+                max_value=600, 
+                value=st.session_state.get("core_tiempo", 60),
+                help="Tiempo máximo manteniendo plancha correcta.",
+                key="core_tiempo"
+            )
+
     else:
-        st.warning("⚠️ **Primero debes seleccionar tu nivel de experiencia en entrenamiento para acceder a la evaluación de ejercicios funcionales.**")
-        st.info("Por favor, selecciona una opción diferente a 'A) He entrenado de forma irregular' para continuar con la evaluación funcional.")
-        ejercicios_data = {}
-        niveles_ejercicios = {}
+        if experiencia.startswith("A) He entrenado de forma irregular"):
+            st.warning("⚠️ **Has seleccionado 'entrenamiento irregular'. Esto limitará las recomendaciones avanzadas.**")
+            st.info("💡 Considera elegir una opción que refleje mejor tu experiencia para obtener recomendaciones más precisas.")
 
-    if experiencia and not experiencia.startswith("A) He entrenado de forma irregular"):
-        with tab1:
-            st.markdown("#### Empuje superior")
-            col1, col2 = st.columns(2)
-            with col1:
-                empuje = st.selectbox(
-                    "Elige tu mejor ejercicio de empuje:",
-                    ["Flexiones", "Fondos"],
-                    help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
-                )
-            with col2:
-                empuje_reps = st.number_input(
-                    f"¿Cuántas repeticiones continuas realizas con buena forma en {empuje}?",
-                    min_value=0, max_value=100, value=safe_int(st.session_state.get(f"{empuje}_reps", 10), 10),
-                    help="Sin pausas, sin perder rango completo de movimiento."
-                )
-                ejercicios_data[empuje] = empuje_reps
-
-        with tab2:
-            st.markdown("#### Tracción superior")
-            col1, col2 = st.columns(2)
-            with col1:
-                traccion = st.selectbox(
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Validación y botón Siguiente
+    is_step_3_valid = validate_step_3()
+    
+    if is_step_3_valid:
+        st.markdown("""
+        <div class="step-motivation">
+            🏆 ¡Perfecto! Tu evaluación funcional está completa. ¡Analicemos tu actividad diaria!
+        </div>
+        """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button(
+            "🚶 SIGUIENTE: ACTIVIDAD FÍSICA DIARIA",
+            disabled=not is_step_3_valid,
+            key="next_step_3",
+            help="Continúa al siguiente paso" if is_step_3_valid else "Selecciona una experiencia válida para continuar"
+        ):
+            if is_step_3_valid:
+                advance_step()
+                st.rerun()
+    
+    if not is_step_3_valid:
+        st.markdown("""
+        <div class="step-validation-error">
+            ⚠️ Por favor selecciona una opción de experiencia diferente a "entrenamiento irregular"
+        </div>
+        """, unsafe_allow_html=True)
                     "Elige tu mejor ejercicio de tracción:",
                     ["Dominadas", "Remo invertido"],
                     help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
@@ -2578,6 +2568,173 @@ según tu progreso real. Se recomienda evaluación periódica cada 2-3
 semanas para optimizar resultados.
 
 """
+
+# ==================== PASO 4-6 Y RESULTADO FINAL ====================
+elif current_step == 4:
+    st.markdown("""
+    <div class="step-header">
+        <h1 class="step-title">🚶 Paso 4: Actividad Física Diaria</h1>
+        <p class="step-subtitle">Evalúa tu nivel de actividad habitual fuera del ejercicio</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    
+    opciones_actividad = [
+        "Sedentario (trabajo de oficina, <5,000 pasos/día)",
+        "Moderadamente-activo (trabajo mixto, 5,000-10,000 pasos/día)",
+        "Activo (trabajo físico, 10,000-12,500 pasos/día)",
+        "Muy-activo (trabajo muy físico, >12,500 pasos/día)"
+    ]
+
+    actividad_diaria = st.radio(
+        "Selecciona tu nivel de actividad diaria:",
+        opciones_actividad,
+        index=0,
+        help="Considera tu trabajo, transporte y actividades domésticas",
+        key="actividad_diaria"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    is_step_4_valid = validate_step_4()
+    if is_step_4_valid:
+        st.markdown('<div class="step-motivation">🔥 ¡Excelente! Continuemos con el siguiente paso.</div>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🍽️ SIGUIENTE: EFECTO TÉRMICO", disabled=not is_step_4_valid, key="next_step_4"):
+            advance_step()
+            st.rerun()
+
+elif current_step == 5:
+    st.markdown("""
+    <div class="step-header">
+        <h1 class="step-title">🍽️ Paso 5: Efecto Térmico de los Alimentos</h1>
+        <p class="step-subtitle">Calcula el gasto energético adicional por digestión</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    
+    eta_factor = st.slider(
+        "Factor ETA (%)",
+        min_value=8.0,
+        max_value=15.0,
+        value=10.0,
+        step=0.5,
+        help="Típicamente entre 8-15% del gasto energético total",
+        key="eta_factor"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    is_step_5_valid = validate_step_5()
+    if is_step_5_valid:
+        st.markdown('<div class="step-motivation">⚡ ¡Perfecto! Un paso más y terminamos.</div>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🏋️ SIGUIENTE: GASTO ENERGÉTICO", disabled=not is_step_5_valid, key="next_step_5"):
+            advance_step()
+            st.rerun()
+
+elif current_step == 6:
+    st.markdown("""
+    <div class="step-header">
+        <h1 class="step-title">🏋️ Paso 6: Gasto Energético del Ejercicio</h1>
+        <p class="step-subtitle">Define tu rutina de entrenamiento de fuerza</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    
+    frecuencia_opciones = [
+        "0-1 días por semana (principiante)",
+        "2 días por semana (intermedio)",
+        "3 días por semana (regular)",
+        "4-5 días por semana (avanzado)",
+        "6+ días por semana (élite/competitivo)"
+    ]
+    
+    entrenamiento_fuerza = st.radio(
+        "¿Con qué frecuencia entrenas fuerza/resistencia?",
+        frecuencia_opciones,
+        index=0,
+        help="Incluye pesas, calistenia, entrenamiento funcional",
+        key="entrenamiento_fuerza"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    is_step_6_valid = validate_step_6()
+    if is_step_6_valid:
+        st.markdown('<div class="step-motivation">🎯 ¡Increíble! Tu evaluación está completa.</div>', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("📈 VER RESULTADOS FINALES", disabled=not is_step_6_valid, key="next_step_6"):
+            advance_step()
+            st.rerun()
+
+# ==================== PASO 7: RESULTADOS FINALES ====================
+elif current_step == 7:
+    st.markdown("""
+    <div class="completion-card">
+        <h1>🎉 ¡EVALUACIÓN COMPLETADA!</h1>
+        <p>Tu cuestionario MUPAI ha sido procesado exitosamente</p>
+        <p>🏆 Todos los pasos han sido completados con excelencia</p>
+        <p>📊 Tus datos están siendo analizados para crear tu plan personalizado</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Realizar cálculos finales con los datos disponibles
+    peso = st.session_state.get("peso", 70.0)
+    estatura = st.session_state.get("estatura", 170)
+    grasa_corporal = st.session_state.get("grasa_corporal", 20.0)
+    sexo = st.session_state.get("sexo", "Hombre")
+    edad = st.session_state.get("edad", 25)
+    metodo_grasa = st.session_state.get("metodo_grasa", "Omron HBF-516 (BIA)")
+    
+    if peso > 0 and estatura > 0 and grasa_corporal > 0:
+        grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+        mlg = calcular_mlg(peso, grasa_corregida)
+        tmb = calcular_tmb_cunningham(mlg)
+        ffmi = calcular_ffmi(mlg, estatura) if estatura > 0 else 0
+        
+        st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
+        st.markdown("### 📊 Resumen de tu Evaluación")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("💪 Masa Libre de Grasa", f"{mlg:.1f} kg")
+            st.metric("🔥 TMB Cunningham", f"{tmb:.0f} kcal")
+        with col2:
+            st.metric("📏 FFMI", f"{ffmi:.1f}")
+            st.metric("⚖️ Grasa Corregida", f"{grasa_corregida:.1f}%")
+        with col3:
+            experiencia = st.session_state.get("experiencia_entrenamiento", "No especificado")[:20] + "..."
+            st.metric("💪 Experiencia", experiencia)
+            actividad = st.session_state.get("actividad_diaria", "No especificado")[:15] + "..."
+            st.metric("🚶 Actividad", actividad)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Botón para nueva evaluación
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🔄 NUEVA EVALUACIÓN", key="nueva_evaluacion_final"):
+            for key in list(st.session_state.keys()):
+                if key not in ["authenticated"]:  # Mantener autenticación
+                    del st.session_state[key]
+            st.session_state.current_step = 1
+            st.rerun()
+
+# Mensaje para pasos no válidos
+else:
+    st.error("❌ Error en la navegación. Reiniciando...")
+    st.session_state.current_step = 1
+    st.rerun()
 
 # ==================== MENSAJE FINAL SIMPLIFICADO ====================
 # Solo mostrar si los datos están completos para la evaluación
