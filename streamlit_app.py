@@ -68,6 +68,83 @@ def validate_email(email):
     
     return True, ""
 
+# ==================== FUNCIONES DE VALIDACIÓN POR PASOS ====================
+
+def validate_step_1():
+    """Valida que todos los campos del paso 1 (datos personales) estén completos."""
+    nombre = st.session_state.get("nombre", "")
+    telefono = st.session_state.get("telefono", "")
+    email = st.session_state.get("email_cliente", "")
+    acepto_terminos = st.session_state.get("acepto_terminos", False)
+    
+    # Realizar validaciones individuales
+    name_valid, _ = validate_name(nombre)
+    phone_valid, _ = validate_phone(telefono)
+    email_valid, _ = validate_email(email)
+    
+    return name_valid and phone_valid and email_valid and acepto_terminos
+
+def validate_step_2():
+    """Valida que todos los campos del paso 2 (composición corporal) estén completos."""
+    peso = st.session_state.get("peso", 0)
+    estatura = st.session_state.get("estatura", 0)
+    grasa_corporal = st.session_state.get("grasa_corporal", 0)
+    
+    return peso > 30 and estatura > 120 and grasa_corporal > 0
+
+def validate_step_3():
+    """Valida que el paso 3 (evaluación funcional) esté completo."""
+    experiencia = st.session_state.get("experiencia_entrenamiento", "")
+    return len(experiencia) > 0 and not experiencia.startswith("A) He entrenado de forma irregular")
+
+def validate_step_4():
+    """Valida que el paso 4 (actividad física) esté completo."""
+    actividad = st.session_state.get("actividad_diaria", "")
+    return len(actividad) > 0
+
+def validate_step_5():
+    """Valida que el paso 5 (efecto térmico) esté completo."""
+    eta_factor = st.session_state.get("eta_factor", 0)
+    return eta_factor > 0
+
+def validate_step_6():
+    """Valida que el paso 6 (gasto energético) esté completo."""
+    entrenamiento_fuerza = st.session_state.get("entrenamiento_fuerza", "")
+    return len(entrenamiento_fuerza) > 0
+
+def get_step_progress():
+    """Calcula el progreso actual basado en los pasos completados."""
+    current_step = st.session_state.get("current_step", 1)
+    total_steps = 6
+    return min((current_step - 1) * 100 / total_steps, 100)
+
+def advance_step():
+    """Avanza al siguiente paso si la validación es exitosa."""
+    current_step = st.session_state.get("current_step", 1)
+    
+    # Validar el paso actual antes de avanzar
+    if current_step == 1 and validate_step_1():
+        st.session_state.step_1_complete = True
+        st.session_state.current_step = 2
+    elif current_step == 2 and validate_step_2():
+        st.session_state.step_2_complete = True
+        st.session_state.current_step = 3
+    elif current_step == 3 and validate_step_3():
+        st.session_state.step_3_complete = True
+        st.session_state.current_step = 4
+    elif current_step == 4 and validate_step_4():
+        st.session_state.step_4_complete = True
+        st.session_state.current_step = 5
+    elif current_step == 5 and validate_step_5():
+        st.session_state.step_5_complete = True
+        st.session_state.current_step = 6
+    elif current_step == 6 and validate_step_6():
+        st.session_state.step_6_complete = True
+        st.session_state.questionnaire_complete = True
+        st.session_state.current_step = 7
+    
+    return st.session_state.current_step
+
 # ==================== CONFIGURACIÓN DE PÁGINA Y CSS MEJORADO ====================
 st.set_page_config(
     page_title="MUPAI - Evaluación Fitness Personalizada",
@@ -290,6 +367,119 @@ hr {
     font-weight: 600;
     font-size: 1.01rem;
 }
+/* ==================== ESTILOS PARA NAVEGACIÓN POR PASOS ==================== */
+.step-header {
+    background: linear-gradient(135deg, var(--mupai-black) 0%, #2A2A2A 100%);
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    border: 2px solid var(--mupai-yellow);
+    text-align: center;
+    animation: fadeIn 0.6s ease-out;
+}
+.step-title {
+    color: var(--mupai-yellow);
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+.step-subtitle {
+    color: #F5F5F5;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+.next-button {
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    color: var(--mupai-black);
+    border: none;
+    padding: 1rem 3rem;
+    font-weight: 900;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(244, 196, 48, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 1.2rem;
+    margin: 2rem 0 1rem 0;
+    cursor: pointer;
+}
+.next-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(244, 196, 48, 0.35);
+    filter: brightness(1.05);
+}
+.next-button:disabled {
+    background: #555555;
+    color: #888888;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+.step-motivation {
+    background: linear-gradient(135deg, var(--mupai-success) 0%, #27AE60 100%);
+    color: white;
+    padding: 1.2rem 2rem;
+    border-radius: 12px;
+    text-align: center;
+    margin: 1.5rem 0;
+    font-weight: 700;
+    font-size: 1.1rem;
+    animation: slideIn 0.5s ease-out;
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.2);
+}
+.step-validation-error {
+    background: linear-gradient(135deg, var(--mupai-danger) 0%, #C0392B 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    margin: 1rem 0;
+    font-weight: 600;
+    animation: slideIn 0.4s ease-out;
+}
+.progress-container {
+    background: #1E1E1E;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    border: 1px solid #333;
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+}
+.progress-text {
+    color: var(--mupai-yellow);
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+.completion-card {
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    color: var(--mupai-black);
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    text-align: center;
+    margin: 2rem 0;
+    box-shadow: 0 10px 40px rgba(244, 196, 48, 0.3);
+    animation: fadeIn 0.8s ease-out;
+}
+.completion-card h1 {
+    color: var(--mupai-black);
+    font-size: 2.5rem;
+    font-weight: 900;
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.completion-card p {
+    color: var(--mupai-black);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 1rem 0;
+}
 </style>
 """, unsafe_allow_html=True)
 # Header principal visual con logos
@@ -407,7 +597,15 @@ defaults = {
     "sexo": "Hombre",
     "fecha_llenado": datetime.now().strftime("%Y-%m-%d"),
     "acepto_terminos": False,
-    "authenticated": False  # Nueva variable para controlar el login
+    "authenticated": False,  # Nueva variable para controlar el login
+    "current_step": 1,  # Control de pasos del cuestionario
+    "step_1_complete": False,  # Datos personales
+    "step_2_complete": False,  # Composición corporal
+    "step_3_complete": False,  # Evaluación funcional
+    "step_4_complete": False,  # Actividad física
+    "step_5_complete": False,  # Efecto térmico
+    "step_6_complete": False,  # Gasto energético ejercicio
+    "questionnaire_complete": False  # Cuestionario completado
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -907,63 +1105,144 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
         return False
         # ==================== VISUALES INICIALES ====================
 
-# Hide mission/vision section to keep interface simple and focused
-# with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
-# Hidden: mission section content
+# ==================== SISTEMA DE NAVEGACIÓN POR PASOS ====================
 
-# BLOQUE 0: Datos personales con diseño mejorado
-st.markdown('<div class="content-card">', unsafe_allow_html=True)
-st.markdown("### 👤 Información Personal")
-st.markdown("Por favor, completa todos los campos para comenzar tu evaluación personalizada.")
+# Progreso general y navegación
+current_step = st.session_state.get("current_step", 1)
+total_steps = 6
 
-col1, col2 = st.columns(2)
-with col1:
-    nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez García", help="Tu nombre legal completo")
-    telefono = st.text_input("Teléfono*", placeholder="Ej: 8661234567", help="10 dígitos sin espacios")
-    email_cliente = st.text_input("Email*", placeholder="correo@ejemplo.com", help="Email válido para recibir resultados")
+# Contenedor de progreso fijo
+st.markdown("""
+<div class="progress-container">
+    <div class="progress-text">
+        📊 Progreso del Cuestionario MUPAI
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-with col2:
-    edad = st.number_input("Edad (años)*", min_value=15, max_value=80, value=safe_int(st.session_state.get("edad", 25), 25), help="Tu edad actual")
-    sexo = st.selectbox("Sexo biológico*", ["Hombre", "Mujer"], help="Necesario para cálculos precisos")
-    fecha_llenado = datetime.now().strftime("%Y-%m-%d")
-    st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
+# Barra de progreso
+progress_value = get_step_progress()
+progress_bar = st.progress(progress_value / 100)
+progress_text = st.empty()
 
-acepto_terminos = st.checkbox("He leído y acepto la política de privacidad y el descargo de responsabilidad")
+# Actualizar texto de progreso
+step_names = {
+    1: "Datos Personales",
+    2: "Composición Corporal", 
+    3: "Evaluación Funcional",
+    4: "Actividad Física",
+    5: "Efecto Térmico",
+    6: "Gasto Energético",
+    7: "Resultados Finales"
+}
 
-if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not acepto_terminos):
-    # Validación estricta de cada campo
-    name_valid, name_error = validate_name(nombre)
-    phone_valid, phone_error = validate_phone(telefono)
-    email_valid, email_error = validate_email(email_cliente)
+if current_step <= 6:
+    progress_text.markdown(f"""
+    <div style="text-align: center; color: var(--mupai-yellow); font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">
+        🚀 Paso {current_step} de {total_steps}: {step_names[current_step]}
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    progress_text.markdown(f"""
+    <div style="text-align: center; color: var(--mupai-success); font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">
+        🎉 ¡Cuestionario Completado! - {step_names[7]}
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==================== PASO 1: DATOS PERSONALES ====================
+if current_step == 1:
+    st.markdown("""
+    <div class="step-header">
+        <h1 class="step-title">👤 Paso 1: Información Personal</h1>
+        <p class="step-subtitle">Comparte tus datos básicos para personalizar tu evaluación</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Mostrar errores específicos para cada campo que falle
-    validation_errors = []
-    if not name_valid:
-        validation_errors.append(f"**Nombre:** {name_error}")
-    if not phone_valid:
-        validation_errors.append(f"**Teléfono:** {phone_error}")
-    if not email_valid:
-        validation_errors.append(f"**Email:** {email_error}")
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
     
-    # Solo proceder si todas las validaciones pasan
-    if name_valid and phone_valid and email_valid:
-        st.session_state.datos_completos = True
-        st.session_state.nombre = nombre
-        st.session_state.telefono = telefono
-        st.session_state.email_cliente = email_cliente
-        st.session_state.edad = edad
-        st.session_state.sexo = sexo
+    col1, col2 = st.columns(2)
+    with col1:
+        nombre = st.text_input(
+            "Nombre completo*", 
+            value=st.session_state.get("nombre", ""),
+            placeholder="Ej: Juan Pérez García", 
+            help="Tu nombre legal completo",
+            key="nombre"
+        )
+        telefono = st.text_input(
+            "Teléfono*", 
+            value=st.session_state.get("telefono", ""),
+            placeholder="Ej: 8661234567", 
+            help="10 dígitos sin espacios",
+            key="telefono"
+        )
+        email_cliente = st.text_input(
+            "Email*", 
+            value=st.session_state.get("email_cliente", ""),
+            placeholder="correo@ejemplo.com", 
+            help="Email válido para recibir resultados",
+            key="email_cliente"
+        )
+
+    with col2:
+        edad = st.number_input(
+            "Edad (años)*", 
+            min_value=15, 
+            max_value=80, 
+            value=safe_int(st.session_state.get("edad", 25), 25), 
+            help="Tu edad actual",
+            key="edad"
+        )
+        sexo = st.selectbox(
+            "Sexo biológico*", 
+            ["Hombre", "Mujer"], 
+            index=0 if st.session_state.get("sexo", "Hombre") == "Hombre" else 1,
+            help="Necesario para cálculos precisos",
+            key="sexo"
+        )
+        fecha_llenado = datetime.now().strftime("%Y-%m-%d")
         st.session_state.fecha_llenado = fecha_llenado
-        st.session_state.acepto_terminos = acepto_terminos
-        st.success("✅ Datos registrados correctamente. ¡Continuemos con tu evaluación!")
-    else:
-        # Mostrar todos los errores de validación
-        error_message = "⚠️ **Por favor corrige los siguientes errores:**\n\n" + "\n\n".join(validation_errors)
-        st.error(error_message)
+        st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
 
-st.markdown('</div>', unsafe_allow_html=True)
+    acepto_terminos = st.checkbox(
+        "He leído y acepto la política de privacidad y el descargo de responsabilidad",
+        value=st.session_state.get("acepto_terminos", False),
+        key="acepto_terminos"
+    )
 
-if not st.session_state.datos_completos:
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Validación y botón Siguiente
+    is_step_1_valid = validate_step_1()
+    
+    if is_step_1_valid:
+        st.markdown("""
+        <div class="step-motivation">
+            ✅ ¡Perfecto! Todos los datos están completos. ¡Listo para continuar!
+        </div>
+        """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button(
+            "🚀 SIGUIENTE: COMPOSICIÓN CORPORAL",
+            disabled=not is_step_1_valid,
+            key="next_step_1",
+            help="Continúa al siguiente paso" if is_step_1_valid else "Completa todos los campos para continuar"
+        ):
+            if is_step_1_valid:
+                advance_step()
+                st.rerun()
+    
+    if not is_step_1_valid:
+        st.markdown("""
+        <div class="step-validation-error">
+            ⚠️ Por favor completa todos los campos requeridos y acepta los términos para continuar
+        </div>
+        """, unsafe_allow_html=True)
+
+# ==================== BIENVENIDA INFORMATIVA ====================
+if current_step == 1 and not st.session_state.get("datos_completos", False):
     st.markdown("""
     <div class="content-card" style="margin-top:2rem; padding:3rem; background: #181A1B; color: #F5F5F5; border-left: 5px solid #F4C430;">
         <div style="text-align:center;">
