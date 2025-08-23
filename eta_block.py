@@ -219,9 +219,10 @@ def crear_tarjeta_eta(titulo, contenido, tipo="info"):
         margin: 1rem 0;
         border-radius: 0 8px 8px 0;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        text-align: center;
     ">
-        <h4 style="color: {color}; margin: 0 0 0.5rem 0;">{titulo}</h4>
-        <p style="color: #cccccc; margin: 0;">{contenido}</p>
+        <h4 style="color: {color}; margin: 0 0 0.5rem 0; text-align: center;">{titulo}</h4>
+        <p style="color: #cccccc; margin: 0; text-align: center;">{contenido}</p>
     </div>
     """, unsafe_allow_html=True)
 

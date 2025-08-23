@@ -119,6 +119,7 @@ st.markdown("""
     margin-bottom: 1.7rem;
     border-left: 5px solid var(--mupai-yellow);
     animation: slideIn 0.5s;
+    text-align: center;
 }
 .card-psmf {
     border-left-color: var(--mupai-warning)!important;
@@ -158,20 +159,7 @@ st.markdown("""
     color: #fff!important;
     font-size: 1.13rem!important;
     font-weight: 600!important;
-}
-/* Special styling for body fat measurement method selector */
-.stSelectbox[data-testid="stSelectbox"]:has(label:contains("Método de medición de grasa")) > div > div > select,
-.body-fat-method-selector > div > div > select {
-    background: #F8F9FA!important;
-    color: #1E1E1E!important;
-    border: 2px solid #DAA520!important;
-    font-weight: bold!important;
-}
-.stSelectbox[data-testid="stSelectbox"]:has(label:contains("Método de medición de grasa")) option,
-.body-fat-method-selector option {
-    background: #FFFFFF!important;
-    color: #1E1E1E!important;
-    font-weight: bold!important;
+    text-align: center!important;
 }
 .stTextInput label, .stNumberInput label, .stSelectbox label,
 .stRadio label, .stCheckbox label, .stDateInput label, .stMarkdown,
@@ -180,11 +168,29 @@ st.markdown("""
     opacity: 1 !important;
     font-weight: 700 !important;
     font-size: 1.04rem !important;
+    text-align: center !important;
 }
 .stTextInput input::placeholder,
 .stNumberInput input::placeholder {
     color: #e0e0e0 !important;
     opacity: 1 !important;
+    text-align: center !important;
+}
+/* Special styling for body fat measurement method selector */
+.stSelectbox[data-testid="stSelectbox"]:has(label:contains("Método de medición de grasa")) > div > div > select,
+.body-fat-method-selector > div > div > select {
+    background: #F8F9FA!important;
+    color: #1E1E1E!important;
+    border: 2px solid #DAA520!important;
+    font-weight: bold!important;
+    text-align: center!important;
+}
+.stSelectbox[data-testid="stSelectbox"]:has(label:contains("Método de medición de grasa")) option,
+.body-fat-method-selector option {
+    background: #FFFFFF!important;
+    color: #1E1E1E!important;
+    font-weight: bold!important;
+    text-align: center!important;
 }
 .stAlert > div {
     border-radius: 11px;
@@ -195,11 +201,30 @@ st.markdown("""
 }
 [data-testid="metric-container"] {
     background: linear-gradient(125deg, #252525 0%, #303030 100%);
-    padding: 1.1rem 1rem;
+    padding: 1.2rem 1rem;
     border-radius: 12px;
     border-left: 4px solid var(--mupai-yellow);
     box-shadow: 0 2.5px 11px rgba(0,0,0,0.11);
     color: #fff !important;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+[data-testid="metric-container"] > div {
+    text-align: center;
+    width: 100%;
+}
+[data-testid="metric-container"] [data-testid="metric-value"] {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+[data-testid="metric-container"] [data-testid="metric-label"] {
+    text-align: center;
+    font-weight: 600;
+    opacity: 0.9;
 }
 .streamlit-expanderHeader {
     background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%);
@@ -239,19 +264,38 @@ st.markdown("""
 @keyframes slideIn { from { opacity: 0; transform: translateX(-18px);} to { opacity: 1; transform: translateX(0);} }
 .badge {
     display: inline-block;
-    padding: 0.32rem 0.98rem;
-    border-radius: 18px;
-    font-size: 0.97rem;
-    font-weight: 800;
-    margin: 0.27rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0.25rem;
     color: #FFF;
     background: #313131;
     border: 1px solid #555;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 1.2;
+    min-width: auto;
 }
-.badge-success { background: var(--mupai-success); }
-.badge-warning { background: var(--mupai-warning); color: #222; border: 1px solid #b78a09;}
-.badge-danger { background: var(--mupai-danger); }
-.badge-info { background: var(--mupai-yellow); color: #1E1E1E;}
+.badge-success { 
+    background: var(--mupai-success); 
+    text-align: center;
+}
+.badge-warning { 
+    background: var(--mupai-warning); 
+    color: #222; 
+    border: 1px solid #b78a09;
+    text-align: center;
+}
+.badge-danger { 
+    background: var(--mupai-danger); 
+    text-align: center;
+}
+.badge-info { 
+    background: var(--mupai-yellow); 
+    color: #1E1E1E;
+    text-align: center;
+}
 .dataframe {
     border-radius: 10px !important;
     overflow: hidden;
@@ -267,8 +311,33 @@ hr {
 }
 @media (max-width: 768px) {
     .main-header { padding: 1.2rem;}
-    .content-card { padding: 1.1rem;}
-    .stButton > button { padding: 0.5rem 1.1rem; font-size: 0.96rem;}
+    .content-card { 
+        padding: 1.5rem 1rem;
+        text-align: center;
+    }
+    .stButton > button { 
+        padding: 0.75rem 1.5rem; 
+        font-size: 1rem;
+        width: 100%;
+    }
+    [data-testid="metric-container"] {
+        padding: 1rem 0.8rem;
+        text-align: center;
+    }
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+        margin: 0.2rem;
+        text-align: center;
+    }
+    .enhanced-card {
+        padding: 1.2rem;
+        text-align: center;
+    }
+    .step-summary-card {
+        padding: 1rem;
+        text-align: center;
+    }
 }
 .content-card:hover {
     transform: translateY(-1.5px);
@@ -526,6 +595,7 @@ hr {
     border-left: 4px solid var(--mupai-success);
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-align: center;
 }
 
 .step-summary-card:hover {
@@ -540,12 +610,15 @@ hr {
     margin-bottom: 0.8rem;
     display: flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .summary-content {
     color: #CCCCCC;
     font-size: 0.95rem;
     line-height: 1.5;
+    text-align: center;
 }
 
 .summary-metrics {
@@ -586,6 +659,10 @@ hr {
     box-shadow: 0 4px 15px rgba(39,174,96,0.3);
     animation: successSlideIn 0.6s ease-out;
     border: none;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @keyframes successSlideIn {
@@ -615,6 +692,7 @@ hr {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    text-align: center;
 }
 
 .enhanced-card::before {
@@ -641,7 +719,9 @@ hr {
 .card-header {
     display: flex;
     align-items: center;
+    justify-content: center;
     margin-bottom: 1rem;
+    text-align: center;
 }
 
 .card-icon {
@@ -655,11 +735,13 @@ hr {
     font-weight: bold;
     font-size: 1.2rem;
     margin: 0;
+    text-align: center;
 }
 
 .card-content {
     color: #CCCCCC;
     line-height: 1.6;
+    text-align: center;
 }
 
 /* === HIDE GITHUB/FORK ELEMENTS === */
@@ -3191,6 +3273,14 @@ create_enhanced_card(
 st.markdown("### 📊 Resumen Ejecutivo de tu Evaluación")
 
 # Create comprehensive summary cards
+# Ensure diferencia_edad is calculated properly
+try:
+    edad_num = int(edad)
+    diferencia_edad = edad_metabolica - edad_num
+except (ValueError, TypeError):
+    edad_num = 25
+    diferencia_edad = 0
+
 summary_sections = [
     {
         "title": "👤 Perfil Personal",
@@ -3198,7 +3288,7 @@ summary_sections = [
             {"value": f"{edad} años", "label": "Edad Cronológica"},
             {"value": f"{edad_metabolica} años", "label": "Edad Metabólica"},
             {"value": f"{diferencia_edad:+d} años", "label": "Diferencia"},
-            {"value": evaluacion, "label": "Evaluación"}
+            {"value": "Evaluación completada", "label": "Estado"}
         ],
         "icon": "👤"
     },
