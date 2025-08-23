@@ -1035,6 +1035,7 @@ def create_step_summary_card(title, metrics_data, icon="📊"):
     </div>
     """
     
+    # Render the HTML properly using st.markdown with unsafe_allow_html=True
     st.markdown(summary_html, unsafe_allow_html=True)
 
 def create_enhanced_card(title, content, icon="📋"):
