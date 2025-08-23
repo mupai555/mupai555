@@ -1150,6 +1150,37 @@ def crear_tarjeta(titulo, contenido, tipo="info"):
     </div>
     """
 
+def show_metric(label, value, help_text="", tipo="info"):
+    """Utility function to display metrics consistently with proper HTML formatting"""
+    colores = {
+        "info": "var(--mupai-yellow)",
+        "success": "var(--mupai-success)",  
+        "warning": "var(--mupai-warning)",
+        "danger": "var(--mupai-danger)"
+    }
+    color = colores.get(tipo, "var(--mupai-yellow)")
+    
+    help_html = f"<small style='opacity: 0.8;'>{help_text}</small>" if help_text else ""
+    
+    metric_html = f"""
+    <div class="metric-item" style="
+        background: linear-gradient(125deg, #252525 0%, #303030 100%);
+        padding: 1.2rem 1rem;
+        border-radius: 12px;
+        border-left: 4px solid {color};
+        box-shadow: 0 2.5px 11px rgba(0,0,0,0.11);
+        color: #fff !important;
+        text-align: center;
+        margin: 0.5rem 0;
+    ">
+        <div style="font-weight: 700; font-size: 1.5rem; margin-bottom: 0.5rem;">{value}</div>
+        <div style="font-weight: 600; opacity: 0.9; font-size: 1rem;">{label}</div>
+        {help_html}
+    </div>
+    """
+    
+    st.markdown(metric_html, unsafe_allow_html=True)
+
 # Referencias funcionales mejoradas (CORREGIDO PARA MUJERES)
 referencias_funcionales = {
     "Hombre": {
@@ -3216,9 +3247,27 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
         # --- DESGLOSE FINAL VISUAL ---
         st.markdown("### 🍽️ Distribución de macronutrientes")
-        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
+        
+        # Usar formato HTML profesional en lugar de st.write()
+        macronutrient_html = f"""
+        <div class="content-card" style="background: linear-gradient(135deg, #1E1E1E 0%, #232425 100%); border-left: 4px solid var(--mupai-success);">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: #2A2A2A; border-radius: 8px;">
+                    <span style="font-weight: bold; color: var(--mupai-yellow);">🥩 Proteína:</span>
+                    <span style="color: #fff;">{proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: #2A2A2A; border-radius: 8px;">
+                    <span style="font-weight: bold; color: var(--mupai-yellow);">🥑 Grasas:</span>
+                    <span style="color: #fff;">{grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; background: #2A2A2A; border-radius: 8px;">
+                    <span style="font-weight: bold; color: var(--mupai-yellow);">🍞 Carbohidratos:</span>
+                    <span style="color: #fff;">{carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)</span>
+                </div>
+            </div>
+        </div>
+        """
+        st.markdown(macronutrient_html, unsafe_allow_html=True)
 
         # Mostrar cálculo detallado con diseño mejorado
         st.markdown("### 🧮 Desglose del cálculo")
