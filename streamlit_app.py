@@ -8,6 +8,19 @@ from email.mime.multipart import MIMEMultipart
 import time
 import re
 
+# Importar el bloque ETA
+from eta_block import (
+    calcular_eta_automatico,
+    calcular_tmb_cunningham,
+    calcular_mlg,
+    corregir_porcentaje_grasa,
+    obtener_geaf,
+    validate_step_5,
+    mostrar_bloque_eta,
+    obtener_eta_calculado,
+    recalcular_eta
+)
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -115,13 +128,7 @@ def validate_step_4():
     actividad = st.session_state.get("actividad_diaria", "")
     return len(actividad) > 0
 
-def validate_step_5():
-    """Valida que el paso 5 (efecto térmico) esté completo."""
-    # ETA se calcula automáticamente, solo necesitamos los datos previos
-    peso = st.session_state.get("peso", 0)
-    porcentaje_grasa = st.session_state.get("grasa_corporal", 0)
-    actividad = st.session_state.get("actividad_diaria", "")
-    return peso > 0 and porcentaje_grasa > 0 and len(actividad) > 0
+# validate_step_5 is imported from eta_block
 
 def validate_step_6():
     """Valida que el paso 6 (gasto energético) esté completo."""
@@ -802,72 +809,7 @@ def safe_int(value, default=0):
     except (ValueError, TypeError):
         return int(default)
 
-def calcular_tmb_cunningham(mlg):
-    """Calcula el TMB usando la fórmula de Cunningham."""
-    try:
-        mlg = float(mlg)
-    except (TypeError, ValueError):
-        mlg = 0.0
-    return 370 + (21.6 * mlg)
-
-def calcular_mlg(peso, porcentaje_grasa):
-    """Calcula la Masa Libre de Grasa."""
-    try:
-        peso = float(peso)
-        porcentaje_grasa = float(porcentaje_grasa)
-    except (TypeError, ValueError):
-        peso = 0.0
-        porcentaje_grasa = 0.0
-    return peso * (1 - porcentaje_grasa / 100)
-
-def corregir_porcentaje_grasa(medido, metodo, sexo):
-    """
-    Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron, ajusta con tablas especializadas por sexo.
-    Si InBody, aplica factor.
-    Si BodPod, aplica factor por sexo.
-    Si DEXA, devuelve el valor medido.
-    """
-    try:
-        medido = float(medido)
-    except (TypeError, ValueError):
-        medido = 0.0
-
-    if metodo == "Omron HBF-516 (BIA)":
-        # Tablas especializadas por sexo para conversión Omron→DEXA
-        if sexo == "Hombre":
-            tabla = {
-                5: 2.8, 6: 3.8, 7: 4.8, 8: 5.8, 9: 6.8,
-                10: 7.8, 11: 8.8, 12: 9.8, 13: 10.8, 14: 11.8,
-                15: 13.8, 16: 14.8, 17: 15.8, 18: 16.8, 19: 17.8,
-                20: 20.8, 21: 21.8, 22: 22.8, 23: 23.8, 24: 24.8,
-                25: 27.3, 26: 28.3, 27: 29.3, 28: 30.3, 29: 31.3,
-                30: 33.8, 31: 34.8, 32: 35.8, 33: 36.8, 34: 37.8,
-                35: 40.3, 36: 41.3, 37: 42.3, 38: 43.3, 39: 44.3,
-                40: 45.3
-            }
-        else:  # Mujer
-            tabla = {
-                5: 2.2, 6: 3.2, 7: 4.2, 8: 5.2, 9: 6.2,
-                10: 7.2, 11: 8.2, 12: 9.2, 13: 10.2, 14: 11.2,
-                15: 13.2, 16: 14.2, 17: 15.2, 18: 16.2, 19: 17.2,
-                20: 20.2, 21: 21.2, 22: 22.2, 23: 23.2, 24: 24.2,
-                25: 26.7, 26: 27.7, 27: 28.7, 28: 29.7, 29: 30.7,
-                30: 33.2, 31: 34.2, 32: 35.2, 33: 36.2, 34: 37.2,
-                35: 39.7, 36: 40.7, 37: 41.7, 38: 42.7, 39: 43.7,
-                40: 44.7
-            }
-        
-        grasa_redondeada = int(round(medido))
-        grasa_redondeada = min(max(grasa_redondeada, 5), 40)
-        return tabla.get(grasa_redondeada, medido)
-    elif metodo == "InBody 270 (BIA profesional)":
-        return medido * 1.02
-    elif metodo == "Bod Pod (Pletismografía)":
-        factor = 1.0 if sexo == "Mujer" else 1.03
-        return medido * factor
-    else:  # DEXA (Gold Standard) u otros
-        return medido
+# TMB, MLG, and body fat correction functions are imported from eta_block
 
 def calcular_ffmi(mlg, estatura_cm):
     """Calcula el FFMI y lo normaliza a 1.80m de estatura."""
@@ -1019,65 +961,7 @@ def calcular_edad_metabolica(edad_cronologica, porcentaje_grasa, sexo):
     edad_metabolica = edad_cronologica + ajuste_edad
     return max(18, min(80, round(edad_metabolica)))
 
-def obtener_geaf(nivel):
-    """Devuelve el factor de actividad física (GEAF) según el nivel."""
-    valores = {
-        "Sedentario": 1.00,
-        "Moderadamente-activo": 1.11,
-        "Activo": 1.25,
-        "Muy-activo": 1.45
-    }
-    return valores.get(nivel, 1.00)
-
-def calcular_eta_automatico(tmb, geaf, porcentaje_grasa, sexo):
-    """
-    Calcula el Efecto Térmico de los Alimentos (ETA) automáticamente.
-    Fórmula científica basada en composición corporal y gasto energético.
-    
-    Args:
-        tmb: Tasa Metabólica Basal (kcal)
-        geaf: Factor de Actividad Física
-        porcentaje_grasa: Porcentaje de grasa corporal
-        sexo: "Hombre" o "Mujer"
-    
-    Returns:
-        float: ETA en kcal/día
-    """
-    try:
-        tmb = float(tmb)
-        geaf = float(geaf)
-        porcentaje_grasa = float(porcentaje_grasa)
-    except (TypeError, ValueError):
-        return 0.0
-    
-    # Gasto energético base (TMB * GEAF)
-    gasto_base = tmb * geaf
-    
-    # Factor ETA basado en composición corporal y sexo
-    # Personas más magras tienen mayor ETA debido a mayor masa muscular
-    if sexo == "Hombre":
-        if porcentaje_grasa <= 10:
-            factor_eta = 0.12  # 12% para hombres muy magros
-        elif porcentaje_grasa <= 15:
-            factor_eta = 0.11  # 11% para hombres magros
-        elif porcentaje_grasa <= 20:
-            factor_eta = 0.10  # 10% para hombres normales
-        else:
-            factor_eta = 0.09  # 9% para hombres con más grasa
-    else:  # Mujer
-        if porcentaje_grasa <= 16:
-            factor_eta = 0.11  # 11% para mujeres muy magras
-        elif porcentaje_grasa <= 21:
-            factor_eta = 0.10  # 10% para mujeres magras
-        elif porcentaje_grasa <= 26:
-            factor_eta = 0.09  # 9% para mujeres normales
-        else:
-            factor_eta = 0.08  # 8% para mujeres con más grasa
-    
-    # ETA = Factor * Gasto energético base
-    eta = gasto_base * factor_eta
-    
-    return round(eta, 1)
+# obtener_geaf and calcular_eta_automatico functions are imported from eta_block
 
 def esta_en_rango_saludable(porcentaje_grasa, sexo):
     """
@@ -1800,81 +1684,8 @@ elif current_step == 4:
             st.rerun()
 
 elif current_step == 5:
-    st.markdown("""
-    <div class="step-header">
-        <h1 class="step-title">🍽️ Paso 5: Efecto Térmico de los Alimentos</h1>
-        <p class="step-subtitle">Cálculo automático del gasto energético adicional por digestión</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    
-    # Obtener datos previos para calcular ETA automáticamente
-    peso = st.session_state.get("peso", 0)
-    grasa_corporal = st.session_state.get("grasa_corporal", 0)
-    metodo_grasa = st.session_state.get("metodo_grasa", "DEXA (Gold Standard)")
-    actividad_diaria = st.session_state.get("actividad_diaria", "")
-    sexo = st.session_state.get("sexo", "Hombre")
-    
-    if peso > 0 and grasa_corporal > 0 and actividad_diaria:
-        # Calcular valores necesarios
-        grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
-        mlg = calcular_mlg(peso, grasa_corregida)
-        tmb = calcular_tmb_cunningham(mlg)
-        geaf = obtener_geaf(actividad_diaria)
-        eta_calculado = calcular_eta_automatico(tmb, geaf, grasa_corregida, sexo)
-        
-        # Mostrar información científica
-        st.markdown("### 🧬 Cálculo Científico del ETA")
-        st.info("""
-        **💡 ¿Qué es el Efecto Térmico de los Alimentos (ETA)?**
-        
-        Es el aumento temporal del gasto energético después de comer, debido al proceso de digestión, absorción, transporte y metabolismo de los nutrientes. Representa típicamente 8-15% del gasto energético total diario.
-        """)
-        
-        # Mostrar resultados automáticos
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric(
-                "🔥 TMB (Cunningham)", 
-                f"{tmb:.0f} kcal/día",
-                help="Tasa Metabólica Basal calculada con fórmula de Cunningham"
-            )
-        with col2:
-            st.metric(
-                "🚶 Factor GEAF", 
-                f"{geaf:.2f}",
-                help=f"Factor de actividad física: {actividad_diaria}"
-            )
-        with col3:
-            st.metric(
-                "🍽️ ETA Calculado", 
-                f"{eta_calculado:.0f} kcal/día",
-                help="Efecto Térmico de los Alimentos calculado automáticamente"
-            )
-        
-        # Guardar el ETA calculado en session_state
-        st.session_state.eta_calculado = eta_calculado
-        
-        # Explicación del cálculo
-        factor_eta = eta_calculado / (tmb * geaf) * 100 if (tmb * geaf) > 0 else 0
-        st.markdown(f"""
-        **📊 Detalles del cálculo:**
-        - **Gasto energético base:** {tmb:.0f} × {geaf:.2f} = {(tmb * geaf):.0f} kcal/día
-        - **Factor ETA aplicado:** {factor_eta:.1f}% (basado en composición corporal)
-        - **ETA resultante:** {eta_calculado:.0f} kcal/día
-        """)
-        
-        st.success("✅ **ETA calculado automáticamente con base científica**")
-        
-    else:
-        st.warning("⚠️ Completa los pasos anteriores para calcular el ETA automáticamente")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    is_step_5_valid = validate_step_5()
-    if is_step_5_valid:
-        st.markdown('<div class="step-motivation">⚡ ¡Perfecto! Un paso más y terminamos.</div>', unsafe_allow_html=True)
+    # Usar el bloque ETA modular
+    is_step_5_valid = mostrar_bloque_eta()
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
