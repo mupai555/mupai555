@@ -907,27 +907,9 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
         return False
         # ==================== VISUALES INICIALES ====================
 
-# Misión, Visión y Compromiso con diseño mejorado
-with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(crear_tarjeta(
-            "🎯 Misión",
-            "Hacer accesible el entrenamiento basado en ciencia, ofreciendo planes personalizados que se adaptan a todos los niveles de condición física.",
-            "info"
-        ), unsafe_allow_html=True)
-    with col2:
-        st.markdown(crear_tarjeta(
-            "👁️ Visión",
-            "Ser el referente global en evaluación y entrenamiento digital personalizado, uniendo investigación científica con experiencia práctica.",
-            "success"
-        ), unsafe_allow_html=True)
-    with col3:
-        st.markdown(crear_tarjeta(
-            "🤝 Compromiso",
-            "Nos guiamos por la ética, transparencia y precisión científica para ofrecer resultados reales, medibles y sostenibles.",
-            "warning"
-        ), unsafe_allow_html=True)
+# Hide mission/vision section to keep interface simple and focused
+# with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
+# Hidden: mission section content
 
 # BLOQUE 0: Datos personales con diseño mejorado
 st.markdown('<div class="content-card">', unsafe_allow_html=True)
@@ -1056,7 +1038,7 @@ if datos_personales_completos and st.session_state.datos_completos:
     # BLOQUE 1: Datos antropométricos con diseño mejorado
     with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
         progress.progress(20)
-        progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
+        progress_text.text("🏃‍♀️ Paso 1 de 5: Conociendo tu cuerpo - ¡Excelente inicio!")
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
@@ -1147,57 +1129,15 @@ if datos_personales_completos and st.session_state.datos_completos:
             f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
         )
 
-    # Resultados principales visuales
-    st.markdown("### 📈 Resultados de tu composición corporal")
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", "Normal" if 10 <= grasa_corregida <= 25 else "Revisar")
-    with col2:
-        st.metric("MLG", f"{mlg:.1f} kg", "Masa Libre de Grasa")
-    with col3:
-        st.metric("TMB", f"{tmb:.0f} kcal", "Metabolismo Basal")
-    with col4:
-        try:
-            edad_num = int(edad)
-            diferencia_edad = edad_metabolica - edad_num
-        except (ValueError, TypeError):
-            edad_num = 25
-            diferencia_edad = 0
-        st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
-
-    # FFMI con visualización mejorada
-    st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        color_nivel = {
-            "Bajo": "danger",
-            "Promedio": "warning",
-            "Bueno": "success",
-            "Avanzado": "info",
-            "Élite": "success"
-        }.get(nivel_ffmi, "info")
-        st.markdown(f"""
-        <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
-        <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
-        """, unsafe_allow_html=True)
-        if sexo == "Hombre":
-            ffmi_max = 25
-            rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
-        else:
-            ffmi_max = 21
-            rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
-        progreso_ffmi = min(ffmi / ffmi_max, 1.0)
-        st.progress(progreso_ffmi)
-        st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
-    with col2:
-        st.info(f"""
-        **Referencia FFMI ({sexo}):**
-        - Bajo: <{rangos_ffmi['Bajo']}
-        - Promedio: {rangos_ffmi['Bajo']}-{rangos_ffmi['Promedio']}
-        - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
-        - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
-        - Élite: >{rangos_ffmi['Avanzado']}
-        """)
+    # Hide technical data - show simple confirmation instead
+    st.markdown("""
+    <div class="content-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center;">
+        <h3 style="color: white; margin-bottom: 1rem;">✅ ¡Datos recibidos correctamente!</h3>
+        <p style="color: white; font-size: 1.1rem; margin: 0;">
+            Tu información ha sido procesada exitosamente. Continuemos con la siguiente sección.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 else:
     st.info("Por favor completa los datos personales para comenzar la evaluación.")
@@ -1304,7 +1244,7 @@ progress_text = st.empty()
 # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
 with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
     progress.progress(40)
-    progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
+    progress_text.text("💪 Paso 2 de 5: Evaluando tu fuerza - ¡Vamos súper bien!")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -1643,7 +1583,7 @@ else:
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
     progress.progress(60)
-    progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+    progress_text.text("🔥 Paso 3 de 5: Tu estilo de vida - ¡Ya casi terminamos!")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
@@ -1709,7 +1649,7 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
 with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
     progress.progress(70)
-    progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
+    progress_text.text("⚡ Paso 4 de 5: Optimizando tu metabolismo - ¡Increíble progreso!")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -1761,7 +1701,7 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
     progress.progress(80)
-    progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
+    progress_text.text("🏋️‍♂️ Paso 5 de 5: Tu rutina de ejercicio - ¡Último paso!")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
@@ -1824,7 +1764,7 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
     progress.progress(100)
-    progress_text.text("Paso final: Calculando tu plan nutricional personalizado")
+    progress_text.text("🎉 ¡Completado! Tu coach creará tu plan personalizado")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -2017,89 +1957,26 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         if carbo_g < 50:
             st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
 
-        # --- DESGLOSE FINAL VISUAL ---
-        st.markdown("### 🍽️ Distribución de macronutrientes")
-        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
+        # Replace all technical details with simple motivational message
+        st.markdown("""
+        <div class="content-card" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; text-align: center; padding: 3rem 2rem;">
+            <h2 style="color: white; margin-bottom: 1.5rem;">🎉 ¡Evaluación Completada!</h2>
+            <p style="color: white; font-size: 1.3rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                Hemos analizado tu información de manera exitosa. Tu coach personal recibirá todos los datos
+                y creará un plan 100% personalizado para ti.
+            </p>
+            <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0;">
+                <p style="color: white; font-size: 1.1rem; margin: 0; font-weight: 500;">
+                    🔒 <strong>Tus datos son confidenciales, solo los verá tu coach</strong>
+                </p>
+            </div>
+            <p style="color: white; font-size: 1.1rem; margin: 0;">
+                ¡Pronto recibirás tu plan nutricional y de entrenamiento personalizado!
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # Mostrar cálculo detallado con diseño mejorado
-        st.markdown("### 🧮 Desglose del cálculo")
-        with st.expander("Ver cálculo detallado", expanded=False):
-            st.code(f"""
-Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
-GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
 
-Factor de Balance Energético (FBEO) = 1 - (déficit/100)
-FBEO = 1 - ({porcentaje}/100) = {fbeo:.2f}
-
-Ingesta Calórica = GE × FBEO
-Ingesta = {GE:.0f} × {fbeo:.2f} = {ingesta_calorica:.0f} kcal/día
-""")
-
-        # Resultado final con diseño premium
-        st.markdown("### 🎯 Tu plan nutricional personalizado")
-
-        # Métricas principales
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
-                     f"{ingesta_calorica/peso:.1f} kcal/kg" if peso > 0 else "– kcal/kg")
-        with col2:
-            st.metric("🥩 Proteína", f"{proteina_g} g", 
-                     f"{proteina_g/peso:.2f} g/kg" if peso > 0 else "– g/kg")
-        with col3:
-            st.metric("🥑 Grasas", f"{grasa_g} g", 
-                     f"{round(grasa_kcal/ingesta_calorica*100)}%" if ingesta_calorica > 0 else "–%")
-        with col4:
-            st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
-                     f"{round(carbo_kcal/ingesta_calorica*100)}%")
-
-        # Visualización de distribución de macros
-        st.markdown("### 📊 Distribución de macronutrientes")
-        import pandas as pd
-        macro_data = {
-            "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
-            "Gramos": [proteina_g, grasa_g, carbo_g],
-            "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
-            "% del total": [
-                f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
-            ]
-        }
-        df_macros = pd.DataFrame(macro_data)
-        st.dataframe(
-            df_macros,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
-                "Gramos": st.column_config.TextColumn("Gramos/día", width="small"),
-                "Calorías": st.column_config.TextColumn("Calorías", width="small"),
-                "% del total": st.column_config.TextColumn("% Total", width="small"),
-            }
-        )
-
-        # Recomendaciones adicionales
-        st.markdown("### 💡 Recomendaciones para optimizar resultados")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info("""
-            **📅 Timing de comidas:**
-            - 3-4 comidas al día
-            - Proteína en cada comida
-            - Pre/post entreno con carbos
-            - Última comida 2-3h antes de dormir
-            """)
-        with col2:
-            st.info("""
-            **💧 Hidratación y suplementos:**
-            - Agua: 35-40ml/kg peso
-            - Creatina: 5g/día
-            - Vitamina D: 2000-4000 UI
-            - Omega-3: 2-3g EPA+DHA
-            """)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -2108,91 +1985,23 @@ peso = st.session_state.get("peso", 0)
 estatura = st.session_state.get("estatura", 0)
 grasa_corporal = st.session_state.get("grasa_corporal", 0)
 
-# RESUMEN FINAL MEJORADO
-st.markdown("---")
-st.markdown('<div class="content-card" style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); color: #1E1E1E;">', unsafe_allow_html=True)
-st.markdown("## 🎯 **Resumen Final de tu Evaluación MUPAI**")
-st.markdown(f"*Fecha: {fecha_llenado} | Cliente: {nombre}*")
-
-# Crear resumen visual con métricas clave
-col1, col2, col3 = st.columns(3)
-with col1:
-    # Ensure edad is numeric for calculations
-    try:
-        edad_num = int(edad)
-        diferencia_edad = edad_metabolica - edad_num
-        evaluacion = '⚠️ Mejorar' if edad_metabolica > edad_num + 2 else '✅ Excelente' if edad_metabolica < edad_num - 2 else '👍 Normal'
-    except (ValueError, TypeError):
-        edad_num = 25  # Default fallback
-        diferencia_edad = 0
-        evaluacion = '👍 Normal'
-    
-    st.markdown(f"""
-    ### 👤 Perfil Personal
-    - **Edad cronológica:** {edad} años
-    - **Edad metabólica:** {edad_metabolica} años
-    - **Diferencia:** {diferencia_edad:+d} años
-    - **Evaluación:** {evaluacion}
-    """)
-with col2:
-    st.markdown(f"""
-    ### 💪 Composición Corporal
-    - **Peso:** {peso} kg | **Altura:** {estatura} cm
-    - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
-    - **FFMI:** {ffmi:.2f} ({nivel_ffmi})
-    - **Potencial:** {porc_potencial:.0f}% alcanzado
-    """)
-with col3:
-    # Safe calculations for display
-    proteina_ratio = f"({proteina_g/peso:.2f}g/kg)" if peso > 0 else "(–g/kg)"
-    grasa_percent = f"({round(grasa_kcal/ingesta_calorica*100)}%)" if ingesta_calorica > 0 else "(–%)"
-    carbo_percent = f"({round(carbo_kcal/ingesta_calorica*100)}%)" if ingesta_calorica > 0 else "(–%)"
-    estrategia = plan_elegido.split('(')[0].strip() if 'plan_elegido' in locals() and plan_elegido else "Plan tradicional"
-    
-    st.markdown(f"""
-    ### 🍽️ Plan Nutricional
-    - **Objetivo:** {fase}
-    - **Calorías:** {ingesta_calorica:.0f} kcal/día
-    - **Proteína:** {proteina_g}g {proteina_ratio}
-    - **Grasas:** {grasa_g}g {grasa_percent}
-    - **Carbohidratos:** {carbo_g}g {carbo_percent}
-    - **Estrategia:** {estrategia}
-    """)
-
-# Mensaje motivacional personalizado
-mensaje_motivacional = ""
-try:
-    edad_num = int(edad)
-    if edad_metabolica > edad_num + 2:
-        mensaje_motivacional = "Tu edad metabólica indica que hay margen significativo de mejora. ¡Este plan te ayudará a rejuvenecer metabólicamente!"
-    elif edad_metabolica < edad_num - 2:
-        mensaje_motivacional = "¡Excelente! Tu edad metabólica es menor que tu edad real. Mantén este gran trabajo."
-    else:
-        mensaje_motivacional = "Tu edad metabólica está bien alineada con tu edad cronológica. Sigamos optimizando tu composición corporal."
-except (ValueError, TypeError):
-    mensaje_motivacional = "Tu edad metabólica está bien alineada con tu edad cronológica. Sigamos optimizando tu composición corporal."
-
-st.success(f"""
-### ✅ Evaluación completada exitosamente
-
-{mensaje_motivacional}
-
-**Tu plan personalizado** considera todos los factores evaluados: composición corporal, 
-nivel de entrenamiento, actividad diaria y objetivos. La fase recomendada es **{fase}** 
-con una ingesta de **{ingesta_calorica:.0f} kcal/día**.
-
-{'⚠️ **Nota:** Elegiste el protocolo PSMF. Recuerda que es temporal (6-8 semanas máximo) y requiere supervisión.' if 'PSMF' in plan_elegido else ''}
-""")
-# Advertencias finales si aplican
-if fuera_rango:
-    st.warning(f"""
-    ⚠️ **Consideración sobre el FFMI:** Tu % de grasa ({grasa_corregida:.1f}%) está fuera del 
-    rango ideal para máxima precisión ({rango_grasa_ok[0]}-{rango_grasa_ok[1]}%). 
-    Los valores de FFMI y potencial muscular son estimaciones que mejorarán su precisión 
-    cuando alcances el rango óptimo.
-    """)
-
-st.markdown('</div>', unsafe_allow_html=True)
+# Simple completion message instead of technical summary
+st.markdown("""
+<div class="content-card" style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); color: #1E1E1E; text-align: center; padding: 3rem 2rem;">
+    <h2 style="color: #1E1E1E; margin-bottom: 1.5rem;">🎯 ¡Evaluación Enviada Exitosamente!</h2>
+    <p style="color: #1E1E1E; font-size: 1.3rem; margin-bottom: 1.5rem; line-height: 1.6;">
+        Tu información ha sido procesada y enviada a tu coach personal.
+    </p>
+    <div style="background: rgba(30,30,30,0.1); padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0;">
+        <p style="color: #1E1E1E; font-size: 1.1rem; margin: 0; font-weight: 500;">
+            🔒 <strong>Tus datos son confidenciales, solo los verá tu coach</strong>
+        </p>
+    </div>
+    <p style="color: #1E1E1E; font-size: 1.1rem; margin: 0;">
+        En breve recibirás tu plan nutricional y de entrenamiento 100% personalizado.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 # ====== BOTONES Y ENVÍO FINAL (SOLO POR BOTÓN, NUNCA AUTOMÁTICO) ======
 
@@ -2520,197 +2329,43 @@ semanas para optimizar resultados.
 
 """
 
-# ==================== RESUMEN PERSONALIZADO ====================
+# ==================== MENSAJE FINAL SIMPLIFICADO ====================
 # Solo mostrar si los datos están completos para la evaluación
 if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
     st.markdown("---")
-    st.markdown("""
-    <div class="content-card" style="background: linear-gradient(135deg, #1E1E1E 0%, #232425 100%); border-left: 4px solid var(--mupai-yellow);">
-        <h2 style="color: var(--mupai-yellow); text-align: center; margin-bottom: 2rem;">
-            🎯 Resumen Personalizado y Proyección
-        </h2>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Categorizar grasa corporal
-    if sexo == "Hombre":
-        if grasa_corregida < 6:
-            categoria_grasa = "Muy bajo (Competición)"
-            color_categoria = "#E74C3C"
-        elif grasa_corregida < 12:
-            categoria_grasa = "Atlético"
-            color_categoria = "#27AE60"
-        elif grasa_corregida < 18:
-            categoria_grasa = "Fitness"
-            color_categoria = "#F39C12"
-        elif grasa_corregida < 25:
-            categoria_grasa = "Promedio"
-            color_categoria = "#3498DB"
-        else:
-            categoria_grasa = "Alto"
-            color_categoria = "#E74C3C"
-    else:  # Mujer
-        if grasa_corregida < 12:
-            categoria_grasa = "Muy bajo (Competición)"
-            color_categoria = "#E74C3C"
-        elif grasa_corregida < 17:
-            categoria_grasa = "Atlético"
-            color_categoria = "#27AE60"
-        elif grasa_corregida < 23:
-            categoria_grasa = "Fitness"
-            color_categoria = "#F39C12"
-        elif grasa_corregida < 30:
-            categoria_grasa = "Promedio"
-            color_categoria = "#3498DB"
-        else:
-            categoria_grasa = "Alto"
-            color_categoria = "#E74C3C"
-    
-    # Usar proyección científica realista
-    peso_actual = peso if peso > 0 else 70  # Fallback si no hay peso
-    
-    # Determinar el porcentaje correcto según el plan elegido usando función centralizada
-    porcentaje_for_projection = obtener_porcentaje_para_proyeccion(
-        plan_elegido if 'plan_elegido' in locals() else "",
-        psmf_recs if 'psmf_recs' in locals() else {},
-        GE if 'GE' in locals() else 0,
-        porcentaje if 'porcentaje' in locals() else 0
-    )
-    
-    # Calcular proyección científica
-    proyeccion = calcular_proyeccion_cientifica(
-        sexo, 
-        grasa_corregida, 
-        nivel_entrenamiento if 'nivel_entrenamiento' in locals() else 'intermedio',
-        peso_actual, 
-        porcentaje_for_projection
-    )
-    
-    # Determinar tipo de cambio y dirección
-    if porcentaje_for_projection < 0:  # Déficit (pérdida) - valor negativo
-        tipo_cambio = "pérdida"
-        direccion = "-"
-    elif porcentaje_for_projection > 0:  # Superávit (ganancia) - valor positivo
-        tipo_cambio = "ganancia"
-        direccion = "+"
-    else:  # Mantenimiento
-        tipo_cambio = "mantenimiento"
-        direccion = ""
-    
-    # Usar el rango medio para la proyección visual
-    cambio_semanal_medio = (proyeccion['rango_semanal_kg'][0] + proyeccion['rango_semanal_kg'][1]) / 2
-    cambio_6_semanas_medio = (proyeccion['rango_total_6sem_kg'][0] + proyeccion['rango_total_6sem_kg'][1]) / 2
-    peso_proyectado = peso_actual + cambio_6_semanas_medio
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown(f"""
-        <div class="content-card" style="background: #1A1A1A;">
-            <h3 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">📊 Diagnóstico Personalizado</h3>
-            <div style="margin-bottom: 1rem;">
-                <strong style="color: #CCCCCC;">Categoría de Grasa Corporal:</strong><br>
-                <span style="color: {color_categoria}; font-weight: bold; font-size: 1.1rem;">{categoria_grasa}</span>
-                <span style="color: #999999;"> ({grasa_corregida:.1f}%)</span>
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <strong style="color: #CCCCCC;">Nivel de Entrenamiento:</strong><br>
-                <span style="color: var(--mupai-yellow); font-weight: bold;">{nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() else 'Intermedio'}</span>
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <strong style="color: #CCCCCC;">Objetivo Recomendado:</strong><br>
-                <span style="color: #27AE60; font-weight: bold;">{fase}</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="content-card" style="background: #1A1A1A;">
-            <h3 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">📈 Proyección Científica 6 Semanas</h3>
-            <div style="margin-bottom: 1rem;">
-                <strong style="color: #CCCCCC;">Rango Semanal Científico:</strong><br>
-                <span style="color: {'#27AE60' if direccion == '+' else '#E74C3C' if direccion == '-' else '#3498DB'}; font-weight: bold; font-size: 1.1rem;">
-                    {proyeccion['rango_semanal_pct'][0]:.1f}% a {proyeccion['rango_semanal_pct'][1]:.1f}% del peso corporal
-                </span><br>
-                <span style="color: #999999; font-size: 0.9rem;">
-                    ({proyeccion['rango_semanal_kg'][0]:+.2f} a {proyeccion['rango_semanal_kg'][1]:+.2f} kg/semana)
-                </span>
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <strong style="color: #CCCCCC;">Peso Actual → Rango Proyectado:</strong><br>
-                <span style="color: #CCCCCC; font-size: 1.1rem;">{peso_actual:.1f} kg → </span>
-                <span style="color: var(--mupai-yellow); font-weight: bold; font-size: 1.1rem;">
-                    {peso_actual + proyeccion['rango_total_6sem_kg'][0]:.1f} a {peso_actual + proyeccion['rango_total_6sem_kg'][1]:.1f} kg
-                </span>
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <strong style="color: #CCCCCC;">Cambio Total Estimado:</strong><br>
-                <span style="color: {'#27AE60' if direccion == '+' else '#E74C3C' if direccion == '-' else '#3498DB'}; font-weight: bold; font-size: 1.1rem;">
-                    {proyeccion['rango_total_6sem_kg'][0]:+.2f} a {proyeccion['rango_total_6sem_kg'][1]:+.2f} kg en 6 semanas
-                </span>
-            </div>
-            <div style="margin-bottom: 0;">
-                <strong style="color: #CCCCCC;">Explicación Científica:</strong><br>
-                <span style="color: #CCCCCC; font-size: 0.9rem; line-height: 1.4;">
-                    {proyeccion['explicacion_textual']}
-                </span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Nota aclaratoria
-    st.markdown("""
-    <div class="content-card" style="background: #252525; border-left: 4px solid #F39C12;">
-        <h4 style="color: #F39C12; margin-bottom: 1rem;">⚠️ Importante: Naturaleza de las Estimaciones</h4>
-        <p style="color: #CCCCCC; line-height: 1.6; margin-bottom: 0;">
-            <strong>Estas son estimaciones basadas en modelos científicos.</strong> El cuerpo humano es un sistema complejo, 
-            no lineal y dinámico. Los resultados reales dependerán de múltiples factores como:
-        </p>
-        <ul style="color: #CCCCCC; margin: 1rem 0; line-height: 1.6;">
-            <li>Adherencia estricta al plan nutricional y de entrenamiento</li>
-            <li>Calidad del sueño y gestión del estrés</li>
-            <li>Respuesta individual y adaptaciones metabólicas</li>
-            <li>Factores hormonales y genéticos</li>
-            <li>Variaciones en la actividad diaria no planificada</li>
-        </ul>
-        <p style="color: #CCCCCC; line-height: 1.6; margin-bottom: 0;">
-            <strong>Recomendación:</strong> Utiliza estas proyecciones como guía inicial y ajusta según tu progreso real. 
-            Se recomienda evaluación periódica cada 2-3 semanas para optimizar resultados.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    # Just show a simple congratulatory message instead of technical details
+    pass  # The earlier completion message handles this
 
-# --- Botón para enviar email (solo si no se ha enviado y todo completo) ---
+# --- Botón para enviar al coach (usuario solo ve confirmación) ---
 if not st.session_state.get("correo_enviado", False):
-    if st.button("📧 Enviar Resumen por Email", key="enviar_email"):
+    if st.button("🚀 Enviar Mi Evaluación al Coach", key="enviar_email"):
         faltantes = datos_completos_para_email()
         if faltantes:
-            st.error(f"❌ No se puede enviar el email. Faltan: {', '.join(faltantes)}")
+            st.error(f"❌ Por favor completa los siguientes datos: {', '.join(faltantes)}")
         else:
-            with st.spinner("📧 Enviando resumen por email..."):
+            with st.spinner("🚀 Enviando tu evaluación al coach..."):
                 ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
                 if ok:
                     st.session_state["correo_enviado"] = True
-                    st.success("✅ Email enviado exitosamente a administración")
+                    st.success("✅ ¡Perfecto! Tu evaluación ha sido enviada exitosamente a tu coach")
                 else:
-                    st.error("❌ Error al enviar email. Contacta a soporte técnico.")
+                    st.error("❌ Hubo un problema técnico. Por favor intenta de nuevo o contacta a soporte.")
 else:
-    st.info("✅ El resumen ya fue enviado por email. Si requieres reenviarlo, refresca la página o usa el botón de 'Reenviar Email'.")
+    st.success("✅ Tu evaluación ya fue enviada exitosamente. Tu coach se pondrá en contacto contigo pronto.")
 
-# --- Opción para reenviar manualmente (opcional) ---
-if st.button("📧 Reenviar Email", key="reenviar_email"):
+# --- Opción para reenviar (simplificada) ---
+if st.button("📧 Reenviar Evaluación", key="reenviar_email"):
     faltantes = datos_completos_para_email()
     if faltantes:
-        st.error(f"❌ No se puede reenviar el email. Faltan: {', '.join(faltantes)}")
+        st.error(f"❌ Por favor completa los siguientes datos: {', '.join(faltantes)}")
     else:
-        with st.spinner("📧 Reenviando resumen por email..."):
+        with st.spinner("📧 Reenviando tu evaluación..."):
             ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
             if ok:
                 st.session_state["correo_enviado"] = True
-                st.success("✅ Email reenviado exitosamente a administración")
+                st.success("✅ ¡Listo! Tu evaluación ha sido reenviada a tu coach")
             else:
-                st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
+                st.error("❌ Hubo un problema técnico. Por favor intenta de nuevo o contacta a soporte.")
 
 # --- Limpieza de sesión y botón de nueva evaluación ---
 if st.button("🔄 Nueva Evaluación", key="nueva"):
