@@ -8,6 +8,14 @@ from email.mime.multipart import MIMEMultipart
 import time
 import re
 
+# Import ETA calculation module
+try:
+    from eta_block import mostrar_bloque_eta, obtener_eta_calculado
+    ETA_MODULE_AVAILABLE = True
+except ImportError:
+    ETA_MODULE_AVAILABLE = False
+    st.warning("⚠️ ETA module not found. Using fallback calculations.")
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -2114,37 +2122,67 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                 ejercicios_data[traccion] = traccion_reps
 
         with tab3:
-            st.markdown("#### Tren inferior empuje")
+            st.markdown("#### 🦵 Tren Inferior Empuje")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa tu fuerza unilateral de piernas. La sentadilla búlgara requiere equilibrio y control.
+                    Cuenta repeticiones por cada pierna individualmente.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Ejercicio:**")
-                st.info("Sentadilla búlgara unilateral")
+                st.info("🦵 Sentadilla Búlgara Unilateral")
             with col2:
                 pierna_empuje_reps = st.number_input(
                     "¿Cuántas repeticiones continuas realizas con buena forma en Sentadilla búlgara unilateral?",
                     min_value=0, max_value=50, value=safe_int(st.session_state.get("Sentadilla búlgara unilateral_reps", 10), 10),
-                    help="Repeticiones con técnica controlada por cada pierna.",
+                    help="Repeticiones con técnica controlada por cada pierna, manteniendo equilibrio y rango completo.",
                     key="sentadilla_bulgara_reps"
                 )
                 ejercicios_data["Sentadilla búlgara unilateral"] = pierna_empuje_reps
 
         with tab4:
-            st.markdown("#### Tren inferior tracción")
+            st.markdown("#### 🦵 Tren Inferior Tracción")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa la activación de la cadena posterior. El puente de glúteo unilateral requiere 
+                    activación específica del glúteo y control pélvico.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Ejercicio:**")
-                st.info("Puente de glúteo unilateral")
+                st.info("🍑 Puente de Glúteo Unilateral")
             with col2:
                 pierna_traccion_reps = st.number_input(
                     "¿Cuántas repeticiones continuas realizas con buena forma en Puente de glúteo unilateral?",
                     min_value=0, max_value=50, value=safe_int(st.session_state.get("Puente de glúteo unilateral_reps", 15), 15),
-                    help="Repeticiones con técnica controlada por cada pierna.",
+                    help="Repeticiones con técnica controlada por cada pierna, activando principalmente el glúteo.",
                     key="puente_gluteo_reps"
                 )
                 ejercicios_data["Puente de glúteo unilateral"] = pierna_traccion_reps
 
         with tab5:
-            st.markdown("#### Core y estabilidad")
+            st.markdown("#### 🧘 Core y Estabilidad")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa tu estabilidad del core. La plancha mide resistencia isométrica, 
+                    mientras que Ab wheel y L-sit evalúan fuerza dinámica avanzada.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 core = st.selectbox(
@@ -2157,14 +2195,14 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                     core_tiempo = st.number_input(
                         "¿Cuál es el máximo tiempo (segundos) que mantienes la posición de plancha con técnica correcta?",
                         min_value=0, max_value=600, value=safe_int(st.session_state.get("plancha_tiempo", 60), 60),
-                        help="Mantén la posición sin perder alineación corporal."
+                        help="Mantén la posición sin perder alineación corporal, desde cabeza hasta talones."
                     )
                     ejercicios_data[core] = core_tiempo
                 else:
                     core_reps = st.number_input(
                         f"¿Cuántas repeticiones completas realizas en {core} con buena forma?",
                         min_value=0, max_value=100, value=safe_int(st.session_state.get(f"{core}_reps", 10), 10),
-                        help="Repeticiones con control y sin compensaciones."
+                        help="Repeticiones con control total y sin compensaciones musculares."
                     )
                     ejercicios_data[core] = core_reps
 
@@ -2383,13 +2421,50 @@ if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0:
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
+# Step 2 completion feedback
+if ejercicios_funcionales_completos and experiencia_completa:
+    show_success_feedback(
+        f"¡Paso 2 Completado! Nivel de entrenamiento determinado: {nivel_entrenamiento.upper()}. Continúa con la evaluación de actividad diaria.",
+        "💪"
+    )
+    
+    # Create summary for completed step
+    training_exercises = [{"value": f"{ejercicio}: {valor}", "label": "Rendimiento"} for ejercicio, valor in list(ejercicios_data.items())[:3]]
+    training_exercises.extend([
+        {"value": nivel_entrenamiento.upper(), "label": "Nivel Global"},
+        {"value": f"{puntos_funcional:.1f}/4.0", "label": "Score Funcional"}
+    ])
+    
+    create_step_summary_card(
+        "Resumen: Evaluación Funcional",
+        training_exercises,
+        "💪"
+    )
+
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
-    progress.progress(60)
-    progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+    # Enhanced step header
+    create_enhanced_card(
+        "🚶 Evaluación de Actividad Física Diaria",
+        "Determina tu nivel de actividad fuera del gimnasio. Este factor (GEAF) es crucial para calcular tu gasto energético total diario y personalizar tu plan nutricional.",
+        "📊"
+    )
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
+    # Enhanced activity assessment with better instructions
+    st.markdown("""
+    <div style="background: rgba(244,196,48,0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--mupai-yellow); margin: 1rem 0;">
+        <h4 style="color: var(--mupai-yellow); margin: 0 0 1rem 0;">📊 Instrucciones para la Evaluación</h4>
+        <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+            <strong>Importante:</strong> Esta evaluación se refiere únicamente a tu actividad física diaria habitual 
+            <strong>fuera del gimnasio o ejercicio planificado</strong>. Considera tu trabajo, actividades domésticas, 
+            transporte, y movimiento general durante el día.
+        </p>
+        <p style="color: #CCCCCC; margin: 0.8rem 0 0 0; font-size: 0.9rem;">
+            <strong style="color: var(--mupai-yellow);">💡 Consejo:</strong> Si tienes contador de pasos en tu teléfono, 
+            revisa tu promedio diario de los últimos 7 días para mayor precisión.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Opciones para el usuario (debe coincidir el orden con 'niveles')
     opciones_radio = [
@@ -2402,9 +2477,9 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     niveles_ui = ["🪑 Sedentario", "🚶 Moderadamente-activo", "🏃 Activo", "💪 Muy-activo"]
 
     nivel_actividad = st.radio(
-        "Selecciona el nivel que mejor te describe:",
+        "Selecciona el nivel que mejor describe tu actividad diaria habitual:",
         opciones_radio,
-        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
+        help="No incluyas el ejercicio planificado en el gimnasio, solo tu actividad diaria normal (trabajo, tareas domésticas, transporte, etc.)"
     )
 
     # Extraer el texto base del nivel seleccionado (antes del paréntesis)
@@ -2416,22 +2491,28 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     except ValueError:
         nivel_idx = 0  # Default: Sedentario
 
-    # Visualización gráfica del nivel seleccionado
+    # Enhanced visual representation
+    st.markdown("### 📈 Tu Nivel de Actividad Seleccionado")
+    
+    # Visualización gráfica del nivel seleccionado con mejor estilo
     cols = st.columns(4)
     for i, niv in enumerate(niveles_ui):
         with cols[i]:
             if i == nivel_idx:
                 st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
+                    <div style="text-align: center; padding: 1.2rem; 
                          background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); 
-                         border-radius: 10px; color: #1E1E1E; font-weight: bold; font-size: 1.1rem;">
-                        <strong>{niv}</strong>
+                         border-radius: 12px; color: #1E1E1E; font-weight: bold; font-size: 1.1rem;
+                         box-shadow: 0 4px 15px rgba(244,196,48,0.3);
+                         transform: scale(1.05);">
+                        <strong>✅ {niv}</strong>
                     </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
-                         background: #f8f9fa; border-radius: 10px; opacity: 0.5; color: #222;">
+                    <div style="text-align: center; padding: 1.2rem; 
+                         background: rgba(255,255,255,0.1); border-radius: 12px; 
+                         opacity: 0.6; color: #888; border: 2px solid rgba(255,255,255,0.1);">
                         {niv}
                     </div>
                 """, unsafe_allow_html=True)
@@ -2441,78 +2522,177 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     st.session_state.nivel_actividad = nivel_actividad_text
     st.session_state.geaf = geaf
 
-    # Mensaje resumen
-    st.success(
-        f"✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**\n\n"
-        f"- Factor GEAF: **{geaf}**\n"
-        f"- Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%"
+    # Enhanced results display with GEAF information
+    create_enhanced_card(
+        "📊 Factor GEAF Calculado",
+        f"Tu nivel de actividad <strong>{nivel_actividad_text}</strong> corresponde a un factor GEAF de <strong>{geaf}</strong>. " +
+        f"Esto significa que tu gasto energético total será {(geaf-1)*100:.0f}% mayor que tu metabolismo basal.",
+        "⚡"
     )
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Display GEAF metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Factor GEAF", f"{geaf}", f"{(geaf-1)*100:.0f}% adicional")
+    with col2:
+        st.metric("Nivel de Actividad", nivel_actividad_text, "Actividad diaria")
+    with col3:
+        if 'tmb' in locals():
+            gasto_total = tmb * geaf
+            st.metric("Gasto Total Estimado", f"{gasto_total:.0f} kcal", "TMB × GEAF")
+
+    # Step 3 completion feedback
+    show_success_feedback(
+        f"¡Paso 3 Completado! Nivel de actividad determinado: {nivel_actividad_text} (GEAF: {geaf}). Continúa con el cálculo del efecto térmico.",
+        "🚶"
+    )
+    
+    # Create summary for completed step
+    create_step_summary_card(
+        "Resumen: Actividad Física Diaria",
+        [
+            {"value": nivel_actividad_text, "label": "Nivel de Actividad"},
+            {"value": f"{geaf}", "label": "Factor GEAF"},
+            {"value": f"+{(geaf-1)*100:.0f}%", "label": "Aumento Metabólico"},
+            {"value": f"{tmb * geaf:.0f} kcal" if 'tmb' in locals() else "N/A", "label": "Gasto Total Estimado"}
+        ],
+        "📊"
+    )
+
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
 with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
-    progress.progress(70)
-    progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
-
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-
-    st.markdown("### 🔥 Determinación automática del ETA")
-    if grasa_corregida <= 10 and sexo == "Hombre":
-        eta = 1.15
-        eta_desc = "ETA alto (muy magro, ≤10% grasa)"
-        eta_color = "success"
-    elif grasa_corregida <= 20 and sexo == "Mujer":
-        eta = 1.15
-        eta_desc = "ETA alto (muy magra, ≤20% grasa)"
-        eta_color = "success"
-    elif grasa_corregida <= 20 and sexo == "Hombre":
-        eta = 1.12
-        eta_desc = "ETA medio (magro, 11-20% grasa)"
-        eta_color = "info"
-    elif grasa_corregida <= 30 and sexo == "Mujer":
-        eta = 1.12
-        eta_desc = "ETA medio (normal, 21-30% grasa)"
-        eta_color = "info"
+    # Use modular ETA calculation if available
+    if ETA_MODULE_AVAILABLE:
+        # Enhanced integration with eta_block.py
+        eta_completed = mostrar_bloque_eta()
+        
+        # Get the calculated ETA value
+        eta_calculado = obtener_eta_calculado()
+        if eta_calculado and eta_calculado > 0:
+            st.session_state.eta_calculado = eta_calculado
+            
+            # Step 4 completion feedback
+            show_success_feedback(
+                f"¡Paso 4 Completado! ETA calculado automáticamente: {eta_calculado:.0f} kcal/día. Continúa con la evaluación del entrenamiento.",
+                "🍽️"
+            )
+            
+            # Create summary for completed step
+            create_step_summary_card(
+                "Resumen: Efecto Térmico de los Alimentos",
+                [
+                    {"value": f"{eta_calculado:.0f} kcal/día", "label": "ETA Calculado"},
+                    {"value": f"{(eta_calculado/(tmb*geaf)*100):.1f}%" if 'tmb' in locals() and 'geaf' in locals() else "N/A", "label": "% del Gasto Total"},
+                    {"value": "Automático", "label": "Método de Cálculo"},
+                    {"value": "Composición Corporal", "label": "Base Científica"}
+                ],
+                "🔥"
+            )
     else:
-        eta = 1.10
-        eta_desc = f"ETA estándar (>{20 if sexo == 'Hombre' else 30}% grasa)"
-        eta_color = "warning"
+        # Fallback ETA calculation with enhanced design
+        create_enhanced_card(
+            "🔥 Cálculo del Efecto Térmico de los Alimentos (ETA)",
+            "El ETA representa el gasto energético adicional necesario para digerir, absorber y metabolizar los alimentos. Se calcula automáticamente basado en tu composición corporal.",
+            "🍽️"
+        )
+        
+        # Fallback ETA calculation
+        if grasa_corregida <= 10 and sexo == "Hombre":
+            eta = 1.15
+            eta_desc = "ETA alto (muy magro, ≤10% grasa)"
+            eta_color = "success"
+        elif grasa_corregida <= 20 and sexo == "Mujer":
+            eta = 1.15
+            eta_desc = "ETA alto (muy magra, ≤20% grasa)"
+            eta_color = "success"
+        elif grasa_corregida <= 20 and sexo == "Hombre":
+            eta = 1.12
+            eta_desc = "ETA medio (magro, 11-20% grasa)"
+            eta_color = "info"
+        elif grasa_corregida <= 30 and sexo == "Mujer":
+            eta = 1.12
+            eta_desc = "ETA medio (normal, 21-30% grasa)"
+            eta_color = "info"
+        else:
+            eta = 1.10
+            eta_desc = f"ETA estándar (>{20 if sexo == 'Hombre' else 30}% grasa)"
+            eta_color = "warning"
 
-    # Guarda ETA en session_state para usarlo en los cálculos finales
-    st.session_state.eta = eta
-    st.session_state.eta_desc = eta_desc
-    st.session_state.eta_color = eta_color
+        # Save ETA in session_state
+        st.session_state.eta = eta
+        st.session_state.eta_desc = eta_desc
+        st.session_state.eta_color = eta_color
 
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown(f"""
-        <div class="content-card" style="text-align: center;">
-            <h2 style="margin: 0;">ETA: {eta}</h2>
-            <span class="badge badge-{eta_color}">{eta_desc}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.info(f"""
-        **¿Qué es el ETA?**
+        # Enhanced ETA display
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #2A2A2A 0%, #1E1E1E 100%); 
+                        padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--mupai-{eta_color}); 
+                        margin: 1rem 0; text-align: center;">
+                <h2 style="margin: 0; color: white;">ETA: {eta}</h2>
+                <span class="badge badge-{eta_color}" style="margin-top: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px;">
+                    {eta_desc}
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.info(f"""
+            **¿Qué es el ETA?**
 
-        Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
+            Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
 
-        Aumenta tu gasto total en un {(eta-1)*100:.0f}%
-        """)
+            Aumenta tu gasto total en un {(eta-1)*100:.0f}%
+            """)
+        
+        # Step 4 completion feedback for fallback
+        eta_calculado_fallback = (tmb * geaf * eta) - (tmb * geaf) if 'tmb' in locals() and 'geaf' in locals() else 0
+        
+        show_success_feedback(
+            f"¡Paso 4 Completado! ETA determinado: factor {eta} ({eta_desc}). Continúa con la evaluación del entrenamiento.",
+            "🔥"
+        )
+        
+        # Create summary for completed step
+        create_step_summary_card(
+            "Resumen: Efecto Térmico de los Alimentos",
+            [
+                {"value": f"{eta}", "label": "Factor ETA"},
+                {"value": eta_desc.split('(')[0].strip(), "label": "Clasificación"},
+                {"value": f"{(eta-1)*100:.0f}%", "label": "Aumento Metabólico"},
+                {"value": f"{eta_calculado_fallback:.0f} kcal" if eta_calculado_fallback > 0 else "N/A", "label": "ETA Estimado"}
+            ],
+            "🔥"
+        )
 
-    st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
-    progress.progress(80)
-    progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
+    # Enhanced step header
+    create_enhanced_card(
+        "🏋️ Gasto Energético del Ejercicio (GEE)",
+        "Calcula el gasto energético adicional por tus entrenamientos de fuerza. Este factor se ajusta según tu nivel de entrenamiento y frecuencia semanal.",
+        "💪"
+    )
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
-
+    # Enhanced training frequency input
+    st.markdown("""
+    <div style="background: rgba(244,196,48,0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--mupai-yellow); margin: 1rem 0;">
+        <h4 style="color: var(--mupai-yellow); margin: 0 0 1rem 0;">🎯 Frecuencia de Entrenamiento</h4>
+        <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+            <strong>Importante:</strong> Solo cuenta entrenamientos de fuerza/resistencia (pesas, máquinas, peso corporal). 
+            No incluyas cardio, deportes, o clases grupales en esta sección.
+        </p>
+        <p style="color: #CCCCCC; margin: 0.8rem 0 0 0; font-size: 0.9rem;">
+            <strong style="color: var(--mupai-yellow);">💡 Consideraciones:</strong> El gasto por sesión se calcula automáticamente 
+            según tu nivel de entrenamiento determinado en pasos anteriores.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     dias_fuerza = st.slider(
-        "¿Cuántos días por semana entrenas con pesas/resistencia?",
+        "¿Cuántos días por semana entrenas con pesas o resistencia?",
         min_value=0, max_value=7, value=3,
-        help="Solo cuenta entrenamientos de fuerza, no cardio"
+        help="Frecuencia semanal de entrenamientos de fuerza únicamente (no cardio ni deportes)"
     )
     st.session_state.dias_fuerza = dias_fuerza
 
@@ -2547,27 +2727,61 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     st.session_state.gee_semanal = gee_semanal
     st.session_state.gee_prom_dia = gee_prom_dia
 
+    # Enhanced metrics display
+    st.markdown("### 📊 Resumen de Gasto Energético por Entrenamiento")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Días/semana", f"{dias_fuerza} días", "Sin entrenar" if dias_fuerza == 0 else "Activo")
+        status = "🚫 Sin entrenar" if dias_fuerza == 0 else "✅ Activo"
+        st.metric("Días/semana", f"{dias_fuerza} días", status)
     with col2:
         current_level = nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() and nivel_entrenamiento else "Sin calcular"
         st.metric("Gasto/sesión", f"{kcal_sesion} kcal", f"Nivel {current_level}")
     with col3:
         st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día", f"Total: {gee_semanal} kcal/sem")
 
+    # Enhanced explanation with better styling
     st.markdown(f"""
-    <div class="content-card" style="background: #D6EAF8; color: #1E1E1E; border: 2px solid #3498DB; padding: 1.5rem;">
-        💡 <strong style="color: #1E1E1E; font-weight: bold;">Cálculo personalizado:</strong> Tu gasto por sesión ({nivel_gee}) 
-        se basa en tu <strong>nivel global de entrenamiento</strong> ({current_level}), que combina desarrollo muscular, 
-        rendimiento funcional y experiencia. Esto proporciona una estimación más precisa de tu gasto energético real.
+    <div style="background: linear-gradient(135deg, #17a2b8, #138496); color: white; 
+                padding: 1.5rem; border-radius: 12px; margin: 1rem 0; 
+                box-shadow: 0 4px 15px rgba(23,162,184,0.3);">
+        <h4 style="margin: 0 0 1rem 0; color: white;">💡 Cálculo Personalizado del GEE</h4>
+        <p style="margin: 0; font-size: 0.95rem;">
+            <strong>Tu gasto por sesión ({nivel_gee})</strong> se calcula automáticamente basado en tu 
+            <strong>nivel global de entrenamiento: {current_level}</strong>.
+        </p>
+        <p style="margin: 0.8rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
+            Este nivel combina tu desarrollo muscular (FFMI), rendimiento funcional y experiencia, 
+            proporcionando una estimación más precisa que métodos genéricos.
+        </p>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Step 5 completion feedback
+    show_success_feedback(
+        f"¡Paso 5 Completado! GEE calculado: {gee_prom_dia:.0f} kcal/día promedio. ¡Evaluación completa! Revisa tu plan nutricional personalizado.",
+        "🏋️"
+    )
+    
+    # Create summary for completed step
+    create_step_summary_card(
+        "Resumen: Gasto Energético del Ejercicio",
+        [
+            {"value": f"{dias_fuerza} días/sem", "label": "Frecuencia"},
+            {"value": f"{kcal_sesion} kcal", "label": "Gasto por Sesión"},
+            {"value": f"{gee_prom_dia:.0f} kcal/día", "label": "Promedio Diario"},
+            {"value": current_level, "label": "Nivel Base"}
+        ],
+        "🏋️"
+    )
+
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
-    progress.progress(100)
-    progress_text.text("Paso final: Calculando tu plan nutricional personalizado")
+    # Enhanced final results header
+    create_enhanced_card(
+        "🎯 Plan Nutricional Personalizado",
+        "Basado en tu evaluación completa, aquí tienes tu plan nutricional científicamente personalizado con opciones tradicionales y PSMF (si aplica).",
+        "📈"
+    )
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
