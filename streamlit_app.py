@@ -1644,16 +1644,32 @@ with col2:
     fecha_llenado = datetime.now().strftime("%Y-%m-%d")
     st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
 
-# Enhanced terms acceptance with visual styling
-st.markdown("""
-<div style="background: rgba(244,196,48,0.1); padding: 1rem; border-radius: 10px; border-left: 4px solid var(--mupai-yellow); margin: 1rem 0;">
-    <p style="color: #CCCCCC; margin: 0; font-size: 0.9rem;">
-        <strong style="color: var(--mupai-yellow);">⚖️ Términos y Condiciones:</strong><br>
-        Al continuar, acepta que comprende que esta evaluación es únicamente informativa y educativa. 
-        No reemplaza el consejo médico profesional. Consulte a un profesional de la salud antes de iniciar cualquier programa de ejercicio o dieta.
-    </p>
-</div>
-""", unsafe_allow_html=True)
+# Enhanced professional disclaimer with expandable section
+with st.expander("📜 **Descargo de Responsabilidad Profesional – Mupai**", expanded=False):
+    st.markdown("""
+    <div style="color: #CCCCCC; line-height: 1.6; font-size: 0.95rem;">
+    
+    <p>En <strong>Mupai (Muscle Up Performance Assessment Intelligence)</strong> brindamos evaluaciones, planes de alimentación orientativa y programas de entrenamiento diseñados por profesionales con formación en ciencias del ejercicio y acondicionamiento físico.</p>
+    
+    <p>En particular, los planes y recomendaciones de esta plataforma han sido elaborados bajo la supervisión del <strong>Lic. Erick Francisco De Luna Hernández, Máster en Fuerza y Acondicionamiento</strong>, profesional especializado en ciencias del ejercicio y entrenamiento de alto rendimiento.</p>
+    
+    <p>Sin embargo, el usuario reconoce y acepta lo siguiente:</p>
+    
+    <h4 style="color: var(--mupai-yellow); margin-top: 1.5rem;">1. 🎓 Alcance profesional</h4>
+    <p>Aunque los servicios provienen de un profesional de la salud en el área del ejercicio, las recomendaciones generadas <strong>no constituyen diagnóstico médico, tratamiento clínico ni sustituyen la consulta con un médico, nutriólogo clínico u otro especialista en salud.</strong></p>
+    
+    <h4 style="color: var(--mupai-yellow); margin-top: 1.5rem;">2. ⚠️ Uso bajo responsabilidad personal</h4>
+    <p>El usuario <strong>asume total responsabilidad</strong> sobre la aplicación de los planes de entrenamiento y alimentación sugeridos.</p>
+    <p>En caso de padecer alguna enfermedad, lesión, condición clínica específica o estar bajo tratamiento médico, el usuario <strong>debe consultar previamente con un profesional sanitario correspondiente.</strong></p>
+    
+    <h4 style="color: var(--mupai-yellow); margin-top: 1.5rem;">3. 🛡️ Exención de responsabilidad</h4>
+    <p>Ni <strong>Mupai</strong>, ni sus representantes, ni el <strong>Lic. Erick Francisco De Luna Hernández, Máster en Fuerza y Acondicionamiento</strong>, serán responsables por daños, lesiones o consecuencias derivadas del uso de las recomendaciones generadas.</p>
+    
+    <h4 style="color: var(--mupai-yellow); margin-top: 1.5rem;">4. ✍️ Consentimiento informado</h4>
+    <p>Al utilizar Mupai, el usuario declara haber leído, comprendido y aceptado este descargo de responsabilidad, <strong>liberando a la plataforma y a sus representantes de cualquier tipo de reclamación legal o personal.</strong></p>
+    
+    </div>
+    """, unsafe_allow_html=True)
 
 acepto_terminos = st.checkbox(
     "✅ He leído y acepto la política de privacidad y el descargo de responsabilidad", 
