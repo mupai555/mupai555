@@ -3075,9 +3075,11 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         # Mostrar cálculo detallado con diseño mejorado
         st.markdown("### 🧮 Desglose del cálculo")
         with st.expander("Ver cálculo detallado", expanded=False):
+            # Get the eta value safely
+            eta_display = eta_value if 'eta_value' in locals() else (eta if 'eta' in locals() else 1.1)
             st.code(f"""
 Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
-GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
+GE = {tmb:.0f} × {geaf} × {eta_display} + {gee_prom_dia:.0f} = {GE:.0f} kcal
 
 Factor de Balance Energético (FBEO) = 1 - (déficit/100)
 FBEO = 1 - ({porcentaje}/100) = {fbeo:.2f}
