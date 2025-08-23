@@ -1566,17 +1566,19 @@ if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0:
 
     porc_potencial = min((ffmi / ffmi_genetico_max) * 100, 100) if ffmi_genetico_max > 0 else 0
 
-    st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-    st.success(f"""
-    📈 **Análisis de tu potencial muscular**
-
-    Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
-
-    - FFMI actual: {ffmi:.2f}
-    - FFMI máximo estimado: {ffmi_genetico_max:.1f}
-    - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Hide FFMI analysis from user view
+    # st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
+    # st.success(f"""
+    # 📈 **Análisis de tu potencial muscular**
+    # Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
+    # - FFMI actual: {ffmi:.2f}
+    # - FFMI máximo estimado: {ffmi_genetico_max:.1f}
+    # - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
+    # """)
+    # st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Simple motivational message instead
+    st.success("✅ ¡Excelente! Datos de potencial procesados correctamente.")
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
@@ -1653,7 +1655,9 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-    st.markdown("### 🔥 Determinación automática del ETA")
+    st.markdown("### 🔥 Optimización metabólica")
+    
+    # Keep the calculation logic but hide technical details from user
     if grasa_corregida <= 10 and sexo == "Hombre":
         eta = 1.15
         eta_desc = "ETA alto (muy magro, ≤10% grasa)"
@@ -1680,22 +1684,15 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     st.session_state.eta_desc = eta_desc
     st.session_state.eta_color = eta_color
 
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown(f"""
-        <div class="content-card" style="text-align: center;">
-            <h2 style="margin: 0;">ETA: {eta}</h2>
-            <span class="badge badge-{eta_color}">{eta_desc}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.info(f"""
-        **¿Qué es el ETA?**
-
-        Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
-
-        Aumenta tu gasto total en un {(eta-1)*100:.0f}%
-        """)
+    # Show simple confirmation instead of technical details
+    st.success("✅ Tu metabolismo ha sido optimizado según tu perfil personal.")
+    st.info("""
+    💡 **Procesamiento completado**
+    
+    Hemos calculado cómo tu cuerpo procesa los alimentos para darte 
+    las recomendaciones más precisas. 
+    """)
+    
 
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
@@ -1737,6 +1734,7 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
         nivel_gee = "300 kcal/sesión"
         gee_color = "warning"
 
+    # Keep calculations but hide details from user
     gee_semanal = dias_fuerza * kcal_sesion
     gee_prom_dia = gee_semanal / 7
 
@@ -1744,22 +1742,14 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     st.session_state.gee_semanal = gee_semanal
     st.session_state.gee_prom_dia = gee_prom_dia
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Días/semana", f"{dias_fuerza} días", "Sin entrenar" if dias_fuerza == 0 else "Activo")
-    with col2:
-        current_level = nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() and nivel_entrenamiento else "Sin calcular"
-        st.metric("Gasto/sesión", f"{kcal_sesion} kcal", f"Nivel {current_level}")
-    with col3:
-        st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día", f"Total: {gee_semanal} kcal/sem")
-
-    st.markdown(f"""
-    <div class="content-card" style="background: #D6EAF8; color: #1E1E1E; border: 2px solid #3498DB; padding: 1.5rem;">
-        💡 <strong style="color: #1E1E1E; font-weight: bold;">Cálculo personalizado:</strong> Tu gasto por sesión ({nivel_gee}) 
-        se basa en tu <strong>nivel global de entrenamiento</strong> ({current_level}), que combina desarrollo muscular, 
-        rendimiento funcional y experiencia. Esto proporciona una estimación más precisa de tu gasto energético real.
-    </div>
-    """, unsafe_allow_html=True)
+    # Simple user-friendly display
+    st.success(f"✅ Perfecto! Registramos que entrenas {dias_fuerza} días por semana.")
+    st.info("""
+    💪 **Tu rutina ha sido procesada**
+    
+    Hemos calculado el impacto de tu entrenamiento en tu plan nutricional 
+    para darte las recomendaciones más precisas.
+    """)
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
@@ -1794,29 +1784,10 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
     fbeo = 1 + porcentaje / 100  # Cambio de signo para reflejar nueva convención
 
-    # Perfil del usuario
-    st.markdown("### 📋 Tu perfil nutricional")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"• **Sexo:** {sexo}")
-        st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
-        try:
-            st.write(f"• **FFMI:** {ffmi:.2f} ({nivel_ffmi})")
-        except Exception:
-            st.write("• **FFMI:** – (completa todos los datos para calcular)")
-    with col2:
-        try:
-            st.write(f"• **Nivel:** {nivel_entrenamiento.capitalize()}")
-        except Exception:
-            st.write("• **Nivel:** –")
-        try:
-            st.write(f"• **Edad metabólica:** {edad_metabolica} años")
-        except Exception:
-            st.write("• **Edad metabólica:** –")
-        try:
-            st.write(f"• **Objetivo:** {fase}")
-        except Exception:
-            st.write("• **Objetivo:** –")
+    # Hide technical profile from user - they'll get a simple completion message instead
+    # Keep calculations for email
+    # st.markdown("### 📋 Tu perfil nutricional")
+    # ... technical details hidden ...
 
     # Cálculo del gasto energético
     GE = tmb * geaf * eta + gee_prom_dia
