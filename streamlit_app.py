@@ -8,6 +8,14 @@ from email.mime.multipart import MIMEMultipart
 import time
 import re
 
+# Import ETA calculation module
+try:
+    from eta_block import mostrar_bloque_eta, obtener_eta_calculado
+    ETA_MODULE_AVAILABLE = True
+except ImportError:
+    ETA_MODULE_AVAILABLE = False
+    st.warning("⚠️ ETA module not found. Using fallback calculations.")
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -290,6 +298,426 @@ hr {
     font-weight: 600;
     font-size: 1.01rem;
 }
+
+/* === MODERN PROGRESS BAR SYSTEM === */
+.fixed-progress-container {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: linear-gradient(135deg, #1E1E1E 0%, #232425 100%);
+    padding: 1rem 0;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    border-bottom: 2px solid var(--mupai-yellow);
+    margin-bottom: 2rem;
+}
+
+.progress-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.step-indicators {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 150px;
+    padding: 0.5rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid transparent;
+}
+
+.step-indicator.active {
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    color: #1E1E1E;
+    font-weight: bold;
+    border-color: var(--mupai-yellow);
+    transform: scale(1.02);
+}
+
+.step-indicator.completed {
+    background: linear-gradient(135deg, var(--mupai-success) 0%, #2ECC71 100%);
+    color: white;
+    border-color: var(--mupai-success);
+}
+
+.step-indicator.pending {
+    color: #888;
+    background: rgba(255,255,255,0.02);
+}
+
+.step-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.step-indicator.active .step-number {
+    background: #1E1E1E;
+    color: var(--mupai-yellow);
+}
+
+.step-indicator.completed .step-number {
+    background: white;
+    color: var(--mupai-success);
+}
+
+.step-indicator.pending .step-number {
+    background: #333;
+    color: #666;
+}
+
+.step-title {
+    font-size: 0.85rem;
+    text-align: center;
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+.main-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    border-radius: 10px;
+    transition: width 0.8s ease;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-text {
+    text-align: center;
+    color: var(--mupai-yellow);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Mobile responsiveness for progress bar */
+@media (max-width: 768px) {
+    .step-indicators {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .step-indicator {
+        flex-direction: row;
+        min-width: auto;
+        width: 100%;
+        justify-content: flex-start;
+        padding: 0.8rem;
+    }
+    
+    .step-number {
+        margin-bottom: 0;
+        margin-right: 0.8rem;
+    }
+    
+    .step-title {
+        text-align: left;
+        flex: 1;
+    }
+}
+
+/* === ENHANCED TOOLTIPS === */
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    background: var(--mupai-yellow);
+    color: #1E1E1E;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: help;
+    margin-left: 0.5rem;
+}
+
+.tooltip-content {
+    visibility: hidden;
+    width: 280px;
+    background-color: #2A2A2A;
+    color: #fff;
+    text-align: left;
+    border-radius: 8px;
+    padding: 1rem;
+    position: absolute;
+    z-index: 1001;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -140px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    border: 1px solid var(--mupai-yellow);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.tooltip-content::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--mupai-yellow) transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip-content {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* === STEP SUMMARY CARDS === */
+.step-summary-card {
+    background: linear-gradient(135deg, #2A2A2A 0%, #1E1E1E 100%);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin: 1rem 0;
+    border-left: 4px solid var(--mupai-success);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.step-summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(244,196,48,0.15);
+}
+
+.summary-title {
+    color: var(--mupai-success);
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+}
+
+.summary-content {
+    color: #CCCCCC;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.metric-item {
+    background: rgba(244,196,48,0.1);
+    padding: 0.8rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid rgba(244,196,48,0.2);
+}
+
+.metric-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--mupai-yellow);
+    display: block;
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: #AAA;
+    margin-top: 0.2rem;
+}
+
+/* === SUCCESS FEEDBACK ANIMATIONS === */
+.success-feedback {
+    background: linear-gradient(135deg, var(--mupai-success) 0%, #2ECC71 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin: 1rem 0;
+    box-shadow: 0 4px 15px rgba(39,174,96,0.3);
+    animation: successSlideIn 0.6s ease-out;
+    border: none;
+}
+
+@keyframes successSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.success-feedback .success-icon {
+    font-size: 1.5rem;
+    margin-right: 0.8rem;
+}
+
+/* === ENHANCED CARDS WITH MICRO-INTERACTIONS === */
+.enhanced-card {
+    background: linear-gradient(135deg, #1E1E1E 0%, #2A2A2A 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    border-left: 4px solid var(--mupai-yellow);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(244,196,48,0.1), transparent);
+    transition: left 0.8s ease;
+}
+
+.enhanced-card:hover::before {
+    left: 100%;
+}
+
+.enhanced-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(244,196,48,0.2);
+    border-left-color: var(--mupai-success);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.card-icon {
+    font-size: 1.5rem;
+    margin-right: 0.8rem;
+    color: var(--mupai-yellow);
+}
+
+.card-title {
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.card-content {
+    color: #CCCCCC;
+    line-height: 1.6;
+}
+
+/* === HIDE GITHUB/FORK ELEMENTS === */
+/* Hide GitHub corner badge/fork button if present */
+.github-corner,
+[href*="github.com"],
+[title*="Fork"],
+[alt*="Fork"],
+button[title*="Fork"],
+a[title*="Fork"],
+.stActionButton[title*="Fork"],
+.stActionButton[aria-label*="Fork"],
+header button[title*="Deploy"],
+header button[title*="GitHub"],
+.streamlit-header button[title*="Deploy"],
+.streamlit-header a[href*="github"],
+[data-testid*="deploy"],
+[data-testid*="github"],
+.element-container:has([href*="github.com"]),
+.block-container:has([href*="github.com"]) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* Hide Streamlit's default GitHub/deploy buttons in header */
+header button[kind="header"],
+header .stActionButton,
+.streamlit-header .stActionButton,
+[data-testid="stHeader"] button,
+[data-testid="stToolbar"] button,
+.stDeployButton,
+[data-baseweb="button"][title*="GitHub"],
+[data-baseweb="button"][title*="Deploy"],
+[data-baseweb="button"][title*="Fork"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Additional GitHub hiding rules */
+.stApp > header button,
+.stApp > header a,
+header .stActionButton > button,
+.streamlit-header button,
+[role="button"][title*="Fork"],
+[role="button"][title*="GitHub"] {
+    display: none !important;
+}
+
+/* Hide any "View app" or similar buttons */
+button[title*="View app"],
+button[title*="view app"],
+a[title*="View app"],
+[data-testid*="viewApp"] {
+    display: none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 # Header principal visual con logos
@@ -394,6 +822,155 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ==================== PROGRESS TRACKING SYSTEM ====================
+def get_current_step():
+    """Determine the current step based on completed data"""
+    if not st.session_state.get("datos_completos", False):
+        return 0  # Login/personal data
+    
+    # Check step completion
+    peso = st.session_state.get("peso", 0)
+    grasa_corporal = st.session_state.get("grasa_corporal", 0)
+    if not (peso and grasa_corporal):
+        return 1  # Step 1: Body composition
+    
+    # Check functional assessment completion
+    ejercicios_data = st.session_state.get("datos_ejercicios", {})
+    if len(ejercicios_data) < 4:  # Less than 4 exercises completed
+        return 2  # Step 2: Functional assessment
+    
+    # Check activity level
+    if not st.session_state.get("geaf", 0):
+        return 3  # Step 3: Activity level
+    
+    # Check ETA calculation
+    if not st.session_state.get("eta_calculado", 0):
+        return 4  # Step 4: ETA
+    
+    # Check training frequency
+    if not st.session_state.get("dias_fuerza", 0):
+        return 5  # Step 5: Training
+    
+    return 6  # All steps completed
+
+def get_step_progress():
+    """Get overall progress percentage"""
+    current_step = get_current_step()
+    return min(current_step * 16.67, 100)  # 6 steps = 100%
+
+def create_step_indicator(step_num, title, icon, status="pending"):
+    """Create individual step indicator"""
+    status_class = f"step-indicator {status}"
+    return f"""
+    <div class="{status_class}">
+        <div class="step-number">{step_num}</div>
+        <div class="step-title">{icon} {title}</div>
+    </div>
+    """
+
+def render_progress_header():
+    """Render the fixed progress header"""
+    current_step = get_current_step()
+    progress_percent = get_step_progress()
+    
+    steps_data = [
+        (1, "Datos Personales", "📝"),
+        (2, "Composición Corporal", "⚖️"),
+        (3, "Evaluación Funcional", "💪"),
+        (4, "Actividad Diaria", "🚶"),
+        (5, "Efecto Térmico", "🍽️"),
+        (6, "Entrenamiento", "🏋️")
+    ]
+    
+    step_indicators = ""
+    for i, (num, title, icon) in enumerate(steps_data, 1):
+        if i < current_step:
+            status = "completed"
+        elif i == current_step:
+            status = "active"
+        else:
+            status = "pending"
+        
+        step_indicators += create_step_indicator(num, title, icon, status)
+    
+    progress_html = f"""
+    <div class="fixed-progress-container">
+        <div class="progress-header">
+            <div class="step-indicators">
+                {step_indicators}
+            </div>
+            <div class="main-progress-bar">
+                <div class="progress-fill" style="width: {progress_percent}%;"></div>
+            </div>
+            <div class="progress-text">
+                Progreso: {progress_percent:.0f}% completado
+            </div>
+        </div>
+    </div>
+    """
+    
+    st.markdown(progress_html, unsafe_allow_html=True)
+
+def create_tooltip(text, tooltip_content):
+    """Create a text with tooltip"""
+    return f"""
+    <span class="tooltip-container">
+        {text}
+        <span class="tooltip-icon">?</span>
+        <div class="tooltip-content">{tooltip_content}</div>
+    </span>
+    """
+
+def show_success_feedback(message, icon="✅"):
+    """Show animated success feedback"""
+    st.markdown(f"""
+    <div class="success-feedback">
+        <span class="success-icon">{icon}</span>
+        <strong>{message}</strong>
+    </div>
+    """, unsafe_allow_html=True)
+
+def create_step_summary_card(title, metrics_data, icon="📊"):
+    """Create a summary card for completed steps"""
+    metrics_html = ""
+    for metric in metrics_data:
+        metrics_html += f"""
+        <div class="metric-item">
+            <span class="metric-value">{metric['value']}</span>
+            <div class="metric-label">{metric['label']}</div>
+        </div>
+        """
+    
+    summary_html = f"""
+    <div class="step-summary-card">
+        <div class="summary-title">
+            <span style="margin-right: 0.5rem;">{icon}</span>
+            {title}
+        </div>
+        <div class="summary-metrics">
+            {metrics_html}
+        </div>
+    </div>
+    """
+    
+    st.markdown(summary_html, unsafe_allow_html=True)
+
+def create_enhanced_card(title, content, icon="📋"):
+    """Create an enhanced card with animations"""
+    card_html = f"""
+    <div class="enhanced-card">
+        <div class="card-header">
+            <span class="card-icon">{icon}</span>
+            <h3 class="card-title">{title}</h3>
+        </div>
+        <div class="card-content">
+            {content}
+        </div>
+    </div>
+    """
+    
+    st.markdown(card_html, unsafe_allow_html=True)
+
 # --- Inicialización de estado de sesión robusta (solo una vez)
 defaults = {
     "datos_completos": False,
@@ -407,7 +984,11 @@ defaults = {
     "sexo": "Hombre",
     "fecha_llenado": datetime.now().strftime("%Y-%m-%d"),
     "acepto_terminos": False,
-    "authenticated": False  # Nueva variable para controlar el login
+    "authenticated": False,  # Nueva variable para controlar el login
+    "current_step": 0,
+    "eta_calculado": 0,
+    "geaf": 0,
+    "dias_fuerza": 0
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -466,6 +1047,10 @@ if not st.session_state.authenticated:
     """, unsafe_allow_html=True)
     
     st.stop()  # Detener la ejecución hasta que se autentique
+
+# ==================== MAIN AUTHENTICATED APP ====================
+# Show modern progress header for authenticated users
+render_progress_header()
 
 # Tarjetas visuales robustas
 def crear_tarjeta(titulo, contenido, tipo="info"):
@@ -930,23 +1515,68 @@ with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False)
         ), unsafe_allow_html=True)
 
 # BLOQUE 0: Datos personales con diseño mejorado
-st.markdown('<div class="content-card">', unsafe_allow_html=True)
-st.markdown("### 👤 Información Personal")
-st.markdown("Por favor, completa todos los campos para comenzar tu evaluación personalizada.")
+create_enhanced_card(
+    "👤 Información Personal", 
+    "Complete todos los campos para comenzar tu evaluación personalizada MUPAI. Esta información es necesaria para calcular con precisión tu plan nutricional y de entrenamiento.",
+    "📝"
+)
 
 col1, col2 = st.columns(2)
 with col1:
-    nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez García", help="Tu nombre legal completo")
-    telefono = st.text_input("Teléfono*", placeholder="Ej: 8661234567", help="10 dígitos sin espacios")
-    email_cliente = st.text_input("Email*", placeholder="correo@ejemplo.com", help="Email válido para recibir resultados")
+    # Enhanced inputs with tooltips using HTML
+    st.markdown('<div class="tooltip-container">', unsafe_allow_html=True)
+    nombre = st.text_input(
+        "Nombre completo*", 
+        placeholder="Ej: Juan Pérez García", 
+        help="Tu nombre legal completo (mínimo 2 palabras)"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    telefono = st.text_input(
+        "Teléfono*", 
+        placeholder="Ej: 8661234567", 
+        help="Número de teléfono a 10 dígitos sin espacios ni guiones"
+    )
+    
+    email_cliente = st.text_input(
+        "Email*", 
+        placeholder="correo@ejemplo.com", 
+        help="Dirección de email válida para recibir tus resultados y seguimiento"
+    )
 
 with col2:
-    edad = st.number_input("Edad (años)*", min_value=15, max_value=80, value=safe_int(st.session_state.get("edad", 25), 25), help="Tu edad actual")
-    sexo = st.selectbox("Sexo biológico*", ["Hombre", "Mujer"], help="Necesario para cálculos precisos")
+    edad = st.number_input(
+        "Edad (años)*", 
+        min_value=15, 
+        max_value=80, 
+        value=safe_int(st.session_state.get("edad", 25), 25), 
+        help="Tu edad actual - necesaria para cálculos metabólicos precisos"
+    )
+    
+    sexo = st.selectbox(
+        "Sexo biológico*", 
+        ["Hombre", "Mujer"], 
+        help="Sexo biológico (no identidad de género) - requerido para fórmulas científicas de composición corporal"
+    )
+    
     fecha_llenado = datetime.now().strftime("%Y-%m-%d")
     st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
 
-acepto_terminos = st.checkbox("He leído y acepto la política de privacidad y el descargo de responsabilidad")
+# Enhanced terms acceptance with visual styling
+st.markdown("""
+<div style="background: rgba(244,196,48,0.1); padding: 1rem; border-radius: 10px; border-left: 4px solid var(--mupai-yellow); margin: 1rem 0;">
+    <p style="color: #CCCCCC; margin: 0; font-size: 0.9rem;">
+        <strong style="color: var(--mupai-yellow);">⚖️ Términos y Condiciones:</strong><br>
+        Al continuar, acepta que comprende que esta evaluación es únicamente informativa y educativa. 
+        No reemplaza el consejo médico profesional. Consulte a un profesional de la salud antes de iniciar cualquier programa de ejercicio o dieta.
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+acepto_terminos = st.checkbox(
+    "✅ He leído y acepto la política de privacidad y el descargo de responsabilidad", 
+    help="Es obligatorio aceptar los términos para continuar con la evaluación"
+)
 
 if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not acepto_terminos):
     # Validación estricta de cada campo
@@ -973,7 +1603,24 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not acepto_terminos):
         st.session_state.sexo = sexo
         st.session_state.fecha_llenado = fecha_llenado
         st.session_state.acepto_terminos = acepto_terminos
-        st.success("✅ Datos registrados correctamente. ¡Continuemos con tu evaluación!")
+        
+        # Enhanced success feedback
+        show_success_feedback(
+            "¡Excelente! Datos personales registrados correctamente. Ahora puedes continuar con tu evaluación completa.", 
+            "🎉"
+        )
+        
+        # Show completed step summary
+        create_step_summary_card(
+            "Datos Personales Completados",
+            [
+                {"value": nombre, "label": "Nombre"},
+                {"value": f"{edad} años", "label": "Edad"},
+                {"value": sexo, "label": "Sexo"},
+                {"value": fecha_llenado, "label": "Fecha"}
+            ],
+            "✅"
+        )
     else:
         # Mostrar todos los errores de validación
         error_message = "⚠️ **Por favor corrige los siguientes errores:**\n\n" + "\n\n".join(validation_errors)
@@ -1049,16 +1696,15 @@ if not st.session_state.datos_completos:
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
 
 if datos_personales_completos and st.session_state.datos_completos:
-    # Progress bar general
-    progress = st.progress(0)
-    progress_text = st.empty()
-
     # BLOQUE 1: Datos antropométricos con diseño mejorado
     with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
-        progress.progress(20)
-        progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
+        # Enhanced step header with description
+        create_enhanced_card(
+            "📊 Evaluación de Composición Corporal",
+            "Medidas precisas de peso, estatura y grasa corporal para calcular tu perfil metabólico. Utiliza los datos más recientes disponibles para mayor exactitud.",
+            "⚖️"
+        )
 
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1:
             # Ensure peso has a valid default
@@ -1073,7 +1719,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                 value=safe_float(peso_value, peso_default),
                 step=0.1,
                 key="peso",
-                help="Peso en ayunas, sin ropa"
+                help="Peso corporal en ayunas, preferiblemente sin ropa. Utiliza una báscula confiable y calibrada."
             )
         with col2:
             # Ensure estatura has a valid default
@@ -1087,7 +1733,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                 max_value=220,
                 value=safe_int(estatura_value, estatura_default),
                 key="estatura",
-                help="Medida sin zapatos"
+                help="Altura total sin calzado, medida en posición erguida y relajada."
             )
         with col3:
             st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
@@ -1095,10 +1741,21 @@ if datos_personales_completos and st.session_state.datos_completos:
                 "📊 Método de medición de grasa",
                 ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
                 key="metodo_grasa",
-                help="Selecciona el método utilizado"
+                help="Método utilizado para medir tu porcentaje de grasa corporal. DEXA es el más preciso, seguido de Bod Pod, InBody y Omron."
             )
             st.markdown('</div>', unsafe_allow_html=True)
 
+        # Enhanced body fat input with better tooltips
+        st.markdown("""
+        <div style="background: rgba(244,196,48,0.1); padding: 1rem; border-radius: 10px; margin: 1rem 0;">
+            <p style="color: #CCCCCC; margin: 0; font-size: 0.9rem;">
+                <strong style="color: var(--mupai-yellow);">📊 Información sobre Grasa Corporal:</strong><br>
+                Ingresa el valor exacto que te proporcionó tu método de medición. El sistema automáticamente 
+                ajustará este valor al estándar DEXA para mayor precisión en los cálculos metabólicos.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
         # Ensure grasa_corporal has a valid default
         grasa_default = 20.0
         grasa_value = st.session_state.get("grasa_corporal", grasa_default)
@@ -1111,10 +1768,8 @@ if datos_personales_completos and st.session_state.datos_completos:
             value=safe_float(grasa_value, grasa_default),
             step=0.1,
             key="grasa_corporal",
-            help="Valor medido con el método seleccionado"
+            help=f"Valor de grasa corporal medido con {metodo_grasa}. Se ajustará automáticamente al estándar DEXA."
         )
-
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
 
@@ -1140,18 +1795,32 @@ if datos_personales_completos and st.session_state.datos_completos:
     nivel_ffmi = clasificar_ffmi(ffmi, sexo)
     edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
 
-    # Mostrar corrección si aplica
+    # Show data validation and correction info
     if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
-        st.info(
-            f"📊 Valor corregido a equivalente DEXA: {grasa_corregida:.1f}% "
-            f"(ajuste de {grasa_corregida - grasa_corporal:+.1f}%)"
-        )
+        st.markdown(f"""
+        <div style="background: rgba(23,162,184,0.1); padding: 1rem; border-radius: 10px; border-left: 4px solid #17a2b8; margin: 1rem 0;">
+            <p style="color: #17a2b8; margin: 0; font-weight: bold;">
+                📊 Corrección Automática Aplicada
+            </p>
+            <p style="color: #CCCCCC; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                Valor original: {grasa_corporal:.1f}% → Equivalente DEXA: {grasa_corregida:.1f}% 
+                (ajuste de {grasa_corregida - grasa_corporal:+.1f}%)
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # Resultados principales visuales
-    st.markdown("### 📈 Resultados de tu composición corporal")
+    # Enhanced results section with visual cards
+    create_enhanced_card(
+        "📈 Resultados de Composición Corporal",
+        "Análisis completo de tu perfil antropométrico y metabólico basado en datos científicos.",
+        "📊"
+    )
+    
+    # Enhanced metrics with better styling
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", "Normal" if 10 <= grasa_corregida <= 25 else "Revisar")
+        fat_status = "🟢 Saludable" if 10 <= grasa_corregida <= 25 else "🟡 Revisar"
+        st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", fat_status)
     with col2:
         st.metric("MLG", f"{mlg:.1f} kg", "Masa Libre de Grasa")
     with col3:
@@ -1163,23 +1832,40 @@ if datos_personales_completos and st.session_state.datos_completos:
         except (ValueError, TypeError):
             edad_num = 25
             diferencia_edad = 0
-        st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
+        age_status = "años más joven" if diferencia_edad < 0 else "años mayor" if diferencia_edad > 0 else "= cronológica"
+        st.metric("Edad Metabólica", f"{edad_metabolica} años", age_status)
 
-    # FFMI con visualización mejorada
-    st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
+    # Enhanced FFMI section with modern design
+    create_enhanced_card(
+        "💪 Índice de Masa Libre de Grasa (FFMI)",
+        f"Tu FFMI de {ffmi:.2f} indica un nivel de desarrollo muscular <strong>{nivel_ffmi}</strong>. " +
+        "Este índice evalúa tu masa muscular independientemente de la grasa corporal.",
+        "🏋️"
+    )
+    
     col1, col2 = st.columns([2, 1])
     with col1:
         color_nivel = {
             "Bajo": "danger",
-            "Promedio": "warning",
+            "Promedio": "warning", 
             "Bueno": "success",
             "Avanzado": "info",
             "Élite": "success"
         }.get(nivel_ffmi, "info")
+        
+        # Modern FFMI display
         st.markdown(f"""
-        <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
-        <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
+        <div style="background: linear-gradient(135deg, #2A2A2A 0%, #1E1E1E 100%); 
+                    padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--mupai-{color_nivel}); margin: 1rem 0;">
+            <h2 style="margin: 0; color: white; display: flex; align-items: center;">
+                FFMI: {ffmi:.2f}
+                <span class="badge badge-{color_nivel}" style="margin-left: 1rem; padding: 0.5rem 1rem; border-radius: 20px;">
+                    {nivel_ffmi}
+                </span>
+            </h2>
+        </div>
         """, unsafe_allow_html=True)
+        
         if sexo == "Hombre":
             ffmi_max = 25
             rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
@@ -1198,6 +1884,26 @@ if datos_personales_completos and st.session_state.datos_completos:
         - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
         - Élite: >{rangos_ffmi['Avanzado']}
         """)
+
+    # Step 1 completion feedback
+    if peso > 0 and estatura > 0 and grasa_corporal > 0:
+        show_success_feedback(
+            "¡Paso 1 Completado! Composición corporal evaluada correctamente. Continúa con la evaluación funcional.",
+            "✅"
+        )
+        
+        # Create summary for completed step
+        create_step_summary_card(
+            "Resumen: Composición Corporal",
+            [
+                {"value": f"{peso:.1f} kg", "label": "Peso"},
+                {"value": f"{estatura} cm", "label": "Estatura"},
+                {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal"},
+                {"value": f"{ffmi:.1f}", "label": f"FFMI ({nivel_ffmi})"},
+                {"value": f"{tmb:.0f} kcal", "label": "TMB"}
+            ],
+            "📊"
+        )
 
 else:
     st.info("Por favor completa los datos personales para comenzar la evaluación.")
@@ -1303,12 +2009,25 @@ progress_text = st.empty()
 
 # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
 with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
-    progress.progress(40)
-    progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
+    # Enhanced step header
+    create_enhanced_card(
+        "💪 Evaluación Funcional y Experiencia",
+        "Evaluación científica de tu capacidad de rendimiento y experiencia en entrenamiento. Esta información es crucial para determinar tu nivel de entrenamiento real.",
+        "🏋️"
+    )
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-
+    # Enhanced experience section
     st.markdown("### 📋 Experiencia en entrenamiento")
+    st.markdown("""
+    <div style="background: rgba(244,196,48,0.1); padding: 1rem; border-radius: 10px; border-left: 4px solid var(--mupai-yellow); margin: 1rem 0;">
+        <p style="color: #CCCCCC; margin: 0; font-size: 0.9rem;">
+            <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong><br>
+            Selecciona la opción que mejor describa tu consistencia real de entrenamiento durante los últimos 2 años. 
+            Sé honesto - esto determinará la precisión de tu evaluación.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     experiencia = st.radio(
         "¿Cuál de las siguientes afirmaciones describe con mayor precisión tu hábito de entrenamiento en los últimos dos años?",
         [
@@ -1317,27 +2036,49 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
             "C) He seguido un programa de entrenamiento estructurado con objetivos claros y progresión semanal.",
             "D) He diseñado o ajustado personalmente mis planes de entrenamiento, monitoreando variables como volumen, intensidad y recuperación."
         ],
-        help="Tu respuesta debe reflejar tu consistencia y planificación real."
+        help="Tu respuesta debe reflejar tu consistencia y planificación real de entrenamiento."
     )
 
     # Solo mostrar ejercicios funcionales si la experiencia ha sido contestada apropiadamente
     if experiencia and not experiencia.startswith("A) He entrenado de forma irregular"):
-        st.markdown("### 🏆 Evaluación de rendimiento por categoría")
-        st.info("💡 Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
+        # Enhanced functional assessment header
+        create_enhanced_card(
+            "🏆 Evaluación de Rendimiento Funcional",
+            "Para cada categoría, selecciona el ejercicio donde tengas mejor rendimiento y registra tu máximo actual. " +
+            "Estos datos determinarán tu nivel real de entrenamiento y capacidad funcional.",
+            "🎯"
+        )
 
         ejercicios_data = {}
         niveles_ejercicios = {}
 
         tab1, tab2, tab3, tab4, tab5 = st.tabs(["💪 Empuje", "🏋️ Tracción", "🦵 Pierna Empuje", "🦵 Pierna Tracción", "🧘 Core"])
     else:
-        st.warning("⚠️ **Primero debes seleccionar tu nivel de experiencia en entrenamiento para acceder a la evaluación de ejercicios funcionales.**")
-        st.info("Por favor, selecciona una opción diferente a 'A) He entrenado de forma irregular' para continuar con la evaluación funcional.")
+        st.markdown("""
+        <div style="background: rgba(255,193,7,0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid #FFC107; margin: 1rem 0;">
+            <h4 style="color: #FFC107; margin: 0 0 1rem 0;">⚠️ Experiencia de Entrenamiento Requerida</h4>
+            <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+                Para continuar con la evaluación funcional, necesitas tener al menos algo de experiencia en entrenamiento regular.
+                Por favor, selecciona una opción diferente a 'A) He entrenado de forma irregular'.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         ejercicios_data = {}
         niveles_ejercicios = {}
 
     if experiencia and not experiencia.startswith("A) He entrenado de forma irregular"):
         with tab1:
-            st.markdown("#### Empuje superior")
+            st.markdown("#### 💪 Empuje Superior")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa tu capacidad de empuje del tren superior. Registra repeticiones continuas sin pausas, 
+                    con rango completo de movimiento y buena técnica.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 empuje = st.selectbox(
@@ -1349,12 +2090,22 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                 empuje_reps = st.number_input(
                     f"¿Cuántas repeticiones continuas realizas con buena forma en {empuje}?",
                     min_value=0, max_value=100, value=safe_int(st.session_state.get(f"{empuje}_reps", 10), 10),
-                    help="Sin pausas, sin perder rango completo de movimiento."
+                    help="Sin pausas, manteniendo rango completo de movimiento y técnica correcta."
                 )
                 ejercicios_data[empuje] = empuje_reps
 
         with tab2:
-            st.markdown("#### Tracción superior")
+            st.markdown("#### 🏋️ Tracción Superior")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa tu fuerza de tracción. Las dominadas requieren técnica estricta. 
+                    El remo invertido es una alternativa válida para principiantes.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 traccion = st.selectbox(
@@ -1371,37 +2122,67 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                 ejercicios_data[traccion] = traccion_reps
 
         with tab3:
-            st.markdown("#### Tren inferior empuje")
+            st.markdown("#### 🦵 Tren Inferior Empuje")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa tu fuerza unilateral de piernas. La sentadilla búlgara requiere equilibrio y control.
+                    Cuenta repeticiones por cada pierna individualmente.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Ejercicio:**")
-                st.info("Sentadilla búlgara unilateral")
+                st.info("🦵 Sentadilla Búlgara Unilateral")
             with col2:
                 pierna_empuje_reps = st.number_input(
                     "¿Cuántas repeticiones continuas realizas con buena forma en Sentadilla búlgara unilateral?",
                     min_value=0, max_value=50, value=safe_int(st.session_state.get("Sentadilla búlgara unilateral_reps", 10), 10),
-                    help="Repeticiones con técnica controlada por cada pierna.",
+                    help="Repeticiones con técnica controlada por cada pierna, manteniendo equilibrio y rango completo.",
                     key="sentadilla_bulgara_reps"
                 )
                 ejercicios_data["Sentadilla búlgara unilateral"] = pierna_empuje_reps
 
         with tab4:
-            st.markdown("#### Tren inferior tracción")
+            st.markdown("#### 🦵 Tren Inferior Tracción")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa la activación de la cadena posterior. El puente de glúteo unilateral requiere 
+                    activación específica del glúteo y control pélvico.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Ejercicio:**")
-                st.info("Puente de glúteo unilateral")
+                st.info("🍑 Puente de Glúteo Unilateral")
             with col2:
                 pierna_traccion_reps = st.number_input(
                     "¿Cuántas repeticiones continuas realizas con buena forma en Puente de glúteo unilateral?",
                     min_value=0, max_value=50, value=safe_int(st.session_state.get("Puente de glúteo unilateral_reps", 15), 15),
-                    help="Repeticiones con técnica controlada por cada pierna.",
+                    help="Repeticiones con técnica controlada por cada pierna, activando principalmente el glúteo.",
                     key="puente_gluteo_reps"
                 )
                 ejercicios_data["Puente de glúteo unilateral"] = pierna_traccion_reps
 
         with tab5:
-            st.markdown("#### Core y estabilidad")
+            st.markdown("#### 🧘 Core y Estabilidad")
+            st.markdown("""
+            <div style="background: rgba(244,196,48,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.85rem;">
+                    <strong style="color: var(--mupai-yellow);">🎯 Instrucciones:</strong> 
+                    Evalúa tu estabilidad del core. La plancha mide resistencia isométrica, 
+                    mientras que Ab wheel y L-sit evalúan fuerza dinámica avanzada.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             col1, col2 = st.columns(2)
             with col1:
                 core = st.selectbox(
@@ -1414,14 +2195,14 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                     core_tiempo = st.number_input(
                         "¿Cuál es el máximo tiempo (segundos) que mantienes la posición de plancha con técnica correcta?",
                         min_value=0, max_value=600, value=safe_int(st.session_state.get("plancha_tiempo", 60), 60),
-                        help="Mantén la posición sin perder alineación corporal."
+                        help="Mantén la posición sin perder alineación corporal, desde cabeza hasta talones."
                     )
                     ejercicios_data[core] = core_tiempo
                 else:
                     core_reps = st.number_input(
                         f"¿Cuántas repeticiones completas realizas en {core} con buena forma?",
                         min_value=0, max_value=100, value=safe_int(st.session_state.get(f"{core}_reps", 10), 10),
-                        help="Repeticiones con control y sin compensaciones."
+                        help="Repeticiones con control total y sin compensaciones musculares."
                     )
                     ejercicios_data[core] = core_reps
 
@@ -1640,13 +2421,50 @@ if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0:
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
+# Step 2 completion feedback
+if ejercicios_funcionales_completos and experiencia_completa:
+    show_success_feedback(
+        f"¡Paso 2 Completado! Nivel de entrenamiento determinado: {nivel_entrenamiento.upper()}. Continúa con la evaluación de actividad diaria.",
+        "💪"
+    )
+    
+    # Create summary for completed step
+    training_exercises = [{"value": f"{ejercicio}: {valor}", "label": "Rendimiento"} for ejercicio, valor in list(ejercicios_data.items())[:3]]
+    training_exercises.extend([
+        {"value": nivel_entrenamiento.upper(), "label": "Nivel Global"},
+        {"value": f"{puntos_funcional:.1f}/4.0", "label": "Score Funcional"}
+    ])
+    
+    create_step_summary_card(
+        "Resumen: Evaluación Funcional",
+        training_exercises,
+        "💪"
+    )
+
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
-    progress.progress(60)
-    progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+    # Enhanced step header
+    create_enhanced_card(
+        "🚶 Evaluación de Actividad Física Diaria",
+        "Determina tu nivel de actividad fuera del gimnasio. Este factor (GEAF) es crucial para calcular tu gasto energético total diario y personalizar tu plan nutricional.",
+        "📊"
+    )
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
+    # Enhanced activity assessment with better instructions
+    st.markdown("""
+    <div style="background: rgba(244,196,48,0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--mupai-yellow); margin: 1rem 0;">
+        <h4 style="color: var(--mupai-yellow); margin: 0 0 1rem 0;">📊 Instrucciones para la Evaluación</h4>
+        <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+            <strong>Importante:</strong> Esta evaluación se refiere únicamente a tu actividad física diaria habitual 
+            <strong>fuera del gimnasio o ejercicio planificado</strong>. Considera tu trabajo, actividades domésticas, 
+            transporte, y movimiento general durante el día.
+        </p>
+        <p style="color: #CCCCCC; margin: 0.8rem 0 0 0; font-size: 0.9rem;">
+            <strong style="color: var(--mupai-yellow);">💡 Consejo:</strong> Si tienes contador de pasos en tu teléfono, 
+            revisa tu promedio diario de los últimos 7 días para mayor precisión.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Opciones para el usuario (debe coincidir el orden con 'niveles')
     opciones_radio = [
@@ -1659,9 +2477,9 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     niveles_ui = ["🪑 Sedentario", "🚶 Moderadamente-activo", "🏃 Activo", "💪 Muy-activo"]
 
     nivel_actividad = st.radio(
-        "Selecciona el nivel que mejor te describe:",
+        "Selecciona el nivel que mejor describe tu actividad diaria habitual:",
         opciones_radio,
-        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
+        help="No incluyas el ejercicio planificado en el gimnasio, solo tu actividad diaria normal (trabajo, tareas domésticas, transporte, etc.)"
     )
 
     # Extraer el texto base del nivel seleccionado (antes del paréntesis)
@@ -1673,22 +2491,28 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     except ValueError:
         nivel_idx = 0  # Default: Sedentario
 
-    # Visualización gráfica del nivel seleccionado
+    # Enhanced visual representation
+    st.markdown("### 📈 Tu Nivel de Actividad Seleccionado")
+    
+    # Visualización gráfica del nivel seleccionado con mejor estilo
     cols = st.columns(4)
     for i, niv in enumerate(niveles_ui):
         with cols[i]:
             if i == nivel_idx:
                 st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
+                    <div style="text-align: center; padding: 1.2rem; 
                          background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); 
-                         border-radius: 10px; color: #1E1E1E; font-weight: bold; font-size: 1.1rem;">
-                        <strong>{niv}</strong>
+                         border-radius: 12px; color: #1E1E1E; font-weight: bold; font-size: 1.1rem;
+                         box-shadow: 0 4px 15px rgba(244,196,48,0.3);
+                         transform: scale(1.05);">
+                        <strong>✅ {niv}</strong>
                     </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; 
-                         background: #f8f9fa; border-radius: 10px; opacity: 0.5; color: #222;">
+                    <div style="text-align: center; padding: 1.2rem; 
+                         background: rgba(255,255,255,0.1); border-radius: 12px; 
+                         opacity: 0.6; color: #888; border: 2px solid rgba(255,255,255,0.1);">
                         {niv}
                     </div>
                 """, unsafe_allow_html=True)
@@ -1698,78 +2522,177 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     st.session_state.nivel_actividad = nivel_actividad_text
     st.session_state.geaf = geaf
 
-    # Mensaje resumen
-    st.success(
-        f"✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**\n\n"
-        f"- Factor GEAF: **{geaf}**\n"
-        f"- Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%"
+    # Enhanced results display with GEAF information
+    create_enhanced_card(
+        "📊 Factor GEAF Calculado",
+        f"Tu nivel de actividad <strong>{nivel_actividad_text}</strong> corresponde a un factor GEAF de <strong>{geaf}</strong>. " +
+        f"Esto significa que tu gasto energético total será {(geaf-1)*100:.0f}% mayor que tu metabolismo basal.",
+        "⚡"
     )
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Display GEAF metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Factor GEAF", f"{geaf}", f"{(geaf-1)*100:.0f}% adicional")
+    with col2:
+        st.metric("Nivel de Actividad", nivel_actividad_text, "Actividad diaria")
+    with col3:
+        if 'tmb' in locals():
+            gasto_total = tmb * geaf
+            st.metric("Gasto Total Estimado", f"{gasto_total:.0f} kcal", "TMB × GEAF")
+
+    # Step 3 completion feedback
+    show_success_feedback(
+        f"¡Paso 3 Completado! Nivel de actividad determinado: {nivel_actividad_text} (GEAF: {geaf}). Continúa con el cálculo del efecto térmico.",
+        "🚶"
+    )
+    
+    # Create summary for completed step
+    create_step_summary_card(
+        "Resumen: Actividad Física Diaria",
+        [
+            {"value": nivel_actividad_text, "label": "Nivel de Actividad"},
+            {"value": f"{geaf}", "label": "Factor GEAF"},
+            {"value": f"+{(geaf-1)*100:.0f}%", "label": "Aumento Metabólico"},
+            {"value": f"{tmb * geaf:.0f} kcal" if 'tmb' in locals() else "N/A", "label": "Gasto Total Estimado"}
+        ],
+        "📊"
+    )
+
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
 with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
-    progress.progress(70)
-    progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
-
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-
-    st.markdown("### 🔥 Determinación automática del ETA")
-    if grasa_corregida <= 10 and sexo == "Hombre":
-        eta = 1.15
-        eta_desc = "ETA alto (muy magro, ≤10% grasa)"
-        eta_color = "success"
-    elif grasa_corregida <= 20 and sexo == "Mujer":
-        eta = 1.15
-        eta_desc = "ETA alto (muy magra, ≤20% grasa)"
-        eta_color = "success"
-    elif grasa_corregida <= 20 and sexo == "Hombre":
-        eta = 1.12
-        eta_desc = "ETA medio (magro, 11-20% grasa)"
-        eta_color = "info"
-    elif grasa_corregida <= 30 and sexo == "Mujer":
-        eta = 1.12
-        eta_desc = "ETA medio (normal, 21-30% grasa)"
-        eta_color = "info"
+    # Use modular ETA calculation if available
+    if ETA_MODULE_AVAILABLE:
+        # Enhanced integration with eta_block.py
+        eta_completed = mostrar_bloque_eta()
+        
+        # Get the calculated ETA value
+        eta_calculado = obtener_eta_calculado()
+        if eta_calculado and eta_calculado > 0:
+            st.session_state.eta_calculado = eta_calculado
+            
+            # Step 4 completion feedback
+            show_success_feedback(
+                f"¡Paso 4 Completado! ETA calculado automáticamente: {eta_calculado:.0f} kcal/día. Continúa con la evaluación del entrenamiento.",
+                "🍽️"
+            )
+            
+            # Create summary for completed step
+            create_step_summary_card(
+                "Resumen: Efecto Térmico de los Alimentos",
+                [
+                    {"value": f"{eta_calculado:.0f} kcal/día", "label": "ETA Calculado"},
+                    {"value": f"{(eta_calculado/(tmb*geaf)*100):.1f}%" if 'tmb' in locals() and 'geaf' in locals() else "N/A", "label": "% del Gasto Total"},
+                    {"value": "Automático", "label": "Método de Cálculo"},
+                    {"value": "Composición Corporal", "label": "Base Científica"}
+                ],
+                "🔥"
+            )
     else:
-        eta = 1.10
-        eta_desc = f"ETA estándar (>{20 if sexo == 'Hombre' else 30}% grasa)"
-        eta_color = "warning"
+        # Fallback ETA calculation with enhanced design
+        create_enhanced_card(
+            "🔥 Cálculo del Efecto Térmico de los Alimentos (ETA)",
+            "El ETA representa el gasto energético adicional necesario para digerir, absorber y metabolizar los alimentos. Se calcula automáticamente basado en tu composición corporal.",
+            "🍽️"
+        )
+        
+        # Fallback ETA calculation
+        if grasa_corregida <= 10 and sexo == "Hombre":
+            eta = 1.15
+            eta_desc = "ETA alto (muy magro, ≤10% grasa)"
+            eta_color = "success"
+        elif grasa_corregida <= 20 and sexo == "Mujer":
+            eta = 1.15
+            eta_desc = "ETA alto (muy magra, ≤20% grasa)"
+            eta_color = "success"
+        elif grasa_corregida <= 20 and sexo == "Hombre":
+            eta = 1.12
+            eta_desc = "ETA medio (magro, 11-20% grasa)"
+            eta_color = "info"
+        elif grasa_corregida <= 30 and sexo == "Mujer":
+            eta = 1.12
+            eta_desc = "ETA medio (normal, 21-30% grasa)"
+            eta_color = "info"
+        else:
+            eta = 1.10
+            eta_desc = f"ETA estándar (>{20 if sexo == 'Hombre' else 30}% grasa)"
+            eta_color = "warning"
 
-    # Guarda ETA en session_state para usarlo en los cálculos finales
-    st.session_state.eta = eta
-    st.session_state.eta_desc = eta_desc
-    st.session_state.eta_color = eta_color
+        # Save ETA in session_state
+        st.session_state.eta = eta
+        st.session_state.eta_desc = eta_desc
+        st.session_state.eta_color = eta_color
 
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown(f"""
-        <div class="content-card" style="text-align: center;">
-            <h2 style="margin: 0;">ETA: {eta}</h2>
-            <span class="badge badge-{eta_color}">{eta_desc}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.info(f"""
-        **¿Qué es el ETA?**
+        # Enhanced ETA display
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #2A2A2A 0%, #1E1E1E 100%); 
+                        padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--mupai-{eta_color}); 
+                        margin: 1rem 0; text-align: center;">
+                <h2 style="margin: 0; color: white;">ETA: {eta}</h2>
+                <span class="badge badge-{eta_color}" style="margin-top: 0.5rem; padding: 0.5rem 1rem; border-radius: 20px;">
+                    {eta_desc}
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.info(f"""
+            **¿Qué es el ETA?**
 
-        Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
+            Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
 
-        Aumenta tu gasto total en un {(eta-1)*100:.0f}%
-        """)
+            Aumenta tu gasto total en un {(eta-1)*100:.0f}%
+            """)
+        
+        # Step 4 completion feedback for fallback
+        eta_calculado_fallback = (tmb * geaf * eta) - (tmb * geaf) if 'tmb' in locals() and 'geaf' in locals() else 0
+        
+        show_success_feedback(
+            f"¡Paso 4 Completado! ETA determinado: factor {eta} ({eta_desc}). Continúa con la evaluación del entrenamiento.",
+            "🔥"
+        )
+        
+        # Create summary for completed step
+        create_step_summary_card(
+            "Resumen: Efecto Térmico de los Alimentos",
+            [
+                {"value": f"{eta}", "label": "Factor ETA"},
+                {"value": eta_desc.split('(')[0].strip(), "label": "Clasificación"},
+                {"value": f"{(eta-1)*100:.0f}%", "label": "Aumento Metabólico"},
+                {"value": f"{eta_calculado_fallback:.0f} kcal" if eta_calculado_fallback > 0 else "N/A", "label": "ETA Estimado"}
+            ],
+            "🔥"
+        )
 
-    st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
-    progress.progress(80)
-    progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
+    # Enhanced step header
+    create_enhanced_card(
+        "🏋️ Gasto Energético del Ejercicio (GEE)",
+        "Calcula el gasto energético adicional por tus entrenamientos de fuerza. Este factor se ajusta según tu nivel de entrenamiento y frecuencia semanal.",
+        "💪"
+    )
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
-
+    # Enhanced training frequency input
+    st.markdown("""
+    <div style="background: rgba(244,196,48,0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--mupai-yellow); margin: 1rem 0;">
+        <h4 style="color: var(--mupai-yellow); margin: 0 0 1rem 0;">🎯 Frecuencia de Entrenamiento</h4>
+        <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+            <strong>Importante:</strong> Solo cuenta entrenamientos de fuerza/resistencia (pesas, máquinas, peso corporal). 
+            No incluyas cardio, deportes, o clases grupales en esta sección.
+        </p>
+        <p style="color: #CCCCCC; margin: 0.8rem 0 0 0; font-size: 0.9rem;">
+            <strong style="color: var(--mupai-yellow);">💡 Consideraciones:</strong> El gasto por sesión se calcula automáticamente 
+            según tu nivel de entrenamiento determinado en pasos anteriores.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     dias_fuerza = st.slider(
-        "¿Cuántos días por semana entrenas con pesas/resistencia?",
+        "¿Cuántos días por semana entrenas con pesas o resistencia?",
         min_value=0, max_value=7, value=3,
-        help="Solo cuenta entrenamientos de fuerza, no cardio"
+        help="Frecuencia semanal de entrenamientos de fuerza únicamente (no cardio ni deportes)"
     )
     st.session_state.dias_fuerza = dias_fuerza
 
@@ -1804,27 +2727,61 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     st.session_state.gee_semanal = gee_semanal
     st.session_state.gee_prom_dia = gee_prom_dia
 
+    # Enhanced metrics display
+    st.markdown("### 📊 Resumen de Gasto Energético por Entrenamiento")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Días/semana", f"{dias_fuerza} días", "Sin entrenar" if dias_fuerza == 0 else "Activo")
+        status = "🚫 Sin entrenar" if dias_fuerza == 0 else "✅ Activo"
+        st.metric("Días/semana", f"{dias_fuerza} días", status)
     with col2:
         current_level = nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() and nivel_entrenamiento else "Sin calcular"
         st.metric("Gasto/sesión", f"{kcal_sesion} kcal", f"Nivel {current_level}")
     with col3:
         st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día", f"Total: {gee_semanal} kcal/sem")
 
+    # Enhanced explanation with better styling
     st.markdown(f"""
-    <div class="content-card" style="background: #D6EAF8; color: #1E1E1E; border: 2px solid #3498DB; padding: 1.5rem;">
-        💡 <strong style="color: #1E1E1E; font-weight: bold;">Cálculo personalizado:</strong> Tu gasto por sesión ({nivel_gee}) 
-        se basa en tu <strong>nivel global de entrenamiento</strong> ({current_level}), que combina desarrollo muscular, 
-        rendimiento funcional y experiencia. Esto proporciona una estimación más precisa de tu gasto energético real.
+    <div style="background: linear-gradient(135deg, #17a2b8, #138496); color: white; 
+                padding: 1.5rem; border-radius: 12px; margin: 1rem 0; 
+                box-shadow: 0 4px 15px rgba(23,162,184,0.3);">
+        <h4 style="margin: 0 0 1rem 0; color: white;">💡 Cálculo Personalizado del GEE</h4>
+        <p style="margin: 0; font-size: 0.95rem;">
+            <strong>Tu gasto por sesión ({nivel_gee})</strong> se calcula automáticamente basado en tu 
+            <strong>nivel global de entrenamiento: {current_level}</strong>.
+        </p>
+        <p style="margin: 0.8rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
+            Este nivel combina tu desarrollo muscular (FFMI), rendimiento funcional y experiencia, 
+            proporcionando una estimación más precisa que métodos genéricos.
+        </p>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Step 5 completion feedback
+    show_success_feedback(
+        f"¡Paso 5 Completado! GEE calculado: {gee_prom_dia:.0f} kcal/día promedio. ¡Evaluación completa! Revisa tu plan nutricional personalizado.",
+        "🏋️"
+    )
+    
+    # Create summary for completed step
+    create_step_summary_card(
+        "Resumen: Gasto Energético del Ejercicio",
+        [
+            {"value": f"{dias_fuerza} días/sem", "label": "Frecuencia"},
+            {"value": f"{kcal_sesion} kcal", "label": "Gasto por Sesión"},
+            {"value": f"{gee_prom_dia:.0f} kcal/día", "label": "Promedio Diario"},
+            {"value": current_level, "label": "Nivel Base"}
+        ],
+        "🏋️"
+    )
+
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
-    progress.progress(100)
-    progress_text.text("Paso final: Calculando tu plan nutricional personalizado")
+    # Enhanced final results header
+    create_enhanced_card(
+        "🎯 Plan Nutricional Personalizado",
+        "Basado en tu evaluación completa, aquí tienes tu plan nutricional científicamente personalizado con opciones tradicionales y PSMF (si aplica).",
+        "📈"
+    )
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -1854,102 +2811,194 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
     fbeo = 1 + porcentaje / 100  # Cambio de signo para reflejar nueva convención
 
-    # Perfil del usuario
-    st.markdown("### 📋 Tu perfil nutricional")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"• **Sexo:** {sexo}")
-        st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
-        try:
-            st.write(f"• **FFMI:** {ffmi:.2f} ({nivel_ffmi})")
-        except Exception:
-            st.write("• **FFMI:** – (completa todos los datos para calcular)")
-    with col2:
-        try:
-            st.write(f"• **Nivel:** {nivel_entrenamiento.capitalize()}")
-        except Exception:
-            st.write("• **Nivel:** –")
-        try:
-            st.write(f"• **Edad metabólica:** {edad_metabolica} años")
-        except Exception:
-            st.write("• **Edad metabólica:** –")
-        try:
-            st.write(f"• **Objetivo:** {fase}")
-        except Exception:
-            st.write("• **Objetivo:** –")
+    # Enhanced user profile section
+    st.markdown("### 📋 Tu Perfil Nutricional Completo")
+    
+    # Create a comprehensive profile card
+    profile_metrics = []
+    try:
+        profile_metrics.extend([
+            {"value": sexo, "label": "Sexo Biológico"},
+            {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal (DEXA)"},
+            {"value": f"{ffmi:.2f}", "label": f"FFMI ({nivel_ffmi})"},
+            {"value": nivel_entrenamiento.capitalize(), "label": "Nivel de Entrenamiento"}
+        ])
+    except:
+        profile_metrics.extend([
+            {"value": sexo, "label": "Sexo Biológico"},
+            {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal (DEXA)"},
+            {"value": "Calculando...", "label": "FFMI"},
+            {"value": "Calculando...", "label": "Nivel"}
+        ])
+    
+    try:
+        profile_metrics.extend([
+            {"value": f"{edad_metabolica} años", "label": "Edad Metabólica"},
+            {"value": fase, "label": "Objetivo Recomendado"}
+        ])
+    except:
+        profile_metrics.extend([
+            {"value": "Calculando...", "label": "Edad Metabólica"},
+            {"value": fase, "label": "Objetivo Recomendado"}
+        ])
+    
+    create_step_summary_card(
+        "Perfil Nutricional Personalizado",
+        profile_metrics,
+        "👤"
+    )
 
-    # Cálculo del gasto energético
-    GE = tmb * geaf * eta + gee_prom_dia
+    # Enhanced energy calculation display
+    create_enhanced_card(
+        "⚡ Cálculo de Gasto Energético Total",
+        f"Tu gasto energético total se calcula combinando todos los factores evaluados: TMB ({tmb:.0f} kcal) × GEAF ({geaf}) × ETA ({eta if 'eta' in locals() else 'calculado'}) + GEE ({gee_prom_dia:.0f} kcal).",
+        "🔥"
+    )
+    
+    # Display energy breakdown
+    st.markdown("### 🔥 Desglose Energético Detallado")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("TMB Base", f"{tmb:.0f} kcal", "Metabolismo basal")
+    with col2:
+        gasto_actividad = tmb * geaf - tmb
+        st.metric("Actividad Diaria", f"{gasto_actividad:.0f} kcal", f"GEAF: {geaf}")
+    with col3:
+        eta_value = eta if 'eta' in locals() else (st.session_state.get('eta_calculado', 0) / (tmb * geaf)) if st.session_state.get('eta_calculado', 0) > 0 else 1.1
+        gasto_eta = (tmb * geaf * eta_value) - (tmb * geaf)
+        st.metric("Efecto Térmico", f"{gasto_eta:.0f} kcal", f"ETA: {eta_value}")
+    with col4:
+        st.metric("Entrenamiento", f"{gee_prom_dia:.0f} kcal", f"GEE promedio")
+
+    # Calculate total energy expenditure
+    GE = tmb * geaf * eta_value + gee_prom_dia
+    
+    # Big total display
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, var(--mupai-success) 0%, #2ECC71 100%); 
+                color: white; padding: 2rem; border-radius: 15px; margin: 1.5rem 0; text-align: center;
+                box-shadow: 0 8px 25px rgba(39,174,96,0.3);">
+        <h2 style="margin: 0; font-size: 2.5rem; font-weight: bold;">⚡ {GE:.0f} kcal/día</h2>
+        <p style="margin: 0.5rem 0 0 0; font-size: 1.2rem; opacity: 0.9;">
+            Tu Gasto Energético Total Diario
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     ingesta_calorica_tradicional = GE * fbeo
 
-    # COMPARATIVA PSMF si aplica
+    # Enhanced PSMF options section
     plan_elegido = "Tradicional"
     if psmf_recs.get("psmf_aplicable"):
-        st.markdown("### ⚡ Opciones de plan nutricional")
-        st.warning("Eres candidato para el protocolo PSMF. Puedes elegir entre dos estrategias:")
+        create_enhanced_card(
+            "⚡ Opciones de Estrategia Nutricional",
+            "Basado en tu porcentaje de grasa corporal, eres candidato para el protocolo PSMF. Puedes elegir entre una estrategia tradicional sostenible o una estrategia acelerada más restrictiva.",
+            "🎯"
+        )
 
         plan_elegido = st.radio(
-            "Selecciona tu estrategia preferida:",
+            "Selecciona tu estrategia nutricional preferida:",
             ["Plan Tradicional (déficit moderado, más sostenible)",
              "Protocolo PSMF (pérdida rápida, más restrictivo)"],
             index=0,
-            help="PSMF es muy efectivo pero requiere mucha disciplina"
+            help="El PSMF es muy efectivo para pérdida rápida pero requiere disciplina estricta y supervisión"
         )
         
-        # Opción para seleccionar grasa en PSMF (30-50g)
+        # Enhanced PSMF fat configuration
         grasa_psmf_seleccionada = 40.0  # Valor por defecto
         if "PSMF" in plan_elegido:
-            st.markdown("#### 🥑 Configuración de grasas para PSMF")
+            st.markdown("""
+            <div style="background: rgba(255,193,7,0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid #FFC107; margin: 1rem 0;">
+                <h4 style="color: #FFC107; margin: 0 0 1rem 0;">🥑 Configuración de Grasas PSMF</h4>
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+                    En el protocolo PSMF, las grasas se mantienen al mínimo esencial. El rango de 30-50g 
+                    asegura funciones hormonales básicas y absorción de vitaminas liposolubles.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             grasa_psmf_seleccionada = st.slider(
-                "Selecciona la cantidad de grasa diaria (en gramos):",
+                "Cantidad de grasa diaria (gramos):",
                 min_value=30.0,
                 max_value=50.0,
                 value=40.0,
                 step=1.0,
-                help="Rango permitido para PSMF: 30-50g de grasas de fuentes magras (pescado, aceite de oliva mínimo)"
+                help="Fuentes recomendadas: aceite de oliva virgen extra (mínimo), pescados grasos, frutos secos (muy limitados)"
             )
 
-        # Mostrar comparativa visual
-        st.markdown("### 📊 Comparativa de planes")
+        # Enhanced plan comparison
+        st.markdown("### 📊 Comparativa Detallada de Estrategias")
+        
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-            st.markdown("#### ✅ Plan Tradicional")
-            st.metric("Déficit", f"{porcentaje}%", "Moderado")
-            st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
-            st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
-            st.markdown("""
-            **Ventajas:**
-            - ✅ Mayor adherencia
-            - ✅ Más energía para entrenar  
-            - ✅ Sostenible largo plazo
-            - ✅ Menor pérdida muscular
-            - ✅ Vida social normal
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Traditional plan card
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, var(--mupai-success) 0%, #2ECC71 100%); 
+                        color: white; padding: 1.5rem; border-radius: 12px; margin: 1rem 0;
+                        box-shadow: 0 6px 20px rgba(39,174,96,0.3);">
+                <h3 style="margin: 0 0 1rem 0;">✅ Plan Tradicional</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">{abs(porcentaje)}%</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">Déficit Moderado</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">{ingesta_calorica_tradicional:.0f}</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">kcal/día</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 1.3rem; font-weight: bold;">0.5-0.7 kg/semana</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Pérdida Esperada</div>
+                </div>
+                <div style="font-size: 0.9rem;">
+                    <strong>✅ Ventajas:</strong><br>
+                    • Mayor adherencia a largo plazo<br>
+                    • Energía suficiente para entrenar<br>
+                    • Sostenible y flexible<br>
+                    • Menor pérdida muscular<br>
+                    • Vida social normal
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
         with col2:
+            # PSMF plan card
             deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
             perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
             multiplicador = psmf_recs.get('multiplicador', 8.3)
             perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
             
-            st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-            st.markdown("#### ⚡ Protocolo PSMF Actualizado")
-            st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
-            st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
-            st.metric("Multiplicador", f"{multiplicador}", f"Perfil: {perfil_grasa}")
-            st.metric("Pérdida esperada", f"{perdida_min}-{perdida_max} kg/semana")
             st.markdown(f"""
-            **Consideraciones:**
-            - ⚠️ Muy restrictivo
-            - ⚠️ Máximo 6-8 semanas
-            - ⚠️ Requiere supervisión médica
-            - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día (1.8g/kg mínimo)
-            - ⚠️ Grasas: 30-50g (seleccionable, fuentes magras)
-            - ⚠️ Carbos: resto de calorías (solo vegetales fibrosos)
-            - ⚠️ Suplementación necesaria
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+            <div style="background: linear-gradient(135deg, var(--mupai-warning) 0%, #F39C12 100%); 
+                        color: white; padding: 1.5rem; border-radius: 12px; margin: 1rem 0;
+                        box-shadow: 0 6px 20px rgba(243,156,18,0.3);">
+                <h3 style="margin: 0 0 1rem 0;">⚡ Protocolo PSMF</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">~{deficit_psmf}%</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">Déficit Agresivo</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">{psmf_recs['calorias_dia']:.0f}</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">kcal/día</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 1.3rem; font-weight: bold;">{perdida_min}-{perdida_max} kg/semana</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Pérdida Acelerada</div>
+                </div>
+                <div style="font-size: 0.85rem;">
+                    <strong>⚠️ Consideraciones:</strong><br>
+                    • Muy restrictivo (máx. 6-8 semanas)<br>
+                    • Requiere supervisión médica<br>
+                    • Proteína: {psmf_recs['proteina_g_dia']}g/día<br>
+                    • Grasas: 30-50g (fuentes magras)<br>
+                    • Solo vegetales fibrosos como carbos<br>
+                    • Suplementación obligatoria
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     # FORZAR actualización de variables clave desde session_state
     peso = st.session_state.get("peso", 0)
@@ -2026,9 +3075,11 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         # Mostrar cálculo detallado con diseño mejorado
         st.markdown("### 🧮 Desglose del cálculo")
         with st.expander("Ver cálculo detallado", expanded=False):
+            # Get the eta value safely
+            eta_display = eta_value if 'eta_value' in locals() else (eta if 'eta' in locals() else 1.1)
             st.code(f"""
 Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
-GE = {tmb:.0f} × {geaf} × {eta} + {gee_prom_dia:.0f} = {GE:.0f} kcal
+GE = {tmb:.0f} × {geaf} × {eta_display} + {gee_prom_dia:.0f} = {GE:.0f} kcal
 
 Factor de Balance Energético (FBEO) = 1 - (déficit/100)
 FBEO = 1 - ({porcentaje}/100) = {fbeo:.2f}
@@ -2108,41 +3159,80 @@ peso = st.session_state.get("peso", 0)
 estatura = st.session_state.get("estatura", 0)
 grasa_corporal = st.session_state.get("grasa_corporal", 0)
 
+# COMPLETION CELEBRATION
+if datos_personales_completos and st.session_state.datos_completos:
+    # Check if all steps are completed
+    all_steps_completed = (
+        peso > 0 and estatura > 0 and grasa_corporal > 0 and  # Step 1
+        ejercicios_funcionales_completos and experiencia_completa and  # Step 2
+        'geaf' in locals() and geaf > 0 and  # Step 3
+        ('eta' in locals() or st.session_state.get('eta_calculado', 0) > 0) and  # Step 4
+        'dias_fuerza' in locals()  # Step 5
+    )
+    
+    if all_steps_completed:
+        st.balloons()
+        show_success_feedback(
+            "🎉 ¡EVALUACIÓN MUPAI COMPLETADA! Has completado exitosamente todos los pasos. Tu plan nutricional personalizado está listo.",
+            "🏆"
+        )
+
 # RESUMEN FINAL MEJORADO
 st.markdown("---")
-st.markdown('<div class="content-card" style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); color: #1E1E1E;">', unsafe_allow_html=True)
-st.markdown("## 🎯 **Resumen Final de tu Evaluación MUPAI**")
-st.markdown(f"*Fecha: {fecha_llenado} | Cliente: {nombre}*")
 
-# Crear resumen visual con métricas clave
-col1, col2, col3 = st.columns(3)
-with col1:
-    # Ensure edad is numeric for calculations
-    try:
-        edad_num = int(edad)
-        diferencia_edad = edad_metabolica - edad_num
-        evaluacion = '⚠️ Mejorar' if edad_metabolica > edad_num + 2 else '✅ Excelente' if edad_metabolica < edad_num - 2 else '👍 Normal'
-    except (ValueError, TypeError):
-        edad_num = 25  # Default fallback
-        diferencia_edad = 0
-        evaluacion = '👍 Normal'
-    
-    st.markdown(f"""
-    ### 👤 Perfil Personal
-    - **Edad cronológica:** {edad} años
-    - **Edad metabólica:** {edad_metabolica} años
-    - **Diferencia:** {diferencia_edad:+d} años
-    - **Evaluación:** {evaluacion}
-    """)
-with col2:
-    st.markdown(f"""
-    ### 💪 Composición Corporal
-    - **Peso:** {peso} kg | **Altura:** {estatura} cm
-    - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
-    - **FFMI:** {ffmi:.2f} ({nivel_ffmi})
-    - **Potencial:** {porc_potencial:.0f}% alcanzado
-    """)
-with col3:
+# Enhanced final summary with celebration
+create_enhanced_card(
+    "🎯 Resumen Final de tu Evaluación MUPAI",
+    f"Evaluación completada el {fecha_llenado} para {nombre}. Tu perfil completo ha sido analizado científicamente para crear un plan nutricional personalizado.",
+    "🏆"
+)
+
+# Enhanced summary with modern card grid
+st.markdown("### 📊 Resumen Ejecutivo de tu Evaluación")
+
+# Create comprehensive summary cards
+summary_sections = [
+    {
+        "title": "👤 Perfil Personal",
+        "metrics": [
+            {"value": f"{edad} años", "label": "Edad Cronológica"},
+            {"value": f"{edad_metabolica} años", "label": "Edad Metabólica"},
+            {"value": f"{diferencia_edad:+d} años", "label": "Diferencia"},
+            {"value": evaluacion, "label": "Evaluación"}
+        ],
+        "icon": "👤"
+    },
+    {
+        "title": "💪 Composición Corporal",
+        "metrics": [
+            {"value": f"{peso} kg", "label": "Peso Corporal"},
+            {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal (DEXA)"},
+            {"value": f"{ffmi:.2f}", "label": f"FFMI ({nivel_ffmi})"},
+            {"value": f"{mlg:.1f} kg", "label": "Masa Libre de Grasa"}
+        ],
+        "icon": "💪"
+    },
+    {
+        "title": "⚡ Perfil Energético",
+        "metrics": [
+            {"value": f"{tmb:.0f} kcal", "label": "TMB (Cunningham)"},
+            {"value": f"{GE:.0f} kcal", "label": "Gasto Total Diario"},
+            {"value": f"{geaf}", "label": "Factor GEAF"},
+            {"value": nivel_actividad_text if 'nivel_actividad_text' in locals() else "N/A", "label": "Nivel Actividad"}
+        ],
+        "icon": "⚡"
+    }
+]
+
+# Display summary cards in a grid
+cols = st.columns(3)
+for i, section in enumerate(summary_sections):
+    with cols[i]:
+        create_step_summary_card(
+            section["title"],
+            section["metrics"],
+            section["icon"]
+        )
     # Safe calculations for display
     proteina_ratio = f"({proteina_g/peso:.2f}g/kg)" if peso > 0 else "(–g/kg)"
     grasa_percent = f"({round(grasa_kcal/ingesta_calorica*100)}%)" if ingesta_calorica > 0 else "(–%)"
