@@ -117,8 +117,11 @@ def validate_step_4():
 
 def validate_step_5():
     """Valida que el paso 5 (efecto térmico) esté completo."""
-    eta_factor = st.session_state.get("eta_factor", 0)
-    return eta_factor > 0
+    # ETA se calcula automáticamente, solo necesitamos los datos previos
+    peso = st.session_state.get("peso", 0)
+    porcentaje_grasa = st.session_state.get("grasa_corporal", 0)
+    actividad = st.session_state.get("actividad_diaria", "")
+    return peso > 0 and porcentaje_grasa > 0 and len(actividad) > 0
 
 def validate_step_6():
     """Valida que el paso 6 (gasto energético) esté completo."""
@@ -525,6 +528,32 @@ header[data-testid="stHeader"] {
 }
 .st-emotion-cache-1dp5vir {
     display: none !important;
+}
+/* Ocultar elementos adicionales de GitHub y fork */
+[data-testid="stToolbar"] > div > button {
+    display: none !important;
+}
+.stApp > header {
+    display: none !important;
+}
+iframe[title*="github"] {
+    display: none !important;
+}
+iframe[src*="streamlit.io"] {
+    display: none !important;
+}
+.stActionButton[aria-label*="Fork"] {
+    display: none !important;
+}
+button[title*="Fork"] {
+    display: none !important;
+}
+button[title*="GitHub"] {
+    display: none !important;
+}
+a[href*="github.com"] {
+    display: none !important;
+}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -1000,6 +1029,56 @@ def obtener_geaf(nivel):
     }
     return valores.get(nivel, 1.00)
 
+def calcular_eta_automatico(tmb, geaf, porcentaje_grasa, sexo):
+    """
+    Calcula el Efecto Térmico de los Alimentos (ETA) automáticamente.
+    Fórmula científica basada en composición corporal y gasto energético.
+    
+    Args:
+        tmb: Tasa Metabólica Basal (kcal)
+        geaf: Factor de Actividad Física
+        porcentaje_grasa: Porcentaje de grasa corporal
+        sexo: "Hombre" o "Mujer"
+    
+    Returns:
+        float: ETA en kcal/día
+    """
+    try:
+        tmb = float(tmb)
+        geaf = float(geaf)
+        porcentaje_grasa = float(porcentaje_grasa)
+    except (TypeError, ValueError):
+        return 0.0
+    
+    # Gasto energético base (TMB * GEAF)
+    gasto_base = tmb * geaf
+    
+    # Factor ETA basado en composición corporal y sexo
+    # Personas más magras tienen mayor ETA debido a mayor masa muscular
+    if sexo == "Hombre":
+        if porcentaje_grasa <= 10:
+            factor_eta = 0.12  # 12% para hombres muy magros
+        elif porcentaje_grasa <= 15:
+            factor_eta = 0.11  # 11% para hombres magros
+        elif porcentaje_grasa <= 20:
+            factor_eta = 0.10  # 10% para hombres normales
+        else:
+            factor_eta = 0.09  # 9% para hombres con más grasa
+    else:  # Mujer
+        if porcentaje_grasa <= 16:
+            factor_eta = 0.11  # 11% para mujeres muy magras
+        elif porcentaje_grasa <= 21:
+            factor_eta = 0.10  # 10% para mujeres magras
+        elif porcentaje_grasa <= 26:
+            factor_eta = 0.09  # 9% para mujeres normales
+        else:
+            factor_eta = 0.08  # 8% para mujeres con más grasa
+    
+    # ETA = Factor * Gasto energético base
+    eta = gasto_base * factor_eta
+    
+    return round(eta, 1)
+
 def esta_en_rango_saludable(porcentaje_grasa, sexo):
     """
     Determina si el porcentaje de grasa corporal está en rango saludable para ponderar FFMI.
@@ -1373,6 +1452,52 @@ if current_step == 1 and not st.session_state.get("datos_completos", False):
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Informational expander with company info
+    with st.expander("🏢 Acerca de MUPAI - Misión, Visión y Valores", expanded=False):
+        st.markdown("""
+        ### 🎯 Misión
+        **Transformar vidas a través de la ciencia del fitness personalizado.** 
+        
+        Proporcionamos evaluaciones basadas en evidencia científica para optimizar la composición corporal, el rendimiento y la salud metabólica de cada individuo.
+        
+        ### 🔮 Visión  
+        **Ser la plataforma líder en evaluación fitness personalizada en América Latina.**
+        
+        Democratizar el acceso a análisis de composición corporal de nivel profesional, integrando tecnología avanzada con metodologías científicas validadas.
+        
+        ### 💎 Valores
+        
+        **🧬 Precisión Científica**  
+        Todos nuestros cálculos se basan en fórmulas validadas científicamente (Cunningham, FFMI, correcciones DEXA) y metodologías de medición estandarizadas.
+        
+        **📊 Transparencia**  
+        Mostramos exactamente cómo calculamos cada métrica, qué fórmulas utilizamos y por qué son relevantes para tu caso específico.
+        
+        **🎯 Personalización**  
+        No existen soluciones universales. Cada recomendación se ajusta a tu composición corporal, experiencia, objetivos y contexto individual.
+        
+        **🔄 Mejora Continua**  
+        Actualizamos constantemente nuestros algoritmos con la última evidencia científica en nutrición deportiva y fisiología del ejercicio.
+        
+        **🤝 Integridad**  
+        Proporcionamos información honesta, realista y basada en evidencia, sin promesas exageradas ni métodos milagrosos.
+        
+        ---
+        
+        ### 👨‍⚕️ Fundamento Científico
+        
+        **MUPAI** utiliza las siguientes metodologías validadas:
+        - **Fórmula de Cunningham** para TMB (más precisa para atletas)
+        - **Índice FFMI** para evaluación de masa muscular
+        - **Correcciones DEXA** para normalizar mediciones de grasa corporal
+        - **Factores GEAF** basados en investigación del gasto energético
+        - **Protocolos PSMF** para casos específicos de recomposición corporal
+        
+        *Desarrollado por profesionales en nutrición deportiva y ciencias del ejercicio.*
+        """)
+    
+    st.markdown("---")
 
 # ==================== PASO 2: COMPOSICIÓN CORPORAL ====================
 elif current_step == 2:
@@ -1678,21 +1803,72 @@ elif current_step == 5:
     st.markdown("""
     <div class="step-header">
         <h1 class="step-title">🍽️ Paso 5: Efecto Térmico de los Alimentos</h1>
-        <p class="step-subtitle">Calcula el gasto energético adicional por digestión</p>
+        <p class="step-subtitle">Cálculo automático del gasto energético adicional por digestión</p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     
-    eta_factor = st.slider(
-        "Factor ETA (%)",
-        min_value=8.0,
-        max_value=15.0,
-        value=10.0,
-        step=0.5,
-        help="Típicamente entre 8-15% del gasto energético total",
-        key="eta_factor"
-    )
+    # Obtener datos previos para calcular ETA automáticamente
+    peso = st.session_state.get("peso", 0)
+    grasa_corporal = st.session_state.get("grasa_corporal", 0)
+    metodo_grasa = st.session_state.get("metodo_grasa", "DEXA (Gold Standard)")
+    actividad_diaria = st.session_state.get("actividad_diaria", "")
+    sexo = st.session_state.get("sexo", "Hombre")
+    
+    if peso > 0 and grasa_corporal > 0 and actividad_diaria:
+        # Calcular valores necesarios
+        grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+        mlg = calcular_mlg(peso, grasa_corregida)
+        tmb = calcular_tmb_cunningham(mlg)
+        geaf = obtener_geaf(actividad_diaria)
+        eta_calculado = calcular_eta_automatico(tmb, geaf, grasa_corregida, sexo)
+        
+        # Mostrar información científica
+        st.markdown("### 🧬 Cálculo Científico del ETA")
+        st.info("""
+        **💡 ¿Qué es el Efecto Térmico de los Alimentos (ETA)?**
+        
+        Es el aumento temporal del gasto energético después de comer, debido al proceso de digestión, absorción, transporte y metabolismo de los nutrientes. Representa típicamente 8-15% del gasto energético total diario.
+        """)
+        
+        # Mostrar resultados automáticos
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "🔥 TMB (Cunningham)", 
+                f"{tmb:.0f} kcal/día",
+                help="Tasa Metabólica Basal calculada con fórmula de Cunningham"
+            )
+        with col2:
+            st.metric(
+                "🚶 Factor GEAF", 
+                f"{geaf:.2f}",
+                help=f"Factor de actividad física: {actividad_diaria}"
+            )
+        with col3:
+            st.metric(
+                "🍽️ ETA Calculado", 
+                f"{eta_calculado:.0f} kcal/día",
+                help="Efecto Térmico de los Alimentos calculado automáticamente"
+            )
+        
+        # Guardar el ETA calculado en session_state
+        st.session_state.eta_calculado = eta_calculado
+        
+        # Explicación del cálculo
+        factor_eta = eta_calculado / (tmb * geaf) * 100 if (tmb * geaf) > 0 else 0
+        st.markdown(f"""
+        **📊 Detalles del cálculo:**
+        - **Gasto energético base:** {tmb:.0f} × {geaf:.2f} = {(tmb * geaf):.0f} kcal/día
+        - **Factor ETA aplicado:** {factor_eta:.1f}% (basado en composición corporal)
+        - **ETA resultante:** {eta_calculado:.0f} kcal/día
+        """)
+        
+        st.success("✅ **ETA calculado automáticamente con base científica**")
+        
+    else:
+        st.warning("⚠️ Completa los pasos anteriores para calcular el ETA automáticamente")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -1780,8 +1956,8 @@ elif current_step == 7:
             st.metric("📏 FFMI", f"{ffmi:.1f}")
             st.metric("⚖️ Grasa Corregida", f"{grasa_corregida:.1f}%")
         with col3:
-            experiencia = st.session_state.get("experiencia_entrenamiento", "No especificado")[:20] + "..."
-            st.metric("💪 Experiencia", experiencia)
+            edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
+            st.metric("🧬 Edad Metabólica", f"{edad_metabolica:.0f} años")
             actividad = st.session_state.get("actividad_diaria", "No especificado")[:15] + "..."
             st.metric("🚶 Actividad", actividad)
         
