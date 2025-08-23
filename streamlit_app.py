@@ -2048,6 +2048,56 @@ if 'fase' not in locals():
 if 'plan_elegido' not in locals():
     plan_elegido = "Plan Tradicional"
 
+# Initialize additional critical variables that might be used in tabla_resumen
+if 'eta' not in locals():
+    eta = 1.1
+if 'eta_desc' not in locals():
+    eta_desc = "ETA estándar"
+if 'geaf' not in locals():
+    geaf = 1.5
+if 'GE' not in locals():
+    GE = 2200.0
+if 'gee_prom_dia' not in locals():
+    gee_prom_dia = 0.0
+if 'dias_fuerza' not in locals():
+    dias_fuerza = 3
+if 'kcal_sesion' not in locals():
+    kcal_sesion = 300
+if 'nivel_actividad' not in locals():
+    nivel_actividad = "Moderadamente Activo (oficina + ejercicio 3-5x/semana)"
+if 'fbeo' not in locals():
+    fbeo = 1.0
+if 'nivel_entrenamiento' not in locals():
+    nivel_entrenamiento = "intermedio"
+if 'nombre' not in locals():
+    nombre = st.session_state.get('nombre', 'No especificado')
+if 'telefono' not in locals():
+    telefono = st.session_state.get('telefono', 'No especificado')
+if 'email_cliente' not in locals():
+    email_cliente = st.session_state.get('email_cliente', 'No especificado')
+if 'fecha_llenado' not in locals():
+    fecha_llenado = datetime.now().strftime("%Y-%m-%d")
+if 'ffmi_genetico_max' not in locals():
+    ffmi_genetico_max = 22.0
+if 'porc_potencial' not in locals():
+    porc_potencial = 75.0
+if 'ratio_kcal_kg' not in locals():
+    ratio_kcal_kg = 30.0
+if 'puntos_ffmi' not in locals():
+    puntos_ffmi = 3
+if 'puntos_funcional' not in locals():
+    puntos_funcional = 2.5
+if 'puntos_exp' not in locals():
+    puntos_exp = 2
+if 'puntaje_total' not in locals():
+    puntaje_total = 0.6
+if 'en_rango_saludable' not in locals():
+    en_rango_saludable = True
+if 'experiencia' not in locals():
+    experiencia = "B) He entrenado durante 6 meses a 1 año"
+if 'nivel_actividad_text' not in locals():
+    nivel_actividad_text = "Moderadamente Activo"
+
 # === ACTUALIZA VARIABLES CLAVE DESDE session_state ANTES DE CUALQUIER CÁLCULO CRÍTICO ===
 # Esto fuerza que SIEMPRE se use el último dato capturado por el usuario
 
@@ -2921,7 +2971,7 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             {"value": f"{ffmi:.2f}", "label": f"FFMI ({nivel_ffmi})"},
             {"value": nivel_entrenamiento.capitalize(), "label": "Nivel de Entrenamiento"}
         ])
-    except:
+    except (ValueError, TypeError, KeyError, AttributeError):
         profile_metrics.extend([
             {"value": sexo, "label": "Sexo Biológico"},
             {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal (DEXA)"},
@@ -2934,7 +2984,7 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             {"value": f"{edad_metabolica} años", "label": "Edad Metabólica"},
             {"value": fase, "label": "Objetivo Recomendado"}
         ])
-    except:
+    except (ValueError, TypeError, KeyError, AttributeError):
         profile_metrics.extend([
             {"value": "Calculando...", "label": "Edad Metabólica"},
             {"value": fase, "label": "Objetivo Recomendado"}
@@ -3415,7 +3465,7 @@ try:
     proteina_kcal_safe = proteina_g * 4 if 'proteina_g' in locals() else 0
     grasa_kcal_safe = grasa_g * 9 if 'grasa_g' in locals() else 0
     carbo_kcal_safe = carbo_g * 4 if 'carbo_g' in locals() else 0
-except:
+except (ValueError, TypeError, ZeroDivisionError):
     imc = 0
     ratio_kcal_kg = 0
     proteina_percent = 0
@@ -3536,7 +3586,7 @@ try:
 - Peso actual → rango proyectado: {peso:.1f} kg → {peso + proyeccion_email['rango_total_6sem_kg'][0]:.1f} a {peso + proyeccion_email['rango_total_6sem_kg'][1]:.1f} kg
 - Explicación científica: {proyeccion_email['explicacion_textual']}
 """
-except:
+except (ValueError, TypeError, KeyError, AttributeError):
     tabla_resumen += "\n- Error en cálculo de proyección. Usar valores por defecto.\n"
 
 # Agregar secciones adicionales del cuestionario
