@@ -98,14 +98,17 @@ def validate_step_3():
     if not experiencia or experiencia.startswith("A) He entrenado de forma irregular"):
         return False
     
-    # Verificar que haya al menos un dato de ejercicio si la experiencia está completa
-    has_exercise_data = False
-    for key in st.session_state:
-        if "reps" in key or "peso" in key:
-            has_exercise_data = True
-            break
+    # Validación estricta: todos los campos de ejercicio son obligatorios
+    empuje_reps = st.session_state.get("empuje_reps", 0)
+    traccion_reps = st.session_state.get("traccion_reps", 0)
+    sentadilla_bulgara_reps = st.session_state.get("sentadilla_bulgara_reps", 0)
+    puente_unilateral_reps = st.session_state.get("puente_unilateral_reps", 0)
+    core_tiempo = st.session_state.get("core_tiempo", 0)
     
-    return True  # Para simplificar, solo validamos la experiencia
+    # Todos los campos deben tener valores mayor a 0
+    return (empuje_reps > 0 and traccion_reps > 0 and 
+            sentadilla_bulgara_reps > 0 and puente_unilateral_reps > 0 and 
+            core_tiempo > 0)
 
 def validate_step_4():
     """Valida que el paso 4 (actividad física) esté completo."""
@@ -489,6 +492,39 @@ hr {
     font-size: 1.3rem;
     font-weight: 700;
     margin: 1rem 0;
+}
+
+/* Ocultar elementos de GitHub */
+.stActionButton[title*="Fork"] {
+    display: none !important;
+}
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+.stActionButton {
+    display: none !important;
+}
+iframe[src*="github"] {
+    display: none !important;
+}
+.github-corner {
+    display: none !important;
+}
+/* Ocultar botón Deploy y otros elementos de Streamlit Cloud */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+.stDeployButton {
+    display: none !important;
+}
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+.st-emotion-cache-18ni7ap {
+    display: none !important;
+}
+.st-emotion-cache-1dp5vir {
+    display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -1089,6 +1125,28 @@ def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
         # Para plan tradicional, usar el porcentaje tradicional
         return porcentaje if porcentaje is not None else 0
 
+def datos_completos_para_email():
+    """Verifica que todos los datos necesarios estén completos para enviar email."""
+    faltantes = []
+    
+    # Datos personales
+    if not st.session_state.get("nombre", "").strip():
+        faltantes.append("nombre completo")
+    if not st.session_state.get("email_cliente", "").strip():
+        faltantes.append("email")
+    if not st.session_state.get("telefono", "").strip():
+        faltantes.append("teléfono")
+    
+    # Datos de composición corporal
+    if not st.session_state.get("peso", 0) > 0:
+        faltantes.append("peso")
+    if not st.session_state.get("estatura", 0) > 0:
+        faltantes.append("estatura")
+    if not st.session_state.get("grasa_corporal", 0) > 0:
+        faltantes.append("% grasa corporal")
+    
+    return faltantes
+
 def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, telefono):
     """Envía el email con el resumen completo de la evaluación."""
     try:
@@ -1503,34 +1561,37 @@ elif current_step == 3:
 
         col3, col4 = st.columns(2)
         with col3:
-            st.markdown("#### 🦵 Tren inferior")
-            piernas = st.selectbox(
-                "Elige tu mejor ejercicio de piernas:",
-                ["Sentadillas", "Peso muerto"],
-                index=0 if st.session_state.get("piernas_ejercicio", "Sentadillas") == "Sentadillas" else 1,
-                help="Selecciona el ejercicio donde tengas mejor rendimiento.",
-                key="piernas_ejercicio"
-            )
-            piernas_peso = st.number_input(
-                f"Peso máximo en {piernas} (kg):",
-                min_value=0.0, 
-                max_value=300.0, 
-                value=st.session_state.get("piernas_peso", 50.0),
-                step=2.5,
-                help="1RM o peso con buena técnica.",
-                key="piernas_peso"
+            st.markdown("#### 🦵 Tren inferior - Cadena anterior")
+            sentadilla_bulgara_reps = st.number_input(
+                "Sentadilla búlgara (peso corporal) - repeticiones:",
+                min_value=0, 
+                max_value=50, 
+                value=st.session_state.get("sentadilla_bulgara_reps", 10),
+                help="Repeticiones máximas con peso corporal únicamente.",
+                key="sentadilla_bulgara_reps"
             )
             
         with col4:
-            st.markdown("#### 🧘 Core")
-            core_tiempo = st.number_input(
-                "Tiempo máximo en plancha (segundos):",
+            st.markdown("#### 🦵 Tren inferior - Cadena posterior")
+            puente_unilateral_reps = st.number_input(
+                "Puente unilateral (peso corporal) - repeticiones:",
                 min_value=0, 
-                max_value=600, 
-                value=st.session_state.get("core_tiempo", 60),
-                help="Tiempo máximo manteniendo plancha correcta.",
-                key="core_tiempo"
+                max_value=50, 
+                value=st.session_state.get("puente_unilateral_reps", 8),
+                help="Repeticiones máximas con peso corporal únicamente.",
+                key="puente_unilateral_reps"
             )
+
+        # Core section in separate row
+        st.markdown("#### 🧘 Core")
+        core_tiempo = st.number_input(
+            "Tiempo máximo en plancha (segundos):",
+            min_value=0, 
+            max_value=600, 
+            value=st.session_state.get("core_tiempo", 60),
+            help="Tiempo máximo manteniendo plancha correcta.",
+            key="core_tiempo"
+        )
 
     else:
         if experiencia.startswith("A) He entrenado de forma irregular"):
@@ -1562,9 +1623,15 @@ elif current_step == 3:
                 st.rerun()
     
     if not is_step_3_valid:
-        st.markdown("""
+        experiencia = st.session_state.get("experiencia_entrenamiento", "")
+        if not experiencia or experiencia.startswith("A) He entrenado de forma irregular"):
+            error_msg = "⚠️ Por favor selecciona una opción de experiencia diferente a 'entrenamiento irregular'"
+        else:
+            error_msg = "⚠️ Por favor completa todos los campos de evaluación funcional: empuje superior, tracción superior, sentadilla búlgara, puente unilateral y tiempo de plancha"
+        
+        st.markdown(f"""
         <div class="step-validation-error">
-            ⚠️ Por favor selecciona una opción de experiencia diferente a "entrenamiento irregular"
+            {error_msg}
         </div>
         """, unsafe_allow_html=True)
 
@@ -1742,6 +1809,14 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
     st.markdown("---")
     # Just show a simple congratulatory message instead of technical details
     pass  # The earlier completion message handles this
+
+# --- Variables para el email (definidas una sola vez) ---
+nombre = st.session_state.get("nombre", "")
+email_cliente = st.session_state.get("email_cliente", "")
+telefono = st.session_state.get("telefono", "")
+edad = st.session_state.get("edad", 25)
+fecha_llenado = "2025-08-23"  # Fecha actual
+tabla_resumen = "Resumen de evaluación MUPAI generado"  # Placeholder para el resumen
 
 # --- Botón para enviar al coach (usuario solo ve confirmación) ---
 if not st.session_state.get("correo_enviado", False):
