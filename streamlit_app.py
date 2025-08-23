@@ -68,6 +68,59 @@ def validate_email(email):
     
     return True, ""
 
+# ==================== FUNCIÓN DE CÁLCULO DE PROGRESO DINÁMICO ====================
+def calcular_progreso_evaluacion():
+    """
+    Calcula el progreso real de la evaluación basado en datos completados.
+    Retorna (porcentaje, texto_descriptivo)
+    """
+    progreso = 0
+    pasos_completados = []
+    
+    # Paso 0: Datos personales (20%)
+    if st.session_state.get("datos_completos", False):
+        progreso += 20
+        pasos_completados.append("Datos personales")
+    
+    # Paso 1: Composición corporal (20%)
+    peso = st.session_state.get("peso", 0)
+    estatura = st.session_state.get("estatura", 0)
+    grasa_corporal = st.session_state.get("grasa_corporal", 0)
+    if peso > 0 and estatura > 0 and grasa_corporal > 0:
+        progreso += 20
+        pasos_completados.append("Composición corporal")
+    
+    # Paso 2: Evaluación funcional (20%)
+    experiencia = st.session_state.get("experiencia_entrenamiento", "")
+    if experiencia and experiencia != "A) He entrenado de forma irregular, con semanas sin entrenar y sin un plan estructurado.":
+        progreso += 20
+        pasos_completados.append("Evaluación funcional")
+    
+    # Paso 3: Actividad física (20%)
+    actividad = st.session_state.get("actividad_diaria", "")
+    if actividad:
+        progreso += 20
+        pasos_completados.append("Actividad física")
+    
+    # Paso 4: Entrenamiento de fuerza (20%)
+    frecuencia_entrenamiento = st.session_state.get("frecuencia_entrenamiento", 0)
+    if frecuencia_entrenamiento > 0:
+        progreso += 20
+        pasos_completados.append("Entrenamiento de fuerza")
+    
+    # Crear texto descriptivo
+    total_pasos = 5
+    pasos_realizados = len(pasos_completados)
+    
+    if pasos_realizados == 0:
+        texto = "Evaluación no iniciada"
+    elif pasos_realizados == total_pasos:
+        texto = "¡Evaluación completada! Calculando resultados..."
+    else:
+        texto = f"Paso {pasos_realizados} de {total_pasos}: {pasos_completados[-1] if pasos_completados else 'Iniciando'}"
+    
+    return min(progreso, 100), texto
+
 # ==================== CONFIGURACIÓN DE PÁGINA Y CSS MEJORADO ====================
 st.set_page_config(
     page_title="MUPAI - Evaluación Fitness Personalizada",
@@ -946,9 +999,54 @@ with col2:
     fecha_llenado = datetime.now().strftime("%Y-%m-%d")
     st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
 
-acepto_terminos = st.checkbox("He leído y acepto la política de privacidad y el descargo de responsabilidad")
+# === DESCARGO DE RESPONSABILIDAD PROFESIONAL ===
+with st.expander("⚖️ **Descargo de Responsabilidad Profesional** (Requerido)", expanded=False):
+    st.markdown("""
+    <div style="color: #F5F5F5; font-size: 0.95rem; line-height: 1.6;">
+        <h4 style="color: #F4C430; margin-bottom: 1rem;">📋 Información Importante Sobre Esta Evaluación</h4>
+        
+        <p><strong>🔬 Naturaleza de la Evaluación:</strong></p>
+        <ul>
+            <li>Esta herramienta proporciona estimaciones basadas en algoritmos científicos validados</li>
+            <li>Los resultados son orientativos y no constituyen un diagnóstico médico o nutricional</li>
+            <li>Las recomendaciones están diseñadas para personas sanas sin condiciones médicas especiales</li>
+        </ul>
+        
+        <p><strong>⚕️ Limitaciones y Consideraciones:</strong></p>
+        <ul>
+            <li>No reemplaza la consulta con profesionales de la salud, nutrición o medicina deportiva</li>
+            <li>Los cálculos pueden tener margen de error según la precisión de los datos ingresados</li>
+            <li>Condiciones médicas, medicamentos o situaciones especiales pueden afectar la precisión</li>
+        </ul>
+        
+        <p><strong>🎯 Uso Recomendado:</strong></p>
+        <ul>
+            <li>Utiliza estos resultados como punto de partida informativo</li>
+            <li>Consulta con profesionales certificados antes de implementar cambios significativos</li>
+            <li>Monitorea tu progreso y ajusta según tu respuesta individual</li>
+        </ul>
+        
+        <p><strong>📞 Responsabilidad:</strong></p>
+        <p>MUPAI y Muscle Up GYM no se hacen responsables por el uso inadecuado de esta información. 
+        El usuario asume la responsabilidad de utilizar estos datos de manera consciente e informada.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Checkbox dentro del expander
+    acepto_descargo = st.checkbox(
+        "✅ He leído y entiendo completamente el descargo de responsabilidad profesional",
+        key="acepto_descargo",
+        help="Debes confirmar que has leído y entiendes las limitaciones de esta evaluación"
+    )
 
-if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not acepto_terminos):
+# Checkbox principal (solo se habilita si se acepta el descargo)
+acepto_terminos = st.checkbox(
+    "He leído y acepto la política de privacidad y el descargo de responsabilidad",
+    disabled=not st.session_state.get("acepto_descargo", False),
+    help="Primero debes leer y aceptar el descargo de responsabilidad profesional arriba" if not st.session_state.get("acepto_descargo", False) else "Acepto los términos para continuar con la evaluación"
+)
+
+if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.session_state.get("acepto_descargo", False))):
     # Validación estricta de cada campo
     name_valid, name_error = validate_name(nombre)
     phone_valid, phone_error = validate_phone(telefono)
@@ -1046,17 +1144,17 @@ if not st.session_state.datos_completos:
     """, unsafe_allow_html=True)
 
 # VALIDACIÓN DATOS PERSONALES PARA CONTINUAR
-datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos
+datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos and st.session_state.get("acepto_descargo", False)
 
 if datos_personales_completos and st.session_state.datos_completos:
-    # Progress bar general
-    progress = st.progress(0)
+    # Progress bar dinámico
+    progreso_actual, texto_progreso = calcular_progreso_evaluacion()
+    progress = st.progress(progreso_actual)
     progress_text = st.empty()
+    progress_text.text(texto_progreso)
 
     # BLOQUE 1: Datos antropométricos con diseño mejorado
     with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
-        progress.progress(20)
-        progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
@@ -1298,13 +1396,16 @@ if fuera_rango:
     """)
     st.markdown('</div>', unsafe_allow_html=True)
 
-progress = st.progress(0)
-progress_text = st.empty()
-
 # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
 with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
-    progress.progress(40)
-    progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
+    # Actualizar progreso dinámico (solo si está disponible)
+    try:
+        progreso_actual, texto_progreso = calcular_progreso_evaluacion()
+        if 'progress' in locals():
+            progress.progress(progreso_actual)
+            progress_text.text(texto_progreso)
+    except NameError:
+        pass  # progress no está definido aún
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -1642,8 +1743,14 @@ else:
 
 # BLOQUE 3: Actividad física diaria
 with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
-    progress.progress(60)
-    progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+    # Actualizar progreso dinámico (solo si está disponible)
+    try:
+        progreso_actual, texto_progreso = calcular_progreso_evaluacion()
+        if 'progress' in locals():
+            progress.progress(progreso_actual)
+            progress_text.text(texto_progreso)
+    except NameError:
+        pass  # progress no está definido aún
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
@@ -1708,8 +1815,14 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
 with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
-    progress.progress(70)
-    progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
+    # Actualizar progreso dinámico (solo si está disponible)
+    try:
+        progreso_actual, texto_progreso = calcular_progreso_evaluacion()
+        if 'progress' in locals():
+            progress.progress(progreso_actual)
+            progress_text.text(texto_progreso)
+    except NameError:
+        pass  # progress no está definido aún
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -1760,8 +1873,14 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
-    progress.progress(80)
-    progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
+    # Actualizar progreso dinámico (solo si está disponible)
+    try:
+        progreso_actual, texto_progreso = calcular_progreso_evaluacion()
+        if 'progress' in locals():
+            progress.progress(progreso_actual)
+            progress_text.text(texto_progreso)
+    except NameError:
+        pass  # progress no está definido aún
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
@@ -1823,8 +1942,14 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
-    progress.progress(100)
-    progress_text.text("Paso final: Calculando tu plan nutricional personalizado")
+    # Actualizar progreso dinámico (solo si está disponible)
+    try:
+        progreso_actual, texto_progreso = calcular_progreso_evaluacion()
+        if 'progress' in locals():
+            progress.progress(100)  # Final siempre es 100%
+            progress_text.text("¡Evaluación completada! Calculando tu plan nutricional personalizado")
+    except NameError:
+        pass  # progress no está definido aún
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
