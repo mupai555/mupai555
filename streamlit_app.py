@@ -2811,102 +2811,194 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
     fbeo = 1 + porcentaje / 100  # Cambio de signo para reflejar nueva convención
 
-    # Perfil del usuario
-    st.markdown("### 📋 Tu perfil nutricional")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(f"• **Sexo:** {sexo}")
-        st.write(f"• **% Grasa corporal:** {grasa_corregida:.1f}%")
-        try:
-            st.write(f"• **FFMI:** {ffmi:.2f} ({nivel_ffmi})")
-        except Exception:
-            st.write("• **FFMI:** – (completa todos los datos para calcular)")
-    with col2:
-        try:
-            st.write(f"• **Nivel:** {nivel_entrenamiento.capitalize()}")
-        except Exception:
-            st.write("• **Nivel:** –")
-        try:
-            st.write(f"• **Edad metabólica:** {edad_metabolica} años")
-        except Exception:
-            st.write("• **Edad metabólica:** –")
-        try:
-            st.write(f"• **Objetivo:** {fase}")
-        except Exception:
-            st.write("• **Objetivo:** –")
+    # Enhanced user profile section
+    st.markdown("### 📋 Tu Perfil Nutricional Completo")
+    
+    # Create a comprehensive profile card
+    profile_metrics = []
+    try:
+        profile_metrics.extend([
+            {"value": sexo, "label": "Sexo Biológico"},
+            {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal (DEXA)"},
+            {"value": f"{ffmi:.2f}", "label": f"FFMI ({nivel_ffmi})"},
+            {"value": nivel_entrenamiento.capitalize(), "label": "Nivel de Entrenamiento"}
+        ])
+    except:
+        profile_metrics.extend([
+            {"value": sexo, "label": "Sexo Biológico"},
+            {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal (DEXA)"},
+            {"value": "Calculando...", "label": "FFMI"},
+            {"value": "Calculando...", "label": "Nivel"}
+        ])
+    
+    try:
+        profile_metrics.extend([
+            {"value": f"{edad_metabolica} años", "label": "Edad Metabólica"},
+            {"value": fase, "label": "Objetivo Recomendado"}
+        ])
+    except:
+        profile_metrics.extend([
+            {"value": "Calculando...", "label": "Edad Metabólica"},
+            {"value": fase, "label": "Objetivo Recomendado"}
+        ])
+    
+    create_step_summary_card(
+        "Perfil Nutricional Personalizado",
+        profile_metrics,
+        "👤"
+    )
 
-    # Cálculo del gasto energético
-    GE = tmb * geaf * eta + gee_prom_dia
+    # Enhanced energy calculation display
+    create_enhanced_card(
+        "⚡ Cálculo de Gasto Energético Total",
+        f"Tu gasto energético total se calcula combinando todos los factores evaluados: TMB ({tmb:.0f} kcal) × GEAF ({geaf}) × ETA ({eta if 'eta' in locals() else 'calculado'}) + GEE ({gee_prom_dia:.0f} kcal).",
+        "🔥"
+    )
+    
+    # Display energy breakdown
+    st.markdown("### 🔥 Desglose Energético Detallado")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("TMB Base", f"{tmb:.0f} kcal", "Metabolismo basal")
+    with col2:
+        gasto_actividad = tmb * geaf - tmb
+        st.metric("Actividad Diaria", f"{gasto_actividad:.0f} kcal", f"GEAF: {geaf}")
+    with col3:
+        eta_value = eta if 'eta' in locals() else (st.session_state.get('eta_calculado', 0) / (tmb * geaf)) if st.session_state.get('eta_calculado', 0) > 0 else 1.1
+        gasto_eta = (tmb * geaf * eta_value) - (tmb * geaf)
+        st.metric("Efecto Térmico", f"{gasto_eta:.0f} kcal", f"ETA: {eta_value}")
+    with col4:
+        st.metric("Entrenamiento", f"{gee_prom_dia:.0f} kcal", f"GEE promedio")
+
+    # Calculate total energy expenditure
+    GE = tmb * geaf * eta_value + gee_prom_dia
+    
+    # Big total display
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, var(--mupai-success) 0%, #2ECC71 100%); 
+                color: white; padding: 2rem; border-radius: 15px; margin: 1.5rem 0; text-align: center;
+                box-shadow: 0 8px 25px rgba(39,174,96,0.3);">
+        <h2 style="margin: 0; font-size: 2.5rem; font-weight: bold;">⚡ {GE:.0f} kcal/día</h2>
+        <p style="margin: 0.5rem 0 0 0; font-size: 1.2rem; opacity: 0.9;">
+            Tu Gasto Energético Total Diario
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     ingesta_calorica_tradicional = GE * fbeo
 
-    # COMPARATIVA PSMF si aplica
+    # Enhanced PSMF options section
     plan_elegido = "Tradicional"
     if psmf_recs.get("psmf_aplicable"):
-        st.markdown("### ⚡ Opciones de plan nutricional")
-        st.warning("Eres candidato para el protocolo PSMF. Puedes elegir entre dos estrategias:")
+        create_enhanced_card(
+            "⚡ Opciones de Estrategia Nutricional",
+            "Basado en tu porcentaje de grasa corporal, eres candidato para el protocolo PSMF. Puedes elegir entre una estrategia tradicional sostenible o una estrategia acelerada más restrictiva.",
+            "🎯"
+        )
 
         plan_elegido = st.radio(
-            "Selecciona tu estrategia preferida:",
+            "Selecciona tu estrategia nutricional preferida:",
             ["Plan Tradicional (déficit moderado, más sostenible)",
              "Protocolo PSMF (pérdida rápida, más restrictivo)"],
             index=0,
-            help="PSMF es muy efectivo pero requiere mucha disciplina"
+            help="El PSMF es muy efectivo para pérdida rápida pero requiere disciplina estricta y supervisión"
         )
         
-        # Opción para seleccionar grasa en PSMF (30-50g)
+        # Enhanced PSMF fat configuration
         grasa_psmf_seleccionada = 40.0  # Valor por defecto
         if "PSMF" in plan_elegido:
-            st.markdown("#### 🥑 Configuración de grasas para PSMF")
+            st.markdown("""
+            <div style="background: rgba(255,193,7,0.1); padding: 1.5rem; border-radius: 12px; border-left: 4px solid #FFC107; margin: 1rem 0;">
+                <h4 style="color: #FFC107; margin: 0 0 1rem 0;">🥑 Configuración de Grasas PSMF</h4>
+                <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+                    En el protocolo PSMF, las grasas se mantienen al mínimo esencial. El rango de 30-50g 
+                    asegura funciones hormonales básicas y absorción de vitaminas liposolubles.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             grasa_psmf_seleccionada = st.slider(
-                "Selecciona la cantidad de grasa diaria (en gramos):",
+                "Cantidad de grasa diaria (gramos):",
                 min_value=30.0,
                 max_value=50.0,
                 value=40.0,
                 step=1.0,
-                help="Rango permitido para PSMF: 30-50g de grasas de fuentes magras (pescado, aceite de oliva mínimo)"
+                help="Fuentes recomendadas: aceite de oliva virgen extra (mínimo), pescados grasos, frutos secos (muy limitados)"
             )
 
-        # Mostrar comparativa visual
-        st.markdown("### 📊 Comparativa de planes")
+        # Enhanced plan comparison
+        st.markdown("### 📊 Comparativa Detallada de Estrategias")
+        
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-            st.markdown("#### ✅ Plan Tradicional")
-            st.metric("Déficit", f"{porcentaje}%", "Moderado")
-            st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
-            st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
-            st.markdown("""
-            **Ventajas:**
-            - ✅ Mayor adherencia
-            - ✅ Más energía para entrenar  
-            - ✅ Sostenible largo plazo
-            - ✅ Menor pérdida muscular
-            - ✅ Vida social normal
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Traditional plan card
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, var(--mupai-success) 0%, #2ECC71 100%); 
+                        color: white; padding: 1.5rem; border-radius: 12px; margin: 1rem 0;
+                        box-shadow: 0 6px 20px rgba(39,174,96,0.3);">
+                <h3 style="margin: 0 0 1rem 0;">✅ Plan Tradicional</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">{abs(porcentaje)}%</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">Déficit Moderado</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">{ingesta_calorica_tradicional:.0f}</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">kcal/día</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 1.3rem; font-weight: bold;">0.5-0.7 kg/semana</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Pérdida Esperada</div>
+                </div>
+                <div style="font-size: 0.9rem;">
+                    <strong>✅ Ventajas:</strong><br>
+                    • Mayor adherencia a largo plazo<br>
+                    • Energía suficiente para entrenar<br>
+                    • Sostenible y flexible<br>
+                    • Menor pérdida muscular<br>
+                    • Vida social normal
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
         with col2:
+            # PSMF plan card
             deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
             perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
             multiplicador = psmf_recs.get('multiplicador', 8.3)
             perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
             
-            st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-            st.markdown("#### ⚡ Protocolo PSMF Actualizado")
-            st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
-            st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
-            st.metric("Multiplicador", f"{multiplicador}", f"Perfil: {perfil_grasa}")
-            st.metric("Pérdida esperada", f"{perdida_min}-{perdida_max} kg/semana")
             st.markdown(f"""
-            **Consideraciones:**
-            - ⚠️ Muy restrictivo
-            - ⚠️ Máximo 6-8 semanas
-            - ⚠️ Requiere supervisión médica
-            - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día (1.8g/kg mínimo)
-            - ⚠️ Grasas: 30-50g (seleccionable, fuentes magras)
-            - ⚠️ Carbos: resto de calorías (solo vegetales fibrosos)
-            - ⚠️ Suplementación necesaria
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+            <div style="background: linear-gradient(135deg, var(--mupai-warning) 0%, #F39C12 100%); 
+                        color: white; padding: 1.5rem; border-radius: 12px; margin: 1rem 0;
+                        box-shadow: 0 6px 20px rgba(243,156,18,0.3);">
+                <h3 style="margin: 0 0 1rem 0;">⚡ Protocolo PSMF</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">~{deficit_psmf}%</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">Déficit Agresivo</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: bold;">{psmf_recs['calorias_dia']:.0f}</div>
+                        <div style="font-size: 0.9rem; opacity: 0.9;">kcal/día</div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-size: 1.3rem; font-weight: bold;">{perdida_min}-{perdida_max} kg/semana</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Pérdida Acelerada</div>
+                </div>
+                <div style="font-size: 0.85rem;">
+                    <strong>⚠️ Consideraciones:</strong><br>
+                    • Muy restrictivo (máx. 6-8 semanas)<br>
+                    • Requiere supervisión médica<br>
+                    • Proteína: {psmf_recs['proteina_g_dia']}g/día<br>
+                    • Grasas: 30-50g (fuentes magras)<br>
+                    • Solo vegetales fibrosos como carbos<br>
+                    • Suplementación obligatoria
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     # FORZAR actualización de variables clave desde session_state
     peso = st.session_state.get("peso", 0)
@@ -3065,41 +3157,80 @@ peso = st.session_state.get("peso", 0)
 estatura = st.session_state.get("estatura", 0)
 grasa_corporal = st.session_state.get("grasa_corporal", 0)
 
+# COMPLETION CELEBRATION
+if datos_personales_completos and st.session_state.datos_completos:
+    # Check if all steps are completed
+    all_steps_completed = (
+        peso > 0 and estatura > 0 and grasa_corporal > 0 and  # Step 1
+        ejercicios_funcionales_completos and experiencia_completa and  # Step 2
+        'geaf' in locals() and geaf > 0 and  # Step 3
+        ('eta' in locals() or st.session_state.get('eta_calculado', 0) > 0) and  # Step 4
+        'dias_fuerza' in locals()  # Step 5
+    )
+    
+    if all_steps_completed:
+        st.balloons()
+        show_success_feedback(
+            "🎉 ¡EVALUACIÓN MUPAI COMPLETADA! Has completado exitosamente todos los pasos. Tu plan nutricional personalizado está listo.",
+            "🏆"
+        )
+
 # RESUMEN FINAL MEJORADO
 st.markdown("---")
-st.markdown('<div class="content-card" style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); color: #1E1E1E;">', unsafe_allow_html=True)
-st.markdown("## 🎯 **Resumen Final de tu Evaluación MUPAI**")
-st.markdown(f"*Fecha: {fecha_llenado} | Cliente: {nombre}*")
 
-# Crear resumen visual con métricas clave
-col1, col2, col3 = st.columns(3)
-with col1:
-    # Ensure edad is numeric for calculations
-    try:
-        edad_num = int(edad)
-        diferencia_edad = edad_metabolica - edad_num
-        evaluacion = '⚠️ Mejorar' if edad_metabolica > edad_num + 2 else '✅ Excelente' if edad_metabolica < edad_num - 2 else '👍 Normal'
-    except (ValueError, TypeError):
-        edad_num = 25  # Default fallback
-        diferencia_edad = 0
-        evaluacion = '👍 Normal'
-    
-    st.markdown(f"""
-    ### 👤 Perfil Personal
-    - **Edad cronológica:** {edad} años
-    - **Edad metabólica:** {edad_metabolica} años
-    - **Diferencia:** {diferencia_edad:+d} años
-    - **Evaluación:** {evaluacion}
-    """)
-with col2:
-    st.markdown(f"""
-    ### 💪 Composición Corporal
-    - **Peso:** {peso} kg | **Altura:** {estatura} cm
-    - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
-    - **FFMI:** {ffmi:.2f} ({nivel_ffmi})
-    - **Potencial:** {porc_potencial:.0f}% alcanzado
-    """)
-with col3:
+# Enhanced final summary with celebration
+create_enhanced_card(
+    "🎯 Resumen Final de tu Evaluación MUPAI",
+    f"Evaluación completada el {fecha_llenado} para {nombre}. Tu perfil completo ha sido analizado científicamente para crear un plan nutricional personalizado.",
+    "🏆"
+)
+
+# Enhanced summary with modern card grid
+st.markdown("### 📊 Resumen Ejecutivo de tu Evaluación")
+
+# Create comprehensive summary cards
+summary_sections = [
+    {
+        "title": "👤 Perfil Personal",
+        "metrics": [
+            {"value": f"{edad} años", "label": "Edad Cronológica"},
+            {"value": f"{edad_metabolica} años", "label": "Edad Metabólica"},
+            {"value": f"{diferencia_edad:+d} años", "label": "Diferencia"},
+            {"value": evaluacion, "label": "Evaluación"}
+        ],
+        "icon": "👤"
+    },
+    {
+        "title": "💪 Composición Corporal",
+        "metrics": [
+            {"value": f"{peso} kg", "label": "Peso Corporal"},
+            {"value": f"{grasa_corregida:.1f}%", "label": "Grasa Corporal (DEXA)"},
+            {"value": f"{ffmi:.2f}", "label": f"FFMI ({nivel_ffmi})"},
+            {"value": f"{mlg:.1f} kg", "label": "Masa Libre de Grasa"}
+        ],
+        "icon": "💪"
+    },
+    {
+        "title": "⚡ Perfil Energético",
+        "metrics": [
+            {"value": f"{tmb:.0f} kcal", "label": "TMB (Cunningham)"},
+            {"value": f"{GE:.0f} kcal", "label": "Gasto Total Diario"},
+            {"value": f"{geaf}", "label": "Factor GEAF"},
+            {"value": nivel_actividad_text if 'nivel_actividad_text' in locals() else "N/A", "label": "Nivel Actividad"}
+        ],
+        "icon": "⚡"
+    }
+]
+
+# Display summary cards in a grid
+cols = st.columns(3)
+for i, section in enumerate(summary_sections):
+    with cols[i]:
+        create_step_summary_card(
+            section["title"],
+            section["metrics"],
+            section["icon"]
+        )
     # Safe calculations for display
     proteina_ratio = f"({proteina_g/peso:.2f}g/kg)" if peso > 0 else "(–g/kg)"
     grasa_percent = f"({round(grasa_kcal/ingesta_calorica*100)}%)" if ingesta_calorica > 0 else "(–%)"
