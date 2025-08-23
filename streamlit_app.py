@@ -1001,34 +1001,73 @@ with col2:
 
 # === DESCARGO DE RESPONSABILIDAD PROFESIONAL ===
 with st.expander("⚖️ **Descargo de Responsabilidad Profesional** (Requerido)", expanded=False):
-    st.markdown("""
-    <div style="color: #F5F5F5; font-size: 0.95rem; line-height: 1.6;">
-        <h4 style="color: #F4C430; margin-bottom: 1rem;">📋 Información Importante Sobre Esta Evaluación</h4>
-        
-        <p><strong>🔬 Naturaleza de la Evaluación:</strong></p>
-        <ul>
+    # Tarjeta principal de información
+    st.markdown(f"""
+    <div class="content-card" style="border-left-color: var(--mupai-warning); margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 1rem; color: var(--mupai-yellow);">📋 Información Importante Sobre Esta Evaluación</h3>
+        <p style="color: #CCCCCC; margin-bottom: 0;">
+            Esta herramienta está diseñada para proporcionar orientación nutricional basada en evidencia científica. 
+            Es importante entender sus limitaciones y uso adecuado.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Tarjeta: Naturaleza de la Evaluación
+    st.markdown(f"""
+    <div class="content-card" style="border-left-color: var(--mupai-yellow); margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
+            <span class="badge badge-info" style="margin-right: 0.5rem;">🔬 CIENTÍFICO</span>
+            <h4 style="margin: 0; color: #FFF;">Naturaleza de la Evaluación</h4>
+        </div>
+        <ul style="color: #CCCCCC; margin: 0; padding-left: 1.2rem;">
             <li>Esta herramienta proporciona estimaciones basadas en algoritmos científicos validados</li>
             <li>Los resultados son orientativos y no constituyen un diagnóstico médico o nutricional</li>
             <li>Las recomendaciones están diseñadas para personas sanas sin condiciones médicas especiales</li>
         </ul>
-        
-        <p><strong>⚕️ Limitaciones y Consideraciones:</strong></p>
-        <ul>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Tarjeta: Limitaciones y Consideraciones
+    st.markdown(f"""
+    <div class="content-card" style="border-left-color: var(--mupai-warning); margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
+            <span class="badge badge-warning" style="margin-right: 0.5rem;">⚕️ IMPORTANTE</span>
+            <h4 style="margin: 0; color: #FFF;">Limitaciones y Consideraciones</h4>
+        </div>
+        <ul style="color: #CCCCCC; margin: 0; padding-left: 1.2rem;">
             <li>No reemplaza la consulta con profesionales de la salud, nutrición o medicina deportiva</li>
             <li>Los cálculos pueden tener margen de error según la precisión de los datos ingresados</li>
             <li>Condiciones médicas, medicamentos o situaciones especiales pueden afectar la precisión</li>
         </ul>
-        
-        <p><strong>🎯 Uso Recomendado:</strong></p>
-        <ul>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Tarjeta: Uso Recomendado
+    st.markdown(f"""
+    <div class="content-card" style="border-left-color: var(--mupai-success); margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
+            <span class="badge badge-success" style="margin-right: 0.5rem;">🎯 RECOMENDADO</span>
+            <h4 style="margin: 0; color: #FFF;">Uso Recomendado</h4>
+        </div>
+        <ul style="color: #CCCCCC; margin: 0; padding-left: 1.2rem;">
             <li>Utiliza estos resultados como punto de partida informativo</li>
             <li>Consulta con profesionales certificados antes de implementar cambios significativos</li>
             <li>Monitorea tu progreso y ajusta según tu respuesta individual</li>
         </ul>
-        
-        <p><strong>📞 Responsabilidad:</strong></p>
-        <p>MUPAI y Muscle Up GYM no se hacen responsables por el uso inadecuado de esta información. 
-        El usuario asume la responsabilidad de utilizar estos datos de manera consciente e informada.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Tarjeta: Responsabilidad
+    st.markdown(f"""
+    <div class="content-card" style="border-left-color: var(--mupai-danger); margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
+            <span class="badge badge-danger" style="margin-right: 0.5rem;">📞 RESPONSABILIDAD</span>
+            <h4 style="margin: 0; color: #FFF;">Descargo de Responsabilidad</h4>
+        </div>
+        <p style="color: #CCCCCC; margin: 0;">
+            <strong>MUPAI y Muscle Up GYM</strong> no se hacen responsables por el uso inadecuado de esta información. 
+            El usuario asume la responsabilidad de utilizar estos datos de manera consciente e informada.
+        </p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -1795,7 +1834,8 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
             else:
                 st.markdown(f"""
                     <div style="text-align: center; padding: 1rem; 
-                         background: #f8f9fa; border-radius: 10px; opacity: 0.5; color: #222;">
+                         background: #2A2A2A; border-radius: 10px; color: #CCCCCC; 
+                         border: 1px solid #444; opacity: 0.85;">
                         {niv}
                     </div>
                 """, unsafe_allow_html=True)
