@@ -27,3 +27,6 @@ Thumbs.db
 
 # Demo and test files
 demo_eta_block.py
+
+# Test files - GitHub removal verification
+test_github_removal.py
