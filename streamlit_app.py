@@ -1228,8 +1228,30 @@ if datos_personales_completos and st.session_state.datos_completos:
 
     # BLOQUE 1: Datos antropométricos con diseño mejorado
     with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
+        # Informational cards first
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown(crear_tarjeta(
+                "📊 Composición Corporal",
+                "Medición precisa de tu masa magra, grasa corporal y distribución de tejidos para cálculos metabólicos exactos.",
+                "info"
+            ), unsafe_allow_html=True)
+        with col2:
+            st.markdown(crear_tarjeta(
+                "🔬 Métodos Científicos",
+                "Utilizamos correcciones validadas según el método de medición para obtener valores equivalentes al estándar DEXA.",
+                "success"
+            ), unsafe_allow_html=True)
+        with col3:
+            st.markdown(crear_tarjeta(
+                "⚡ Precisión TMB",
+                "Los datos antropométricos permiten calcular tu tasa metabólica basal con la fórmula de Cunningham (más precisa).",
+                "warning"
+            ), unsafe_allow_html=True)
 
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
+        st.markdown("### Datos Antropométricos")
+        
+        # Form inputs in organized layout
         col1, col2, col3 = st.columns(3)
         with col1:
             # Ensure peso has a valid default
@@ -1261,16 +1283,14 @@ if datos_personales_completos and st.session_state.datos_completos:
                 help="Medida sin zapatos"
             )
         with col3:
-            st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
             metodo_grasa = st.selectbox(
                 "📊 Método de medición de grasa",
                 ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
                 key="metodo_grasa",
                 help="Selecciona el método utilizado"
             )
-            st.markdown('</div>', unsafe_allow_html=True)
 
-        # Ensure grasa_corporal has a valid default
+        # Body fat percentage input
         grasa_default = 20.0
         grasa_value = st.session_state.get("grasa_corporal", grasa_default)
         if grasa_value == '' or grasa_value is None or grasa_value == 0:
@@ -1284,8 +1304,6 @@ if datos_personales_completos and st.session_state.datos_completos:
             key="grasa_corporal",
             help="Valor medido con el método seleccionado"
         )
-
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
 
@@ -1480,7 +1498,26 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🏆 Evaluación Funcional",
+            "Medición objetiva de tu capacidad física actual a través de ejercicios funcionales estándar para determinar tu nivel real.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Análisis FFMI",
+            "Índice de masa libre de grasa para evaluar tu desarrollo muscular y potencial genético de crecimiento.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Nivel Global",
+            "Combinamos experiencia, rendimiento funcional y desarrollo muscular para clasificar tu nivel de entrenamiento.",
+            "warning"
+        ), unsafe_allow_html=True)
 
     st.markdown("### 📋 Experiencia en entrenamiento")
     experiencia = st.radio(
@@ -1810,7 +1847,6 @@ if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0:
     - FFMI máximo estimado: {ffmi_genetico_max:.1f}
     - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
     """)
-    st.markdown('</div>', unsafe_allow_html=True)
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
@@ -1825,7 +1861,27 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🚶 Factor GEAF",
+            "El Gasto Energético de Actividad Física fuera del ejercicio formal afecta significativamente tu metabolismo total diario.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Medición Precisa",
+            "Distinguimos entre ejercicio planificado y actividad física diaria para cálculos metabólicos más precisos.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "💡 NEAT Importante",
+            "La termogénesis de actividad no asociada al ejercicio (NEAT) puede variar hasta 800 kcal/día entre personas.",
+            "warning"
+        ), unsafe_allow_html=True)
+
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
 
     # Opciones para el usuario (debe coincidir el orden con 'niveles')
@@ -1886,7 +1942,6 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
         f"- Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%"
     )
 
-    st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
 with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
     # Actualizar progreso dinámico (solo si está disponible)
@@ -1898,7 +1953,26 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🔥 Efecto Térmico",
+            "El ETA representa el costo energético de la digestión, absorción y metabolismo de los alimentos (8-15% del gasto total).",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Cálculo Automático",
+            "Calculamos tu ETA basado en composición corporal y sexo. Personas más magras tienen mayor ETA por mayor masa muscular.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Factor Personalizado",
+            "A diferencia de usar un 10% estándar, personalizamos según tu perfil específico para mayor precisión metabólica.",
+            "warning"
+        ), unsafe_allow_html=True)
 
     st.markdown("### 🔥 Determinación automática del ETA")
     if grasa_corregida <= 10 and sexo == "Hombre":
@@ -1944,7 +2018,6 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
         Aumenta tu gasto total en un {(eta-1)*100:.0f}%
         """)
 
-    st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
     # Actualizar progreso dinámico (solo si está disponible)
@@ -1956,7 +2029,27 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🏋️ Gasto del Ejercicio",
+            "El GEE representa las calorías quemadas durante el entrenamiento de fuerza, ajustado según tu nivel y capacidad.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Cálculo Personalizado",
+            "Estimamos tu gasto calórico por sesión basado en tu nivel de entrenamiento: desde 300 kcal (principiante) hasta 500 kcal (élite).",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Intensidad Adaptada",
+            "Personas con mayor nivel entrenan con más intensidad, volumen y capacidad de trabajo, aumentando el gasto energético.",
+            "warning"
+        ), unsafe_allow_html=True)
+
     st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
 
     dias_fuerza = st.slider(
@@ -2013,7 +2106,7 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
         rendimiento funcional y experiencia. Esto proporciona una estimación más precisa de tu gasto energético real.
     </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
     # Actualizar progreso dinámico (solo si está disponible)
@@ -2025,7 +2118,28 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🎯 Plan Personalizado",
+            "Tu plan nutricional se basa en datos reales: composición corporal, actividad, entrenamiento y objetivos específicos.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Metodología Científica",
+            "Utilizamos fórmulas validadas (Cunningham, PSMF) y factores personalizados para máxima precisión metabólica.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Resultados Reales",
+            "Plan diseñado para obtener resultados sostenibles y medibles, respaldado por ciencia del rendimiento.",
+            "warning"
+        ), unsafe_allow_html=True)
+
+    st.markdown("### 🧮 Tu Gasto Energético Total y Plan Nutricional")
 
     # Determinar fase nutricional
     if sexo == "Hombre":
