@@ -142,6 +142,38 @@ st.markdown("""
     --mupai-warning: #F39C12;
     --mupai-danger: #E74C3C;
 }
+
+/* Hide GitHub-related elements */
+#MainMenu {visibility: hidden;}
+.stDeployButton {display: none;}
+.stActionButton {display: none;}
+[data-testid="stToolbar"] {visibility: hidden !important;}
+[data-testid="stDecoration"] {display: none !important;}
+[data-testid="stStatusWidget"] {display: none !important;}
+.stApp > header {visibility: hidden;}
+.css-1dp5vir {visibility: hidden;}
+.css-hi6a2p {padding-top: 0rem;}
+#root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}
+footer {visibility: hidden;}
+.stDeployButton {display: none !important;}
+button[title="View fullscreen"] {visibility: hidden;}
+
+/* Hide hamburger menu and toolbar */
+.css-14xtw13.e8zbici0 {display: none !important;}
+.css-vk3wp9 {display: none !important;}
+.css-1544g2n {display: none !important;}
+section[data-testid="stToolbar"] {display: none !important;}
+div[data-testid="stToolbar"] {display: none !important;}
+.stToolbar {display: none !important;}
+
+/* Additional hiding for any fork/GitHub buttons */
+a[href*="github"] {display: none !important;}
+a[href*="fork"] {display: none !important;}
+button[data-baseweb="button"]:has-text("Fork") {display: none !important;}
+*[title*="GitHub"] {display: none !important;}
+*[title*="Fork"] {display: none !important;}
+*[alt*="GitHub"] {display: none !important;}
+*[alt*="Fork"] {display: none !important;}
 /* Fondo general */
 .stApp {
     background: linear-gradient(135deg, #1E1E1E 0%, #232425 100%);
@@ -419,10 +451,106 @@ hr {
     font-weight: 600;
     font-size: 1.01rem;
 }
+
+/* ULTIMATE GITHUB/FORK HIDING - Hide any possible GitHub elements */
+[data-testid="stAppViewContainer"] header {display: none !important;}
+[data-testid="stHeader"] {display: none !important;}
+.css-18e3th9 {display: none !important;}
+.css-1d391kg {display: none !important;}
+.main-header {margin-top: 0rem !important;}
+.block-container {padding-top: 1rem !important;}
+
+/* Hide any share or deploy buttons that might link to GitHub */
+button:contains("Share") {display: none !important;}
+button:contains("Deploy") {display: none !important;}
+button:contains("GitHub") {display: none !important;}
+button:contains("Fork") {display: none !important;}
+a:contains("GitHub") {display: none !important;}
+a:contains("Fork") {display: none !important;}
+
+/* Hide Streamlit branding that might include GitHub links */
+.css-1rs6os {display: none !important;}
+.css-17eq0hr {display: none !important;}
+.css-1fv8s86 {display: none !important;}
+
 </style>
 """, unsafe_allow_html=True)
 # Header principal visual con logos
 import base64
+
+# JavaScript para ocultar elementos de GitHub/Fork que puedan aparecer dinámicamente
+github_hide_js = """
+<script>
+// Function to hide GitHub/Fork related elements
+function hideGitHubElements() {
+    // Hide elements by text content
+    const elementsToHide = [
+        'a[href*="github"]',
+        'a[href*="fork"]', 
+        'button:contains("Fork")',
+        'button:contains("GitHub")',
+        'button:contains("Share")',
+        'button:contains("Deploy")',
+        '[data-testid="stToolbar"]',
+        '[data-testid="stHeader"]',
+        '.stDeployButton',
+        '.stActionButton'
+    ];
+    
+    elementsToHide.forEach(selector => {
+        try {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                if (el) {
+                    el.style.display = 'none !important';
+                    el.style.visibility = 'hidden !important';
+                }
+            });
+        } catch (e) {
+            console.log('Could not hide element:', selector);
+        }
+    });
+    
+    // Hide elements by text content (more aggressive)
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(el => {
+        if (el.textContent && (
+            el.textContent.toLowerCase().includes('fork') ||
+            el.textContent.toLowerCase().includes('github') ||
+            el.textContent.toLowerCase().includes('deploy') ||
+            el.textContent.toLowerCase().includes('share')
+        )) {
+            // Only hide if it's a button or link
+            if (el.tagName === 'BUTTON' || el.tagName === 'A') {
+                el.style.display = 'none !important';
+            }
+        }
+    });
+}
+
+// Run immediately and also on DOM changes
+hideGitHubElements();
+
+// Observer for dynamic content
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length > 0) {
+            hideGitHubElements();
+        }
+    });
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+// Run again after page load
+window.addEventListener('load', hideGitHubElements);
+</script>
+"""
+
+st.markdown(github_hide_js, unsafe_allow_html=True)
 
 # Cargar y codificar los logos desde la raíz del repo
 try:
