@@ -270,6 +270,40 @@ st.markdown("""
     opacity: 1 !important;
     font-size: 1.05rem;
 }
+/* Enhanced styling for important checkboxes */
+.stCheckbox:has(span:contains("He leído y acepto la política de privacidad")) {
+    background: rgba(244, 196, 48, 0.05) !important;
+    border: 2px solid var(--mupai-yellow) !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    margin: 0.8rem 0 !important;
+    transition: all 0.3s ease !important;
+}
+.stCheckbox:has(span:contains("He leído y acepto la política de privacidad")):hover {
+    background: rgba(244, 196, 48, 0.1) !important;
+    box-shadow: 0 4px 15px rgba(244, 196, 48, 0.2) !important;
+}
+.stCheckbox:has(span:contains("He leído y acepto la política de privacidad")) label {
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+}
+/* Enhanced styling for disclaimer checkbox inside expander */
+.stCheckbox:has(span:contains("He leído y entiendo completamente el descargo")) {
+    background: rgba(244, 196, 48, 0.03) !important;
+    border: 1px solid rgba(244, 196, 48, 0.4) !important;
+    border-radius: 8px !important;
+    padding: 0.8rem !important;
+    margin: 0.5rem 0 !important;
+    transition: all 0.3s ease !important;
+}
+.stCheckbox:has(span:contains("He leído y entiendo completamente el descargo")):hover {
+    background: rgba(244, 196, 48, 0.08) !important;
+    border-color: var(--mupai-yellow) !important;
+}
+.stCheckbox:has(span:contains("He leído y entiendo completamente el descargo")) label {
+    font-weight: 500 !important;
+    font-size: 1.05rem !important;
+}
 .stProgress > div > div > div {
     background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%)!important;
     border-radius: 10px;
@@ -1071,16 +1105,43 @@ with st.expander("⚖️ **Descargo de Responsabilidad Profesional** (Requerido)
     </div>
     """, unsafe_allow_html=True)
     
-    # Checkbox dentro del expander
+    # Checkbox destacado dentro del expander
+    st.markdown("""
+    <div style="background: rgba(244, 196, 48, 0.08); padding: 1rem; border-radius: 10px; border: 1px solid rgba(244, 196, 48, 0.3); margin: 1rem 0;">
+        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+            <span style="color: var(--mupai-yellow); font-size: 1.1rem; margin-right: 0.5rem;">📋</span>
+            <strong style="color: var(--mupai-yellow); font-size: 1rem;">CONFIRMACIÓN REQUERIDA</strong>
+        </div>
+        <p style="color: #CCCCCC; margin: 0; font-size: 0.95rem;">
+            Marca la siguiente casilla para confirmar que has leído y comprendes completamente el descargo de responsabilidad.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     acepto_descargo = st.checkbox(
-        "✅ He leído y entiendo completamente el descargo de responsabilidad profesional",
+        "✅ **He leído y entiendo completamente el descargo de responsabilidad profesional**",
         key="acepto_descargo",
         help="Debes confirmar que has leído y entiendes las limitaciones de esta evaluación"
     )
 
-# Checkbox principal (solo se habilita si se acepta el descargo)
+# Checkbox principal con diseño destacado (solo se habilita si se acepta el descargo)
+st.markdown(f"""
+<div class="content-card" style="border-left-color: var(--mupai-warning); margin: 1.5rem 0; background: linear-gradient(135deg, #1E1E1E 0%, #252525 100%); border: 2px solid var(--mupai-yellow); box-shadow: 0 8px 25px rgba(244, 196, 48, 0.15);">
+    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+        <span class="badge badge-warning" style="margin-right: 0.8rem; font-size: 0.9rem;">✅ ACEPTACIÓN REQUERIDA</span>
+        <h4 style="margin: 0; color: #FFF; font-size: 1.1rem;">Confirmación Final de Términos</h4>
+    </div>
+    <div style="background: rgba(244, 196, 48, 0.1); padding: 1rem; border-radius: 10px; border-left: 4px solid var(--mupai-yellow); margin-bottom: 1rem;">
+        <p style="color: #FFF; margin: 0; font-weight: 500; font-size: 1.05rem;">
+            <strong style="color: var(--mupai-yellow);">⚠️ IMPORTANTE:</strong> 
+            Para continuar con tu evaluación personalizada, debes confirmar que has leído y aceptas completamente nuestros términos y el descargo de responsabilidad profesional.
+        </p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 acepto_terminos = st.checkbox(
-    "He leído y acepto la política de privacidad y el descargo de responsabilidad",
+    "✅ **He leído y acepto la política de privacidad y el descargo de responsabilidad**",
     disabled=not st.session_state.get("acepto_descargo", False),
     help="Primero debes leer y aceptar el descargo de responsabilidad profesional arriba" if not st.session_state.get("acepto_descargo", False) else "Acepto los términos para continuar con la evaluación"
 )
