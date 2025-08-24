@@ -1017,93 +1017,68 @@ with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False)
         ), unsafe_allow_html=True)
 
 # BLOQUE 0: Datos personales con diseño mejorado
-st.markdown('<div class="content-card">', unsafe_allow_html=True)
-st.markdown("### 👤 Información Personal")
-st.markdown("Por favor, completa todos los campos para comenzar tu evaluación personalizada.")
+with st.expander("👤 **Información Personal**", expanded=True):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "📋 Datos Básicos",
+            "Información personal necesaria para personalizar tu evaluación.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "🔐 Privacidad",
+            "Tus datos son confidenciales y solo se usan para generar tu plan personalizado.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Precisión",
+            "Datos precisos = recomendaciones más exactas y efectivas.",
+            "warning"
+        ), unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
-with col1:
-    nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez García", help="Tu nombre legal completo")
-    telefono = st.text_input("Teléfono*", placeholder="Ej: 8661234567", help="10 dígitos sin espacios")
-    email_cliente = st.text_input("Email*", placeholder="correo@ejemplo.com", help="Email válido para recibir resultados")
+    st.markdown("### Completa todos los campos para comenzar")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez García", help="Tu nombre legal completo")
+        telefono = st.text_input("Teléfono*", placeholder="Ej: 8661234567", help="10 dígitos sin espacios")
+        email_cliente = st.text_input("Email*", placeholder="correo@ejemplo.com", help="Email válido para recibir resultados")
 
-with col2:
-    edad = st.number_input("Edad (años)*", min_value=15, max_value=80, value=safe_int(st.session_state.get("edad", 25), 25), help="Tu edad actual")
-    sexo = st.selectbox("Sexo biológico*", ["Hombre", "Mujer"], help="Necesario para cálculos precisos")
-    fecha_llenado = datetime.now().strftime("%Y-%m-%d")
-    st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
+    with col2:
+        edad = st.number_input("Edad (años)*", min_value=15, max_value=80, value=safe_int(st.session_state.get("edad", 25), 25), help="Tu edad actual")
+        sexo = st.selectbox("Sexo biológico*", ["Hombre", "Mujer"], help="Necesario para cálculos precisos")
+        fecha_llenado = datetime.now().strftime("%Y-%m-%d")
+        st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
 
 # === DESCARGO DE RESPONSABILIDAD PROFESIONAL ===
 with st.expander("⚖️ **Descargo de Responsabilidad Profesional** (Requerido)", expanded=False):
-    # Tarjeta principal de información
-    st.markdown(f"""
-    <div class="content-card" style="border-left-color: var(--mupai-warning); margin-bottom: 1rem;">
-        <h3 style="margin-bottom: 1rem; color: var(--mupai-yellow);">📋 Información Importante Sobre Esta Evaluación</h3>
-        <p style="color: #CCCCCC; margin-bottom: 0;">
-            Esta herramienta está diseñada para proporcionar orientación nutricional basada en evidencia científica. 
-            Es importante entender sus limitaciones y uso adecuado.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Tarjeta: Naturaleza de la Evaluación
-    st.markdown(f"""
-    <div class="content-card" style="border-left-color: var(--mupai-yellow); margin-bottom: 1rem;">
-        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
-            <span class="badge badge-info" style="margin-right: 0.5rem;">🔬 CIENTÍFICO</span>
-            <h4 style="margin: 0; color: #FFF;">Naturaleza de la Evaluación</h4>
-        </div>
-        <ul style="color: #CCCCCC; margin: 0; padding-left: 1.2rem;">
-            <li>Esta herramienta proporciona estimaciones basadas en algoritmos científicos validados</li>
-            <li>Los resultados son orientativos y no constituyen un diagnóstico médico o nutricional</li>
-            <li>Las recomendaciones están diseñadas para personas sanas sin condiciones médicas especiales</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Tarjeta: Limitaciones y Consideraciones
-    st.markdown(f"""
-    <div class="content-card" style="border-left-color: var(--mupai-warning); margin-bottom: 1rem;">
-        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
-            <span class="badge badge-warning" style="margin-right: 0.5rem;">⚕️ IMPORTANTE</span>
-            <h4 style="margin: 0; color: #FFF;">Limitaciones y Consideraciones</h4>
-        </div>
-        <ul style="color: #CCCCCC; margin: 0; padding-left: 1.2rem;">
-            <li>No reemplaza la consulta con profesionales de la salud, nutrición o medicina deportiva</li>
-            <li>Los cálculos pueden tener margen de error según la precisión de los datos ingresados</li>
-            <li>Condiciones médicas, medicamentos o situaciones especiales pueden afectar la precisión</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Tarjeta: Uso Recomendado
-    st.markdown(f"""
-    <div class="content-card" style="border-left-color: var(--mupai-success); margin-bottom: 1rem;">
-        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
-            <span class="badge badge-success" style="margin-right: 0.5rem;">🎯 RECOMENDADO</span>
-            <h4 style="margin: 0; color: #FFF;">Uso Recomendado</h4>
-        </div>
-        <ul style="color: #CCCCCC; margin: 0; padding-left: 1.2rem;">
-            <li>Utiliza estos resultados como punto de partida informativo</li>
-            <li>Consulta con profesionales certificados antes de implementar cambios significativos</li>
-            <li>Monitorea tu progreso y ajusta según tu respuesta individual</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Tarjeta: Responsabilidad
-    st.markdown(f"""
-    <div class="content-card" style="border-left-color: var(--mupai-danger); margin-bottom: 1.5rem;">
-        <div style="display: flex; align-items: center; margin-bottom: 0.8rem;">
-            <span class="badge badge-danger" style="margin-right: 0.5rem;">📞 RESPONSABILIDAD</span>
-            <h4 style="margin: 0; color: #FFF;">Descargo de Responsabilidad</h4>
-        </div>
-        <p style="color: #CCCCCC; margin: 0;">
-            <strong>MUPAI y Muscle Up GYM</strong> no se hacen responsables por el uso inadecuado de esta información. 
-            El usuario asume la responsabilidad de utilizar estos datos de manera consciente e informada.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🔬 Naturaleza Científica",
+            "Esta herramienta proporciona estimaciones basadas en algoritmos científicos validados. Los resultados son orientativos y no constituyen un diagnóstico médico o nutricional.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "⚕️ Limitaciones",
+            "No reemplaza la consulta con profesionales de la salud. Los cálculos pueden tener margen de error según la precisión de los datos ingresados.",
+            "warning"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "🎯 Uso Recomendado",
+            "Utiliza estos resultados como punto de partida informativo. Consulta con profesionales certificados antes de implementar cambios significativos.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col4:
+        st.markdown(crear_tarjeta(
+            "📞 Responsabilidad",
+            "MUPAI y Muscle Up GYM no se hacen responsables por el uso inadecuado de esta información. El usuario asume la responsabilidad.",
+            "danger"
+        ), unsafe_allow_html=True)
     
     # Checkbox destacado dentro del expander
     st.markdown("""
@@ -1176,8 +1151,6 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.s
         # Mostrar todos los errores de validación
         error_message = "⚠️ **Por favor corrige los siguientes errores:**\n\n" + "\n\n".join(validation_errors)
         st.error(error_message)
-
-st.markdown('</div>', unsafe_allow_html=True)
 
 if not st.session_state.datos_completos:
     st.markdown("""
@@ -1255,8 +1228,30 @@ if datos_personales_completos and st.session_state.datos_completos:
 
     # BLOQUE 1: Datos antropométricos con diseño mejorado
     with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
+        # Informational cards first
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown(crear_tarjeta(
+                "📊 Composición Corporal",
+                "Medición precisa de tu masa magra, grasa corporal y distribución de tejidos para cálculos metabólicos exactos.",
+                "info"
+            ), unsafe_allow_html=True)
+        with col2:
+            st.markdown(crear_tarjeta(
+                "🔬 Métodos Científicos",
+                "Utilizamos correcciones validadas según el método de medición para obtener valores equivalentes al estándar DEXA.",
+                "success"
+            ), unsafe_allow_html=True)
+        with col3:
+            st.markdown(crear_tarjeta(
+                "⚡ Precisión TMB",
+                "Los datos antropométricos permiten calcular tu tasa metabólica basal con la fórmula de Cunningham (más precisa).",
+                "warning"
+            ), unsafe_allow_html=True)
 
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
+        st.markdown("### Datos Antropométricos")
+        
+        # Form inputs in organized layout
         col1, col2, col3 = st.columns(3)
         with col1:
             # Ensure peso has a valid default
@@ -1288,16 +1283,14 @@ if datos_personales_completos and st.session_state.datos_completos:
                 help="Medida sin zapatos"
             )
         with col3:
-            st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
             metodo_grasa = st.selectbox(
                 "📊 Método de medición de grasa",
                 ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
                 key="metodo_grasa",
                 help="Selecciona el método utilizado"
             )
-            st.markdown('</div>', unsafe_allow_html=True)
 
-        # Ensure grasa_corporal has a valid default
+        # Body fat percentage input
         grasa_default = 20.0
         grasa_value = st.session_state.get("grasa_corporal", grasa_default)
         if grasa_value == '' or grasa_value is None or grasa_value == 0:
@@ -1311,8 +1304,6 @@ if datos_personales_completos and st.session_state.datos_completos:
             key="grasa_corporal",
             help="Valor medido con el método seleccionado"
         )
-
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
 
@@ -1507,7 +1498,26 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🏆 Evaluación Funcional",
+            "Medición objetiva de tu capacidad física actual a través de ejercicios funcionales estándar para determinar tu nivel real.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Análisis FFMI",
+            "Índice de masa libre de grasa para evaluar tu desarrollo muscular y potencial genético de crecimiento.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Nivel Global",
+            "Combinamos experiencia, rendimiento funcional y desarrollo muscular para clasificar tu nivel de entrenamiento.",
+            "warning"
+        ), unsafe_allow_html=True)
 
     st.markdown("### 📋 Experiencia en entrenamiento")
     experiencia = st.radio(
@@ -1837,7 +1847,6 @@ if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0:
     - FFMI máximo estimado: {ffmi_genetico_max:.1f}
     - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
     """)
-    st.markdown('</div>', unsafe_allow_html=True)
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
@@ -1852,7 +1861,27 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🚶 Factor GEAF",
+            "El Gasto Energético de Actividad Física fuera del ejercicio formal afecta significativamente tu metabolismo total diario.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Medición Precisa",
+            "Distinguimos entre ejercicio planificado y actividad física diaria para cálculos metabólicos más precisos.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "💡 NEAT Importante",
+            "La termogénesis de actividad no asociada al ejercicio (NEAT) puede variar hasta 800 kcal/día entre personas.",
+            "warning"
+        ), unsafe_allow_html=True)
+
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
 
     # Opciones para el usuario (debe coincidir el orden con 'niveles')
@@ -1913,7 +1942,6 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
         f"- Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%"
     )
 
-    st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
 with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
     # Actualizar progreso dinámico (solo si está disponible)
@@ -1925,7 +1953,26 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🔥 Efecto Térmico",
+            "El ETA representa el costo energético de la digestión, absorción y metabolismo de los alimentos (8-15% del gasto total).",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Cálculo Automático",
+            "Calculamos tu ETA basado en composición corporal y sexo. Personas más magras tienen mayor ETA por mayor masa muscular.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Factor Personalizado",
+            "A diferencia de usar un 10% estándar, personalizamos según tu perfil específico para mayor precisión metabólica.",
+            "warning"
+        ), unsafe_allow_html=True)
 
     st.markdown("### 🔥 Determinación automática del ETA")
     if grasa_corregida <= 10 and sexo == "Hombre":
@@ -1971,7 +2018,6 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
         Aumenta tu gasto total en un {(eta-1)*100:.0f}%
         """)
 
-    st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
     # Actualizar progreso dinámico (solo si está disponible)
@@ -1983,7 +2029,27 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🏋️ Gasto del Ejercicio",
+            "El GEE representa las calorías quemadas durante el entrenamiento de fuerza, ajustado según tu nivel y capacidad.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Cálculo Personalizado",
+            "Estimamos tu gasto calórico por sesión basado en tu nivel de entrenamiento: desde 300 kcal (principiante) hasta 500 kcal (élite).",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Intensidad Adaptada",
+            "Personas con mayor nivel entrenan con más intensidad, volumen y capacidad de trabajo, aumentando el gasto energético.",
+            "warning"
+        ), unsafe_allow_html=True)
+
     st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
 
     dias_fuerza = st.slider(
@@ -2040,7 +2106,7 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
         rendimiento funcional y experiencia. Esto proporciona una estimación más precisa de tu gasto energético real.
     </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
     # Actualizar progreso dinámico (solo si está disponible)
@@ -2052,7 +2118,28 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
     except NameError:
         pass  # progress no está definido aún
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    # Informational cards
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(crear_tarjeta(
+            "🎯 Plan Personalizado",
+            "Tu plan nutricional se basa en datos reales: composición corporal, actividad, entrenamiento y objetivos específicos.",
+            "info"
+        ), unsafe_allow_html=True)
+    with col2:
+        st.markdown(crear_tarjeta(
+            "📊 Metodología Científica",
+            "Utilizamos fórmulas validadas (Cunningham, PSMF) y factores personalizados para máxima precisión metabólica.",
+            "success"
+        ), unsafe_allow_html=True)
+    with col3:
+        st.markdown(crear_tarjeta(
+            "⚡ Resultados Reales",
+            "Plan diseñado para obtener resultados sostenibles y medibles, respaldado por ciencia del rendimiento.",
+            "warning"
+        ), unsafe_allow_html=True)
+
+    st.markdown("### 🧮 Tu Gasto Energético Total y Plan Nutricional")
 
     # Determinar fase nutricional
     if sexo == "Hombre":
