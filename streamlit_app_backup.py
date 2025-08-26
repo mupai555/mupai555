@@ -1449,87 +1449,10 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
     except Exception as e:
         st.error(f"Error al enviar email: {str(e)}")
         return False
+        # ==================== VISUALES INICIALES ====================
 
-# ==================== REMAINING WIZARD STEPS ====================
-
-# ==================== STEP 4: COMPOSICIÓN CORPORAL Y ANTROPOMETRÍA ====================
-elif paso_actual == 4:
-    st.markdown("""
-    <div class="content-card">
-        <h3 style="color: var(--mupai-yellow);">Composición Corporal y Antropometría</h3>
-        <p>Ingresa tus medidas corporales precisas para calcular tu metabolismo basal y necesidades energéticas.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("### Datos Antropométricos")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        peso = st.number_input(
-            "Peso (kg)*", 
-            min_value=30.0, 
-            max_value=200.0, 
-            value=float(st.session_state.get("peso", 70.0)),
-            step=0.1,
-            help="Tu peso actual en kilogramos"
-        )
-        estatura = st.number_input(
-            "Estatura (cm)*", 
-            min_value=130, 
-            max_value=220, 
-            value=int(st.session_state.get("estatura", 170)),
-            step=1,
-            help="Tu estatura en centímetros"
-        )
-        
-    with col2:
-        grasa_corporal = st.number_input(
-            "Porcentaje de grasa corporal (%)*", 
-            min_value=3.0, 
-            max_value=50.0, 
-            value=float(st.session_state.get("grasa_corporal", 15.0)),
-            step=0.1,
-            help="Tu porcentaje de grasa corporal"
-        )
-        metodo_grasa = st.selectbox(
-            "Método de medición de grasa*",
-            ["DEXA (Gold Standard)", "BIA (Bioimpedancia)", "Plicómetros", "Visual/Estimado"],
-            index=0,
-            help="Método utilizado para medir tu porcentaje de grasa"
-        )
-    
-    if st.button("💾 Guardar Composición Corporal", key="save_body_comp"):
-        if peso > 0 and estatura > 0 and grasa_corporal > 0:
-            st.session_state.peso = peso
-            st.session_state.estatura = estatura
-            st.session_state.grasa_corporal = grasa_corporal
-            st.session_state.metodo_grasa = metodo_grasa
-            st.success("✅ Datos de composición corporal guardados correctamente.")
-        else:
-            st.error("⚠️ Todos los campos son obligatorios.")
-    
-    # Show calculated metrics if data is saved
-    if all([st.session_state.get("peso", 0), st.session_state.get("estatura", 0), st.session_state.get("grasa_corporal", 0)]):
-        st.success("✅ Composición corporal guardada correctamente.")
-        
-        # Calculate BMI and MLG for display
-        peso_saved = st.session_state.get("peso", 0)
-        estatura_saved = st.session_state.get("estatura", 0)
-        grasa_saved = st.session_state.get("grasa_corporal", 0)
-        
-        imc = peso_saved / ((estatura_saved/100) ** 2)
-        mlg = peso_saved * (1 - grasa_saved/100)
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("BMI", f"{imc:.1f}")
-        with col2:
-            st.metric("Masa Libre de Grasa", f"{mlg:.1f} kg")
-        with col3:
-            st.metric("Masa Grasa", f"{peso_saved - mlg:.1f} kg")
-
-# ==================== STEP 5: EVALUACIÓN FUNCIONAL Y EXPERIENCIA ====================
-elif paso_actual == 5:
+# Misión, Visión y Compromiso con diseño mejorado
+with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(crear_tarjeta(
