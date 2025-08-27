@@ -1635,26 +1635,40 @@ if datos_personales_completos and st.session_state.datos_completos:
             with col1:
                 st.markdown("**⚖️ PESO CORPORAL**")
                 # Ensure peso has a valid default
-                peso_default = 70.0
+                peso_default = "70.0"
                 peso_value = st.session_state.get("peso", peso_default)
                 if peso_value == '' or peso_value is None or peso_value == 0:
                     peso_value = peso_default
-                peso = st.number_input(
+                
+                peso_text = st.text_input(
                     "Peso corporal (kg)",
-                    min_value=30.0,
-                    max_value=200.0,
-                    value=safe_float(peso_value, peso_default),
-                    step=0.1,
-                    key="peso",
-                    help="⚖️ Peso en ayunas, sin ropa. Fundamental para calcular tu metabolismo basal (TMB)."
+                    value=str(peso_value),
+                    key="peso_text",
+                    help="⚖️ Peso en ayunas, sin ropa. Fundamental para calcular tu metabolismo basal (TMB).",
+                    placeholder="Ej: 70.5"
                 )
-                # Validation feedback for peso
-                if peso < 40:
-                    st.warning("⚠️ Peso muy bajo. Verifícalo.")
-                elif peso > 150:
-                    st.info("📊 Peso elevado registrado.")
+                
+                # Validate peso input
+                peso_valid = False
+                peso = 0.0
+                if peso_text:
+                    try:
+                        peso = float(peso_text)
+                        if 30.0 <= peso <= 200.0:
+                            peso_valid = True
+                            st.session_state.peso = peso
+                            if peso < 40:
+                                st.warning("⚠️ Peso muy bajo. Verifícalo.")
+                            elif peso > 150:
+                                st.info("📊 Peso elevado registrado.")
+                            else:
+                                st.success("✅ Peso registrado correctamente")
+                        else:
+                            st.error("⚠️ El peso debe estar entre 30 y 200 kg.")
+                    except ValueError:
+                        st.error("⚠️ Por favor ingresa un número válido.")
                 else:
-                    st.success("✅ Peso registrado correctamente")
+                    st.info("💡 Ingresa tu peso corporal en kilogramos.")
                     
             with col2:
                 st.markdown("**📏 ESTATURA**")
@@ -1698,43 +1712,60 @@ if datos_personales_completos and st.session_state.datos_completos:
 
             # Enhanced body fat percentage input
             st.markdown("**💪 PORCENTAJE DE GRASA CORPORAL**")
-            grasa_default = 20.0
+            grasa_default = "20.0"
             grasa_value = st.session_state.get("grasa_corporal", grasa_default)
             if grasa_value == '' or grasa_value is None or grasa_value == 0:
                 grasa_value = grasa_default
-            grasa_corporal = st.number_input(
+                
+            grasa_text = st.text_input(
                 f"% de grasa corporal medido con {metodo_grasa.split('(')[0].strip()}",
-                min_value=3.0,
-                max_value=60.0,
-                value=safe_float(grasa_value, grasa_default),
-                step=0.1,
-                key="grasa_corporal",
-                help=f"💪 Valor exacto medido con {metodo_grasa.split('(')[0].strip()}. Se aplicará corrección automática."
+                value=str(grasa_value),
+                key="grasa_corporal_text",
+                help=f"💪 Valor exacto medido con {metodo_grasa.split('(')[0].strip()}. Se aplicará corrección automática.",
+                placeholder="Ej: 15.5"
             )
             
-            # Enhanced validation feedback for body fat
-            sexo = st.session_state.get("sexo", "Hombre")
-            if sexo == "Hombre":
-                if grasa_corporal < 6:
-                    st.warning("⚠️ Grasa muy baja para hombres. Verifica la medición.")
-                elif grasa_corporal < 15:
-                    st.success("💪 Excelente nivel de grasa corporal")
-                elif grasa_corporal < 25:
-                    st.info("👍 Nivel de grasa saludable")
-                else:
-                    st.warning("📊 Nivel de grasa elevado - ideal para fase de definición")
-            else:  # Mujer
-                if grasa_corporal < 12:
-                    st.warning("⚠️ Grasa muy baja para mujeres. Verifica la medición.")
-                elif grasa_corporal < 20:
-                    st.success("💪 Excelente nivel de grasa corporal")
-                elif grasa_corporal < 30:
-                    st.info("👍 Nivel de grasa saludable")
-                else:
-                    st.warning("📊 Nivel de grasa elevado - ideal para fase de definición")
+            # Validate grasa corporal input
+            grasa_valid = False
+            grasa_corporal = 0.0
+            if grasa_text:
+                try:
+                    grasa_corporal = float(grasa_text)
+                    if 3.0 <= grasa_corporal <= 60.0:
+                        grasa_valid = True
+                        st.session_state.grasa_corporal = grasa_corporal
+                        
+                        # Enhanced validation feedback for body fat
+                        sexo = st.session_state.get("sexo", "Hombre")
+                        if sexo == "Hombre":
+                            if grasa_corporal < 6:
+                                st.warning("⚠️ Grasa muy baja para hombres. Verifica la medición.")
+                            elif grasa_corporal < 15:
+                                st.success("💪 Excelente nivel de grasa corporal")
+                            elif grasa_corporal < 25:
+                                st.info("👍 Nivel de grasa saludable")
+                            else:
+                                st.warning("📊 Nivel de grasa elevado - ideal para fase de definición")
+                        else:  # Mujer
+                            if grasa_corporal < 12:
+                                st.warning("⚠️ Grasa muy baja para mujeres. Verifica la medición.")
+                            elif grasa_corporal < 20:
+                                st.success("💪 Excelente nivel de grasa corporal")
+                            elif grasa_corporal < 30:
+                                st.info("👍 Nivel de grasa saludable")
+                            else:
+                                st.warning("📊 Nivel de grasa elevado - ideal para fase de definición")
+                    else:
+                        st.error("⚠️ El porcentaje de grasa debe estar entre 3% y 60%.")
+                except ValueError:
+                    st.error("⚠️ Por favor ingresa un número válido.")
+            else:
+                st.info("💡 Ingresa tu porcentaje de grasa corporal.")
             
             # Enhanced calculations display with educational content
-            if peso > 0 and estatura > 0 and grasa_corporal > 0:
+            peso_from_session = st.session_state.get("peso", 0)
+            grasa_from_session = st.session_state.get("grasa_corporal", 0)
+            if peso_from_session > 0 and estatura > 0 and grasa_from_session > 0:
                 # Add visual separator
                 st.markdown("---")
                 st.markdown("""
@@ -1750,8 +1781,8 @@ if datos_personales_completos and st.session_state.datos_completos:
                 edad = st.session_state.edad
                 
                 # Calculate derived metrics
-                imc = peso / ((estatura / 100) ** 2)
-                masa_libre_grasa = peso * (1 - grasa_corporal / 100)
+                imc = peso_from_session / ((estatura / 100) ** 2)
+                masa_libre_grasa = peso_from_session * (1 - grasa_from_session / 100)
                 ffmi = masa_libre_grasa / ((estatura / 100) ** 2)
                 
                 # DEXA correction with detailed explanation
@@ -1762,7 +1793,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                     "DEXA (Gold Standard)": 0.0
                 }
                 factor_actual = factores_correccion.get(metodo_grasa, 0.0)
-                grasa_corregida = grasa_corporal + factor_actual
+                grasa_corregida = grasa_from_session + factor_actual
                 grasa_corregida = max(3.0, min(60.0, grasa_corregida))
                 
                 # Show correction explanation
@@ -1847,7 +1878,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                     
                 with col4:
                     # Lean body mass
-                    masa_grasa = peso - masa_libre_grasa
+                    masa_grasa = peso_from_session - masa_libre_grasa
                     st.metric(
                         "Masa Libre Grasa", 
                         f"{masa_libre_grasa:.1f} kg", 
