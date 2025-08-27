@@ -1734,14 +1734,16 @@ if datos_personales_completos and st.session_state.datos_completos:
                 
                 # Calculate derived metrics
                 imc = peso_from_session / ((estatura / 100) ** 2)
-                masa_libre_grasa = peso_from_session * (1 - grasa_from_session / 100)
-                ffmi = masa_libre_grasa / ((estatura / 100) ** 2)
                 
                 # AUDITORIA: Corregida lógica incorrecta de factores fijos por función centralizada
                 # ANTES: Se usaban factores fijos como Omron: -1.5%, InBody: -1.0%, etc.
                 # AHORA: Se usa la función centralizada que implementa la lógica oficial validada
                 grasa_corregida = corregir_porcentaje_grasa(grasa_from_session, metodo_grasa, sexo)
                 grasa_corregida = max(3.0, min(60.0, grasa_corregida))
+                
+                # AUDITORIA: Corregido - usar grasa_corregida en lugar de grasa_from_session para cálculos
+                masa_libre_grasa = peso_from_session * (1 - grasa_corregida / 100)
+                ffmi = masa_libre_grasa / ((estatura / 100) ** 2)
                 
                 # Show correction explanation
                 diferencia_correccion = grasa_corregida - grasa_from_session
