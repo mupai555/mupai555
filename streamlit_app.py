@@ -1578,88 +1578,173 @@ if datos_personales_completos and st.session_state.datos_completos:
             st.success("Tus datos personales han sido registrados correctamente.")
             
         elif current_step == 4:
-            # Step 4: Body Composition and Anthropometry
-            st.markdown("### 📊 Composición Corporal y Antropometría")
+            # Step 4: Body Composition and Anthropometry - Enhanced with better visual prominence
+            st.markdown("""
+            <div style="
+                background: linear-gradient(135deg, #1E1E1E 0%, #252525 100%);
+                padding: 2rem;
+                border-radius: 12px;
+                border-left: 4px solid var(--mupai-yellow);
+                margin: 1rem 0 2rem 0;
+                box-shadow: 0 8px 25px rgba(244, 196, 48, 0.15);
+            ">
+                <h2 style="color: var(--mupai-yellow); margin: 0 0 0.5rem 0; font-size: 1.8rem;">
+                    📊 PASO 4: Composición Corporal y Antropometría
+                </h2>
+                <p style="color: #CCCCCC; margin: 0; font-size: 1.1rem;">
+                    🎯 Este paso es fundamental para calcular tu metabolismo basal y diseñar tu plan nutricional personalizado
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
             
-            # Informational cards first
+            # Enhanced instructional guidance
+            st.info("""
+            📋 **Instrucciones importantes:**
+            - Introduce tu peso **en ayunas** y **sin ropa** para mayor precisión
+            - La estatura debe medirse **sin zapatos**
+            - Selecciona el **método exacto** utilizado para medir tu grasa corporal
+            - Todos los campos son **obligatorios** para continuar
+            """)
+            
+            # Informational cards with enhanced content
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.markdown(crear_tarjeta(
                     "📊 Composición Corporal",
-                    "Medición precisa de tu masa magra, grasa corporal y distribución de tejidos para cálculos metabólicos exactos.",
+                    "Medición precisa de tu masa magra, grasa corporal y distribución de tejidos para cálculos metabólicos exactos. Base fundamental para tu TMB.",
                     "info"
                 ), unsafe_allow_html=True)
             with col2:
                 st.markdown(crear_tarjeta(
                     "🔬 Métodos Científicos",
-                    "Utilizamos correcciones validadas según el método de medición para obtener valores equivalentes al estándar DEXA.",
+                    "Utilizamos correcciones validadas según el método de medición para obtener valores equivalentes al estándar DEXA (Gold Standard).",
                     "success"
                 ), unsafe_allow_html=True)
             with col3:
                 st.markdown(crear_tarjeta(
                     "⚡ Precisión TMB",
-                    "Los datos antropométricos permiten calcular tu tasa metabólica basal con la fórmula de Cunningham (más precisa).",
+                    "Los datos antropométricos permiten calcular tu tasa metabólica basal con la fórmula de Cunningham, más precisa que Harris-Benedict.",
                     "warning"
                 ), unsafe_allow_html=True)
 
-            st.markdown("#### Datos Antropométricos")
+            st.markdown("#### 📊 Datos Antropométricos Requeridos")
+            st.markdown("*Completa todos los campos para ver tus métricas calculadas automáticamente*")
             
-            # Form inputs in organized layout
+            # Enhanced form inputs with validation feedback
             col1, col2, col3 = st.columns(3)
             with col1:
+                st.markdown("**⚖️ PESO CORPORAL**")
                 # Ensure peso has a valid default
                 peso_default = 70.0
                 peso_value = st.session_state.get("peso", peso_default)
                 if peso_value == '' or peso_value is None or peso_value == 0:
                     peso_value = peso_default
                 peso = st.number_input(
-                    "⚖️ Peso corporal (kg)",
+                    "Peso corporal (kg)",
                     min_value=30.0,
                     max_value=200.0,
                     value=safe_float(peso_value, peso_default),
                     step=0.1,
                     key="peso",
-                    help="Peso en ayunas, sin ropa"
+                    help="⚖️ Peso en ayunas, sin ropa. Fundamental para calcular tu metabolismo basal (TMB)."
                 )
+                # Validation feedback for peso
+                if peso < 40:
+                    st.warning("⚠️ Peso muy bajo. Verifícalo.")
+                elif peso > 150:
+                    st.info("📊 Peso elevado registrado.")
+                else:
+                    st.success("✅ Peso registrado correctamente")
+                    
             with col2:
+                st.markdown("**📏 ESTATURA**")
                 # Ensure estatura has a valid default
                 estatura_default = 170
                 estatura_value = st.session_state.get("estatura", estatura_default)
                 if estatura_value == '' or estatura_value is None or estatura_value == 0:
                     estatura_value = estatura_default
                 estatura = st.number_input(
-                    "📏 Estatura (cm)",
+                    "Estatura (cm)",
                     min_value=120,
                     max_value=220,
                     value=safe_int(estatura_value, estatura_default),
                     key="estatura",
-                    help="Medida sin zapatos"
+                    help="📏 Medida sin zapatos. Necesaria para calcular IMC y FFMI."
                 )
+                # Validation feedback for estatura
+                if estatura < 140:
+                    st.warning("⚠️ Estatura muy baja. Verifícala.")
+                elif estatura > 200:
+                    st.info("📊 Estatura elevada registrada.")
+                else:
+                    st.success("✅ Estatura registrada correctamente")
+                    
             with col3:
+                st.markdown("**📊 MÉTODO DE MEDICIÓN**")
                 metodo_grasa = st.selectbox(
-                    "📊 Método de medición de grasa",
+                    "Método de medición de grasa",
                     ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
                     key="metodo_grasa",
-                    help="Selecciona el método utilizado"
+                    help="🔬 Crucial para aplicar la corrección científica correcta según el método."
                 )
+                # Information about selected method
+                method_info = {
+                    "Omron HBF-516 (BIA)": "Corrección: -1.5%. Método doméstico común.",
+                    "InBody 270 (BIA profesional)": "Corrección: -1.0%. BIA profesional.",
+                    "Bod Pod (Pletismografía)": "Corrección: +0.5%. Método muy preciso.",
+                    "DEXA (Gold Standard)": "Sin corrección. Método más preciso disponible."
+                }
+                st.info(f"ℹ️ {method_info.get(metodo_grasa, 'Método seleccionado')}")
 
-            # Body fat percentage input
+            # Enhanced body fat percentage input
+            st.markdown("**💪 PORCENTAJE DE GRASA CORPORAL**")
             grasa_default = 20.0
             grasa_value = st.session_state.get("grasa_corporal", grasa_default)
             if grasa_value == '' or grasa_value is None or grasa_value == 0:
                 grasa_value = grasa_default
             grasa_corporal = st.number_input(
-                f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
+                f"% de grasa corporal medido con {metodo_grasa.split('(')[0].strip()}",
                 min_value=3.0,
                 max_value=60.0,
                 value=safe_float(grasa_value, grasa_default),
                 step=0.1,
                 key="grasa_corporal",
-                help="Valor medido con el método seleccionado"
+                help=f"💪 Valor exacto medido con {metodo_grasa.split('(')[0].strip()}. Se aplicará corrección automática."
             )
             
-            # Show calculations if data is available
+            # Enhanced validation feedback for body fat
+            sexo = st.session_state.get("sexo", "Hombre")
+            if sexo == "Hombre":
+                if grasa_corporal < 6:
+                    st.warning("⚠️ Grasa muy baja para hombres. Verifica la medición.")
+                elif grasa_corporal < 15:
+                    st.success("💪 Excelente nivel de grasa corporal")
+                elif grasa_corporal < 25:
+                    st.info("👍 Nivel de grasa saludable")
+                else:
+                    st.warning("📊 Nivel de grasa elevado - ideal para fase de definición")
+            else:  # Mujer
+                if grasa_corporal < 12:
+                    st.warning("⚠️ Grasa muy baja para mujeres. Verifica la medición.")
+                elif grasa_corporal < 20:
+                    st.success("💪 Excelente nivel de grasa corporal")
+                elif grasa_corporal < 30:
+                    st.info("👍 Nivel de grasa saludable")
+                else:
+                    st.warning("📊 Nivel de grasa elevado - ideal para fase de definición")
+            
+            # Enhanced calculations display with educational content
             if peso > 0 and estatura > 0 and grasa_corporal > 0:
+                # Add visual separator
+                st.markdown("---")
+                st.markdown("""
+                <h3 style="color: var(--mupai-yellow); text-align: center; margin: 1rem 0;">
+                    🧮 CÁLCULOS ANTROPOMÉTRICOS AUTOMÁTICOS
+                </h3>
+                """, unsafe_allow_html=True)
+                
+                st.success("✅ **Todos los datos completos** - Cálculos realizados automáticamente")
+                
                 # Cálculos antropométricos
                 sexo = st.session_state.sexo
                 edad = st.session_state.edad
@@ -1669,26 +1754,138 @@ if datos_personales_completos and st.session_state.datos_completos:
                 masa_libre_grasa = peso * (1 - grasa_corporal / 100)
                 ffmi = masa_libre_grasa / ((estatura / 100) ** 2)
                 
-                # DEXA correction
+                # DEXA correction with detailed explanation
                 factores_correccion = {
                     "Omron HBF-516 (BIA)": -1.5,
                     "InBody 270 (BIA profesional)": -1.0, 
                     "Bod Pod (Pletismografía)": +0.5,
                     "DEXA (Gold Standard)": 0.0
                 }
-                grasa_corregida = grasa_corporal + factores_correccion.get(metodo_grasa, 0.0)
+                factor_actual = factores_correccion.get(metodo_grasa, 0.0)
+                grasa_corregida = grasa_corporal + factor_actual
                 grasa_corregida = max(3.0, min(60.0, grasa_corregida))
                 
-                # Show results
+                # Show correction explanation
+                if factor_actual != 0:
+                    if factor_actual > 0:
+                        st.info(f"🔬 **Corrección aplicada:** +{factor_actual}% (tu método subestima la grasa)")
+                    else:
+                        st.info(f"🔬 **Corrección aplicada:** {factor_actual}% (tu método sobrestima la grasa)")
+                else:
+                    st.info("🏆 **Método DEXA:** No requiere corrección (Gold Standard)")
+
+                # Enhanced results display with explanations
+                st.markdown("#### 📊 Resultados de tus Métricas Corporales")
+                
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric("IMC", f"{imc:.1f}", help="Índice de Masa Corporal")
+                    # IMC with interpretation
+                    if imc < 18.5:
+                        imc_status = "📉 Bajo peso"
+                        imc_color = "orange"
+                    elif imc < 25:
+                        imc_status = "✅ Normal"
+                        imc_color = "green"
+                    elif imc < 30:
+                        imc_status = "⚠️ Sobrepeso"
+                        imc_color = "orange"
+                    else:
+                        imc_status = "🔴 Obesidad"
+                        imc_color = "red"
+                    
+                    st.metric(
+                        "IMC", 
+                        f"{imc:.1f}", 
+                        imc_status,
+                        help="Índice de Masa Corporal = Peso (kg) / Altura² (m). Indicador general de peso saludable."
+                    )
+                    
                 with col2:
-                    st.metric("FFMI", f"{ffmi:.1f}", help="Índice de Masa Libre de Grasa")
+                    # FFMI with interpretation
+                    if sexo == "Hombre":
+                        if ffmi < 16:
+                            ffmi_status = "📉 Bajo"
+                        elif ffmi < 19:
+                            ffmi_status = "👍 Normal"
+                        elif ffmi < 22:
+                            ffmi_status = "💪 Bueno"
+                        else:
+                            ffmi_status = "🏆 Excelente"
+                    else:  # Mujer
+                        if ffmi < 14:
+                            ffmi_status = "📉 Bajo"
+                        elif ffmi < 17:
+                            ffmi_status = "👍 Normal"
+                        elif ffmi < 19:
+                            ffmi_status = "💪 Bueno"
+                        else:
+                            ffmi_status = "🏆 Excelente"
+                    
+                    st.metric(
+                        "FFMI", 
+                        f"{ffmi:.1f}", 
+                        ffmi_status,
+                        help="Fat-Free Mass Index = Masa Libre de Grasa / Altura². Indica tu desarrollo muscular."
+                    )
+                    
                 with col3:
-                    st.metric("Grasa Corregida", f"{grasa_corregida:.1f}%", help="Ajustado a estándar DEXA")
+                    # Corrected body fat with interpretation
+                    diferencia = grasa_corregida - grasa_corporal
+                    if diferencia > 0:
+                        delta_text = f"+{diferencia:.1f}%"
+                    elif diferencia < 0:
+                        delta_text = f"{diferencia:.1f}%"
+                    else:
+                        delta_text = "Sin cambio"
+                        
+                    st.metric(
+                        "Grasa Corregida", 
+                        f"{grasa_corregida:.1f}%", 
+                        delta_text,
+                        help="Porcentaje de grasa ajustado al estándar DEXA para mayor precisión en cálculos."
+                    )
+                    
                 with col4:
-                    st.metric("Masa Libre Grasa", f"{masa_libre_grasa:.1f} kg", help="Peso sin grasa corporal")
+                    # Lean body mass
+                    masa_grasa = peso - masa_libre_grasa
+                    st.metric(
+                        "Masa Libre Grasa", 
+                        f"{masa_libre_grasa:.1f} kg", 
+                        f"Grasa: {masa_grasa:.1f} kg",
+                        help="Peso total menos grasa corporal. Incluye músculos, huesos, órganos y agua."
+                    )
+
+                # Educational explanations
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #1E1E1E 0%, #252525 100%); 
+                           padding: 1.5rem; border-radius: 10px; margin: 1rem 0;
+                           border-left: 4px solid #27AE60;">
+                    <h4 style="color: #27AE60; margin: 0 0 1rem 0;">💡 ¿Qué significan estos números?</h4>
+                    <ul style="color: #CCCCCC; margin: 0;">
+                        <li><strong>IMC:</strong> Relación peso/altura. Útil para población general, pero no considera composición corporal.</li>
+                        <li><strong>FFMI:</strong> Indica tu desarrollo muscular independiente de la grasa. Más útil que el IMC para deportistas.</li>
+                        <li><strong>Grasa Corregida:</strong> Ajuste científico según tu método de medición para mayor precisión.</li>
+                        <li><strong>Masa Libre de Grasa:</strong> Tu peso sin grasa corporal. Fundamental para calcular tu metabolismo basal.</li>
+                    </ul>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Validation status for step completion
+                st.success("🎯 **Paso 4 completado exitosamente** - Todos los datos antropométricos registrados correctamente")
+                
+            else:
+                # Validation feedback when data is incomplete
+                missing_fields = []
+                if peso <= 0:
+                    missing_fields.append("Peso corporal")
+                if estatura <= 0:
+                    missing_fields.append("Estatura")
+                if grasa_corporal <= 0:
+                    missing_fields.append("Porcentaje de grasa corporal")
+                    
+                if missing_fields:
+                    st.warning(f"⚠️ **Campos faltantes:** {', '.join(missing_fields)}")
+                    st.info("ℹ️ Complete todos los campos para ver sus métricas calculadas automáticamente")
         
         elif current_step == 5:
             # Step 5: Functional Evaluation and Experience
