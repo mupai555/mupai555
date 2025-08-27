@@ -50,24 +50,6 @@ def validate_wizard_step(step):
         return peso > 0 and porcentaje_grasa > 0 and len(actividad) > 0
     return False
 
-def get_validation_errors(step):
-    """Get specific validation error messages for a step"""
-    if step == 4:  # Body composition
-        errors = []
-        peso = st.session_state.get("peso", 0)
-        estatura = st.session_state.get("estatura", 0)
-        grasa_corporal = st.session_state.get("grasa_corporal", 0)
-        
-        if peso <= 0:
-            errors.append("• **Peso corporal** es obligatorio (debe ser mayor a 0)")
-        if estatura <= 0:
-            errors.append("• **Estatura** es obligatoria (debe ser mayor a 0)")
-        if grasa_corporal <= 0:
-            errors.append("• **Porcentaje de grasa corporal** es obligatorio (debe ser mayor a 0)")
-        
-        return errors
-    return []
-
 def navigate_wizard(direction):
     """Navigate wizard steps"""
     current_step = st.session_state.get("wizard_step", 2)
@@ -128,12 +110,6 @@ def show_wizard_navigation():
                 if step_valid:
                     navigate_wizard("next")
                     st.rerun()
-            
-            # Show validation errors if step is not valid
-            if not step_valid:
-                validation_errors = get_validation_errors(current_step)
-                if validation_errors:
-                    st.error("⚠️ **Para continuar, complete los siguientes campos:**\n\n" + "\n".join(validation_errors))
         else:
             # Last step - show completion button
             if validate_wizard_step(current_step):
@@ -1631,32 +1607,20 @@ if datos_personales_completos and st.session_state.datos_completos:
             # Form inputs in organized layout
             col1, col2, col3 = st.columns(3)
             with col1:
-                # Use text input for peso to allow true empty state
-                peso_text = st.text_input(
+                # Ensure peso has a valid default
+                peso_default = 70.0
+                peso_value = st.session_state.get("peso", peso_default)
+                if peso_value == '' or peso_value is None or peso_value == 0:
+                    peso_value = peso_default
+                peso = st.number_input(
                     "⚖️ Peso corporal (kg)",
-                    value=str(st.session_state.get("peso", "")) if st.session_state.get("peso", 0) > 0 else "",
-                    key="peso_text",
-                    help="Peso en ayunas, sin ropa. Ingrese un número entre 30 y 200 kg."
+                    min_value=30.0,
+                    max_value=200.0,
+                    value=safe_float(peso_value, peso_default),
+                    step=0.1,
+                    key="peso",
+                    help="Peso en ayunas, sin ropa"
                 )
-                
-                # Convert text to number and validate
-                try:
-                    if peso_text.strip() == "":
-                        peso = 0  # Empty field
-                        st.session_state.peso = 0
-                    else:
-                        peso = float(peso_text)
-                        if 30.0 <= peso <= 200.0:
-                            st.session_state.peso = peso
-                        else:
-                            st.error("El peso debe estar entre 30 y 200 kg")
-                            peso = 0
-                            st.session_state.peso = 0
-                except ValueError:
-                    if peso_text.strip() != "":
-                        st.error("Ingrese un número válido para el peso")
-                    peso = 0
-                    st.session_state.peso = 0
             with col2:
                 # Ensure estatura has a valid default
                 estatura_default = 170
@@ -1679,32 +1643,20 @@ if datos_personales_completos and st.session_state.datos_completos:
                     help="Selecciona el método utilizado"
                 )
 
-            # Body fat percentage input - use text input to allow empty state
-            grasa_text = st.text_input(
+            # Body fat percentage input
+            grasa_default = 20.0
+            grasa_value = st.session_state.get("grasa_corporal", grasa_default)
+            if grasa_value == '' or grasa_value is None or grasa_value == 0:
+                grasa_value = grasa_default
+            grasa_corporal = st.number_input(
                 f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-                value=str(st.session_state.get("grasa_corporal", "")) if st.session_state.get("grasa_corporal", 0) > 0 else "",
-                key="grasa_text",
-                help="Valor medido con el método seleccionado. Ingrese un número entre 3 y 60%."
+                min_value=3.0,
+                max_value=60.0,
+                value=safe_float(grasa_value, grasa_default),
+                step=0.1,
+                key="grasa_corporal",
+                help="Valor medido con el método seleccionado"
             )
-            
-            # Convert text to number and validate
-            try:
-                if grasa_text.strip() == "":
-                    grasa_corporal = 0  # Empty field
-                    st.session_state.grasa_corporal = 0
-                else:
-                    grasa_corporal = float(grasa_text)
-                    if 3.0 <= grasa_corporal <= 60.0:
-                        st.session_state.grasa_corporal = grasa_corporal
-                    else:
-                        st.error("El porcentaje de grasa debe estar entre 3% y 60%")
-                        grasa_corporal = 0
-                        st.session_state.grasa_corporal = 0
-            except ValueError:
-                if grasa_text.strip() != "":
-                    st.error("Ingrese un número válido para el porcentaje de grasa")
-                grasa_corporal = 0
-                st.session_state.grasa_corporal = 0
             
             # Show calculations if data is available
             if peso > 0 and estatura > 0 and grasa_corporal > 0:
