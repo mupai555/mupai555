@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import time
 import re
-from eta_block import calcular_eta_automatico
+from eta_block import calcular_eta_automatico, corregir_porcentaje_grasa
 
 # ==================== WIZARD SYSTEM FUNCTIONS ====================
 def get_wizard_step_title(step):
@@ -969,54 +969,6 @@ def calcular_mlg(peso, porcentaje_grasa):
         porcentaje_grasa = 0.0
     return peso * (1 - porcentaje_grasa / 100)
 
-def corregir_porcentaje_grasa(medido, metodo, sexo):
-    """
-    Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron, ajusta con tablas especializadas por sexo.
-    Si InBody, aplica factor.
-    Si BodPod, aplica factor por sexo.
-    Si DEXA, devuelve el valor medido.
-    """
-    try:
-        medido = float(medido)
-    except (TypeError, ValueError):
-        medido = 0.0
-
-    if metodo == "Omron HBF-516 (BIA)":
-        # Tablas especializadas por sexo para conversión Omron→DEXA
-        if sexo == "Hombre":
-            tabla = {
-                5: 2.8, 6: 3.8, 7: 4.8, 8: 5.8, 9: 6.8,
-                10: 7.8, 11: 8.8, 12: 9.8, 13: 10.8, 14: 11.8,
-                15: 13.8, 16: 14.8, 17: 15.8, 18: 16.8, 19: 17.8,
-                20: 20.8, 21: 21.8, 22: 22.8, 23: 23.8, 24: 24.8,
-                25: 27.3, 26: 28.3, 27: 29.3, 28: 30.3, 29: 31.3,
-                30: 33.8, 31: 34.8, 32: 35.8, 33: 36.8, 34: 37.8,
-                35: 40.3, 36: 41.3, 37: 42.3, 38: 43.3, 39: 44.3,
-                40: 45.3
-            }
-        else:  # Mujer
-            tabla = {
-                5: 2.2, 6: 3.2, 7: 4.2, 8: 5.2, 9: 6.2,
-                10: 7.2, 11: 8.2, 12: 9.2, 13: 10.2, 14: 11.2,
-                15: 13.2, 16: 14.2, 17: 15.2, 18: 16.2, 19: 17.2,
-                20: 20.2, 21: 21.2, 22: 22.2, 23: 23.2, 24: 24.2,
-                25: 26.7, 26: 27.7, 27: 28.7, 28: 29.7, 29: 30.7,
-                30: 33.2, 31: 34.2, 32: 35.2, 33: 36.2, 34: 37.2,
-                35: 39.7, 36: 40.7, 37: 41.7, 38: 42.7, 39: 43.7,
-                40: 44.7
-            }
-        
-        grasa_redondeada = int(round(medido))
-        grasa_redondeada = min(max(grasa_redondeada, 5), 40)
-        return tabla.get(grasa_redondeada, medido)
-    elif metodo == "InBody 270 (BIA profesional)":
-        return medido * 1.02
-    elif metodo == "Bod Pod (Pletismografía)":
-        factor = 1.0 if sexo == "Mujer" else 1.03
-        return medido * factor
-    else:  # DEXA (Gold Standard) u otros
-        return medido
 
 def calcular_ffmi(mlg, estatura_cm):
     """Calcula el FFMI y lo normaliza a 1.80m de estatura."""
@@ -1701,12 +1653,12 @@ if datos_personales_completos and st.session_state.datos_completos:
                     key="metodo_grasa",
                     help="🔬 Crucial para aplicar la corrección científica correcta según el método."
                 )
-                # Information about selected method
+                # Information about selected method - AUDITORIA: Corregida información incorrecta sobre correcciones
                 method_info = {
-                    "Omron HBF-516 (BIA)": "Corrección: -1.5%. Método doméstico común.",
-                    "InBody 270 (BIA profesional)": "Corrección: -1.0%. BIA profesional.",
-                    "Bod Pod (Pletismografía)": "Corrección: +0.5%. Método muy preciso.",
-                    "DEXA (Gold Standard)": "Sin corrección. Método más preciso disponible."
+                    "Omron HBF-516 (BIA)": "Conversión por tabla especializada. Ej: 25% → 27.3% (hombres), 25% → 26.7% (mujeres).",
+                    "InBody 270 (BIA profesional)": "Factor de corrección: ×1.02. BIA profesional.",
+                    "Bod Pod (Pletismografía)": "Factor: ×1.03 (hombres), ×1.00 (mujeres). Método muy preciso.",
+                    "DEXA (Gold Standard)": "Sin corrección. Estándar de referencia (Gold Standard)."
                 }
                 st.info(f"ℹ️ {method_info.get(metodo_grasa, 'Método seleccionado')}")
 
@@ -1782,26 +1734,24 @@ if datos_personales_completos and st.session_state.datos_completos:
                 
                 # Calculate derived metrics
                 imc = peso_from_session / ((estatura / 100) ** 2)
-                masa_libre_grasa = peso_from_session * (1 - grasa_from_session / 100)
-                ffmi = masa_libre_grasa / ((estatura / 100) ** 2)
                 
-                # DEXA correction with detailed explanation
-                factores_correccion = {
-                    "Omron HBF-516 (BIA)": -1.5,
-                    "InBody 270 (BIA profesional)": -1.0, 
-                    "Bod Pod (Pletismografía)": +0.5,
-                    "DEXA (Gold Standard)": 0.0
-                }
-                factor_actual = factores_correccion.get(metodo_grasa, 0.0)
-                grasa_corregida = grasa_from_session + factor_actual
+                # AUDITORIA: Corregida lógica incorrecta de factores fijos por función centralizada
+                # ANTES: Se usaban factores fijos como Omron: -1.5%, InBody: -1.0%, etc.
+                # AHORA: Se usa la función centralizada que implementa la lógica oficial validada
+                grasa_corregida = corregir_porcentaje_grasa(grasa_from_session, metodo_grasa, sexo)
                 grasa_corregida = max(3.0, min(60.0, grasa_corregida))
                 
+                # AUDITORIA: Corregido - usar grasa_corregida en lugar de grasa_from_session para cálculos
+                masa_libre_grasa = peso_from_session * (1 - grasa_corregida / 100)
+                ffmi = masa_libre_grasa / ((estatura / 100) ** 2)
+                
                 # Show correction explanation
-                if factor_actual != 0:
-                    if factor_actual > 0:
-                        st.info(f"🔬 **Corrección aplicada:** +{factor_actual}% (tu método subestima la grasa)")
+                diferencia_correccion = grasa_corregida - grasa_from_session
+                if abs(diferencia_correccion) > 0.1:
+                    if diferencia_correccion > 0:
+                        st.info(f"🔬 **Corrección aplicada:** +{diferencia_correccion:.1f}% (tu método subestima la grasa)")
                     else:
-                        st.info(f"🔬 **Corrección aplicada:** {factor_actual}% (tu método sobrestima la grasa)")
+                        st.info(f"🔬 **Corrección aplicada:** {diferencia_correccion:.1f}% (tu método sobrestima la grasa)")
                 else:
                     st.info("🏆 **Método DEXA:** No requiere corrección (Gold Standard)")
 

@@ -54,19 +54,32 @@ def calcular_mlg(peso, porcentaje_grasa):
 
 def corregir_porcentaje_grasa(medido, metodo, sexo):
     """
-    Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron, ajusta con tablas especializadas por sexo.
-    Si InBody, aplica factor.
-    Si BodPod, aplica factor por sexo.
-    Si DEXA, devuelve el valor medido.
+    Función centralizada para corregir el porcentaje de grasa corporal al estándar DEXA.
+    
+    Esta función implementa la lógica oficial validada para convertir mediciones de diferentes
+    métodos al estándar DEXA (Gold Standard).
+    
+    Métodos soportados:
+    1. Omron HBF-516 (BIA): Usa tabla de conversión especializada por sexo (NUNCA factor fijo)
+    2. InBody 270 (BIA profesional): Multiplica por 1.02
+    3. Bod Pod (Pletismografía): Multiplica por 1.03 si es hombre, 1.00 si es mujer
+    4. DEXA (Gold Standard): Sin corrección (valor original)
+    
+    Ejemplos de conversión:
+    - 25% Omron hombre → 27.3% DEXA
+    - 25% Omron mujer → 26.7% DEXA  
+    - 25% InBody → 25.5% DEXA
+    - 25% Bod Pod hombre → 25.75% DEXA
+    - 25% Bod Pod mujer → 25.0% DEXA
+    - 25% DEXA → 25.0% DEXA (sin cambio)
     
     Args:
-        medido: Porcentaje de grasa medido
-        metodo: Método de medición utilizado
-        sexo: "Hombre" o "Mujer"
+        medido (float): Porcentaje de grasa medido
+        metodo (str): Método de medición utilizado
+        sexo (str): "Hombre" o "Mujer"
         
     Returns:
-        float: Porcentaje de grasa corregido
+        float: Porcentaje de grasa corregido al estándar DEXA
     """
     try:
         medido = float(medido)
@@ -74,25 +87,26 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
         medido = 20.0
     
     if metodo == "Omron HBF-516 (BIA)":
-        # Tabla de conversión para hombres
+        # Tablas especializadas por sexo para conversión Omron→DEXA
+        # AUDITORIA: Corregida tabla incorrecta que mostraba 25%→26.2% en lugar de 25%→27.3%
         if sexo == "Hombre":
             tabla = {
-                5: 4.2, 6: 5.2, 7: 6.2, 8: 7.2, 9: 8.2,
-                10: 9.7, 11: 10.7, 12: 11.7, 13: 12.7, 14: 13.7,
-                15: 15.2, 16: 16.2, 17: 17.2, 18: 18.2, 19: 19.2,
-                20: 20.7, 21: 21.7, 22: 22.7, 23: 23.7, 24: 24.7,
-                25: 26.2, 26: 27.2, 27: 28.2, 28: 29.2, 29: 30.2,
-                30: 31.7, 31: 32.7, 32: 33.7, 33: 34.7, 34: 35.7,
-                35: 37.2, 36: 38.2, 37: 39.2, 38: 40.2, 39: 41.2,
-                40: 42.2
+                5: 2.8, 6: 3.8, 7: 4.8, 8: 5.8, 9: 6.8,
+                10: 7.8, 11: 8.8, 12: 9.8, 13: 10.8, 14: 11.8,
+                15: 13.8, 16: 14.8, 17: 15.8, 18: 16.8, 19: 17.8,
+                20: 20.8, 21: 21.8, 22: 22.8, 23: 23.8, 24: 24.8,
+                25: 27.3, 26: 28.3, 27: 29.3, 28: 30.3, 29: 31.3,  # 25% → 27.3% (ejemplo oficial)
+                30: 33.8, 31: 34.8, 32: 35.8, 33: 36.8, 34: 37.8,
+                35: 40.3, 36: 41.3, 37: 42.3, 38: 43.3, 39: 44.3,
+                40: 45.3
             }
         else:  # Mujer
             tabla = {
-                5: 5.7, 6: 6.7, 7: 7.7, 8: 8.7, 9: 9.7,
-                10: 10.2, 11: 11.2, 12: 12.2, 13: 13.2, 14: 14.2,
-                15: 15.7, 16: 16.7, 17: 17.7, 18: 18.7, 19: 19.7,
+                5: 2.2, 6: 3.2, 7: 4.2, 8: 5.2, 9: 6.2,
+                10: 7.2, 11: 8.2, 12: 9.2, 13: 10.2, 14: 11.2,
+                15: 13.2, 16: 14.2, 17: 15.2, 18: 16.2, 19: 17.2,
                 20: 20.2, 21: 21.2, 22: 22.2, 23: 23.2, 24: 24.2,
-                25: 26.7, 26: 27.7, 27: 28.7, 28: 29.7, 29: 30.7,
+                25: 26.7, 26: 27.7, 27: 28.7, 28: 29.7, 29: 30.7,  # 25% → 26.7%
                 30: 33.2, 31: 34.2, 32: 35.2, 33: 36.2, 34: 37.2,
                 35: 39.7, 36: 40.7, 37: 41.7, 38: 42.7, 39: 43.7,
                 40: 44.7
@@ -102,11 +116,14 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
         grasa_redondeada = min(max(grasa_redondeada, 5), 40)
         return tabla.get(grasa_redondeada, medido)
     elif metodo == "InBody 270 (BIA profesional)":
+        # InBody 270: factor de corrección 1.02
         return medido * 1.02
     elif metodo == "Bod Pod (Pletismografía)":
+        # Bod Pod: factor 1.03 para hombres, 1.00 para mujeres
         factor = 1.0 if sexo == "Mujer" else 1.03
         return medido * factor
     else:  # DEXA (Gold Standard) u otros
+        # DEXA no requiere corrección (es el estándar de referencia)
         return medido
 
 
