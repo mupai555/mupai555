@@ -2842,13 +2842,35 @@ ENTRENAMIENTO DE FUERZA - DETALLE
 
 =====================================
 COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
-=====================================
+====================================="""
+
+# Calcular macros del plan tradicional para el resumen del email
+proteina_g_tradicional = peso * obtener_factor_proteina_tradicional(grasa_corregida) if 'peso' in locals() and peso > 0 and 'grasa_corregida' in locals() else 0
+proteina_kcal_tradicional = proteina_g_tradicional * 4
+
+# Calcular grasas tradicional con los límites del 20-40%
+grasa_min_kcal_tradicional = plan_tradicional_calorias * 0.20
+porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida) if 'grasa_corregida' in locals() else 0.40
+grasa_ideal_kcal_tradicional = tmb * porcentaje_grasa_tmb if 'tmb' in locals() else 0
+grasa_ideal_g_tradicional = grasa_ideal_kcal_tradicional / 9
+grasa_min_g_tradicional = grasa_min_kcal_tradicional / 9
+grasa_max_kcal_tradicional = plan_tradicional_calorias * 0.40
+grasa_g_tradicional = max(grasa_min_g_tradicional, grasa_ideal_g_tradicional)
+if grasa_g_tradicional * 9 > grasa_max_kcal_tradicional:
+    grasa_g_tradicional = grasa_max_kcal_tradicional / 9
+grasa_kcal_tradicional = grasa_g_tradicional * 9
+
+# Calcular carbohidratos tradicional
+carbo_kcal_tradicional = plan_tradicional_calorias - proteina_kcal_tradicional - grasa_kcal_tradicional
+carbo_g_tradicional = carbo_kcal_tradicional / 4
+
+tabla_resumen += f"""
 📊 PLAN TRADICIONAL (DÉFICIT/SUPERÁVIT MODERADO):
 - Calorías: {plan_tradicional_calorias:.0f} kcal/día
 - Estrategia: {fase}
-- Proteína: {peso * obtener_factor_proteina_tradicional(grasa_corregida) if 'peso' in locals() and peso > 0 and 'grasa_corregida' in locals() else 0:.1f}g/día ({obtener_factor_proteina_tradicional(grasa_corregida) if 'grasa_corregida' in locals() else 1.8:.1f}g/kg peso según % grasa)
-- Grasas: ~{obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida)*100 if 'grasa_corregida' in locals() else 40:.0f}% del TMB = {tmb * obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida) / 9 if 'tmb' in locals() and 'grasa_corregida' in locals() else 0:.1f}g/día (ajustado por límites 20-40% calorías)
-- Carbohidratos: Resto de calorías disponibles
+- Proteína: {proteina_g_tradicional:.1f}g ({proteina_kcal_tradicional:.0f} kcal) = {proteina_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
+- Grasas: {grasa_g_tradicional:.1f}g ({grasa_kcal_tradicional:.0f} kcal) = {grasa_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
+- Carbohidratos: {carbo_g_tradicional:.1f}g ({carbo_kcal_tradicional:.0f} kcal) = {carbo_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
 - Sostenibilidad: ALTA - Recomendado para adherencia a largo plazo
 - Pérdida/ganancia esperada: 0.3-0.7% peso corporal/semana
 - Duración recomendada: Indefinida con ajustes periódicos
@@ -2856,13 +2878,19 @@ COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
 ⚡ PROTOCOLO PSMF ACTUALIZADO {'(APLICABLE)' if plan_psmf_disponible else '(NO APLICABLE)'}:"""
 
 if plan_psmf_disponible:
+    # Calcular carbohidratos PSMF usando la fórmula especificada
+    carbo_g_psmf = round((psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia'] * 4 - psmf_recs['grasa_g_dia'] * 9) / 4, 1) if psmf_recs.get('calorias_dia', 0) > 0 else 0
+    carbo_kcal_psmf = carbo_g_psmf * 4
+    proteina_kcal_psmf = psmf_recs['proteina_g_dia'] * 4
+    grasa_kcal_psmf = psmf_recs['grasa_g_dia'] * 9
+    
     tabla_resumen += f"""
 - Calorías: {psmf_recs['calorias_dia']:.0f} kcal/día
 - Criterio de aplicabilidad: {psmf_recs.get('criterio', 'No especificado')}
-- Proteína: {psmf_recs['proteina_g_dia']:.1f}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} automático según {grasa_corregida:.1f}% grasa)
+- Proteína: {psmf_recs['proteina_g_dia']:.1f}g ({proteina_kcal_psmf:.0f} kcal) = {proteina_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}%
+- Grasas: {psmf_recs['grasa_g_dia']:.1f}g ({grasa_kcal_psmf:.0f} kcal) = {grasa_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}%
+- Carbohidratos: {carbo_g_psmf:.1f}g ({carbo_kcal_psmf:.0f} kcal) = {carbo_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}% (solo vegetales fibrosos)
 - Multiplicador calórico: {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
-- Grasas: {psmf_recs.get('grasa_g_dia', 40):.0f}g/día (automático según % grasa corporal)
-- Carbohidratos: Solo de vegetales fibrosos ({(psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia']*4 - psmf_recs.get('grasa_g_dia', 40)*9)/4 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}g estimados)
 - Déficit estimado: ~{int((1 - psmf_recs['calorias_dia']/(GE if 'GE' in locals() else 2000)) * 100) if psmf_recs.get('calorias_dia', 0) > 0 else 0}%
 - Pérdida esperada: {psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[0]}-{psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[1]} kg/semana
 - Sostenibilidad: BAJA - Máximo 6-8 semanas
