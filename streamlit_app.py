@@ -178,7 +178,7 @@ st.markdown("""
 .stExpander .streamlit-expanderHeader *,
 [data-testid="stExpander"] summary,
 [data-testid="stExpander"] summary * {
-    color: var(--mupai-yellow) !important;
+    color: #FFFFFF !important;
     opacity: 1 !important;
     font-weight: bold !important;
     visibility: visible !important;
@@ -209,7 +209,7 @@ st.markdown("""
     background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%);
     border-radius: 12px;
     font-weight: bold;
-    color: var(--mupai-yellow) !important;
+    color: #FFFFFF !important;
     border: 2px solid var(--mupai-yellow);
     font-size: 1.16rem;
     opacity: 1 !important;
@@ -223,7 +223,7 @@ st.markdown("""
 [data-testid="stExpander"] summary > div,
 [data-testid="stExpander"] summary span,
 [data-testid="stExpander"] summary p {
-    color: var(--mupai-yellow) !important;
+    color: #FFFFFF !important;
     opacity: 1 !important;
     font-weight: bold !important;
     text-shadow: none !important;
@@ -239,7 +239,7 @@ st.markdown("""
 [data-testid="stExpander"] summary:hover > div,
 [data-testid="stExpander"] summary:hover span,
 [data-testid="stExpander"] summary:hover p {
-    color: var(--mupai-yellow) !important;
+    color: #FFFFFF !important;
     opacity: 1 !important;
     font-weight: bold !important;
 }
@@ -1541,8 +1541,8 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
         help="Tu respuesta debe reflejar tu consistencia y planificación real."
     )
 
-    # Solo mostrar ejercicios funcionales si la experiencia ha sido contestada apropiadamente
-    if experiencia and not experiencia.startswith("A) He entrenado de forma irregular"):
+    # Allow all users to access functional exercises regardless of experience level
+    if experiencia:
         st.markdown("### 🏆 Evaluación de rendimiento por categoría")
         st.info("💡 Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
 
@@ -1552,11 +1552,10 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
         tab1, tab2, tab3, tab4, tab5 = st.tabs(["💪 Empuje", "🏋️ Tracción", "🦵 Pierna Empuje", "🦵 Pierna Tracción", "🧘 Core"])
     else:
         st.warning("⚠️ **Primero debes seleccionar tu nivel de experiencia en entrenamiento para acceder a la evaluación de ejercicios funcionales.**")
-        st.info("Por favor, selecciona una opción diferente a 'A) He entrenado de forma irregular' para continuar con la evaluación funcional.")
         ejercicios_data = {}
         niveles_ejercicios = {}
 
-    if experiencia and not experiencia.startswith("A) He entrenado de forma irregular"):
+    if experiencia:
         with tab1:
             st.markdown("#### Empuje superior")
             col1, col2 = st.columns(2)
@@ -1736,7 +1735,7 @@ else:
 
 # Validar si todos los ejercicios funcionales y experiencia están completos
 ejercicios_funcionales_completos = len(ejercicios_data) >= 5  # Debe tener los 5 ejercicios
-experiencia_completa = experiencia and not experiencia.startswith("A) He entrenado de forma irregular")
+experiencia_completa = experiencia  # Allow all experience levels
 
 # === MOSTRAR RESUMEN GLOBAL TEMPRANO (ADICIONAL) ===
 # Mostrar resumen global después de los badges de ejercicios si hay datos suficientes
