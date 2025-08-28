@@ -68,6 +68,44 @@ def validate_email(email):
     
     return True, ""
 
+def validate_peso(peso_text):
+    """
+    Valida el campo de peso corporal.
+    Retorna (es_válido, mensaje_error, valor_float)
+    """
+    if not peso_text or not peso_text.strip():
+        return False, "El peso corporal es obligatorio", 0.0
+    
+    try:
+        peso = float(peso_text.strip())
+        if peso < 30.0:
+            return False, "El peso debe ser al menos 30 kg", peso
+        elif peso > 200.0:
+            return False, "El peso no puede ser mayor a 200 kg", peso
+        else:
+            return True, "", peso
+    except ValueError:
+        return False, "El peso debe ser un número válido (ejemplo: 75.5)", 0.0
+
+def validate_grasa_corporal(grasa_text):
+    """
+    Valida el campo de porcentaje de grasa corporal.
+    Retorna (es_válido, mensaje_error, valor_float)
+    """
+    if not grasa_text or not grasa_text.strip():
+        return False, "El porcentaje de grasa corporal es obligatorio", 0.0
+    
+    try:
+        grasa = float(grasa_text.strip())
+        if grasa < 3.0:
+            return False, "El porcentaje de grasa debe ser al menos 3%", grasa
+        elif grasa > 60.0:
+            return False, "El porcentaje de grasa no puede ser mayor a 60%", grasa
+        else:
+            return True, "", grasa
+    except ValueError:
+        return False, "El porcentaje de grasa debe ser un número válido (ejemplo: 15.5)", 0.0
+
 # ==================== CONFIGURACIÓN DE PÁGINA Y CSS MEJORADO ====================
 st.set_page_config(
     page_title="MUPAI - Evaluación Fitness Personalizada",
@@ -1233,27 +1271,35 @@ if datos_personales_completos and st.session_state.datos_completos:
     progress_text = st.empty()
 
     # BLOQUE 1: Datos antropométricos con diseño mejorado
-    with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
+    st.markdown("""
+    <div style="background: linear-gradient(90deg, #FF6B6B, #4ECDC4); padding: 10px; border-radius: 10px; margin: 10px 0;">
+        <h3 style="color: white; margin: 0; text-align: center;">
+            📊 <strong>Paso 1: Composición Corporal y Antropometría</strong>
+        </h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    with st.expander("🔽 **Ver/Editar Datos de Composición Corporal**", expanded=True):
         progress.progress(20)
         progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
         with col1:
-            # Ensure peso has a valid default
-            peso_default = 70.0
-            peso_value = st.session_state.get("peso", peso_default)
-            if peso_value == '' or peso_value is None or peso_value == 0:
-                peso_value = peso_default
-            peso = st.number_input(
+            # Text input for peso (weight) - validation happens on submit
+            peso_value = st.session_state.get("peso_text", "70.0")
+            peso_text = st.text_input(
                 "⚖️ Peso corporal (kg)",
-                min_value=30.0,
-                max_value=200.0,
-                value=safe_float(peso_value, peso_default),
-                step=0.1,
-                key="peso",
-                help="Peso en ayunas, sin ropa"
+                value=str(peso_value),
+                key="peso_text",
+                help="Peso en ayunas, sin ropa (rango válido: 30-200 kg)",
+                placeholder="Ej: 75.5"
             )
+            # Convert to float for calculations, using safe conversion
+            try:
+                peso = float(peso_text) if peso_text.strip() else 70.0
+            except ValueError:
+                peso = 70.0
         with col2:
             # Ensure estatura has a valid default
             estatura_default = 170
@@ -1278,20 +1324,20 @@ if datos_personales_completos and st.session_state.datos_completos:
             )
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Ensure grasa_corporal has a valid default
-        grasa_default = 20.0
-        grasa_value = st.session_state.get("grasa_corporal", grasa_default)
-        if grasa_value == '' or grasa_value is None or grasa_value == 0:
-            grasa_value = grasa_default
-        grasa_corporal = st.number_input(
+        # Text input for grasa_corporal (body fat) - validation happens on submit
+        grasa_value = st.session_state.get("grasa_corporal_text", "20.0")
+        grasa_text = st.text_input(
             f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-            min_value=3.0,
-            max_value=60.0,
-            value=safe_float(grasa_value, grasa_default),
-            step=0.1,
-            key="grasa_corporal",
-            help="Valor medido con el método seleccionado"
+            value=str(grasa_value),
+            key="grasa_corporal_text",
+            help="Valor medido con el método seleccionado (rango válido: 3-60%)",
+            placeholder="Ej: 15.5"
         )
+        # Convert to float for calculations, using safe conversion
+        try:
+            grasa_corporal = float(grasa_text) if grasa_text.strip() else 20.0
+        except ValueError:
+            grasa_corporal = 20.0
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -2376,9 +2422,29 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ====== BOTONES Y ENVÍO FINAL (SOLO POR BOTÓN, NUNCA AUTOMÁTICO) ======
 
 def datos_completos_para_email():
+    # Validate peso and grasa corporal when submitting
+    peso_text = st.session_state.get("peso_text", "")
+    grasa_text = st.session_state.get("grasa_corporal_text", "")
+    
+    peso_valid, peso_error, peso_value = validate_peso(peso_text)
+    grasa_valid, grasa_error, grasa_value = validate_grasa_corporal(grasa_text)
+    
+    # Show validation errors if any
+    validation_errors = []
+    if not peso_valid:
+        validation_errors.append(f"**Peso:** {peso_error}")
+    if not grasa_valid:
+        validation_errors.append(f"**% Grasa corporal:** {grasa_error}")
+    
+    if validation_errors:
+        error_message = "⚠️ **Por favor corrige los siguientes errores:**\n\n" + "\n\n".join(validation_errors)
+        st.error(error_message)
+        return ["Validación de datos antropométricos"]
+    
+    # Original validation for other required fields
     obligatorios = {
         "Nombre": nombre,
-        "Peso": peso,
+        "Peso": peso_value if peso_valid else None,
         "Estatura": estatura,
         "Edad": edad,
         "Email": email_cliente,
