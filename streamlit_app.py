@@ -173,6 +173,18 @@ st.markdown("""
     font-weight: 700 !important;
     font-size: 1.04rem !important;
 }
+/* Reglas específicas adicionales para máxima visibilidad de títulos de expanders */
+.stExpander .streamlit-expanderHeader,
+.stExpander .streamlit-expanderHeader *,
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary * {
+    color: var(--mupai-yellow) !important;
+    opacity: 1 !important;
+    font-weight: bold !important;
+    visibility: visible !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
 .stTextInput input::placeholder,
 .stNumberInput input::placeholder {
     color: #e0e0e0 !important;
@@ -197,9 +209,39 @@ st.markdown("""
     background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%);
     border-radius: 12px;
     font-weight: bold;
-    color: #FFF !important;
+    color: var(--mupai-yellow) !important;
     border: 2px solid var(--mupai-yellow);
     font-size: 1.16rem;
+    opacity: 1 !important;
+}
+/* Reglas específicas para títulos de expanders principales con máxima visibilidad */
+.streamlit-expanderHeader > div,
+.streamlit-expanderHeader > div > div,
+.streamlit-expanderHeader span,
+.streamlit-expanderHeader p,
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary > div,
+[data-testid="stExpander"] summary span,
+[data-testid="stExpander"] summary p {
+    color: var(--mupai-yellow) !important;
+    opacity: 1 !important;
+    font-weight: bold !important;
+    text-shadow: none !important;
+    filter: none !important;
+}
+/* Asegurar visibilidad en estado hover */
+.streamlit-expanderHeader:hover,
+.streamlit-expanderHeader:hover > div,
+.streamlit-expanderHeader:hover > div > div,
+.streamlit-expanderHeader:hover span,
+.streamlit-expanderHeader:hover p,
+[data-testid="stExpander"] summary:hover,
+[data-testid="stExpander"] summary:hover > div,
+[data-testid="stExpander"] summary:hover span,
+[data-testid="stExpander"] summary:hover p {
+    color: var(--mupai-yellow) !important;
+    opacity: 1 !important;
+    font-weight: bold !important;
 }
 .stRadio > div {
     background: #181A1B !important;
