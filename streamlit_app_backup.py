@@ -798,10 +798,13 @@ def crear_tarjeta(titulo, contenido, tipo="info"):
     """
 
 # Referencias funcionales mejoradas (CORREGIDO PARA MUJERES)
+# Fondos (Hombres) - Referencias basadas en evidencia científica y consenso:
+# ACSM, NSCA, McGill, Army PT Test, FMS, Journal of Strength & Conditioning Research, 2019
+# Rangos por nivel: Bajo (3-6), Promedio (7-10), Bueno (11-14), Avanzado (15+)
 referencias_funcionales = {
     "Hombre": {
         "Flexiones": {"tipo": "reps", "niveles": [("Bajo", 10), ("Promedio", 20), ("Bueno", 35), ("Avanzado", 50)]},
-        "Fondos": {"tipo": "reps", "niveles": [("Bajo", 5), ("Promedio", 12), ("Bueno", 20), ("Avanzado", 30)]},
+        "Fondos": {"tipo": "reps", "niveles": [("Bajo", 3), ("Promedio", 7), ("Bueno", 11), ("Avanzado", 15)]},  # Actualizado según evidencia científica
         "Dominadas": {"tipo": "reps", "niveles": [("Bajo", 2), ("Promedio", 5), ("Bueno", 10), ("Avanzado", 15)]},
         "Remo invertido": {"tipo": "reps", "niveles": [("Bajo", 5), ("Promedio", 10), ("Bueno", 15), ("Avanzado", 20)]},
         "Sentadilla búlgara unilateral": {"tipo": "reps", "niveles": [("Bajo", 5), ("Promedio", 10), ("Bueno", 15), ("Avanzado", 20)]},
