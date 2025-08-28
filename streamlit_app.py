@@ -801,10 +801,10 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
     según el nuevo protocolo basado en proteína total y multiplicadores.
     
     Requisitos actualizados:
-    - Proteína mínima: 1.8g/kg peso corporal total
+    - Proteína automática según % grasa: 1.8g/kg (<25% grasa) o 1.6g/kg (≥25% grasa)
+    - Grasas automáticas según % grasa: 30g/día (<25% grasa) o 50g/día (≥25% grasa)
     - Calorías = proteína (g) × multiplicador según % grasa
     - Multiplicadores: 8.3 (alto % grasa), 9.0 (moderado), 9.5-9.7 (magro)
-    - Grasas: Fijas entre 30-50g (seleccionables por usuario, default 40g)
     - Carbohidratos: Resto de calorías de vegetales fibrosos únicamente
     """
     try:
@@ -827,8 +827,15 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         return {"psmf_aplicable": False}
     
     if psmf_aplicable:
-        # PROTEÍNA: Mínimo 1.8g/kg peso corporal total
-        proteina_g_dia = round(peso * 1.8, 1)
+        # PROTEÍNA Y GRASAS: Asignación automática según % grasa corporal corregida
+        if grasa_corregida < 25:
+            # < 25% grasa: 1.8g/kg proteína + 30g grasas
+            proteina_g_dia = round(peso * 1.8, 1)
+            grasa_g_dia = 30.0
+        else:
+            # ≥ 25% grasa: 1.6g/kg proteína + 50g grasas
+            proteina_g_dia = round(peso * 1.6, 1)
+            grasa_g_dia = 50.0
         
         # MULTIPLICADOR CALÓRICO según % grasa corporal
         if grasa_corregida > 35:  # Alto % grasa - PSMF tradicional
@@ -863,6 +870,7 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         return {
             "psmf_aplicable": True,
             "proteina_g_dia": proteina_g_dia,
+            "grasa_g_dia": grasa_g_dia,
             "calorias_dia": calorias_dia,
             "calorias_piso_dia": calorias_piso_dia,
             "multiplicador": multiplicador,
@@ -2319,18 +2327,18 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             help="PSMF es muy efectivo pero requiere mucha disciplina"
         )
         
-        # Opción para seleccionar grasa en PSMF (30-50g)
-        grasa_psmf_seleccionada = 40.0  # Valor por defecto
+        # Grasas automáticas según % grasa corporal (sin selección manual)
         if "PSMF" in plan_elegido:
-            st.markdown("#### 🥑 Configuración de grasas para PSMF")
-            grasa_psmf_seleccionada = st.slider(
-                "Selecciona la cantidad de grasa diaria (en gramos):",
-                min_value=30.0,
-                max_value=50.0,
-                value=40.0,
-                step=1.0,
-                help="Rango permitido para PSMF: 30-50g de grasas de fuentes magras (pescado, aceite de oliva mínimo)"
-            )
+            st.markdown("#### 🥑 Grasas asignadas automáticamente para PSMF")
+            if grasa_corregida < 25:
+                grasa_psmf_seleccionada = 30.0
+                st.info(f"**Grasas asignadas:** {grasa_psmf_seleccionada}g/día (automático para {grasa_corregida:.1f}% grasa corporal < 25%)")
+            else:
+                grasa_psmf_seleccionada = 50.0
+                st.info(f"**Grasas asignadas:** {grasa_psmf_seleccionada}g/día (automático para {grasa_corregida:.1f}% grasa corporal ≥ 25%)")
+            st.caption("💡 Las grasas se asignan automáticamente según tu porcentaje de grasa corporal corregida para optimizar la adherencia y efectividad del protocolo.")
+        else:
+            grasa_psmf_seleccionada = 40.0  # Valor por defecto para plan tradicional
 
         # Mostrar comparativa visual
         st.markdown("### 📊 Comparativa de planes")
@@ -2367,8 +2375,8 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             - ⚠️ Muy restrictivo
             - ⚠️ Máximo 6-8 semanas
             - ⚠️ Requiere supervisión médica
-            - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día (1.8g/kg mínimo)
-            - ⚠️ Grasas: 30-50g (seleccionable, fuentes magras)
+            - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} automático)
+            - ⚠️ Grasas: {psmf_recs.get('grasa_g_dia', 40)}g/día (automático según % grasa)
             - ⚠️ Carbos: resto de calorías (solo vegetales fibrosos)
             - ⚠️ Suplementación necesaria
             """)
@@ -2388,8 +2396,8 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         proteina_g = psmf_recs['proteina_g_dia']
         proteina_kcal = proteina_g * 4
         
-        # GRASAS: Usar el valor seleccionado por el usuario (30-50g)
-        grasa_g = grasa_psmf_seleccionada if 'grasa_psmf_seleccionada' in locals() else 40.0
+        # GRASAS: Usar el valor automático calculado por la función PSMF
+        grasa_g = psmf_recs.get('grasa_g_dia', 40.0)
         grasa_kcal = grasa_g * 9
         
         # CARBOHIDRATOS: El resto de calorías de vegetales fibrosos únicamente
@@ -2406,12 +2414,12 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
         - Es un protocolo **MUY RESTRICTIVO** con nuevo cálculo basado en proteína total
         - **Duración máxima:** 6-8 semanas
-        - **Proteína:** {proteina_g}g/día (1.8g/kg peso total mínimo)
+        - **Proteína:** {proteina_g}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} según {grasa_corregida:.1f}% grasa corporal)
+        - **Grasas:** {grasa_g}g/día (asignación automática según {grasa_corregida:.1f}% grasa corporal)
         - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
         - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
         - **Requiere:** Supervisión médica y análisis de sangre regulares
         - **Carbohidratos:** Solo de vegetales fibrosos ({carbo_g}g calculados según calorías restantes)
-        - **Grasas:** {grasa_g}g (rango 30-50g, fuentes magras como pescado, aceite de oliva mínimo)
         - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
         - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
         """)
@@ -2863,10 +2871,10 @@ if plan_psmf_disponible:
     tabla_resumen += f"""
 - Calorías: {psmf_recs['calorias_dia']:.0f} kcal/día
 - Criterio de aplicabilidad: {psmf_recs.get('criterio', 'No especificado')}
-- Proteína: {psmf_recs['proteina_g_dia']:.1f}g/día (1.8g/kg peso mínimo)
+- Proteína: {psmf_recs['proteina_g_dia']:.1f}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} automático según {grasa_corregida:.1f}% grasa)
 - Multiplicador calórico: {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
-- Grasas: 30-50g/día (fuentes magras: pescado, aceite oliva mínimo)
-- Carbohidratos: Solo de vegetales fibrosos ({(psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia']*4 - 40*9)/4 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}g estimados)
+- Grasas: {psmf_recs.get('grasa_g_dia', 40):.0f}g/día (automático según % grasa corporal)
+- Carbohidratos: Solo de vegetales fibrosos ({(psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia']*4 - psmf_recs.get('grasa_g_dia', 40)*9)/4 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}g estimados)
 - Déficit estimado: ~{int((1 - psmf_recs['calorias_dia']/(GE if 'GE' in locals() else 2000)) * 100) if psmf_recs.get('calorias_dia', 0) > 0 else 0}%
 - Pérdida esperada: {psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[0]}-{psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[1]} kg/semana
 - Sostenibilidad: BAJA - Máximo 6-8 semanas
