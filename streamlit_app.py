@@ -243,6 +243,35 @@ st.markdown("""
     opacity: 1 !important;
     font-weight: bold !important;
 }
+
+/* Estilos específicos para asegurar fondo consistente en todos los expanders */
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] > div > div > div > summary,
+.streamlit-expanderHeader,
+div[data-testid="stExpander"] details summary {
+    background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%) !important;
+    border-radius: 12px !important;
+    font-weight: bold !important;
+    color: #FFFFFF !important;
+    border: 2px solid var(--mupai-yellow) !important;
+    font-size: 1.16rem !important;
+    opacity: 1 !important;
+}
+
+/* Forzar fondo oscuro en estado expandido y colapsado */
+[data-testid="stExpander"][open] summary,
+[data-testid="stExpander"]:not([open]) summary,
+[data-testid="stExpander"] summary:focus,
+[data-testid="stExpander"] summary:active {
+    background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%) !important;
+}
+
+/* Asegurar que el contenedor del expander no sobrescriba el fondo */
+[data-testid="stExpander"] > div,
+[data-testid="stExpander"] > div > div,
+[data-testid="stExpander"] details {
+    background: transparent !important;
+}
 .stRadio > div {
     background: #181A1B !important;
     padding: 1.1rem 0.5rem;
