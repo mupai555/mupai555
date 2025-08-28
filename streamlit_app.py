@@ -1449,28 +1449,182 @@ datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_t
 # ==================== MAIN APPLICATION LOGIC ====================
 # Show all evaluation sections together in classic questionnaire format
 if datos_personales_completos and st.session_state.datos_completos:
-    # Check if wizard is completed
-    if not st.session_state.get("wizard_completed", False):
-        # WIZARD SYSTEM (Steps 2-8)
-        # show_wizard_progress()
+    
+    st.markdown("## 📋 Evaluación MUPAI - Cuestionario Completo")
+    st.info("Complete todas las secciones para obtener su análisis personalizado. Puede rellenar las secciones en cualquier orden.")
+    
+    # ==================== SECTION 1: BODY COMPOSITION ====================
+    st.markdown("---")
+    st.markdown("### 📊 Sección 1: Composición Corporal y Antropometría")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        peso = st.number_input("Peso (kg)", min_value=30.0, max_value=200.0, value=float(st.session_state.get("peso", 70.0)), key="peso", step=0.1)
+    with col2:
+        estatura = st.number_input("Estatura (cm)", min_value=140, max_value=220, value=int(st.session_state.get("estatura", 170)), key="estatura", step=1)
+    with col3:
+        grasa_corporal = st.number_input("% Grasa corporal", min_value=3.0, max_value=60.0, value=float(st.session_state.get("grasa_corporal", 15.0)), key="grasa_corporal", step=0.1)
+    
+    metodo_grasa = st.selectbox("Método de medición", ["DEXA (Gold Standard)", "Omron HBF-516 (BIA)", "InBody (BIA)", "BodPod (Densitometría)", "Caliper/Plicómetro"], key="metodo_grasa")
+    
+    # ==================== SECTION 2: FUNCTIONAL EVALUATION ====================
+    st.markdown("---")
+    st.markdown("### 💪 Sección 2: Evaluación Funcional y Experiencia")
+    
+    experiencia = st.radio("Experiencia en entrenamiento:", [
+        "A) He entrenado de forma irregular, con semanas sin entrenar y sin un plan estructurado.",
+        "B) He seguido rutinas de entrenamiento durante 3-6 meses de forma relativamente constante.",
+        "C) Tengo 1-2 años de experiencia en entrenamiento sistemático con rutinas estructuradas.", 
+        "D) Tengo más de 2 años de entrenamiento constante y conozco bien mi respuesta a diferentes estímulos."
+    ], key="experiencia_entrenamiento")
+    
+    st.markdown("#### Evaluación Funcional")
+    col1, col2 = st.columns(2)
+    with col1:
+        flexiones = st.number_input("Flexiones continuas", min_value=0, max_value=100, value=int(st.session_state.get("flexiones_reps", 15)), key="flexiones_reps")
+        dominadas = st.number_input("Dominadas continuas", min_value=0, max_value=30, value=int(st.session_state.get("dominadas_reps", 3)), key="dominadas_reps")
+    with col2:
+        plancha_segundos = st.number_input("Plancha (segundos)", min_value=0, max_value=300, value=int(st.session_state.get("plancha_segundos", 30)), key="plancha_segundos")
+        sentadillas = st.number_input("Sentadillas", min_value=0, max_value=100, value=int(st.session_state.get("sentadillas_reps", 20)), key="sentadillas_reps")
+    
+    # ==================== SECTION 3: PHYSICAL ACTIVITY ====================
+    st.markdown("---")
+    st.markdown("### 🚶 Sección 3: Nivel de Actividad Física")
+    
+    nivel_actividad = st.radio("Nivel de actividad diaria:", [
+        "Sedentario (trabajo de oficina, poco movimiento, menos de 5000 pasos/día)",
+        "Moderadamente-activo (trabajo mixto, 6000-8000 pasos/día, actividades ligeras)",
+        "Activo (trabajo físico ligero o muchas actividades diarias, 8000-12000 pasos/día)",
+        "Muy-activo (trabajo físico intenso o muy activo durante el día, más de 12000 pasos/día)"
+    ], key="actividad_diaria")
+    
+    # ==================== SECTION 4: STRENGTH TRAINING ====================
+    st.markdown("---")
+    st.markdown("### 🏋️ Sección 4: Entrenamiento de Fuerza")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        frecuencia_entrenamiento = st.slider("Días por semana de entrenamiento", min_value=0, max_value=7, value=int(st.session_state.get("frecuencia_entrenamiento", 3)), key="frecuencia_entrenamiento")
+        duracion_sesion = st.slider("Duración por sesión (minutos)", min_value=0, max_value=180, value=int(st.session_state.get("duracion_sesion", 60)), step=15, key="duracion_sesion")
+    with col2:
+        intensidad_entrenamiento = st.selectbox("Intensidad del entrenamiento", [
+            "Baja (descansos largos, no muy exigente)", 
+            "Moderada (algo de esfuerzo, descansos moderados)",
+            "Alta (entrenamientos exigentes, descansos cortos)",
+            "Muy alta (entrenamientos muy intensos, al fallo)"
+        ], key="intensidad_entrenamiento")
+    
+    # ==================== SECTION 5: ETA (using eta_block.py) ====================
+    st.markdown("---")
+    st.markdown("### 🍽️ Sección 5: Efecto Térmico de los Alimentos (ETA)")
+    
+    from eta_block import mostrar_bloque_eta
+    mostrar_bloque_eta()
+    
+    # ==================== RESULTS SECTION ====================
+    st.markdown("---")
+    st.markdown("## 📊 Resultados de tu Evaluación")
+    
+    # Check if we have enough data for calculations
+    datos_suficientes = peso > 0 and estatura > 0 and grasa_corporal > 0 and experiencia and nivel_actividad and frecuencia_entrenamiento > 0
+    
+    if datos_suficientes:
+        # Calculate metrics
+        sexo = st.session_state.get("sexo", "Hombre")
+        edad = st.session_state.get("edad", 25)
+        metodo_grasa = st.session_state.get("metodo_grasa", "DEXA (Gold Standard)")
         
-        current_step = st.session_state.get("wizard_step", 2)
+        # Body composition calculations
+        grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+        mlg = calcular_mlg(peso, grasa_corregida)
+        imc = peso / ((estatura / 100) ** 2)
+        ffmi = mlg / ((estatura / 100) ** 2)
         
-        # Wizard Step Content
-        st.markdown('<div class="wizard-step-container">', unsafe_allow_html=True)
+        # Energy calculations
+        tmb = calcular_tmb_cunningham(mlg)
+        nivel_corto = nivel_actividad.split('(')[0].strip()
+        geaf = obtener_geaf(nivel_corto)
         
-        if current_step == 2:
-            # Step 2: Terms and Disclaimer (This is already handled above, so we can skip to next)
-            st.markdown("### ✅ Términos y Descargo Aceptados")
-            st.success("Has aceptado los términos y el descargo de responsabilidad.")
+        # ETA calculation
+        eta = calcular_eta_automatico(tmb, geaf, grasa_corregida, sexo)
+        
+        # Exercise energy expenditure
+        peso_actual = peso
+        factores_intensidad = {
+            "Baja (descansos largos, no muy exigente)": 0.5,
+            "Moderada (algo de esfuerzo, descansos moderados)": 0.7,
+            "Alta (entrenamientos exigentes, descansos cortos)": 0.9,
+            "Muy alta (entrenamientos muy intensos, al fallo)": 1.1
+        }
+        factor_intensidad = factores_intensidad.get(intensidad_entrenamiento, 0.7)
+        calorias_por_sesion = peso_actual * factor_intensidad * (duracion_sesion / 60) * 6
+        gee_semanal = calorias_por_sesion * frecuencia_entrenamiento
+        gee_por_dia = gee_semanal / 7
+        
+        # Total energy expenditure
+        GE = tmb * geaf + eta + gee_por_dia
+        
+        st.success("✅ **Cálculos completados exitosamente**")
+        
+        # Display results
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("IMC", f"{imc:.1f}", help="Índice de Masa Corporal")
+        with col2:
+            st.metric("FFMI", f"{ffmi:.1f}", help="Fat-Free Mass Index")
+        with col3:
+            st.metric("TMB", f"{tmb:.0f} kcal", help="Tasa Metabólica Basal")
+        with col4:
+            st.metric("Gasto Total", f"{GE:.0f} kcal", help="Gasto Energético Total Diario")
+        
+        # Nutritional recommendations
+        st.markdown("### 🍽️ Recomendaciones Nutricionales")
+        
+        objetivo = st.selectbox("Objetivo principal:", [
+            "Mantenimiento de peso",
+            "Pérdida de grasa", 
+            "Ganancia muscular"
+        ])
+        
+        if objetivo == "Mantenimiento de peso":
+            calorias_objetivo = GE
+        elif objetivo == "Pérdida de grasa":
+            deficit = st.slider("Déficit calórico (%)", min_value=10, max_value=25, value=15)
+            calorias_objetivo = GE * (1 - deficit/100)
+        else:  # Ganancia muscular
+            superavit = st.slider("Superávit calórico (%)", min_value=5, max_value=20, value=10)
+            calorias_objetivo = GE * (1 + superavit/100)
+        
+        # Macro calculations
+        proteina_g = round(peso * 1.8, 1)
+        proteina_kcal = proteina_g * 4
+        grasa_g = round(peso * 0.8, 1)
+        grasa_kcal = grasa_g * 9
+        carbo_kcal = calorias_objetivo - proteina_kcal - grasa_kcal
+        carbo_g = round(carbo_kcal / 4, 1)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            **📊 Plan Nutricional Diario:**
             
-        elif current_step == 3:
-            # Step 3: Personal Data (Already handled above)
-            st.markdown("### ✅ Datos Personales Completados")
-            st.success("Tus datos personales han sido registrados correctamente.")
+            - **Calorías:** {calorias_objetivo:.0f} kcal
+            - **Proteína:** {proteina_g}g ({proteina_kcal/calorias_objetivo*100:.0f}%)
+            - **Grasas:** {grasa_g}g ({grasa_kcal/calorias_objetivo*100:.0f}%)
+            - **Carbohidratos:** {carbo_g}g ({carbo_kcal/calorias_objetivo*100:.0f}%)
+            """)
+        
+        with col2:
+            st.markdown(f"""
+            **💡 Recomendaciones:**
             
-        elif current_step == 4:
-            # Step 4: Body Composition and Anthropometry - Enhanced with better visual prominence
+            - Consume {proteina_g/4:.0f}g de proteína en cada comida
+            - Incluye carbohidratos alrededor del entrenamiento
+            - Prioriza grasas saludables
+            - Hidratación: {peso*35:.0f}ml de agua al día
+            """)
+    else:
+        st.warning("⚠️ Complete todas las secciones para ver sus resultados personalizados")
             st.markdown("""
             <div style="
                 background: linear-gradient(135deg, #1E1E1E 0%, #252525 100%);
@@ -2078,7 +2232,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Show wizard navigation
-        # show_wizard_navigation()
+        show_wizard_navigation()
     else:
         # WIZARD COMPLETED - Show results and plans (Steps 9 & 10)
         st.markdown("## 🎉 ¡Evaluación Completada!")
