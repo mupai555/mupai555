@@ -2139,8 +2139,81 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-    # Determinar fase nutricional usando lógica refinada
-    fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
+    # Determinar si el usuario está en el rango óptimo para selección interactiva
+    en_rango_optimo = False
+    if sexo == "Hombre" and 10 <= grasa_corregida <= 18:
+        en_rango_optimo = True
+    elif sexo == "Mujer" and 16 <= grasa_corregida <= 23:
+        en_rango_optimo = True
+    
+    # Lógica interactiva para usuarios en rango óptimo
+    if en_rango_optimo:
+        st.markdown("### 🎯 Selección de objetivo nutricional")
+        st.info(f"""
+        🎉 **¡Excelente!** Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) está en el rango óptimo 
+        para {'hombres (10-18%)' if sexo == 'Hombre' else 'mujeres (16-23%)'}. 
+        Puedes elegir tu objetivo nutricional según tus metas personales.
+        """)
+        
+        objetivo_seleccionado = st.selectbox(
+            "**Elige tu objetivo nutricional:**",
+            ["Déficit (Pérdida de grasa)", "Mantenimiento (Recomposición)", "Superávit (Ganancia muscular)"],
+            key="objetivo_nutricional",
+            help="Selecciona el objetivo que mejor se alinee con tus metas actuales"
+        )
+        
+        # Determinar porcentaje y explicación según subrango y objetivo
+        if sexo == "Hombre":
+            if 10 <= grasa_corregida <= 15:
+                # Subrango 10-15% hombres
+                if "Déficit" in objetivo_seleccionado:
+                    porcentaje = -10
+                    fase = "Déficit moderado: 10%"
+                elif "Mantenimiento" in objetivo_seleccionado:
+                    porcentaje = 2.5
+                    fase = "Mantenimiento con ligero superávit: 2.5%"
+                else:  # Superávit
+                    porcentaje = 7.5
+                    fase = "Superávit moderado: 7.5%"
+            else:  # 15-18% hombres
+                if "Déficit" in objetivo_seleccionado:
+                    porcentaje = -15
+                    fase = "Déficit moderado: 15%"
+                elif "Mantenimiento" in objetivo_seleccionado:
+                    porcentaje = 0
+                    fase = "Mantenimiento"
+                else:  # Superávit
+                    porcentaje = 5
+                    fase = "Superávit ligero: 5%"
+        else:  # Mujer
+            if 16 <= grasa_corregida <= 20:
+                # Subrango 16-20% mujeres
+                if "Déficit" in objetivo_seleccionado:
+                    porcentaje = -10
+                    fase = "Déficit moderado: 10%"
+                elif "Mantenimiento" in objetivo_seleccionado:
+                    porcentaje = 2.5
+                    fase = "Mantenimiento con ligero superávit: 2.5%"
+                else:  # Superávit
+                    porcentaje = 7.5
+                    fase = "Superávit moderado: 7.5%"
+            else:  # 20-23% mujeres
+                if "Déficit" in objetivo_seleccionado:
+                    porcentaje = -15
+                    fase = "Déficit moderado: 15%"
+                elif "Mantenimiento" in objetivo_seleccionado:
+                    porcentaje = 0
+                    fase = "Mantenimiento"
+                else:  # Superávit
+                    porcentaje = 5
+                    fase = "Superávit ligero: 5%"
+        
+        # Mostrar explicación del objetivo seleccionado
+        st.success(f"**Objetivo seleccionado:** {fase}")
+        
+    else:
+        # Usar lógica automática para usuarios fuera del rango óptimo
+        fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
 
     fbeo = 1 + porcentaje / 100  # Cambio de signo para reflejar nueva convención
 
