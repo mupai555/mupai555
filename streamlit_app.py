@@ -899,6 +899,65 @@ def sugerir_deficit(porcentaje_grasa, sexo):
             return min(deficit, tope) if porcentaje_grasa <= limite_extra else deficit
     return 20  # Déficit por defecto
 
+def determinar_fase_nutricional_refinada(grasa_corregida, sexo):
+    """
+    Determina la fase nutricional refinada basada en % de grasa corporal y sexo.
+    Usa la tabla completa de rangos para decisiones más precisas.
+    """
+    try:
+        grasa_corregida = float(grasa_corregida)
+    except (TypeError, ValueError):
+        grasa_corregida = 0.0
+    
+    if sexo == "Hombre":
+        # Rangos refinados para hombres
+        if grasa_corregida < 6:
+            # Muy bajo - competición
+            fase = "Superávit recomendado: 10-15%"
+            porcentaje = 12.5
+        elif grasa_corregida <= 10:
+            # Bajo - atlético
+            fase = "Superávit recomendado: 5-10%"
+            porcentaje = 7.5
+        elif grasa_corregida <= 15:
+            # Fitness/atlético - puede mantener o ligero superávit
+            fase = "Mantenimiento o ligero superávit: 0-5%"
+            porcentaje = 2.5
+        elif grasa_corregida <= 18:
+            # Buena condición - mantenimiento
+            fase = "Mantenimiento"
+            porcentaje = 0
+        else:
+            # Sobrepeso - déficit según tabla
+            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
+            porcentaje = -deficit_valor
+            fase = f"Déficit recomendado: {deficit_valor}%"
+    else:  # Mujer
+        # Rangos refinados para mujeres
+        if grasa_corregida < 12:
+            # Muy bajo - competición
+            fase = "Superávit recomendado: 10-15%"
+            porcentaje = 12.5
+        elif grasa_corregida <= 16:
+            # Bajo - atlético
+            fase = "Superávit recomendado: 5-10%"
+            porcentaje = 7.5
+        elif grasa_corregida <= 20:
+            # Fitness/atlético - puede mantener o ligero superávit
+            fase = "Mantenimiento o ligero superávit: 0-5%"
+            porcentaje = 2.5
+        elif grasa_corregida <= 23:
+            # Buena condición - mantenimiento
+            fase = "Mantenimiento"
+            porcentaje = 0
+        else:
+            # Sobrepeso - déficit según tabla
+            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
+            porcentaje = -deficit_valor
+            fase = f"Déficit recomendado: {deficit_valor}%"
+    
+    return fase, porcentaje
+
 def calcular_edad_metabolica(edad_cronologica, porcentaje_grasa, sexo):
     """Calcula la edad metabólica ajustada por % de grasa."""
     try:
@@ -2080,29 +2139,8 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-    # Determinar fase nutricional
-    if sexo == "Hombre":
-        if grasa_corregida < 10:
-            fase = "Superávit recomendado: 10-15%"
-            porcentaje = 12.5  # Positivo para superávit (ganancia)
-        elif grasa_corregida <= 18:
-            fase = "Mantenimiento o minivolumen"
-            porcentaje = 0
-        else:
-            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
-            porcentaje = -deficit_valor  # Negativo para déficit (pérdida)
-            fase = f"Déficit recomendado: {deficit_valor}%"
-    else:  # Mujer
-        if grasa_corregida < 16:
-            fase = "Superávit recomendado: 10%"
-            porcentaje = 10  # Positivo para superávit (ganancia)
-        elif grasa_corregida <= 23:
-            fase = "Mantenimiento"
-            porcentaje = 0
-        else:
-            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
-            porcentaje = -deficit_valor  # Negativo para déficit (pérdida)
-            fase = f"Déficit recomendado: {deficit_valor}%"
+    # Determinar fase nutricional usando lógica refinada
+    fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
 
     fbeo = 1 + porcentaje / 100  # Cambio de signo para reflejar nueva convención
 
