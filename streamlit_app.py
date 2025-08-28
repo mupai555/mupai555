@@ -2080,8 +2080,7 @@ if datos_personales_completos and st.session_state.datos_completos:
     
     if datos_suficientes:
         # Show results and plans
-        st.markdown("## 🎉 ¡Evaluación Completada!")
-        st.success("Has completado exitosamente todos los pasos de la evaluación MUPAI.")
+        st.markdown("## 📊 Resultados y Plan Nutricional Personalizado")
         
         # Get all necessary data from session state for calculations
         peso = st.session_state.get("peso", 0)
@@ -2089,22 +2088,163 @@ if datos_personales_completos and st.session_state.datos_completos:
         grasa_corporal = st.session_state.get("grasa_corporal", 0)
         sexo = st.session_state.get("sexo", "Hombre")
         edad = st.session_state.get("edad", 25)
+        metodo_grasa = st.session_state.get("metodo_grasa", "DEXA (Gold Standard)")
+        actividad_diaria = st.session_state.get("actividad_diaria", "")
+        frecuencia_entrenamiento = st.session_state.get("frecuencia_entrenamiento", 0)
         
-        # Display basic results
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            imc = peso / ((estatura / 100) ** 2) if estatura > 0 else 0
-            st.metric("IMC", f"{imc:.1f}", help="Índice de Masa Corporal")
-        with col2:
-            st.metric("Peso", f"{peso:.1f} kg", help="Peso corporal")
-        with col3:
-            st.metric("Estatura", f"{estatura} cm", help="Estatura")
+        if peso > 0 and estatura > 0 and grasa_corporal > 0:
+            # Calculate all necessary metrics
+            grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+            mlg = calcular_mlg(peso, grasa_corregida)
+            tmb = calcular_tmb_cunningham(mlg)
+            ffmi = calcular_ffmi(mlg, estatura) if estatura > 0 else 0
+            nivel_ffmi = clasificar_ffmi(ffmi, sexo)
+            edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
             
-        st.success("📊 Evaluación completada. Todos los cálculos han sido realizados.")
-        
-        # Email functionality would go here
-        if st.button("📧 Solicitar Resumen por Email"):
-            st.info("Funcionalidad de email estará disponible próximamente.")
+            # Get activity level
+            nivel_actividad = actividad_diaria.split('(')[0].strip() if actividad_diaria else "Sedentario"
+            geaf = obtener_geaf(nivel_actividad)
+            
+            # Calculate ETA
+            eta = calcular_eta_automatico(tmb, geaf, grasa_corregida, sexo)
+            
+            # Calculate GEE (exercise energy expenditure)
+            gee_por_dia = st.session_state.get("gee_por_dia", 0)
+            
+            # Total energy expenditure
+            GE = tmb * geaf * eta + gee_por_dia
+            
+            # Show comprehensive results
+            st.markdown("### 📈 Resumen de tu Evaluación")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("% Grasa (DEXA)", f"{grasa_corregida:.1f}%", "Corregido")
+            with col2:
+                st.metric("MLG", f"{mlg:.1f} kg", "Masa Libre de Grasa")
+            with col3:
+                st.metric("TMB", f"{tmb:.0f} kcal", "Metabolismo Basal")
+            with col4:
+                st.metric("Gasto Total", f"{GE:.0f} kcal", "Energía Diaria")
+            
+            # Show detailed breakdown
+            with st.expander("🔍 Ver Desglose Detallado de Cálculos", expanded=False):
+                st.code(f"""
+Tasa Metabólica Basal (TMB): {tmb:.0f} kcal/día
+Factor de Actividad (GEAF): {geaf}
+Efecto Térmico Alimentos (ETA): {eta:.3f}
+Gasto del Ejercicio (GEE): {gee_por_dia:.0f} kcal/día
+
+Gasto Energético Total (GE) = TMB × GEAF × ETA + GEE
+GE = {tmb:.0f} × {geaf} × {eta:.3f} + {gee_por_dia:.0f} = {GE:.0f} kcal/día
+                """)
+            
+            # Nutritional recommendations based on goals
+            st.markdown("### 🎯 Recomendaciones Nutricionales")
+            
+            # Goal selection
+            objetivo = st.selectbox(
+                "Selecciona tu objetivo principal:",
+                ["Pérdida de grasa", "Mantenimiento", "Ganancia muscular"],
+                help="Esto determinará tu plan nutricional personalizado"
+            )
+            
+            # Calculate macros based on goal
+            if objetivo == "Pérdida de grasa":
+                deficit = 20  # 20% deficit
+                calorias_objetivo = GE * (1 - deficit/100)
+                fase = "Déficit calórico para pérdida de grasa"
+            elif objetivo == "Ganancia muscular":
+                superavit = 10  # 10% surplus
+                calorias_objetivo = GE * (1 + superavit/100)
+                fase = "Superávit calórico para ganancia muscular"
+            else:
+                calorias_objetivo = GE
+                fase = "Mantenimiento del peso corporal"
+            
+            # Calculate macros
+            proteina_g = round(peso * 1.8, 1)  # 1.8g/kg
+            proteina_kcal = proteina_g * 4
+            
+            # Fats: 30% of calories
+            grasa_kcal = calorias_objetivo * 0.30
+            grasa_g = round(grasa_kcal / 9, 1)
+            
+            # Carbs: remaining calories
+            carbo_kcal = calorias_objetivo - proteina_kcal - grasa_kcal
+            carbo_g = round(carbo_kcal / 4, 1)
+            
+            # Display nutrition plan
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"""
+                **🎯 Tu Plan Nutricional: {fase}**
+                
+                📊 **Distribución Diaria:**
+                - **Calorías totales:** {calorias_objetivo:.0f} kcal
+                - **Proteína:** {proteina_g}g ({proteina_kcal/calorias_objetivo*100:.0f}%)
+                - **Grasas:** {grasa_g}g ({grasa_kcal/calorias_objetivo*100:.0f}%)
+                - **Carbohidratos:** {carbo_g}g ({carbo_kcal/calorias_objetivo*100:.0f}%)
+                """)
+            
+            with col2:
+                st.markdown(f"""
+                **💡 Recomendaciones Adicionales:**
+                
+                - Consume {proteina_g/4:.0f}g de proteína en cada una de 4 comidas
+                - Incluye carbohidratos alrededor del entrenamiento
+                - Prioriza grasas saludables (omega-3, aceite de oliva)
+                - Mantén hidratación: {peso*35:.0f}ml de agua al día
+                """)
+            
+            # Email functionality
+            st.markdown("---")
+            st.markdown("## 📧 Resumen y Envío por Email")
+            
+            # Create summary for email
+            nombre = st.session_state.get("nombre", "")
+            email_cliente = st.session_state.get("email_cliente", "")
+            fecha_llenado = st.session_state.get("fecha_llenado", "")
+            telefono = st.session_state.get("telefono", "")
+            
+            if nombre and email_cliente:
+                tabla_resumen = f"""
+RESUMEN EVALUACIÓN MUPAI - {nombre}
+Fecha: {fecha_llenado}
+Email: {email_cliente}
+Teléfono: {telefono}
+
+=== DATOS ANTROPOMÉTRICOS ===
+Peso: {peso} kg
+Estatura: {estatura} cm
+% Grasa corporal: {grasa_corregida:.1f}% (método: {metodo_grasa})
+Masa libre de grasa: {mlg:.1f} kg
+FFMI: {ffmi:.1f} - Nivel: {nivel_ffmi}
+
+=== EVALUACIÓN ENERGÉTICA ===
+TMB (Cunningham): {tmb:.0f} kcal/día
+Factor actividad (GEAF): {geaf}
+Efecto térmico alimentos: {eta:.3f}
+Gasto ejercicio: {gee_por_dia:.0f} kcal/día
+GASTO TOTAL: {GE:.0f} kcal/día
+
+=== PLAN NUTRICIONAL ===
+Objetivo: {objetivo}
+Calorías objetivo: {calorias_objetivo:.0f} kcal/día
+Proteína: {proteina_g}g
+Grasas: {grasa_g}g
+Carbohidratos: {carbo_g}g
+                """
+                
+                if st.button("📧 Enviar Resumen por Email"):
+                    try:
+                        enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
+                        st.success("✅ Resumen enviado exitosamente a tu email!")
+                    except Exception as e:
+                        st.error(f"❌ Error al enviar email: {str(e)}")
+                        
+        else:
+            st.error("⚠️ Faltan datos de la evaluación. Por favor completa todos los pasos.")
             
     else:
         st.warning("⚠️ Complete todas las secciones para ver sus resultados personalizados.")
