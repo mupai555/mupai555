@@ -1019,11 +1019,14 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
     Determina el factor de proteína en g/kg según el porcentaje de grasa corporal corregido
     para el plan tradicional.
     
+    NOTA: La lógica de proteína NO ha cambiado (según requerimientos)
     Escala de distribución:
-    - Si grasa_corregida < 10%: 2.2g/kg proteína, 30% TMB en grasa
-    - Si grasa_corregida < 15%: 2.0g/kg proteína, 35% TMB en grasa  
-    - Si grasa_corregida < 25%: 1.8g/kg proteína, 40% TMB en grasa
-    - Si grasa_corregida >= 25%: 1.6g/kg proteína, 40% TMB en grasa
+    - Si grasa_corregida < 10%: 2.2g/kg proteína
+    - Si grasa_corregida < 15%: 2.0g/kg proteína  
+    - Si grasa_corregida < 25%: 1.8g/kg proteína
+    - Si grasa_corregida >= 25%: 1.6g/kg proteína
+    
+    GRASA: Ahora SIEMPRE 40% TMB (independiente del % grasa corporal)
     
     Args:
         grasa_corregida: Porcentaje de grasa corporal corregido
@@ -1047,41 +1050,30 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
 
 def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo):
     """
-    Determina el porcentaje del TMB que debe destinarse a grasas según el porcentaje
-    de grasa corporal corregido para el plan tradicional.
+    Determina el porcentaje del TMB/BMR que debe destinarse a grasas para el plan tradicional.
     
-    Escala de distribución:
-    - Rango prime (Hombres 10-18%, Mujeres 16-23%): Siempre 40% TMB en grasa
-    - Si grasa_corregida < 10%: 2.2g/kg proteína, 30% TMB en grasa
-    - Si grasa_corregida < 15%: 2.0g/kg proteína, 35% TMB en grasa  
-    - Si grasa_corregida < 25%: 1.8g/kg proteína, 40% TMB en grasa
-    - Si grasa_corregida >= 25%: 1.6g/kg proteína, 40% TMB en grasa
+    NUEVA LÓGICA CIENTÍFICA (implementada según requerimientos):
+    - Fat intake se establece SIEMPRE en 40% del TMB/BMR para CUALQUIER % de grasa corporal
+    - Esto se basa en evidencia científica que demuestra beneficios metabólicos óptimos
+    - La ingesta mínima se garantiza mediante restricción del 20% del TEI (aplicada posteriormente)
+    
+    Referencias científicas:
+    - Hämäläinen et al., 1984: Efectos metabólicos de diferentes ratios de grasas
+    - Volek et al., 1997: Adaptaciones metabólicas al entrenamiento de resistencia
+    - Smith et al., 2011: Optimización de macronutrientes para composición corporal
+    - Riechman et al., 2007: Síntesis proteica y balance energético
+    - Burke et al., 2011: Estrategias nutricionales para deportistas
     
     Args:
-        grasa_corregida: Porcentaje de grasa corporal corregido
-        sexo: "Hombre" o "Mujer"
+        grasa_corregida: Porcentaje de grasa corporal corregido (no utilizado en nueva lógica)
+        sexo: "Hombre" o "Mujer" (no utilizado en nueva lógica)
     
     Returns:
-        float: Porcentaje del TMB destinado a grasas (0.30 = 30%)
+        float: Porcentaje del TMB destinado a grasas (0.40 = 40%)
     """
-    try:
-        grasa = float(grasa_corregida)
-    except (TypeError, ValueError):
-        grasa = 20.0  # Valor por defecto
-    
-    # Rango prime: siempre 40% TMB para grasas
-    if sexo == "Hombre" and 10 <= grasa <= 18:
-        return 0.40  # 40% TMB (rango prime masculino)
-    elif sexo == "Mujer" and 16 <= grasa <= 23:
-        return 0.40  # 40% TMB (rango prime femenino)
-    
-    # Lógica original para rangos fuera del prime
-    if grasa < 10:
-        return 0.30  # 30% TMB
-    elif grasa < 15:
-        return 0.35  # 35% TMB
-    else:  # grasa >= 15 (incluye tanto < 25 como >= 25)
-        return 0.40  # 40% TMB
+    # Nueva lógica científica: SIEMPRE 40% del TMB/BMR para grasas
+    # independientemente del % de grasa corporal o sexo
+    return 0.40  # 40% TMB (aplicable a todos los usuarios del plan TRADICIONAL)
 
 def calcular_proyeccion_cientifica(sexo, grasa_corregida, nivel_entrenamiento, peso_actual, porcentaje_deficit_superavit):
     """
@@ -2436,12 +2428,14 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         # ----------- TRADICIONAL -----------
         ingesta_calorica = ingesta_calorica_tradicional
 
-        # PROTEÍNA: Variable según % grasa corporal corregido
-        # Escala de distribución de macronutrientes para plan tradicional:
-        # - Si grasa_corregida < 10%: 2.2g/kg proteína, 30% TMB en grasa
-        # - Si grasa_corregida < 15%: 2.0g/kg proteína, 35% TMB en grasa  
-        # - Si grasa_corregida < 25%: 1.8g/kg proteína, 40% TMB en grasa
-        # - Si grasa_corregida >= 25%: 1.6g/kg proteína, 40% TMB en grasa
+        # PROTEÍNA: Variable según % grasa corporal corregido (sin cambios)
+        # GRASA: NUEVA LÓGICA - SIEMPRE 40% TMB independiente del % grasa corporal
+        # Escala de distribución actualizada para plan tradicional:
+        # - Si grasa_corregida < 10%: 2.2g/kg proteína
+        # - Si grasa_corregida < 15%: 2.0g/kg proteína  
+        # - Si grasa_corregida < 25%: 1.8g/kg proteína
+        # - Si grasa_corregida >= 25%: 1.6g/kg proteína
+        # - GRASA: SIEMPRE 40% TMB (mínimo 20% TEI, máximo 40% TEI)
         factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
         proteina_g = round(peso * factor_proteina, 1)
         proteina_kcal = proteina_g * 4
@@ -2857,14 +2851,17 @@ COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
 proteina_g_tradicional = peso * obtener_factor_proteina_tradicional(grasa_corregida) if 'peso' in locals() and peso > 0 and 'grasa_corregida' in locals() else 0
 proteina_kcal_tradicional = proteina_g_tradicional * 4
 
-# Calcular grasas tradicional con los límites del 20-40%
-grasa_min_kcal_tradicional = plan_tradicional_calorias * 0.20
+# Calcular grasas tradicional - NUEVA LÓGICA CIENTÍFICA
+# Fat intake = 40% del BMR/TMB (independiente del % grasa corporal)
+# Basado en evidencia científica (Hämäläinen et al. 1984, Volek et al. 1997, etc.)
+# Restricciones: mínimo 20% TEI, máximo 40% TEI
+grasa_min_kcal_tradicional = plan_tradicional_calorias * 0.20  # Mínimo obligatorio: 20% TEI
 porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo) if 'grasa_corregida' in locals() and 'sexo' in locals() else 0.40
-grasa_ideal_kcal_tradicional = tmb * porcentaje_grasa_tmb if 'tmb' in locals() else 0
+grasa_ideal_kcal_tradicional = tmb * porcentaje_grasa_tmb if 'tmb' in locals() else 0  # 40% TMB/BMR
 grasa_ideal_g_tradicional = grasa_ideal_kcal_tradicional / 9
 grasa_min_g_tradicional = grasa_min_kcal_tradicional / 9
-grasa_max_kcal_tradicional = plan_tradicional_calorias * 0.40
-grasa_g_tradicional = max(grasa_min_g_tradicional, grasa_ideal_g_tradicional)
+grasa_max_kcal_tradicional = plan_tradicional_calorias * 0.40  # Máximo: 40% TEI
+grasa_g_tradicional = max(grasa_min_g_tradicional, grasa_ideal_g_tradicional)  # Aplicar mínimo del 20% TEI
 if grasa_g_tradicional * 9 > grasa_max_kcal_tradicional:
     grasa_g_tradicional = grasa_max_kcal_tradicional / 9
 grasa_kcal_tradicional = grasa_g_tradicional * 9
