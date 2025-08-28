@@ -1447,12 +1447,12 @@ if not st.session_state.datos_completos:
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos and st.session_state.get("acepto_descargo", False)
 
 # ==================== MAIN APPLICATION LOGIC ====================
-# Show all evaluation sections together in classic questionnaire format
+# Check if we should show the wizard or standalone sections
 if datos_personales_completos and st.session_state.datos_completos:
     # Check if wizard is completed
     if not st.session_state.get("wizard_completed", False):
         # WIZARD SYSTEM (Steps 2-8)
-        # show_wizard_progress()
+        show_wizard_progress()
         
         current_step = st.session_state.get("wizard_step", 2)
         
@@ -2078,7 +2078,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Show wizard navigation
-        # show_wizard_navigation()
+        show_wizard_navigation()
     else:
         # WIZARD COMPLETED - Show results and plans (Steps 9 & 10)
         st.markdown("## 🎉 ¡Evaluación Completada!")
