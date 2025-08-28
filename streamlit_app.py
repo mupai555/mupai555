@@ -1006,6 +1006,66 @@ def esta_en_rango_saludable(porcentaje_grasa, sexo):
     else:  # Mujer
         return grasa <= 32.0
 
+def obtener_factor_proteina_tradicional(grasa_corregida):
+    """
+    Determina el factor de proteína en g/kg según el porcentaje de grasa corporal corregido
+    para el plan tradicional.
+    
+    Escala de distribución:
+    - Si grasa_corregida < 10%: 2.2g/kg proteína, 30% TMB en grasa
+    - Si grasa_corregida < 15%: 2.0g/kg proteína, 35% TMB en grasa  
+    - Si grasa_corregida < 25%: 1.8g/kg proteína, 40% TMB en grasa
+    - Si grasa_corregida >= 25%: 1.6g/kg proteína, 40% TMB en grasa
+    
+    Args:
+        grasa_corregida: Porcentaje de grasa corporal corregido
+    
+    Returns:
+        float: Factor de proteína en g/kg peso corporal
+    """
+    try:
+        grasa = float(grasa_corregida)
+    except (TypeError, ValueError):
+        grasa = 20.0  # Valor por defecto
+    
+    if grasa < 10:
+        return 2.2
+    elif grasa < 15:
+        return 2.0
+    elif grasa < 25:
+        return 1.8
+    else:  # grasa >= 25
+        return 1.6
+
+def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida):
+    """
+    Determina el porcentaje del TMB que debe destinarse a grasas según el porcentaje
+    de grasa corporal corregido para el plan tradicional.
+    
+    Escala de distribución:
+    - Si grasa_corregida < 10%: 2.2g/kg proteína, 30% TMB en grasa
+    - Si grasa_corregida < 15%: 2.0g/kg proteína, 35% TMB en grasa  
+    - Si grasa_corregida < 25%: 1.8g/kg proteína, 40% TMB en grasa
+    - Si grasa_corregida >= 25%: 1.6g/kg proteína, 40% TMB en grasa
+    
+    Args:
+        grasa_corregida: Porcentaje de grasa corporal corregido
+    
+    Returns:
+        float: Porcentaje del TMB destinado a grasas (0.30 = 30%)
+    """
+    try:
+        grasa = float(grasa_corregida)
+    except (TypeError, ValueError):
+        grasa = 20.0  # Valor por defecto
+    
+    if grasa < 10:
+        return 0.30  # 30% TMB
+    elif grasa < 15:
+        return 0.35  # 35% TMB
+    else:  # grasa >= 15 (incluye tanto < 25 como >= 25)
+        return 0.40  # 40% TMB
+
 def calcular_proyeccion_cientifica(sexo, grasa_corregida, nivel_entrenamiento, peso_actual, porcentaje_deficit_superavit):
     """
     Calcula la proyección científica realista de ganancia o pérdida de peso semanal y total.
@@ -2359,22 +2419,30 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         # ----------- TRADICIONAL -----------
         ingesta_calorica = ingesta_calorica_tradicional
 
-        # PROTEÍNA: 1.8g/kg peso corporal total
-        proteina_g = round(peso * 1.8, 1)
+        # PROTEÍNA: Variable según % grasa corporal corregido
+        # Escala de distribución de macronutrientes para plan tradicional:
+        # - Si grasa_corregida < 10%: 2.2g/kg proteína, 30% TMB en grasa
+        # - Si grasa_corregida < 15%: 2.0g/kg proteína, 35% TMB en grasa  
+        # - Si grasa_corregida < 25%: 1.8g/kg proteína, 40% TMB en grasa
+        # - Si grasa_corregida >= 25%: 1.6g/kg proteína, 40% TMB en grasa
+        factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
+        proteina_g = round(peso * factor_proteina, 1)
         proteina_kcal = proteina_g * 4
 
-        # GRASA: 40% TMB/REE, nunca menos del 20% ni más del 40% de calorías totales
+        # GRASA: Porcentaje variable del TMB según % grasa, nunca menos del 20% ni más del 40% de calorías totales
         grasa_min_kcal = ingesta_calorica * 0.20
-        grasa_ideal_kcal = tmb * 0.40
+        porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida)
+        grasa_ideal_kcal = tmb * porcentaje_grasa_tmb
         grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
         grasa_min_g = round(grasa_min_kcal / 9, 1)
-        grasa_max_kcal = ingesta_calorica * 0.40
+        grasa_max_kcal = ingesta_calorica * 0.40  # La grasa nunca debe superar el 40% del TMB
         grasa_g = max(grasa_min_g, grasa_ideal_g)
         if grasa_g * 9 > grasa_max_kcal:
             grasa_g = round(grasa_max_kcal / 9, 1)
         grasa_kcal = grasa_g * 9
 
-        # CARBOHIDRATOS: el resto de las calorías
+        # CARBOHIDRATOS: el resto de las calorías según especificación
+        # Fórmula: (ingesta_calorica - (proteina_g * 4 + grasa_g * 9)) / 4
         carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
         carbo_g = round(carbo_kcal / 4, 1)
         if carbo_g < 50:
@@ -2782,8 +2850,8 @@ COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
 📊 PLAN TRADICIONAL (DÉFICIT/SUPERÁVIT MODERADO):
 - Calorías: {plan_tradicional_calorias:.0f} kcal/día
 - Estrategia: {fase}
-- Proteína: {peso * 1.8 if 'peso' in locals() and peso > 0 else 0:.1f}g/día (1.8g/kg peso)
-- Grasas: ~40% del TMB = {tmb * 0.40 / 9 if 'tmb' in locals() else 0:.1f}g/día (ajustado por límites 20-40% calorías)
+- Proteína: {peso * obtener_factor_proteina_tradicional(grasa_corregida) if 'peso' in locals() and peso > 0 and 'grasa_corregida' in locals() else 0:.1f}g/día ({obtener_factor_proteina_tradicional(grasa_corregida) if 'grasa_corregida' in locals() else 1.8:.1f}g/kg peso según % grasa)
+- Grasas: ~{obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida)*100 if 'grasa_corregida' in locals() else 40:.0f}% del TMB = {tmb * obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida) / 9 if 'tmb' in locals() and 'grasa_corregida' in locals() else 0:.1f}g/día (ajustado por límites 20-40% calorías)
 - Carbohidratos: Resto de calorías disponibles
 - Sostenibilidad: ALTA - Recomendado para adherencia a largo plazo
 - Pérdida/ganancia esperada: 0.3-0.7% peso corporal/semana
