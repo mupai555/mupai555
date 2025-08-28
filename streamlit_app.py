@@ -2415,6 +2415,28 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
         - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
         """)
+        
+        # --- DESGLOSE DE CÁLCULO PSMF ---
+        st.markdown("### 🧮 Desglose de Cálculo PSMF")
+        st.markdown(f"""
+        **Cálculo paso a paso de tu protocolo PSMF personalizado:**
+        
+        1. **Proteína:** 1.8 g/kg × {peso:.1f} kg = **{proteina_g:.1f} g/día**
+           - Factor fijo PSMF: 1.8g por kg de peso corporal total
+        
+        2. **Grasas:** **{grasa_g:.1f} g/día** (seleccionado por usuario)
+           - Rango PSMF: 30-50g de fuentes magras
+           - Perfil corporal: {perfil_grasa}
+        
+        3. **Calorías totales:** {proteina_g:.1f}g × {multiplicador:.1f} = **{ingesta_calorica:.0f} kcal/día**
+           - Fórmula PSMF: proteína (g) × multiplicador según % grasa
+           - Multiplicador: {multiplicador:.1f} (para {perfil_grasa})
+        
+        4. **Carbohidratos:** solo vegetales fibrosos = **{carbo_g:.1f} g/día**
+           - Calculado: ({ingesta_calorica:.0f} kcal - {proteina_g:.1f}g×4 - {grasa_g:.1f}g×9) ÷ 4
+           - Resultado: ({ingesta_calorica:.0f} - {proteina_kcal:.0f} - {grasa_kcal:.0f}) ÷ 4 = {carbo_g:.1f}g
+        """)
+        
     else:
         # ----------- TRADICIONAL -----------
         ingesta_calorica = ingesta_calorica_tradicional
