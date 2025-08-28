@@ -1045,12 +1045,13 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
     else:  # grasa >= 25
         return 1.6
 
-def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida):
+def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo):
     """
     Determina el porcentaje del TMB que debe destinarse a grasas según el porcentaje
     de grasa corporal corregido para el plan tradicional.
     
     Escala de distribución:
+    - Rango prime (Hombres 10-18%, Mujeres 16-23%): Siempre 40% TMB en grasa
     - Si grasa_corregida < 10%: 2.2g/kg proteína, 30% TMB en grasa
     - Si grasa_corregida < 15%: 2.0g/kg proteína, 35% TMB en grasa  
     - Si grasa_corregida < 25%: 1.8g/kg proteína, 40% TMB en grasa
@@ -1058,6 +1059,7 @@ def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida):
     
     Args:
         grasa_corregida: Porcentaje de grasa corporal corregido
+        sexo: "Hombre" o "Mujer"
     
     Returns:
         float: Porcentaje del TMB destinado a grasas (0.30 = 30%)
@@ -1067,6 +1069,13 @@ def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida):
     except (TypeError, ValueError):
         grasa = 20.0  # Valor por defecto
     
+    # Rango prime: siempre 40% TMB para grasas
+    if sexo == "Hombre" and 10 <= grasa <= 18:
+        return 0.40  # 40% TMB (rango prime masculino)
+    elif sexo == "Mujer" and 16 <= grasa <= 23:
+        return 0.40  # 40% TMB (rango prime femenino)
+    
+    # Lógica original para rangos fuera del prime
     if grasa < 10:
         return 0.30  # 30% TMB
     elif grasa < 15:
@@ -2439,7 +2448,7 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
         # GRASA: Porcentaje variable del TMB según % grasa, nunca menos del 20% ni más del 40% de calorías totales
         grasa_min_kcal = ingesta_calorica * 0.20
-        porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida)
+        porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo)
         grasa_ideal_kcal = tmb * porcentaje_grasa_tmb
         grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
         grasa_min_g = round(grasa_min_kcal / 9, 1)
@@ -2850,7 +2859,7 @@ proteina_kcal_tradicional = proteina_g_tradicional * 4
 
 # Calcular grasas tradicional con los límites del 20-40%
 grasa_min_kcal_tradicional = plan_tradicional_calorias * 0.20
-porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida) if 'grasa_corregida' in locals() else 0.40
+porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo) if 'grasa_corregida' in locals() and 'sexo' in locals() else 0.40
 grasa_ideal_kcal_tradicional = tmb * porcentaje_grasa_tmb if 'tmb' in locals() else 0
 grasa_ideal_g_tradicional = grasa_ideal_kcal_tradicional / 9
 grasa_min_g_tradicional = grasa_min_kcal_tradicional / 9
