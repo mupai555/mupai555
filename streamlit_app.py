@@ -637,24 +637,27 @@ defaults = {
     "fecha_llenado": datetime.now().strftime("%Y-%m-%d"),
     "acepto_terminos": False,
     "authenticated": False,  # Variable para controlar el login
-    # Nuevas variables para el sistema de acceso seguro
-    "access_stage": "initial",  # "initial", "request_form", "login"
-    "access_codes": {},  # Diccionario para almacenar códigos {email: {"code": "xxx", "used": False}}
-    "access_request_sent": False,
-    "access_user_name": "",
-    "access_user_email": "",
-    "access_user_whatsapp": ""
+    # Sistema de autenticación simplificado
+    "access_mode": "initial",  # "initial", "form", "login"
+    "generated_code": "",  # Código único generado
+    "access_email": "",  # Email para el que se generó el código
+    "access_name": "",  # Nombre del usuario
+    "access_whatsapp": "",  # WhatsApp del usuario
 }
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
+# Set global para códigos usados (prevenir reutilización)
+if "used_codes" not in st.session_state:
+    st.session_state.used_codes = set()
+
 # ==================== SISTEMA DE AUTENTICACIÓN SEGURO ====================
 # Si no está autenticado, mostrar el flujo de acceso seguro
 if not st.session_state.authenticated:
     
-    # PANTALLA INICIAL: Solo botón "Solicitar acceso"
-    if st.session_state.access_stage == "initial":
+    # PANTALLA 1: Solo botón "Solicitar acceso"
+    if st.session_state.access_mode == "initial":
         st.markdown("""
         <div class="content-card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
             <h2 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">
@@ -670,7 +673,7 @@ if not st.session_state.authenticated:
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("📝 Solicitar Acceso", use_container_width=True):
-                st.session_state.access_stage = "request_form"
+                st.session_state.access_mode = "form"
                 st.rerun()
         
         # Información del sistema
@@ -688,8 +691,8 @@ if not st.session_state.authenticated:
         </div>
         """, unsafe_allow_html=True)
     
-    # PANTALLA DE SOLICITUD DE ACCESO: Formulario
-    elif st.session_state.access_stage == "request_form":
+    # PANTALLA 2: Formulario para nombre/email/whatsapp
+    elif st.session_state.access_mode == "form":
         st.markdown("""
         <div class="content-card" style="max-width: 600px; margin: 2rem auto; text-align: center;">
             <h2 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">
@@ -750,8 +753,14 @@ if not st.session_state.authenticated:
                         for error in errores:
                             st.error(f"❌ {error}")
                     else:
-                        # Generar código y enviar email
+                        # Generar código único y guardar datos en session_state
                         codigo = generar_codigo_acceso()
+                        
+                        # Guardar datos simples en session_state
+                        st.session_state.generated_code = codigo
+                        st.session_state.access_email = email_acceso
+                        st.session_state.access_name = nombre_acceso
+                        st.session_state.access_whatsapp = whatsapp_acceso
                         
                         # En modo desarrollo, simular envío exitoso si no hay secrets configurados
                         try:
@@ -773,23 +782,7 @@ if not st.session_state.authenticated:
                                 )
                         
                         if email_enviado:
-                            # Guardar datos en session state
-                            st.session_state.access_user_name = nombre_acceso
-                            st.session_state.access_user_email = email_acceso
-                            st.session_state.access_user_whatsapp = whatsapp_acceso
-                            
-                            # Almacenar código de acceso
-                            if "access_codes" not in st.session_state:
-                                st.session_state.access_codes = {}
-                            st.session_state.access_codes[email_acceso] = {
-                                "code": codigo,
-                                "used": False,
-                                "timestamp": datetime.now().isoformat()
-                            }
-                            
-                            st.session_state.access_request_sent = True
-                            st.session_state.access_stage = "login"
-                            
+                            st.session_state.access_mode = "login"
                             st.success("✅ Solicitud enviada exitosamente. Redirigiéndote al login...")
                             time.sleep(2)
                             st.rerun()
@@ -798,11 +791,11 @@ if not st.session_state.authenticated:
             
             with col_btn2:
                 if st.form_submit_button("⬅️ Regresar", use_container_width=True):
-                    st.session_state.access_stage = "initial"
+                    st.session_state.access_mode = "initial"
                     st.rerun()
     
-    # PANTALLA DE LOGIN: Email y código de acceso
-    elif st.session_state.access_stage == "login":
+    # PANTALLA 3: Formulario login con email y código
+    elif st.session_state.access_mode == "login":
         st.markdown("""
         <div class="content-card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
             <h2 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">
@@ -820,7 +813,7 @@ if not st.session_state.authenticated:
             email_login = st.text_input(
                 "Correo electrónico", 
                 placeholder="correo@ejemplo.com",
-                value=st.session_state.get("access_user_email", ""),
+                value=st.session_state.get("access_email", ""),
                 key="email_login_input"
             )
             
@@ -842,32 +835,34 @@ if not st.session_state.authenticated:
                     elif not codigo_login or len(codigo_login) != 8:
                         st.error("❌ El código debe tener 8 caracteres")
                     else:
-                        # Verificar código
-                        access_codes = st.session_state.get("access_codes", {})
+                        # Verificar código usando las nuevas variables simples
+                        codigo_upper = codigo_login.upper()
                         
-                        if email_login in access_codes:
-                            stored_data = access_codes[email_login]
+                        # Verificar si el email coincide y el código coincide
+                        if (email_login == st.session_state.access_email and 
+                            codigo_upper == st.session_state.generated_code):
                             
-                            if stored_data["code"] == codigo_login.upper():
-                                if not stored_data["used"]:
-                                    # Código válido y no usado
-                                    st.session_state.access_codes[email_login]["used"] = True
-                                    st.session_state.authenticated = True
-                                    st.success("✅ Acceso autorizado. Bienvenido al sistema MUPAI.")
-                                    time.sleep(1)
-                                    st.rerun()
-                                else:
-                                    st.error("❌ Este código ya ha sido utilizado")
+                            # Verificar si el código ya fue usado
+                            if codigo_upper not in st.session_state.used_codes:
+                                # Código válido y no usado - permitir acceso
+                                st.session_state.used_codes.add(codigo_upper)
+                                st.session_state.authenticated = True
+                                st.success("✅ Acceso autorizado. Bienvenido al sistema MUPAI.")
+                                time.sleep(1)
+                                st.rerun()
                             else:
-                                st.error("❌ Código incorrecto")
+                                st.error("❌ Este código ya ha sido utilizado")
                         else:
-                            st.error("❌ No se encontró una solicitud de acceso para este email")
+                            st.error("❌ Email o código incorrecto")
             
             with col_login2:
                 if st.button("⬅️ Nueva Solicitud", use_container_width=True):
                     # Limpiar datos y regresar al inicio
-                    st.session_state.access_stage = "initial"
-                    st.session_state.access_request_sent = False
+                    st.session_state.access_mode = "initial"
+                    st.session_state.generated_code = ""
+                    st.session_state.access_email = ""
+                    st.session_state.access_name = ""
+                    st.session_state.access_whatsapp = ""
                     st.rerun()
     
     st.stop()  # Detener la ejecución hasta que se autentique
