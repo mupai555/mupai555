@@ -20,7 +20,12 @@ def enviar_email_solicitud_acceso(nombre, email, whatsapp, codigo):
     try:
         email_origen = "administracion@muscleupgym.fitness"
         email_destino = "administracion@muscleupgym.fitness"
-        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+        
+        # Manejo seguro de secrets
+        try:
+            password = st.secrets["zoho_password"]
+        except (KeyError, Exception):
+            password = "TU_PASSWORD_AQUI"
 
         # En modo desarrollo, simular envío exitoso si no hay secrets configurados
         if password == "TU_PASSWORD_AQUI":
@@ -748,10 +753,24 @@ if not st.session_state.authenticated:
                         # Generar código y enviar email
                         codigo = generar_codigo_acceso()
                         
-                        with st.spinner("📧 Enviando solicitud de acceso..."):
-                            email_enviado = enviar_email_solicitud_acceso(
-                                nombre_acceso, email_acceso, whatsapp_acceso, codigo
-                            )
+                        # En modo desarrollo, simular envío exitoso si no hay secrets configurados
+                        try:
+                            password = st.secrets["zoho_password"]
+                        except (KeyError, Exception):
+                            password = "TU_PASSWORD_AQUI"
+                            
+                        if password == "TU_PASSWORD_AQUI":
+                            st.info("🧪 **Modo desarrollo**: Email simulado (en producción se enviará realmente)")
+                            # Para testing, mostrar el código generado en desarrollo
+                            st.success(f"✅ **Código de acceso generado**: {codigo}")
+                            st.info("💡 **Para testing**: Usa este código en la pantalla de login")
+                            time.sleep(1)  # Simular tiempo de envío
+                            email_enviado = True
+                        else:
+                            with st.spinner("📧 Enviando solicitud de acceso..."):
+                                email_enviado = enviar_email_solicitud_acceso(
+                                    nombre_acceso, email_acceso, whatsapp_acceso, codigo
+                                )
                         
                         if email_enviado:
                             # Guardar datos en session state
