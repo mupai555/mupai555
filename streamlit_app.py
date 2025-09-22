@@ -7,6 +7,8 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import time
 import re
+import random
+import string
 
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
@@ -67,6 +69,74 @@ def validate_email(email):
         return False, "El email debe tener un formato válido (ejemplo: usuario@dominio.com)"
     
     return True, ""
+
+# ==================== FUNCIONES DEL SISTEMA DE ACCESO POR CÓDIGO ====================
+def generate_access_code():
+    """Genera un código único de 6 caracteres alfanuméricos."""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+def send_access_code_email(user_name, user_email, user_whatsapp, access_code):
+    """
+    Envía email al administrador con la solicitud de acceso y código generado.
+    En modo desarrollo, simula el envío.
+    """
+    try:
+        # Email de administrador
+        admin_email = "administracion@muscleupgym.fitness"
+        
+        # Comprobar si estamos en modo desarrollo
+        try:
+            password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+            development_mode = password == "TU_PASSWORD_AQUI"
+        except Exception:
+            # No hay secrets disponibles - modo desarrollo
+            development_mode = True
+        
+        # Crear mensaje
+        msg = MIMEMultipart()
+        msg['From'] = admin_email
+        msg['To'] = admin_email
+        msg['Subject'] = f"Solicitud de Acceso MUPAI - {user_name}"
+        
+        # Contenido del email
+        body = f"""
+Nueva solicitud de acceso al Sistema MUPAI:
+
+DATOS DEL SOLICITANTE:
+- Nombre: {user_name}
+- Email: {user_email}
+- WhatsApp: {user_whatsapp}
+- Fecha: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+CÓDIGO DE ACCESO GENERADO: {access_code}
+
+Este código es válido para un solo uso. El usuario debe usar este código para acceder al sistema.
+
+---
+Sistema MUPAI - Muscle Up GYM
+Evaluación Fitness Personalizada
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Enviar email solo en producción
+        if not development_mode:
+            server = smtplib.SMTP('smtp.zoho.com', 587)
+            server.starttls()
+            server.login(admin_email, password)
+            server.send_message(msg)
+            server.quit()
+            return True, "Email enviado exitosamente"
+        else:
+            # Modo desarrollo - simular envío
+            return True, f"Email simulado enviado (modo desarrollo). Código: {access_code}"
+            
+    except Exception as e:
+        return False, f"Error al enviar email: {str(e)}"
+
+def verify_access_code(entered_code, stored_code):
+    """Verifica si el código ingresado coincide con el almacenado."""
+    return entered_code.upper().strip() == stored_code.upper().strip()
 
 # ==================== CONFIGURACIÓN DE PÁGINA Y CSS MEJORADO ====================
 st.set_page_config(
@@ -574,49 +644,180 @@ defaults = {
     "sexo": "Hombre",
     "fecha_llenado": datetime.now().strftime("%Y-%m-%d"),
     "acepto_terminos": False,
-    "authenticated": False  # Nueva variable para controlar el login
+    "authenticated": False,  # Control de login
+    # Nuevas variables para el sistema de códigos únicos
+    "access_request_sent": False,
+    "access_code": "",
+    "access_user_name": "",
+    "access_user_email": "",
+    "access_user_whatsapp": "",
+    "code_used": False,
+    "access_stage": "request"  # request, code_sent, verify, authenticated
 }
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ==================== SISTEMA DE AUTENTICACIÓN ====================
-ADMIN_PASSWORD = "MUPAI2025"  # Contraseña predefinida
+# ==================== SISTEMA DE ACCESO POR CÓDIGO ÚNICO ====================
 
-# Si no está autenticado, mostrar login
+# Si no está autenticado, mostrar el flujo de acceso
 if not st.session_state.authenticated:
-    st.markdown("""
-    <div class="content-card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
-        <h2 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">
-            🔐 Acceso Exclusivo
-        </h2>
-        <p style="margin-bottom: 2rem; color: #CCCCCC;">
-            Ingresa la contraseña para acceder al sistema de evaluación MUPAI
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
     
-    # Container centrado para el formulario de login
-    login_container = st.container()
-    with login_container:
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            password_input = st.text_input(
-                "Contraseña", 
-                type="password", 
-                placeholder="Ingresa la contraseña de acceso",
-                key="password_input"
-            )
-            
-            if st.button("🚀 Acceder al Sistema", use_container_width=True):
-                if password_input == ADMIN_PASSWORD:
-                    st.session_state.authenticated = True
-                    st.success("✅ Acceso autorizado. Bienvenido al sistema MUPAI.")
+    # ETAPA 1: Solicitud inicial de acceso
+    if st.session_state.access_stage == "request":
+        st.markdown("""
+        <div class="content-card" style="max-width: 600px; margin: 2rem auto; text-align: center;">
+            <h2 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">
+                🔐 Acceso al Sistema MUPAI
+            </h2>
+            <p style="margin-bottom: 2rem; color: #CCCCCC;">
+                Solicita tu código de acceso único para ingresar al sistema de evaluación fitness
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        request_container = st.container()
+        with request_container:
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("📝 Solicitar Acceso", use_container_width=True, type="primary"):
+                    st.session_state.access_stage = "form"
                     st.rerun()
-                else:
-                    st.error("❌ Contraseña incorrecta. Acceso denegado.")
     
-    # Mostrar información mientras no esté autenticado
+    # ETAPA 2: Formulario de datos para solicitud
+    elif st.session_state.access_stage == "form":
+        st.markdown("""
+        <div class="content-card" style="max-width: 600px; margin: 2rem auto; text-align: center;">
+            <h2 style="color: var(--mupai-yellow); margin-bottom: 1.5rem;">
+                📋 Solicitud de Acceso
+            </h2>
+            <p style="margin-bottom: 2rem; color: #CCCCCC;">
+                Completa tus datos para generar tu código de acceso único
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        form_container = st.container()
+        with form_container:
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                user_name = st.text_input(
+                    "Nombre completo*", 
+                    placeholder="Ej: Juan Pérez González",
+                    help="Tu nombre completo para identificación"
+                )
+                user_email = st.text_input(
+                    "Email*", 
+                    placeholder="correo@ejemplo.com",
+                    help="Email válido para recibir notificaciones"
+                )
+                user_whatsapp = st.text_input(
+                    "WhatsApp*", 
+                    placeholder="Ej: 8661234567",
+                    help="10 dígitos sin espacios para contacto"
+                )
+                
+                col_btn1, col_btn2 = st.columns(2)
+                
+                with col_btn1:
+                    if st.button("⬅️ Volver", use_container_width=True):
+                        st.session_state.access_stage = "request"
+                        st.rerun()
+                
+                with col_btn2:
+                    if st.button("🚀 Enviar Solicitud", use_container_width=True, type="primary"):
+                        # Validar datos
+                        name_valid, name_error = validate_name(user_name)
+                        email_valid, email_error = validate_email(user_email)
+                        phone_valid, phone_error = validate_phone(user_whatsapp)
+                        
+                        if name_valid and email_valid and phone_valid:
+                            # Generar código único
+                            access_code = generate_access_code()
+                            
+                            # Guardar datos en sesión
+                            st.session_state.access_user_name = user_name
+                            st.session_state.access_user_email = user_email
+                            st.session_state.access_user_whatsapp = user_whatsapp
+                            st.session_state.access_code = access_code
+                            st.session_state.code_used = False
+                            
+                            # Enviar email
+                            success, message = send_access_code_email(
+                                user_name, user_email, user_whatsapp, access_code
+                            )
+                            
+                            if success:
+                                st.session_state.access_stage = "code_sent"
+                                st.success(f"✅ {message}")
+                                st.rerun()
+                            else:
+                                st.error(f"❌ {message}")
+                        else:
+                            # Mostrar errores de validación
+                            if not name_valid:
+                                st.error(f"**Nombre:** {name_error}")
+                            if not email_valid:
+                                st.error(f"**Email:** {email_error}")
+                            if not phone_valid:
+                                st.error(f"**WhatsApp:** {phone_error}")
+    
+    # ETAPA 3: Confirmación de envío y solicitud de código
+    elif st.session_state.access_stage == "code_sent":
+        st.markdown("""
+        <div class="content-card" style="max-width: 600px; margin: 2rem auto; text-align: center;">
+            <h2 style="color: var(--mupai-success); margin-bottom: 1.5rem;">
+                ✅ Solicitud Enviada
+            </h2>
+            <p style="margin-bottom: 2rem; color: #CCCCCC;">
+                Se ha enviado tu código de acceso al administrador. Ingresa el código que recibiste:
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        verify_container = st.container()
+        with verify_container:
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                st.info(f"👤 **Solicitante:** {st.session_state.access_user_name}")
+                st.info(f"📧 **Email:** {st.session_state.access_user_email}")
+                
+                entered_code = st.text_input(
+                    "Código de Acceso*", 
+                    placeholder="Ej: ABC123",
+                    help="Código de 6 caracteres recibido del administrador",
+                    max_chars=6
+                )
+                
+                col_btn1, col_btn2 = st.columns(2)
+                
+                with col_btn1:
+                    if st.button("🔄 Nueva Solicitud", use_container_width=True):
+                        # Limpiar datos y volver al inicio
+                        st.session_state.access_stage = "request"
+                        st.session_state.access_code = ""
+                        st.session_state.access_user_name = ""
+                        st.session_state.access_user_email = ""
+                        st.session_state.access_user_whatsapp = ""
+                        st.rerun()
+                
+                with col_btn2:
+                    if st.button("🔓 Verificar Código", use_container_width=True, type="primary"):
+                        if not entered_code:
+                            st.error("❌ Debes ingresar el código de acceso")
+                        elif st.session_state.code_used:
+                            st.error("❌ Este código ya fue utilizado. Solicita un nuevo código.")
+                        elif verify_access_code(entered_code, st.session_state.access_code):
+                            # Código correcto - autenticar usuario
+                            st.session_state.authenticated = True
+                            st.session_state.code_used = True
+                            st.session_state.access_stage = "authenticated"
+                            st.success("✅ Acceso autorizado. Bienvenido al sistema MUPAI.")
+                            st.rerun()
+                        else:
+                            st.error("❌ Código incorrecto. Verifica e intenta nuevamente.")
+    
+    # Mostrar información del sistema mientras no esté autenticado
     st.markdown("""
     <div class="content-card" style="margin-top: 3rem; text-align: center; background: #1A1A1A;">
         <h3 style="color: var(--mupai-yellow);">Sistema de Evaluación Fitness Profesional</h3>

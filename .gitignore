@@ -3,8 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Streamlit cache
+# Streamlit cache and logs
 .streamlit/
+streamlit_output.log
 
 # Environment variables
 .env
@@ -30,3 +31,12 @@ demo_eta_block.py
 
 # Test files - GitHub removal verification
 test_github_removal.py
+
+# Temporary files
+/tmp/
+*.tmp
+*.log
+
+# Playwright screenshots
+/tmp/playwright-logs/
+playwright-logs/
