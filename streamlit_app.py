@@ -34,6 +34,16 @@ METHOD_CONFIDENCE = {
 # Umbral mínimo de confianza para considerar el FFMI evaluable
 FFMI_CONFIDENCE_THRESHOLD = 0.50
 
+# ==================== CONSTANTES PARA EXTRAPOLACIÓN Y PSMF ====================
+# Tope máximo para extrapolación de Omron (configurable)
+MAX_EXTRAPOLATE = 60.0
+
+# Factor de proteína para PSMF basado en LBM en casos de alta adiposidad
+PROTEIN_FACTOR_PSMF_LBM = 1.8  # g/kg LBM
+
+# Umbral para considerar alta adiposidad (activa banderas especiales)
+UMBRAL_ALTA_ADIPOSIDAD = 45.0
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -682,10 +692,13 @@ defaults = {
     "grasa_extrapolada": False,
     "grasa_extrapolada_valor": None,
     "grasa_extrapolada_medido": None,
+    "alta_adiposidad": False,
     "allow_extrapolate": False,
     # Variables para rastreo de confianza FFMI
     "ffmi_low_confidence": False,
     "ffmi_confidence_value": None,
+    # Variable para PSMF basado en LBM
+    "psmf_lbm_based": False,
     # Variable para grasa visceral
     "grasa_visceral_g": None,
     # Flags separados para envíos de correo
@@ -956,7 +969,7 @@ def calcular_mlg(peso, porcentaje_grasa):
         porcentaje_grasa = 0.0
     return peso * (1 - porcentaje_grasa / 100)
 
-def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max_extrapolate=65.0):
+def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max_extrapolate=None):
     """
     Corrige el porcentaje de grasa según el método de medición.
     Si el método es Omron, ajusta con tablas especializadas por sexo.
@@ -966,15 +979,21 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
     
     Para Omron:
     - Interpola entre puntos de la tabla cuando medido está dentro del rango.
-    - Si medido > max_tabla y allow_extrapolate=False: retorna max_tabla (comportamiento conservador).
-    - Si medido > max_tabla y allow_extrapolate=True: extrapola linealmente usando la pendiente
-      de los últimos dos puntos de la tabla, limitado por max_extrapolate.
-    - Establece flags en session_state cuando ocurre extrapolación (con try/except para seguridad).
+    - Si medido > max_tabla (40%): ACTIVA AUTOMÁTICAMENTE la extrapolación lineal
+      usando la pendiente de los últimos dos puntos de la tabla.
+    - Aplica tope configurable MAX_EXTRAPOLATE (default 60.0%).
+    - Establece flags en session_state: grasa_extrapolada, grasa_extrapolada_valor,
+      grasa_extrapolada_medido, alta_adiposidad (si medido >= 45.0).
+    - Fuerza allow_extrapolate=True en session_state cuando se activa automáticamente.
     """
     try:
         medido = float(medido)
     except (TypeError, ValueError):
         medido = 0.0
+    
+    # Usar el tope global si no se proporciona uno específico
+    if max_extrapolate is None:
+        max_extrapolate = MAX_EXTRAPOLATE
 
     if metodo == "Omron HBF-516 (BIA)":
         # Tablas especializadas por sexo para conversión Omron→DEXA
@@ -1017,6 +1036,8 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
                 import streamlit as st
                 if 'grasa_extrapolada' in st.session_state:
                     st.session_state['grasa_extrapolada'] = False
+                if 'alta_adiposidad' in st.session_state:
+                    st.session_state['alta_adiposidad'] = False
             except:
                 pass
             return resultado
@@ -1025,35 +1046,36 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
         elif medido < min_omron:
             return tabla[min_omron]
         
-        # Si está por encima del máximo de la tabla
+        # Si está por encima del máximo de la tabla (>40)
         else:  # medido > max_omron
-            if not allow_extrapolate:
-                # Comportamiento conservador: retornar máximo de la tabla
-                return tabla[max_omron]
-            else:
-                # Extrapolación lineal usando los últimos dos puntos
-                # Calcular pendiente entre los dos últimos puntos
-                x1, x2 = omron_values[-2], omron_values[-1]
-                y1, y2 = dexa_values[-2], dexa_values[-1]
-                slope = (y2 - y1) / (x2 - x1)
-                
-                # Extrapolar desde el último punto
-                extrapolated = y2 + slope * (medido - x2)
-                
-                # Limitar al máximo permitido
-                result = min(extrapolated, max_extrapolate)
-                
-                # Establecer flags de session_state para rastreo (con try/except para seguridad)
-                try:
-                    import streamlit as st
-                    st.session_state['grasa_extrapolada'] = True
-                    st.session_state['grasa_extrapolada_valor'] = result
-                    st.session_state['grasa_extrapolada_medido'] = medido
-                except:
-                    # Si streamlit no está disponible o hay error, continuar sin establecer flags
-                    pass
-                
-                return float(result)
+            # ACTIVACIÓN AUTOMÁTICA DE EXTRAPOLACIÓN para medido > 40
+            # Extrapolación lineal usando los últimos dos puntos
+            # Calcular pendiente entre los dos últimos puntos
+            x1, x2 = omron_values[-2], omron_values[-1]
+            y1, y2 = dexa_values[-2], dexa_values[-1]
+            slope = (y2 - y1) / (x2 - x1)
+            
+            # Extrapolar desde el último punto
+            extrapolated = y2 + slope * (medido - x2)
+            
+            # Limitar al máximo permitido
+            result = min(extrapolated, max_extrapolate)
+            
+            # Establecer flags de session_state para rastreo (con try/except para seguridad)
+            try:
+                import streamlit as st
+                st.session_state['grasa_extrapolada'] = True
+                st.session_state['grasa_extrapolada_valor'] = result
+                st.session_state['grasa_extrapolada_medido'] = medido
+                # Activar flag de alta adiposidad si medido >= 45.0
+                st.session_state['alta_adiposidad'] = (medido >= UMBRAL_ALTA_ADIPOSIDAD)
+                # Forzar allow_extrapolate=True cuando se activa automáticamente
+                st.session_state['allow_extrapolate'] = True
+            except:
+                # Si streamlit no está disponible o hay error, continuar sin establecer flags
+                pass
+            
+            return float(result)
     
     elif metodo == "InBody 270 (BIA profesional)":
         return float(medido * 1.02)
@@ -1099,6 +1121,7 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
     
     Requisitos actualizados:
     - Proteína automática según % grasa: 1.8g/kg (<25% grasa) o 1.6g/kg (≥25% grasa)
+    - NUEVA: Para alta adiposidad (H>=35% o M>=40%), usar LBM como base: 1.8g/kg LBM
     - Grasas automáticas según % grasa: 30g/día (<25% grasa) o 50g/día (≥25% grasa)
     - Calorías = proteína (g) × multiplicador según % grasa
     - Multiplicadores: 8.3 (alto % grasa), 9.0 (moderado), 9.5-9.7 (magro)
@@ -1107,9 +1130,11 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
     try:
         peso = float(peso)
         grasa_corregida = float(grasa_corregida)
+        mlg = float(mlg)
     except (TypeError, ValueError):
         peso = 70.0
         grasa_corregida = 20.0
+        mlg = 56.0
     
     # Determinar elegibilidad para PSMF según sexo y % grasa
     if sexo == "Hombre" and grasa_corregida > 18:
@@ -1124,8 +1149,29 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         return {"psmf_aplicable": False}
     
     if psmf_aplicable:
+        # Determinar si usar LBM como base (casos de alta adiposidad)
+        usar_lbm = False
+        if (sexo == "Hombre" and grasa_corregida >= 35.0) or (sexo == "Mujer" and grasa_corregida >= 40.0):
+            usar_lbm = True
+            # Registrar en session_state
+            try:
+                import streamlit as st
+                st.session_state['psmf_lbm_based'] = True
+            except:
+                pass
+        else:
+            try:
+                import streamlit as st
+                st.session_state['psmf_lbm_based'] = False
+            except:
+                pass
+        
         # PROTEÍNA Y GRASAS: Asignación automática según % grasa corporal corregida
-        if grasa_corregida < 25:
+        if usar_lbm:
+            # Alta adiposidad: usar LBM como base con factor fijo
+            proteina_g_dia = round(mlg * PROTEIN_FACTOR_PSMF_LBM, 1)
+            grasa_g_dia = 50.0  # Alta adiposidad típicamente tiene ≥25% grasa
+        elif grasa_corregida < 25:
             # < 25% grasa: 1.8g/kg proteína + 30g grasas
             proteina_g_dia = round(peso * 1.8, 1)
             grasa_g_dia = 30.0
@@ -1147,7 +1193,7 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         else:  # Casos más magros - visible abdominals/lower %
             # Usar 9.6 como punto medio del rango 9.5-9.7
             multiplicador = 9.6
-            perfil_grasa = "más magro (abdominales visibles)"
+            perfil_grasa = "mas magro (abdominales visibles)"
         
         # CALORÍAS = proteína (g) × multiplicador
         calorias_dia = round(proteina_g_dia * multiplicador, 0)
@@ -1164,6 +1210,12 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
             perdida_semanal_min = 0.6  # kg/semana
             perdida_semanal_max = 1.0
         
+        # Construir criterio descriptivo
+        if usar_lbm:
+            criterio_detalle = f"{criterio} - LBM-based: {perfil_grasa} (proteina {PROTEIN_FACTOR_PSMF_LBM}g/kg LBM)"
+        else:
+            criterio_detalle = f"{criterio} - Nuevo protocolo: {perfil_grasa}"
+        
         return {
             "psmf_aplicable": True,
             "proteina_g_dia": proteina_g_dia,
@@ -1173,7 +1225,8 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
             "multiplicador": multiplicador,
             "perfil_grasa": perfil_grasa,
             "perdida_semanal_kg": (perdida_semanal_min, perdida_semanal_max),
-            "criterio": f"{criterio} - Nuevo protocolo: {perfil_grasa}"
+            "criterio": criterio_detalle,
+            "lbm_based": usar_lbm
         }
     else:
         return {"psmf_aplicable": False}
@@ -1945,13 +1998,36 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         # Checkbox para permitir extrapolación de Omron (solo visible si es Omron)
         if st.session_state.get("metodo_grasa", "").startswith("Omron"):
-            allow_extrapolate = st.checkbox(
-                "Permitir extrapolación de Omron para valores >40% (opcional, menos fiable)",
-                value=st.session_state.get("allow_extrapolate", False),
-                key="allow_extrapolate",
-                help="Cuando está activado, permite extrapolar valores de Omron por encima del 40%. "
-                     "La extrapolación es menos precisa que la interpolación dentro del rango de la tabla."
-            )
+            # Obtener el valor actual de grasa corporal para determinar comportamiento del checkbox
+            current_grasa = st.session_state.get("grasa_corporal", 0.0)
+            try:
+                current_grasa = float(current_grasa)
+            except (TypeError, ValueError):
+                current_grasa = 0.0
+            
+            # Si la lectura actual es > 40, marcar checkbox y deshabilitar (activación automática)
+            if current_grasa > 40.0:
+                st.checkbox(
+                    "Extrapolacion de Omron para valores >40% (ACTIVADA AUTOMATICAMENTE)",
+                    value=True,
+                    disabled=True,
+                    key="allow_extrapolate_display",
+                    help="La extrapolacion se activa automaticamente para lecturas Omron >40%. "
+                         "El valor corregido se calcula linealmente desde los ultimos puntos de la tabla "
+                         "y se limita a un maximo de 60%. Este metodo es menos preciso que la interpolacion "
+                         "dentro del rango de la tabla; se recomienda usar DEXA o InBody para mayor precision."
+                )
+                # Forzar el valor en session_state
+                st.session_state['allow_extrapolate'] = True
+            else:
+                # Permitir activación manual para valores <= 40
+                allow_extrapolate = st.checkbox(
+                    "Permitir extrapolacion de Omron para valores >40% (opcional, menos fiable)",
+                    value=st.session_state.get("allow_extrapolate", False),
+                    key="allow_extrapolate",
+                    help="Cuando esta activado, permite extrapolar valores de Omron por encima del 40%. "
+                         "La extrapolacion es menos precisa que la interpolacion dentro del rango de la tabla."
+                )
 
         # Ensure grasa_corporal has a valid default
         grasa_default = 20.0
@@ -2019,16 +2095,26 @@ if datos_personales_completos and st.session_state.datos_completos:
     nivel_ffmi = clasificar_ffmi(ffmi, sexo)
     edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
 
+    # Mostrar banner destacado si hay alta adiposidad
+    if st.session_state.get('alta_adiposidad', False):
+        st.error(
+            f"🚨 **ALTA ADIPOSIDAD DETECTADA** - Lectura Omron >= {UMBRAL_ALTA_ADIPOSIDAD:.0f}%: "
+            f"Se recomienda encarecidamente usar un metodo de medicion mas preciso (DEXA o InBody) "
+            f"para estos niveles de grasa corporal. Los calculos PSMF se ajustan automaticamente "
+            f"para usar masa libre de grasa (LBM) como base."
+        )
+    
     # Mostrar advertencia si se utilizó extrapolación
     if st.session_state.get('grasa_extrapolada', False):
         medido_extrap = st.session_state.get('grasa_extrapolada_medido', 0)
         valor_extrap = st.session_state.get('grasa_extrapolada_valor', 0)
         st.warning(
-            f"⚠️ **Valor extrapolado (menos fiable):** El valor medido de Omron ({medido_extrap:.1f}%) "
-            f"está por encima del rango de la tabla de calibración (máx 40%). "
-            f"El valor corregido ({valor_extrap:.1f}%) se obtuvo mediante extrapolación lineal, "
-            f"lo cual es menos preciso que la interpolación dentro del rango de la tabla. "
-            f"Se recomienda usar un método de medición más preciso como DEXA o InBody para estos niveles de grasa corporal."
+            f"⚠️ **Valor EXTRAPOLADO (menos fiable):** El valor medido de Omron ({medido_extrap:.1f}%) "
+            f"esta por encima del rango de la tabla de calibracion (max 40%). "
+            f"El valor corregido equivalente DEXA ({valor_extrap:.1f}%) se obtuvo mediante EXTRAPOLACION LINEAL, "
+            f"limitada a un maximo de {MAX_EXTRAPOLATE:.0f}%. "
+            f"La extrapolacion es MENOS PRECISA que la interpolacion dentro del rango de la tabla. "
+            f"Se recomienda usar un metodo de medicion mas preciso como DEXA o InBody para mayor fiabilidad."
         )
     
     # Mostrar corrección si aplica
