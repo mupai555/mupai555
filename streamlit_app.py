@@ -1374,14 +1374,14 @@ def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo):
 
 def calcular_proyeccion_cientifica(sexo, grasa_corregida, nivel_entrenamiento, peso_actual, porcentaje_deficit_superavit):
     """
-    Calcula la proyección científica realista de ganancia o pérdida de peso semanal y total.
+    Calcula la proyeccion cientifica realista de ganancia o perdida de peso semanal y total.
     
     Args:
         sexo: "Hombre" o "Mujer"
         grasa_corregida: Porcentaje de grasa corporal corregido
-        nivel_entrenamiento: "principiante", "intermedio", "avanzado", "élite"
+        nivel_entrenamiento: "principiante", "intermedio", "avanzado", "elite"
         peso_actual: Peso actual en kg
-        porcentaje_deficit_superavit: Porcentaje de déficit (-) o superávit (+)
+        porcentaje_deficit_superavit: Porcentaje de deficit (-) o superavit (+)
     
     Returns:
         dict con rango_semanal_pct, rango_semanal_kg, rango_total_6sem_kg, explicacion_textual
@@ -1395,55 +1395,55 @@ def calcular_proyeccion_cientifica(sexo, grasa_corregida, nivel_entrenamiento, p
         grasa_corregida = 20.0
         porcentaje = 0.0
     
-    # Rangos científicos según objetivo, sexo y nivel
-    if porcentaje < 0:  # Déficit (pérdida) - valor negativo
+    # Rangos cientificos segun objetivo, sexo y nivel
+    if porcentaje < 0:  # Deficit (perdida) - valor negativo
         if sexo == "Hombre":
             if nivel_entrenamiento in ["principiante", "intermedio"]:
                 rango_pct_min, rango_pct_max = -1.0, -0.5
-            else:  # avanzado, élite
+            else:  # avanzado, elite
                 rango_pct_min, rango_pct_max = -0.7, -0.3
         else:  # Mujer
             if nivel_entrenamiento in ["principiante", "intermedio"]:
                 rango_pct_min, rango_pct_max = -0.8, -0.3
-            else:  # avanzado, élite
+            else:  # avanzado, elite
                 rango_pct_min, rango_pct_max = -0.6, -0.2
         
-        # Ajuste por % grasa (personas con más grasa pueden perder más rápido inicialmente)
+        # Ajuste por % grasa (personas con mas grasa pueden perder mas rapido inicialmente)
         if grasa_corregida > (25 if sexo == "Hombre" else 30):
-            factor_grasa = 1.2  # 20% más rápido
+            factor_grasa = 1.2  # 20% mas rapido
         elif grasa_corregida < (12 if sexo == "Hombre" else 18):
-            factor_grasa = 0.8  # 20% más conservador
+            factor_grasa = 0.8  # 20% mas conservador
         else:
             factor_grasa = 1.0
         
         rango_pct_min *= factor_grasa
         rango_pct_max *= factor_grasa
         
-        explicacion = f"Con {grasa_corregida:.1f}% de grasa y nivel {nivel_entrenamiento}, se recomienda una pérdida conservadora pero efectiva. {'Nivel alto de grasa permite pérdida inicial más rápida.' if factor_grasa > 1 else 'Nivel bajo de grasa requiere enfoque más conservador.' if factor_grasa < 1 else 'Nivel óptimo de grasa para pérdida sostenible.'}"
+        explicacion = f"Con {grasa_corregida:.1f}% de grasa y nivel {nivel_entrenamiento}, se recomienda una perdida conservadora pero efectiva. {'Nivel alto de grasa permite perdida inicial mas rapida.' if factor_grasa > 1 else 'Nivel bajo de grasa requiere enfoque mas conservador.' if factor_grasa < 1 else 'Nivel optimo de grasa para perdida sostenible.'}"
         
-    elif porcentaje > 0:  # Superávit (ganancia) - valor positivo
+    elif porcentaje > 0:  # Superavit (ganancia) - valor positivo
         if sexo == "Hombre":
             if nivel_entrenamiento in ["principiante", "intermedio"]:
                 rango_pct_min, rango_pct_max = 0.2, 0.5
-            else:  # avanzado, élite
+            else:  # avanzado, elite
                 rango_pct_min, rango_pct_max = 0.1, 0.3
         else:  # Mujer
             if nivel_entrenamiento in ["principiante", "intermedio"]:
                 rango_pct_min, rango_pct_max = 0.1, 0.3
-            else:  # avanzado, élite
+            else:  # avanzado, elite
                 rango_pct_min, rango_pct_max = 0.05, 0.2
         
-        explicacion = f"Como {sexo.lower()} con nivel {nivel_entrenamiento}, la ganancia muscular será gradual y sostenible. Los principiantes pueden ganar músculo más rápido que los avanzados."
+        explicacion = f"Como {sexo.lower()} con nivel {nivel_entrenamiento}, la ganancia muscular sera gradual y sostenible. Los principiantes pueden ganar musculo mas rapido que los avanzados."
         
     else:  # Mantenimiento
         rango_pct_min, rango_pct_max = -0.1, 0.1
-        explicacion = f"En mantenimiento, el peso debe mantenerse estable con fluctuaciones menores del ±0.1% semanal debido a variaciones normales de hidratación y contenido intestinal."
+        explicacion = f"En mantenimiento, el peso debe mantenerse estable con fluctuaciones menores del +/-0.1% semanal debido a variaciones normales de hidratacion y contenido intestinal."
     
     # Convertir porcentajes a kg
     rango_kg_min = peso_actual * (rango_pct_min / 100)
     rango_kg_max = peso_actual * (rango_pct_max / 100)
     
-    # Proyección total 6 semanas
+    # Proyeccion total 6 semanas
     rango_total_min_6sem = rango_kg_min * 6
     rango_total_max_6sem = rango_kg_max * 6
     
@@ -2408,11 +2408,13 @@ try:
     map_ffmi = {"Bajo":1, "Promedio":2, "Bueno":3, "Avanzado":4, "Élite":5}
     puntos_ffmi = map_ffmi.get(nivel_ffmi, 1)
     score_ffmi = (puntos_ffmi - 1) / 4.0   # 0..1
+    st.session_state["puntos_ffmi"] = puntos_ffmi
 
     map_exp = {"A)":1, "B)":2, "C)":3, "D)":4}
     exp_key = experiencia[:2] if isinstance(experiencia, str) and len(experiencia) >= 2 else ""
     puntos_exp = map_exp.get(exp_key, 1)
     score_exp = (puntos_exp - 1) / 3.0     # 0..1
+    st.session_state["puntos_exp"] = puntos_exp
 
     if ejercicios_reportados > 0:
         map_nivel = {"Bajo":1, "Promedio":2, "Bueno":3, "Avanzado":4}
@@ -2421,6 +2423,10 @@ try:
     else:
         avg_puntos = 1.0
         score_func = 0.0
+    
+    # Store puntos_funcional (1..4 scale) for UI display
+    puntos_funcional = avg_puntos
+    st.session_state["puntos_funcional"] = puntos_funcional
 
     # --- Soft‑weight FFMI según %grasa corregida (DEXA) ---
     if sexo == "Hombre":
@@ -2483,6 +2489,10 @@ try:
     FFMI_incluido = ffmi_confidence_factor  # 0..1
     confianza = 0.6 * completitud + 0.25 * FFMI_incluido + 0.15 * (puntos_exp / 4.0)
     confianza = max(0.0, min(1.0, confianza))
+    
+    # Calculate and store en_rango_saludable for UI
+    en_rango_saludable = esta_en_rango_saludable(grasa_corregida, sexo)
+    st.session_state["en_rango_saludable"] = en_rango_saludable
 
     # --- Umbrales más conservadores ---
     # Novato/Principiante: <0.30
@@ -2527,17 +2537,46 @@ try:
     # Guardar y mostrar transparencia
     nivel_entrenamiento = nivel_final
     st.session_state["nivel_entrenamiento"] = nivel_entrenamiento
+    st.session_state["puntaje_total"] = puntaje_total
+    st.session_state["confianza"] = confianza
 
     st.info(f"Nivel calculado: {nivel_entrenamiento} — Puntaje: {puntaje_total:.2f} — Confianza: {confianza:.2f}")
     st.caption(f"Contribución: FFMI {w_ffmi*100:.0f}%, Funcional {w_func*100:.0f}%, Experiencia {w_exp*100:.0f}% — Ejercicios: {ejercicios_reportados}/{total_ejercicios_esperados}")
+    
+    # DEBUG: Show scoring details for operators (easy to identify/remove)
+    st.caption(f"🔍 DEBUG - Puntaje total: {puntaje_total:.3f}, Confianza: {confianza:.3f}, Pesos: w_ffmi={w_ffmi:.2f}, w_func={w_func:.2f}, w_exp={w_exp:.2f}")
 
 except Exception as e:
+    import traceback
     st.error(f"Error al calcular nivel de entrenamiento: {e}")
+    st.write("Detalles del error:")
+    st.write(traceback.format_exc())
+    # Set safe fallback values
     nivel_entrenamiento = "intermedio"
+    puntaje_total = 0.5
+    confianza = 0.5
+    puntos_funcional = st.session_state.get("puntos_funcional", 1.0)
+    puntos_ffmi = st.session_state.get("puntos_ffmi", 1)
+    puntos_exp = st.session_state.get("puntos_exp", 1)
+    en_rango_saludable = st.session_state.get("en_rango_saludable", True)
+    # Store fallbacks
+    st.session_state["nivel_entrenamiento"] = nivel_entrenamiento
+    st.session_state["puntaje_total"] = puntaje_total
+    st.session_state["confianza"] = confianza
 
 # Validar si todos los ejercicios funcionales y experiencia están completos
 ejercicios_funcionales_completos = len(ejercicios_data) >= 5  # Debe tener los 5 ejercicios
 experiencia_completa = experiencia  # Allow all experience levels
+
+# === ENSURE VARIABLES ARE DEFINED FOR UI ===
+# Get values from session_state with safe fallbacks to prevent NameError
+puntos_funcional = st.session_state.get("puntos_funcional", 1.0)
+puntos_ffmi = st.session_state.get("puntos_ffmi", 1)
+puntos_exp = st.session_state.get("puntos_exp", 1)
+puntaje_total = st.session_state.get("puntaje_total", 0.5)
+confianza = st.session_state.get("confianza", 0.5)
+nivel_entrenamiento = st.session_state.get("nivel_entrenamiento", "intermedio")
+en_rango_saludable = st.session_state.get("en_rango_saludable", True)
 
 # === MOSTRAR RESUMEN GLOBAL TEMPRANO (ADICIONAL) ===
 # Mostrar resumen global después de los badges de ejercicios si hay datos suficientes
@@ -3593,12 +3632,12 @@ EXPERIENCIA Y RESPUESTAS FUNCIONALES
 NIVEL GLOBAL DE ENTRENAMIENTO
 =====================================
 🎯 DESGLOSE DEL NIVEL GLOBAL:
-- Desarrollo muscular (FFMI): {puntos_ffmi if 'puntos_ffmi' in locals() else 0}/5 puntos → {nivel_ffmi}
-- Rendimiento funcional: {puntos_funcional if 'puntos_funcional' in locals() else 0:.1f}/4 puntos → Promedio de ejercicios
-- Experiencia declarada: {puntos_exp if 'puntos_exp' in locals() else 0}/4 puntos → {experiencia_text[:50]}...
-- PONDERACIÓN APLICADA: {'40% FFMI + 40% Funcional + 20% Experiencia (rango saludable)' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '0% FFMI + 80% Funcional + 20% Experiencia (fuera de rango saludable)'}
-- GRASA CORPORAL: {grasa_corregida:.1f}% ({'En rango saludable' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'Fuera de rango saludable (>{25 if sexo == "Hombre" else 32}%)'})
-- RESULTADO FINAL: {nivel_entrenamiento.upper() if 'nivel_entrenamiento' in locals() else 'INTERMEDIO'} (Score: {puntaje_total if 'puntaje_total' in locals() else 0:.2f}/1.0)
+- Desarrollo muscular (FFMI): {st.session_state.get('puntos_ffmi', 1)}/5 puntos → {nivel_ffmi}
+- Rendimiento funcional: {st.session_state.get('puntos_funcional', 1.0):.1f}/4 puntos → Promedio de ejercicios
+- Experiencia declarada: {st.session_state.get('puntos_exp', 1)}/4 puntos → {experiencia_text[:50]}...
+- PONDERACIÓN APLICADA: {'40% FFMI + 40% Funcional + 20% Experiencia (rango saludable)' if st.session_state.get('en_rango_saludable', True) else '0% FFMI + 80% Funcional + 20% Experiencia (fuera de rango saludable)'}
+- GRASA CORPORAL: {grasa_corregida:.1f}% ({'En rango saludable' if st.session_state.get('en_rango_saludable', True) else f'Fuera de rango saludable (>{25 if sexo == "Hombre" else 32}%)'})
+- RESULTADO FINAL: {st.session_state.get('nivel_entrenamiento', 'intermedio').upper()} (Score: {st.session_state.get('puntaje_total', 0.5):.2f}/1.0)
 
 =====================================
 ACTIVIDAD FÍSICA DIARIA Y FACTORES
