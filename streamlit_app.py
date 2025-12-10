@@ -2094,31 +2094,151 @@ if 'experiencia' not in locals() or experiencia is None:
 if 'niveles_ejercicios' not in locals() or niveles_ejercicios is None:
     niveles_ejercicios = {}  # Diccionario vacío por defecto
 
-# Calcular nivel global con ponderación
-puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}.get(nivel_ffmi, 1)
-puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}.get(experiencia[:2] if experiencia and len(experiencia) >= 2 else "", 1)
-puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
-puntos_funcional = sum([puntos_por_nivel.get(n, 1) for n in niveles_ejercicios.values()]) / len(niveles_ejercicios) if niveles_ejercicios else 1
+# Calcular nivel global con ponderación - LÓGICA ROBUSTA Y CONSERVADORA
+try:
+    # --- Obtener estado / seguridad ---
+    niveles_ejercicios_state = st.session_state.get("niveles_ejercicios", {}) or {}
+    ejercicios_reportados = len(niveles_ejercicios_state)
+    total_ejercicios_esperados = 5
+    completitud = min(1.0, ejercicios_reportados / total_ejercicios_esperados)
 
-# Determinar si el porcentaje de grasa está en rango saludable para ponderar FFMI
-en_rango_saludable = esta_en_rango_saludable(grasa_corregida, sexo)
+    # Variables de entrada (asegurarse que existan)
+    nivel_ffmi = st.session_state.get("nivel_ffmi", nivel_ffmi if 'nivel_ffmi' in locals() else "Bajo")
+    ffmi_val = float(st.session_state.get("ffmi", ffmi if 'ffmi' in locals() else 0.0))
+    grasa_corregida = float(st.session_state.get("grasa_corregida", grasa_corregida if 'grasa_corregida' in locals() else 0.0))
+    metodo_grasa = st.session_state.get("metodo_grasa", metodo_grasa if 'metodo_grasa' in locals() else "DEXA (Gold Standard)")
+    experiencia = st.session_state.get("experiencia", experiencia if 'experiencia' in locals() else "")
 
-# Ponderación adaptativa según el porcentaje de grasa corporal
-if en_rango_saludable:
-    # Rango saludable: FFMI 40%, funcionalidad 40%, experiencia 20%
-    puntaje_total = (puntos_ffmi / 5 * 0.4) + (puntos_funcional / 4 * 0.4) + (puntos_exp / 4 * 0.2)
-else:
-    # Fuera de rango saludable (obesidad): FFMI 0%, funcionalidad 80%, experiencia 20%
-    puntaje_total = (puntos_ffmi / 5 * 0.0) + (puntos_funcional / 4 * 0.8) + (puntos_exp / 4 * 0.2)
+    # --- Mapear y normalizar scores 0..1 ---
+    map_ffmi = {"Bajo":1, "Promedio":2, "Bueno":3, "Avanzado":4, "Élite":5}
+    puntos_ffmi = map_ffmi.get(nivel_ffmi, 1)
+    score_ffmi = (puntos_ffmi - 1) / 4.0   # 0..1
 
-if puntaje_total < 0.3:
-    nivel_entrenamiento = "principiante"
-elif puntaje_total < 0.5:
+    map_exp = {"A)":1, "B)":2, "C)":3, "D)":4}
+    exp_key = experiencia[:2] if isinstance(experiencia, str) and len(experiencia) >= 2 else ""
+    puntos_exp = map_exp.get(exp_key, 1)
+    score_exp = (puntos_exp - 1) / 3.0     # 0..1
+
+    if ejercicios_reportados > 0:
+        map_nivel = {"Bajo":1, "Promedio":2, "Bueno":3, "Avanzado":4}
+        avg_puntos = sum(map_nivel.get(v,1) for v in niveles_ejercicios_state.values()) / ejercicios_reportados
+        score_func = (avg_puntos - 1) / 3.0  # 0..1
+    else:
+        avg_puntos = 1.0
+        score_func = 0.0
+
+    # --- Soft‑weight FFMI según %grasa corregida (DEXA) ---
+    if sexo == "Hombre":
+        healthy_upper = 25.0
+        soft_zero_at = 38.0
+        ffmi_plausible_max = 32.0
+    else:
+        healthy_upper = 32.0
+        soft_zero_at = 42.0
+        ffmi_plausible_max = 26.0
+
+    if grasa_corregida <= healthy_upper:
+        fat_proximity_factor = 1.0
+    elif grasa_corregida >= soft_zero_at:
+        fat_proximity_factor = 0.0
+    else:
+        fat_proximity_factor = 1.0 - (grasa_corregida - healthy_upper) / (soft_zero_at - healthy_upper)
+        fat_proximity_factor = max(0.0, min(1.0, fat_proximity_factor))
+
+    # método ya fue corregido a DEXA; solo ligera penalización por método original
+    method_confidence = {
+        "DEXA (Gold Standard)": 1.00,
+        "InBody 270 (BIA profesional)": 0.97,
+        "Bod Pod (Pletismografía)": 0.98,
+        "Omron HBF-516 (BIA)": 0.92
+    }
+    metodo_factor = method_confidence.get(metodo_grasa, 0.95)
+
+    ffmi_confidence_factor = fat_proximity_factor * metodo_factor  # 0..1
+
+    ffmi_base_nominal = 0.35  # peso base prudente
+    w_ffmi_base = ffmi_base_nominal * ffmi_confidence_factor
+
+    # plausibility cap
+    if ffmi_val > ffmi_plausible_max:
+        ffmi_val = ffmi_plausible_max
+        w_ffmi_base *= 0.7
+
+    # --- Pesos base resto ---
+    w_func_base = 0.45
+    w_exp_base = 0.20
+
+    # penalizar funcional por incompletitud (lineal)
+    w_func = w_func_base * completitud
+    w_ffmi = w_ffmi_base
+    w_exp = w_exp_base
+
+    # normalizar pesos para sumar 1
+    sum_w = w_ffmi + w_func + w_exp
+    if sum_w <= 0:
+        w_ffmi, w_func, w_exp = 0.0, 0.0, 1.0
+        sum_w = 1.0
+    w_ffmi /= sum_w; w_func /= sum_w; w_exp /= sum_w
+
+    # --- Puntaje total ---
+    puntaje_total = score_ffmi * w_ffmi + score_func * w_func + score_exp * w_exp
+    puntaje_total = max(0.0, min(1.0, puntaje_total))
+
+    # --- Confianza ---
+    FFMI_incluido = ffmi_confidence_factor  # 0..1
+    confianza = 0.6 * completitud + 0.25 * FFMI_incluido + 0.15 * (puntos_exp / 4.0)
+    confianza = max(0.0, min(1.0, confianza))
+
+    # --- Umbrales más conservadores ---
+    # Novato/Principiante: <0.30
+    # Intermedio: 0.30 - <0.60
+    # Avanzado: 0.60 - <0.80
+    # Élite: >=0.80
+    if puntaje_total < 0.30:
+        nivel_calc = "principiante"
+    elif puntaje_total < 0.60:
+        nivel_calc = "intermedio"
+    elif puntaje_total < 0.80:
+        nivel_calc = "avanzado"
+    else:
+        nivel_calc = "élite"
+
+    # --- Reglas funcionales y requisitos estrictos ---
+    # Requisitos Avanzado (equilibrado): al menos 3 ejercicios reportados, ninguno "Bajo", al menos 3 >= "Bueno"
+    niveles_list = list(niveles_ejercicios_state.values())
+    cuenta_bajo = sum(1 for v in niveles_list if str(v).strip() == "Bajo")
+    cuenta_bueno_o_mas = sum(1 for v in niveles_list if map_nivel.get(str(v).strip(),1) >= 3)
+
+    if nivel_calc == "avanzado":
+        if ejercicios_reportados < 3 or cuenta_bajo > 0 or cuenta_bueno_o_mas < 3:
+            nivel_calc = "intermedio"
+            st.warning("Para alcanzar AVANZADO necesitas: al menos 3 ejercicios reportados, ninguno con nivel 'Bajo' y al menos 3 ejercicios con nivel 'Bueno' o 'Avanzado'.")
+
+    # Requisitos Élite: n_reportados==5, al menos 4/5 'Avanzado', experiencia == D) y FFMI mínimo (Hombre>=24, Mujer>=20)
+    if nivel_calc == "élite":
+        cuenta_avanzado = sum(1 for v in niveles_list if str(v).strip() == "Avanzado")
+        ffmi_threshold = 24.0 if sexo == "Hombre" else 20.0
+        if not (ejercicios_reportados == 5 and cuenta_avanzado >= 4 and puntos_exp == 4 and ffmi_val >= ffmi_threshold):
+            nivel_calc = "avanzado"
+            st.warning("Para alcanzar ÉLITE se requieren: 5 ejercicios reportados, ≥4 con 'Avanzado', experiencia D) y FFMI mínimo (Hombre≥24 / Mujer≥20).")
+
+    # --- Aplicar bloqueo por baja confianza ---
+    if confianza < 0.50 and nivel_calc in ("avanzado", "élite"):
+        nivel_final = "intermedio"
+        st.warning(f"La confianza es baja ({confianza:.2f}). Resultado limitado a INTERMEDIO hasta completar más datos.")
+    else:
+        nivel_final = nivel_calc
+
+    # Guardar y mostrar transparencia
+    nivel_entrenamiento = nivel_final
+    st.session_state["nivel_entrenamiento"] = nivel_entrenamiento
+
+    st.info(f"Nivel calculado: {nivel_entrenamiento} — Puntaje: {puntaje_total:.2f} — Confianza: {confianza:.2f}")
+    st.caption(f"Contribución: FFMI {w_ffmi*100:.0f}%, Funcional {w_func*100:.0f}%, Experiencia {w_exp*100:.0f}% — Ejercicios: {ejercicios_reportados}/{total_ejercicios_esperados}")
+
+except Exception as e:
+    st.error(f"Error al calcular nivel de entrenamiento: {e}")
     nivel_entrenamiento = "intermedio"
-elif puntaje_total < 0.7:
-    nivel_entrenamiento = "avanzado"
-else:
-    nivel_entrenamiento = "élite"
 
 # Validar si todos los ejercicios funcionales y experiencia están completos
 ejercicios_funcionales_completos = len(ejercicios_data) >= 5  # Debe tener los 5 ejercicios
