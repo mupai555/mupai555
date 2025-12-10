@@ -984,18 +984,27 @@ def calcular_mlg(peso, porcentaje_grasa):
 
 def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max_extrapolate=65.0):
     """
-    Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron, ajusta con tablas especializadas por sexo.
+    Corrige el porcentaje de grasa segun el metodo de medicion.
+    Si el metodo es Omron, ajusta con tablas especializadas por sexo.
     Si InBody, aplica factor.
     Si BodPod, aplica factor por sexo.
     Si DEXA, devuelve el valor medido.
     
     Para Omron:
-    - Interpola entre puntos de la tabla cuando medido está dentro del rango.
-    - Si medido > max_tabla y allow_extrapolate=False: retorna max_tabla (comportamiento conservador).
-    - Si medido > max_tabla y allow_extrapolate=True: extrapola linealmente usando la pendiente
-      de los últimos dos puntos de la tabla, limitado por max_extrapolate.
-    - Establece flags en session_state cuando ocurre extrapolación (con try/except para seguridad).
+    - Interpola entre puntos de la tabla cuando medido esta dentro del rango.
+    - AUTO-EXTRAPOLACION: Si medido > 40% (max_tabla), SIEMPRE extrapola linealmente
+      usando la pendiente de los ultimos dos puntos de la tabla, independiente del
+      valor de allow_extrapolate (comportamiento automatico para alta adiposidad).
+    - Limita el resultado extrapolado a MAX_EXTRAPOLATE (60.0% por defecto).
+    - Establece flags en session_state cuando ocurre extrapolacion:
+      * grasa_extrapolada = True
+      * grasa_extrapolada_valor = resultado extrapolado
+      * grasa_extrapolada_medido = valor medido original
+      * alta_adiposidad = True si medido >= EXTREME_ADIPOSITY_THRESHOLD (45.0%)
+      * allow_extrapolate = True (para transparencia en UI)
+    
+    Nota: El parametro allow_extrapolate se mantiene por compatibilidad pero la
+    extrapolacion ahora se activa automaticamente para Omron >40%.
     """
     try:
         medido = float(medido)
