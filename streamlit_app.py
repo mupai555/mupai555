@@ -10,6 +10,30 @@ import re
 import random
 import string
 
+# ==================== CONSTANTES PARA FFMI CONFIDENCE ====================
+# Rangos de grasa corporal saludable (límite superior) por sexo
+HEALTHY_UPPER = {
+    'Hombre': 25.0,
+    'Mujer': 32.0
+}
+
+# Punto donde la confianza llega a cero (soft zero) - muy alto % de grasa
+SOFT_ZERO_AT = {
+    'Hombre': 38.0,
+    'Mujer': 42.0
+}
+
+# Factores de confianza del método de medición
+METHOD_CONFIDENCE = {
+    'DEXA (Gold Standard)': 1.0,
+    'InBody 270 (BIA profesional)': 0.97,
+    'Bod Pod (Pletismografía)': 0.98,
+    'Omron HBF-516 (BIA)': 0.92
+}
+
+# Umbral mínimo de confianza para considerar el FFMI evaluable
+FFMI_CONFIDENCE_THRESHOLD = 0.50
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -653,7 +677,15 @@ defaults = {
     "access_user_whatsapp": "",
     "code_used": False,
     "access_stage": "request",  # request, code_sent, verify, authenticated
-    "masa_muscular": ""
+    "masa_muscular": "",
+    # Variables para rastreo de extrapolación de grasa corporal
+    "grasa_extrapolada": False,
+    "grasa_extrapolada_valor": None,
+    "grasa_extrapolada_medido": None,
+    "allow_extrapolate": False,
+    # Variables para rastreo de confianza FFMI
+    "ffmi_low_confidence": False,
+    "ffmi_confidence_value": None
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -919,13 +951,20 @@ def calcular_mlg(peso, porcentaje_grasa):
         porcentaje_grasa = 0.0
     return peso * (1 - porcentaje_grasa / 100)
 
-def corregir_porcentaje_grasa(medido, metodo, sexo):
+def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max_extrapolate=65.0):
     """
     Corrige el porcentaje de grasa según el método de medición.
     Si el método es Omron, ajusta con tablas especializadas por sexo.
     Si InBody, aplica factor.
     Si BodPod, aplica factor por sexo.
     Si DEXA, devuelve el valor medido.
+    
+    Para Omron:
+    - Interpola entre puntos de la tabla cuando medido está dentro del rango.
+    - Si medido > max_tabla y allow_extrapolate=False: retorna max_tabla (comportamiento conservador).
+    - Si medido > max_tabla y allow_extrapolate=True: extrapola linealmente usando la pendiente
+      de los últimos dos puntos de la tabla, limitado por max_extrapolate.
+    - Establece flags en session_state cuando ocurre extrapolación (con try/except para seguridad).
     """
     try:
         medido = float(medido)
@@ -957,16 +996,67 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
                 40: 44.7
             }
         
-        grasa_redondeada = int(round(medido))
-        grasa_redondeada = min(max(grasa_redondeada, 5), 40)
-        return tabla.get(grasa_redondeada, medido)
+        # Convertir tabla a listas ordenadas para interpolación
+        omron_values = sorted(tabla.keys())
+        dexa_values = [tabla[k] for k in omron_values]
+        
+        min_omron = min(omron_values)
+        max_omron = max(omron_values)
+        
+        # Si está dentro del rango de la tabla, interpolar
+        if min_omron <= medido <= max_omron:
+            # Usar numpy.interp para interpolación lineal
+            resultado = float(np.interp(medido, omron_values, dexa_values))
+            # Limpiar flags de extrapolación si existen
+            try:
+                import streamlit as st
+                if 'grasa_extrapolada' in st.session_state:
+                    st.session_state['grasa_extrapolada'] = False
+            except:
+                pass
+            return resultado
+        
+        # Si está por debajo del mínimo, usar valor mínimo de la tabla
+        elif medido < min_omron:
+            return tabla[min_omron]
+        
+        # Si está por encima del máximo de la tabla
+        else:  # medido > max_omron
+            if not allow_extrapolate:
+                # Comportamiento conservador: retornar máximo de la tabla
+                return tabla[max_omron]
+            else:
+                # Extrapolación lineal usando los últimos dos puntos
+                # Calcular pendiente entre los dos últimos puntos
+                x1, x2 = omron_values[-2], omron_values[-1]
+                y1, y2 = dexa_values[-2], dexa_values[-1]
+                slope = (y2 - y1) / (x2 - x1)
+                
+                # Extrapolar desde el último punto
+                extrapolated = y2 + slope * (medido - x2)
+                
+                # Limitar al máximo permitido
+                result = min(extrapolated, max_extrapolate)
+                
+                # Establecer flags de session_state para rastreo (con try/except para seguridad)
+                try:
+                    import streamlit as st
+                    st.session_state['grasa_extrapolada'] = True
+                    st.session_state['grasa_extrapolada_valor'] = result
+                    st.session_state['grasa_extrapolada_medido'] = medido
+                except:
+                    # Si streamlit no está disponible o hay error, continuar sin establecer flags
+                    pass
+                
+                return float(result)
+    
     elif metodo == "InBody 270 (BIA profesional)":
-        return medido * 1.02
+        return float(medido * 1.02)
     elif metodo == "Bod Pod (Pletismografía)":
         factor = 1.0 if sexo == "Mujer" else 1.03
-        return medido * factor
+        return float(medido * factor)
     else:  # DEXA (Gold Standard) u otros
-        return medido
+        return float(medido)
 
 def calcular_ffmi(mlg, estatura_cm):
     """Calcula el FFMI y lo normaliza a 1.80m de estatura."""
@@ -1681,6 +1771,16 @@ if datos_personales_completos and st.session_state.datos_completos:
                 help="Selecciona el método utilizado"
             )
             st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Checkbox para permitir extrapolación de Omron (solo visible si es Omron)
+        if st.session_state.get("metodo_grasa", "").startswith("Omron"):
+            allow_extrapolate = st.checkbox(
+                "Permitir extrapolación de Omron para valores >40% (opcional, menos fiable)",
+                value=st.session_state.get("allow_extrapolate", False),
+                key="allow_extrapolate",
+                help="Cuando está activado, permite extrapolar valores de Omron por encima del 40%. "
+                     "La extrapolación es menos precisa que la interpolación dentro del rango de la tabla."
+            )
 
         # Ensure grasa_corporal has a valid default
         grasa_default = 20.0
@@ -1721,8 +1821,9 @@ if datos_personales_completos and st.session_state.datos_completos:
     estatura = st.session_state.estatura
     grasa_corporal = st.session_state.grasa_corporal
     masa_muscular = st.session_state.get("masa_muscular", 0.0)
+    allow_extrapolate = st.session_state.get("allow_extrapolate", False)
 
-    grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+    grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo, allow_extrapolate=allow_extrapolate)
     mlg = calcular_mlg(peso, grasa_corregida)
     tmb = calcular_tmb_cunningham(mlg)
 
@@ -1736,6 +1837,18 @@ if datos_personales_completos and st.session_state.datos_completos:
     nivel_ffmi = clasificar_ffmi(ffmi, sexo)
     edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
 
+    # Mostrar advertencia si se utilizó extrapolación
+    if st.session_state.get('grasa_extrapolada', False):
+        medido_extrap = st.session_state.get('grasa_extrapolada_medido', 0)
+        valor_extrap = st.session_state.get('grasa_extrapolada_valor', 0)
+        st.warning(
+            f"⚠️ **Valor extrapolado (menos fiable):** El valor medido de Omron ({medido_extrap:.1f}%) "
+            f"está por encima del rango de la tabla de calibración (máx 40%). "
+            f"El valor corregido ({valor_extrap:.1f}%) se obtuvo mediante extrapolación lineal, "
+            f"lo cual es menos preciso que la interpolación dentro del rango de la tabla. "
+            f"Se recomienda usar un método de medición más preciso como DEXA o InBody para estos niveles de grasa corporal."
+        )
+    
     # Mostrar corrección si aplica
     if metodo_grasa != "DEXA (Gold Standard)" and abs(grasa_corregida - grasa_corporal) > 0.1:
         st.info(
@@ -2330,7 +2443,7 @@ else:
     
     Una vez completados todos los datos, se mostrará tu ponderación de FFMI, rendimiento funcional y experiencia.
     """)
-    # === Potencial genético ===
+    # === Potencial genético con análisis de confianza ===
 # Initialize variables with safe defaults
 if 'ffmi' not in locals():
     ffmi = 0
@@ -2340,30 +2453,109 @@ if 'porc_potencial' not in locals():
     porc_potencial = 0
 
 if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0:
-    if sexo == "Hombre":
-        ffmi_genetico_max = {
-            "principiante": 22, "intermedio": 23.5,
-            "avanzado": 24.5, "élite": 25
-        }.get(nivel_entrenamiento, 22)
+    # Calcular confianza del FFMI basado en % grasa corporal y método de medición
+    
+    # 1. Factor de proximidad a rango saludable de grasa corporal
+    healthy_upper = HEALTHY_UPPER.get(sexo, 25.0)
+    soft_zero_at = SOFT_ZERO_AT.get(sexo, 38.0)
+    
+    if grasa_corregida <= healthy_upper:
+        # En rango saludable: confianza máxima (1.0)
+        fat_proximity_factor = 1.0
+    elif grasa_corregida >= soft_zero_at:
+        # Por encima del límite máximo: confianza cero (0.0)
+        fat_proximity_factor = 0.0
     else:
-        ffmi_genetico_max = {
-            "principiante": 19, "intermedio": 20,
-            "avanzado": 20.5, "élite": 21
-        }.get(nivel_entrenamiento, 19)
-
-    porc_potencial = min((ffmi / ffmi_genetico_max) * 100, 100) if ffmi_genetico_max > 0 else 0
-
-    st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-    st.success(f"""
-    📈 **Análisis de tu potencial muscular**
-
-    Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
-
-    - FFMI actual: {ffmi:.2f}
-    - FFMI máximo estimado: {ffmi_genetico_max:.1f}
-    - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
+        # Entre healthy_upper y soft_zero_at: interpolación lineal
+        fat_proximity_factor = 1.0 - (grasa_corregida - healthy_upper) / (soft_zero_at - healthy_upper)
+    
+    # 2. Factor de confianza del método de medición
+    method_confidence = METHOD_CONFIDENCE.get(metodo_grasa, 0.90)
+    
+    # 3. Confianza total del FFMI
+    ffmi_confidence = fat_proximity_factor * method_confidence
+    
+    # Guardar en session_state para reportes
+    st.session_state['ffmi_confidence_value'] = ffmi_confidence
+    
+    # Determinar si el FFMI es evaluable según el umbral de confianza
+    if ffmi_confidence < FFMI_CONFIDENCE_THRESHOLD:
+        # Confianza baja: FFMI no evaluable
+        st.session_state['ffmi_low_confidence'] = True
+        ffmi_classification_text = "No evaluable (confianza baja)"
+        porc_potencial = None
+        
+        st.markdown('<div class="content-card" style="border-left-color: #E74C3C;">', unsafe_allow_html=True)
+        st.warning(f"""
+        ⚠️ **FFMI y Potencial Muscular: No Evaluable (Confianza Baja)**
+        
+        Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) está significativamente por encima del rango saludable 
+        ({healthy_upper}% para {sexo.lower()}s), lo que reduce la precisión de la clasificación del FFMI.
+        
+        **Métricas de confianza:**
+        - Factor de proximidad a rango saludable: {fat_proximity_factor:.2f}
+        - Confianza del método ({metodo_grasa.split('(')[0].strip()}): {method_confidence:.2f}
+        - **Confianza total del FFMI: {ffmi_confidence:.2f}** (mínimo requerido: {FFMI_CONFIDENCE_THRESHOLD})
+        
+        **FFMI actual (transparencia):** {ffmi:.2f} (clasificación: {nivel_ffmi})
+        
+        **Recomendación:** Para obtener una clasificación precisa del FFMI y potencial muscular, 
+        se recomienda reducir el porcentaje de grasa corporal hacia el rango saludable (≤{healthy_upper}%).
+        
+        El FFMI se volverá evaluable cuando la confianza alcance {FFMI_CONFIDENCE_THRESHOLD:.2f} o más.
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    else:
+        # Confianza aceptable: calcular FFMI atenuado y clasificación
+        st.session_state['ffmi_low_confidence'] = False
+        
+        # FFMI atenuado por confianza para clasificación
+        ffmi_for_classification = ffmi * ffmi_confidence
+        nivel_ffmi_confidence = clasificar_ffmi(ffmi_for_classification, sexo)
+        
+        # Calcular FFMI máximo según nivel de entrenamiento
+        if sexo == "Hombre":
+            ffmi_genetico_max = {
+                "principiante": 22, "intermedio": 23.5,
+                "avanzado": 24.5, "élite": 25
+            }.get(nivel_entrenamiento, 22)
+        else:
+            ffmi_genetico_max = {
+                "principiante": 19, "intermedio": 20,
+                "avanzado": 20.5, "élite": 21
+            }.get(nivel_entrenamiento, 19)
+        
+        # Calcular potencial usando FFMI atenuado
+        porc_potencial = min((ffmi_for_classification / ffmi_genetico_max) * 100, 100) if ffmi_genetico_max > 0 else 0
+        
+        st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
+        st.success(f"""
+        📈 **Análisis de tu potencial muscular (con confianza ajustada)**
+        
+        Has desarrollado aproximadamente el **{porc_potencial:.0f}%** de tu potencial muscular natural.
+        
+        **Métricas clave:**
+        - FFMI actual (raw): {ffmi:.2f}
+        - FFMI ajustado por confianza: {ffmi_for_classification:.2f}
+        - Clasificación ajustada: {nivel_ffmi_confidence}
+        - FFMI máximo estimado: {ffmi_genetico_max:.1f}
+        - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi_for_classification):.1f} puntos
+        
+        **Análisis de confianza:**
+        - Confianza del FFMI: {ffmi_confidence:.2f} ({int(ffmi_confidence*100)}%)
+        - Factor de proximidad a rango saludable: {fat_proximity_factor:.2f}
+        - Confianza del método ({metodo_grasa.split('(')[0].strip()}): {method_confidence:.2f}
+        """)
+        
+        # Mostrar nota informativa si la confianza no es máxima pero es aceptable
+        if ffmi_confidence < 0.90:
+            st.info(f"""
+            💡 **Nota:** Tu clasificación de FFMI usa un valor atenuado basado en la confianza ({ffmi_confidence:.2f}). 
+            Para maximizar la precisión, considera reducir tu porcentaje de grasa corporal hacia el rango saludable (≤{healthy_upper}%).
+            """)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
@@ -2912,12 +3104,23 @@ with col1:
     - **Evaluación:** {evaluacion}
     """)
 with col2:
+    # Handle FFMI display based on confidence
+    ffmi_low_conf = st.session_state.get('ffmi_low_confidence', False)
+    ffmi_conf_value = st.session_state.get('ffmi_confidence_value', None)
+    
+    if ffmi_low_conf:
+        ffmi_display_text = f"{ffmi:.2f} (No evaluable - confianza baja)"
+        potencial_display = "No evaluable"
+    else:
+        ffmi_display_text = f"{ffmi:.2f} ({nivel_ffmi})"
+        potencial_display = f"{porc_potencial:.0f}% alcanzado" if porc_potencial is not None else "No evaluable"
+    
     st.markdown(f"""
     ### 💪 Composición Corporal
     - **Peso:** {peso} kg | **Altura:** {estatura} cm
     - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
-    - **FFMI:** {ffmi:.2f} ({nivel_ffmi})
-    - **Potencial:** {porc_potencial:.0f}% alcanzado
+    - **FFMI:** {ffmi_display_text}
+    - **Potencial:** {potencial_display}
     """)
 with col3:
     # Safe calculations for display
@@ -3035,7 +3238,21 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 - IMC: {imc:.1f} kg/m²
 - Método medición grasa: {metodo_grasa}
 - % Grasa medido: {grasa_corporal}%
-- % Grasa corregido (DEXA): {grasa_corregida:.1f}%
+- % Grasa corregido (DEXA): {grasa_corregida:.1f}%"""
+
+# Add extrapolation info if applicable
+if st.session_state.get('grasa_extrapolada', False):
+    medido_extrap = st.session_state.get('grasa_extrapolada_medido', 0)
+    valor_extrap = st.session_state.get('grasa_extrapolada_valor', 0)
+    tabla_resumen += f"""
+⚠️ NOTA DE EXTRAPOLACIÓN:
+  El valor medido de Omron ({medido_extrap:.1f}%) está por encima del rango de calibración
+  de la tabla (máx 40%). El valor corregido ({valor_extrap:.1f}%) se obtuvo mediante
+  extrapolación lineal, lo cual es MENOS PRECISO que la interpolación dentro del rango.
+  Se recomienda usar un método más preciso (DEXA/InBody) para estos niveles de grasa.
+"""
+
+tabla_resumen += f"""
 - % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
 - Masa Libre de Grasa: {mlg:.1f} kg
 - Masa Grasa: {peso - mlg:.1f} kg
@@ -3044,10 +3261,43 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 ÍNDICES METABÓLICOS:
 =====================================
 - TMB (Cunningham): {tmb:.0f} kcal
-- FFMI actual: {ffmi:.2f}
-- Clasificación FFMI: {nivel_ffmi}
+- FFMI actual (raw): {ffmi:.2f}
+- Clasificación FFMI base: {nivel_ffmi}"""
+
+# Add FFMI confidence info
+ffmi_conf_value = st.session_state.get('ffmi_confidence_value', None)
+ffmi_low_conf = st.session_state.get('ffmi_low_confidence', False)
+
+if ffmi_conf_value is not None:
+    tabla_resumen += f"""
+- Confianza del FFMI: {ffmi_conf_value:.2f} ({int(ffmi_conf_value*100)}%)"""
+    
+    if ffmi_low_conf:
+        tabla_resumen += f"""
+⚠️ FFMI Y POTENCIAL: NO EVALUABLE (CONFIANZA BAJA)
+  El porcentaje de grasa corporal ({grasa_corregida:.1f}%) está significativamente
+  por encima del rango saludable, lo que reduce la precisión de la clasificación.
+  Confianza actual: {ffmi_conf_value:.2f} (mínimo requerido: {FFMI_CONFIDENCE_THRESHOLD})
+  Recomendación: Reducir grasa corporal hacia rango saludable para evaluación precisa.
+- FFMI mostrado solo para transparencia: {ffmi:.2f}
+- Clasificación: No evaluable (confianza baja)
+- Potencial alcanzado: No evaluable"""
+    else:
+        # Calculate attenuated FFMI for the report
+        ffmi_attenuated = ffmi * ffmi_conf_value if ffmi_conf_value > 0 else ffmi
+        nivel_ffmi_conf = clasificar_ffmi(ffmi_attenuated, sexo)
+        porc_pot_text = f"{porc_potencial:.0f}%" if porc_potencial is not None else "No evaluable"
+        tabla_resumen += f"""
+- FFMI ajustado por confianza: {ffmi_attenuated:.2f}
+- Clasificación ajustada: {nivel_ffmi_conf}
 - FFMI máximo estimado: {ffmi_genetico_max:.1f}
-- Potencial alcanzado: {porc_potencial:.0f}%
+- Potencial alcanzado: {porc_pot_text}
+- Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi_attenuated):.1f} puntos FFMI"""
+else:
+    # Fallback if confidence not calculated
+    tabla_resumen += f"""
+- FFMI máximo estimado: {ffmi_genetico_max:.1f}
+- Potencial alcanzado: {porc_potencial:.0f}% (sin ajuste de confianza)
 - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos FFMI
 
 =====================================
