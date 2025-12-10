@@ -2544,13 +2544,19 @@ try:
     st.info(f"Nivel calculado: {nivel_entrenamiento} — Puntaje: {puntaje_total:.2f} — Confianza: {confianza:.2f}")
     st.caption(f"Contribución: FFMI {w_ffmi*100:.0f}%, Funcional {w_func*100:.0f}%, Experiencia {w_exp*100:.0f}% — Ejercicios: {ejercicios_reportados}/{total_ejercicios_esperados}")
     
-    # DEBUG: Show detailed scoring breakdown (can be removed after testing)
-    st.write(f"🔍 DEBUG - Scores: puntaje_total={puntaje_total:.3f}, confianza={confianza:.3f}, w_ffmi={w_ffmi:.2f}, w_func={w_func:.2f}, w_exp={w_exp:.2f}")
+    # DEBUG: Show detailed scoring breakdown - displayed as caption for transparency
+    st.caption(f"🔍 Detalle: puntaje_total={puntaje_total:.3f}, confianza={confianza:.3f}, w_ffmi={w_ffmi:.2f}, w_func={w_func:.2f}, w_exp={w_exp:.2f}")
 
 except Exception as e:
-    st.error(f"❌ Error al calcular nivel de entrenamiento: {e}")
-    st.write("Traceback completo:")
-    st.write(traceback.format_exc())
+    st.error(f"❌ Error al calcular nivel de entrenamiento. Usando valores por defecto. Por favor, contacta al soporte si el problema persiste.")
+    # Log detailed error server-side (not shown to user by default)
+    import logging
+    logging.error(f"Error en cálculo de nivel: {e}")
+    logging.error(traceback.format_exc())
+    # Show error details in expander for debugging
+    with st.expander("Ver detalles del error (para debugging)"):
+        st.write(f"Error: {e}")
+        st.code(traceback.format_exc())
     # Set fallback values
     nivel_entrenamiento = "intermedio"
     puntaje_total = 0.5
