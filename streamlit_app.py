@@ -34,6 +34,28 @@ METHOD_CONFIDENCE = {
 # Umbral mínimo de confianza para considerar el FFMI evaluable
 FFMI_CONFIDENCE_THRESHOLD = 0.50
 
+# ==================== CONSTANTES PARA AUTO-EXTRAPOLACION Y LBM ====================
+# Configuracion para extrapolacion automatica de Omron
+MAX_EXTRAPOLATE = 60.0  # Limite maximo de extrapolacion (%)
+
+# Factores de proteina basados en LBM (Lean Body Mass)
+PROTEIN_FACTOR_PSMF_LBM = 1.8  # g/kg LBM para PSMF
+PROTEIN_FACTOR_TRAD_LBM = 1.6  # g/kg LBM para plan tradicional
+
+# Umbrales de adiposidad
+EXTREME_ADIPOSITY_THRESHOLD = 45.0  # % grasa para casos extremos
+
+# Limites minimos de macronutrientes
+CARB_MIN_G = 50  # Carbohidratos minimos (g)
+FAT_FLOOR_G = 20  # Grasas minimas (g)
+
+# Limites de ingesta energetica (TEI)
+TEI_MIN_WOMAN = 1200  # kcal minimas para mujeres
+TEI_MIN_MAN = 1400  # kcal minimas para hombres
+
+# Deficit maximo permitido
+MAX_DEFICIT = 0.35  # 35% deficit maximo
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -683,11 +705,15 @@ defaults = {
     "grasa_extrapolada_valor": None,
     "grasa_extrapolada_medido": None,
     "allow_extrapolate": False,
+    "alta_adiposidad": False,
     # Variables para rastreo de confianza FFMI
     "ffmi_low_confidence": False,
     "ffmi_confidence_value": None,
     # Variable para grasa visceral
     "grasa_visceral_g": None,
+    # Flags para calculos basados en LBM
+    "psmf_lbm_based": False,
+    "trad_protein_lbm_used": False,
     # Flags separados para envíos de correo
     "correo_enviado_admin": False,
     "correo_enviado_cliente": False
@@ -958,18 +984,27 @@ def calcular_mlg(peso, porcentaje_grasa):
 
 def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max_extrapolate=65.0):
     """
-    Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron, ajusta con tablas especializadas por sexo.
+    Corrige el porcentaje de grasa segun el metodo de medicion.
+    Si el metodo es Omron, ajusta con tablas especializadas por sexo.
     Si InBody, aplica factor.
     Si BodPod, aplica factor por sexo.
     Si DEXA, devuelve el valor medido.
     
     Para Omron:
-    - Interpola entre puntos de la tabla cuando medido está dentro del rango.
-    - Si medido > max_tabla y allow_extrapolate=False: retorna max_tabla (comportamiento conservador).
-    - Si medido > max_tabla y allow_extrapolate=True: extrapola linealmente usando la pendiente
-      de los últimos dos puntos de la tabla, limitado por max_extrapolate.
-    - Establece flags en session_state cuando ocurre extrapolación (con try/except para seguridad).
+    - Interpola entre puntos de la tabla cuando medido esta dentro del rango.
+    - AUTO-EXTRAPOLACION: Si medido > 40% (max_tabla), SIEMPRE extrapola linealmente
+      usando la pendiente de los ultimos dos puntos de la tabla, independiente del
+      valor de allow_extrapolate (comportamiento automatico para alta adiposidad).
+    - Limita el resultado extrapolado a MAX_EXTRAPOLATE (60.0% por defecto).
+    - Establece flags en session_state cuando ocurre extrapolacion:
+      * grasa_extrapolada = True
+      * grasa_extrapolada_valor = resultado extrapolado
+      * grasa_extrapolada_medido = valor medido original
+      * alta_adiposidad = True si medido >= EXTREME_ADIPOSITY_THRESHOLD (45.0%)
+      * allow_extrapolate = True (para transparencia en UI)
+    
+    Nota: El parametro allow_extrapolate se mantiene por compatibilidad pero la
+    extrapolacion ahora se activa automaticamente para Omron >40%.
     """
     try:
         medido = float(medido)
@@ -1017,6 +1052,7 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
                 import streamlit as st
                 if 'grasa_extrapolada' in st.session_state:
                     st.session_state['grasa_extrapolada'] = False
+                    st.session_state['alta_adiposidad'] = False
             except:
                 pass
             return resultado
@@ -1027,33 +1063,33 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
         
         # Si está por encima del máximo de la tabla
         else:  # medido > max_omron
-            if not allow_extrapolate:
-                # Comportamiento conservador: retornar máximo de la tabla
-                return tabla[max_omron]
-            else:
-                # Extrapolación lineal usando los últimos dos puntos
-                # Calcular pendiente entre los dos últimos puntos
-                x1, x2 = omron_values[-2], omron_values[-1]
-                y1, y2 = dexa_values[-2], dexa_values[-1]
-                slope = (y2 - y1) / (x2 - x1)
-                
-                # Extrapolar desde el último punto
-                extrapolated = y2 + slope * (medido - x2)
-                
-                # Limitar al máximo permitido
-                result = min(extrapolated, max_extrapolate)
-                
-                # Establecer flags de session_state para rastreo (con try/except para seguridad)
-                try:
-                    import streamlit as st
-                    st.session_state['grasa_extrapolada'] = True
-                    st.session_state['grasa_extrapolada_valor'] = result
-                    st.session_state['grasa_extrapolada_medido'] = medido
-                except:
-                    # Si streamlit no está disponible o hay error, continuar sin establecer flags
-                    pass
-                
-                return float(result)
+            # AUTO-EXTRAPOLACION: Para Omron >40%, siempre extrapolar (independiente del checkbox)
+            # Extrapolación lineal usando los últimos dos puntos
+            # Calcular pendiente entre los dos últimos puntos
+            x1, x2 = omron_values[-2], omron_values[-1]
+            y1, y2 = dexa_values[-2], dexa_values[-1]
+            slope = (y2 - y1) / (x2 - x1)
+            
+            # Extrapolar desde el último punto
+            extrapolated = y2 + slope * (medido - x2)
+            
+            # Limitar al máximo permitido (usar constante MAX_EXTRAPOLATE)
+            result = min(extrapolated, MAX_EXTRAPOLATE)
+            
+            # Establecer flags de session_state para rastreo (con try/except para seguridad)
+            try:
+                import streamlit as st
+                st.session_state['grasa_extrapolada'] = True
+                st.session_state['grasa_extrapolada_valor'] = result
+                st.session_state['grasa_extrapolada_medido'] = medido
+                st.session_state['allow_extrapolate'] = True  # Auto-activar para transparencia
+                # Flag de alta adiposidad si medido >= 45.0
+                st.session_state['alta_adiposidad'] = (medido >= EXTREME_ADIPOSITY_THRESHOLD)
+            except:
+                # Si streamlit no está disponible o hay error, continuar sin establecer flags
+                pass
+            
+            return float(result)
     
     elif metodo == "InBody 270 (BIA profesional)":
         return float(medido * 1.02)
@@ -1092,7 +1128,7 @@ def clasificar_ffmi(ffmi, sexo):
             return clasificacion
     return "Élite"
 
-def calculate_psmf(sexo, peso, grasa_corregida, mlg):
+def calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura_cm=170):
     """
     Calcula los parámetros para PSMF (Very Low Calorie Diet) actualizada
     según el nuevo protocolo basado en proteína total y multiplicadores.
@@ -1103,13 +1139,25 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
     - Calorías = proteína (g) × multiplicador según % grasa
     - Multiplicadores: 8.3 (alto % grasa), 9.0 (moderado), 9.5-9.7 (magro)
     - Carbohidratos: Resto de calorías de vegetales fibrosos únicamente
+    
+    Actualización LBM-based:
+    - Usa LBM para proteína cuando: grasa_corregida >= 35% (hombres) o >= 40% (mujeres) o IMC >= 30
+    - Factor LBM: PROTEIN_FACTOR_PSMF_LBM = 1.8 g/kg LBM
     """
     try:
         peso = float(peso)
         grasa_corregida = float(grasa_corregida)
+        mlg = float(mlg)
+        estatura_cm = float(estatura_cm)
     except (TypeError, ValueError):
         peso = 70.0
         grasa_corregida = 20.0
+        mlg = 56.0
+        estatura_cm = 170.0
+    
+    # Calcular IMC
+    estatura_m = estatura_cm / 100.0
+    imc = peso / (estatura_m ** 2) if estatura_m > 0 else 25.0
     
     # Determinar elegibilidad para PSMF según sexo y % grasa
     if sexo == "Hombre" and grasa_corregida > 18:
@@ -1124,15 +1172,44 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         return {"psmf_aplicable": False}
     
     if psmf_aplicable:
+        # Determinar si usar LBM-based protein calculation
+        use_lbm_based = False
+        if sexo == "Hombre" and grasa_corregida >= 35:
+            use_lbm_based = True
+        elif sexo == "Mujer" and grasa_corregida >= 40:
+            use_lbm_based = True
+        elif imc >= 30:
+            use_lbm_based = True
+        
         # PROTEÍNA Y GRASAS: Asignación automática según % grasa corporal corregida
-        if grasa_corregida < 25:
+        if use_lbm_based:
+            # Usar LBM para calcular proteína en casos de alta adiposidad
+            proteina_g_dia = round(mlg * PROTEIN_FACTOR_PSMF_LBM, 1)
+            grasa_g_dia = 50.0  # Grasas para alta adiposidad
+            # Guardar flag en session_state
+            try:
+                import streamlit as st
+                st.session_state['psmf_lbm_based'] = True
+            except:
+                pass
+        elif grasa_corregida < 25:
             # < 25% grasa: 1.8g/kg proteína + 30g grasas
             proteina_g_dia = round(peso * 1.8, 1)
             grasa_g_dia = 30.0
+            try:
+                import streamlit as st
+                st.session_state['psmf_lbm_based'] = False
+            except:
+                pass
         else:
             # ≥ 25% grasa: 1.6g/kg proteína + 50g grasas
             proteina_g_dia = round(peso * 1.6, 1)
             grasa_g_dia = 50.0
+            try:
+                import streamlit as st
+                st.session_state['psmf_lbm_based'] = False
+            except:
+                pass
         
         # MULTIPLICADOR CALÓRICO según % grasa corporal
         if grasa_corregida > 35:  # Alto % grasa - PSMF tradicional
@@ -1173,7 +1250,8 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
             "multiplicador": multiplicador,
             "perfil_grasa": perfil_grasa,
             "perdida_semanal_kg": (perdida_semanal_min, perdida_semanal_max),
-            "criterio": f"{criterio} - Nuevo protocolo: {perfil_grasa}"
+            "criterio": f"{criterio} - Nuevo protocolo: {perfil_grasa}",
+            "use_lbm_based": use_lbm_based
         }
     else:
         return {"psmf_aplicable": False}
@@ -1943,16 +2021,6 @@ if datos_personales_completos and st.session_state.datos_completos:
             )
             st.markdown('</div>', unsafe_allow_html=True)
         
-        # Checkbox para permitir extrapolación de Omron (solo visible si es Omron)
-        if st.session_state.get("metodo_grasa", "").startswith("Omron"):
-            allow_extrapolate = st.checkbox(
-                "Permitir extrapolación de Omron para valores >40% (opcional, menos fiable)",
-                value=st.session_state.get("allow_extrapolate", False),
-                key="allow_extrapolate",
-                help="Cuando está activado, permite extrapolar valores de Omron por encima del 40%. "
-                     "La extrapolación es menos precisa que la interpolación dentro del rango de la tabla."
-            )
-
         # Ensure grasa_corporal has a valid default
         grasa_default = 20.0
         grasa_value = st.session_state.get("grasa_corporal", grasa_default)
@@ -1967,6 +2035,35 @@ if datos_personales_completos and st.session_state.datos_completos:
             key="grasa_corporal",
             help="Valor medido con el método seleccionado"
         )
+        
+        # Checkbox para permitir extrapolación de Omron (solo visible si es Omron)
+        if st.session_state.get("metodo_grasa", "").startswith("Omron"):
+            # Determinar si el valor actual requiere auto-extrapolacion
+            current_grasa = st.session_state.get("grasa_corporal", 20.0)
+            auto_extrapolate_needed = current_grasa > 40.0
+            
+            if auto_extrapolate_needed:
+                # Mostrar checkbox marcado y deshabilitado con mensaje explicativo
+                st.checkbox(
+                    "Extrapolacion activada automaticamente (Omron >40%)",
+                    value=True,
+                    disabled=True,
+                    key="allow_extrapolate_display",
+                    help="La extrapolacion se activa automaticamente para valores de Omron superiores al 40% "
+                         "(fuera del rango de calibracion). Limitada a un maximo de 60% por seguridad."
+                )
+                # Asegurar que el flag interno este activado
+                if 'allow_extrapolate' not in st.session_state or not st.session_state['allow_extrapolate']:
+                    st.session_state['allow_extrapolate'] = True
+            else:
+                # Comportamiento normal del checkbox para valores <= 40
+                allow_extrapolate = st.checkbox(
+                    "Permitir extrapolacion de Omron para valores >40% (opcional, menos fiable)",
+                    value=st.session_state.get("allow_extrapolate", False),
+                    key="allow_extrapolate",
+                    help="Cuando esta activado, permite extrapolar valores de Omron por encima del 40%. "
+                         "La extrapolacion es menos precisa que la interpolacion dentro del rango de la tabla."
+                )
 
         # Campo opcional - % Masa muscular (no afecta cálculos)
         masa_muscular_default = st.session_state.get("masa_muscular", 40.0)
@@ -2025,10 +2122,18 @@ if datos_personales_completos and st.session_state.datos_completos:
         valor_extrap = st.session_state.get('grasa_extrapolada_valor', 0)
         st.warning(
             f"⚠️ **Valor extrapolado (menos fiable):** El valor medido de Omron ({medido_extrap:.1f}%) "
-            f"está por encima del rango de la tabla de calibración (máx 40%). "
-            f"El valor corregido ({valor_extrap:.1f}%) se obtuvo mediante extrapolación lineal, "
-            f"lo cual es menos preciso que la interpolación dentro del rango de la tabla. "
-            f"Se recomienda usar un método de medición más preciso como DEXA o InBody para estos niveles de grasa corporal."
+            f"esta por encima del rango de la tabla de calibracion (max 40%). "
+            f"El valor corregido ({valor_extrap:.1f}%) se obtuvo mediante extrapolacion lineal, "
+            f"lo cual es menos preciso que la interpolacion dentro del rango de la tabla. "
+            f"Se recomienda usar un metodo de medicion mas preciso como DEXA o InBody para estos niveles de grasa corporal."
+        )
+    
+    # Mostrar advertencia adicional para alta adiposidad
+    if st.session_state.get('alta_adiposidad', False):
+        st.error(
+            f"🚨 **Alta adiposidad detectada:** Con un nivel de grasa corporal de {grasa_corregida:.1f}%, "
+            f"se utilizaran calculos especiales basados en masa libre de grasa (LBM) para optimizar "
+            f"la retencion muscular durante la perdida de peso. Se recomienda supervision profesional."
         )
     
     # Mostrar corrección si aplica
@@ -2164,28 +2269,32 @@ grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
 mlg = calcular_mlg(peso, grasa_corregida)
 
 # --- Cálculo PSMF ---
-psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
+psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura)
 if psmf_recs.get("psmf_aplicable"):
     st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
     perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
+    use_lbm = psmf_recs.get('use_lbm_based', False)
+    protein_ratio_text = f"{psmf_recs['proteina_g_dia']/mlg:.2f} g/kg LBM" if use_lbm else f"{psmf_recs['proteina_g_dia']/peso:.2f} g/kg peso total"
+    lbm_note = "\n    💡 **Nota:** Proteina calculada basada en LBM (masa libre de grasa) debido a alta adiposidad." if use_lbm else ""
+    
     st.warning(f"""
     ⚡ **CANDIDATO PARA PROTOCOLO PSMF ACTUALIZADO**
-    Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
+    Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrias beneficiarte de una fase de perdida rapida:
     
-    🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día ({psmf_recs['proteina_g_dia']/peso:.2f} g/kg peso total)
-    🔥 **Calorías diarias:** {psmf_recs['calorias_dia']:.0f} kcal/día
+    🥩 **Proteina diaria:** {psmf_recs['proteina_g_dia']} g/dia ({protein_ratio_text})
+    🔥 **Calorias diarias:** {psmf_recs['calorias_dia']:.0f} kcal/dia
     📊 **Multiplicador:** {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
-    📈 **Pérdida semanal proyectada:** {perdida_min}-{perdida_max} kg/semana
-    ⚠️ **Mínimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/día
-    📋 **Criterio:** {psmf_recs['criterio']}
+    📈 **Perdida semanal proyectada:** {perdida_min}-{perdida_max} kg/semana
+    ⚠️ **Minimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/dia
+    📋 **Criterio:** {psmf_recs['criterio']}{lbm_note}
     
     ⚠️ **ADVERTENCIAS DE SEGURIDAD:**
-    • Duración máxima: 6-8 semanas
-    • Requiere supervisión médica/nutricional
-    • Carbohidratos y grasas al mínimo (solo de fuentes magras y vegetales)
-    • Suplementación obligatoria: multivitamínico, omega-3, electrolitos
+    • Duracion maxima: 6-8 semanas
+    • Requiere supervision medica/nutricional
+    • Carbohidratos y grasas al minimo (solo de fuentes magras y vegetales)
+    • Suplementacion obligatoria: multivitaminico, omega-3, electrolitos
     
-    *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
+    *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteina)*
     """)
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -3186,38 +3295,94 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         """)
     else:
         # ----------- TRADICIONAL -----------
-        ingesta_calorica = ingesta_calorica_tradicional
+        # Detectar caso extremo de adiposidad
+        grasa_extrapolada_medido = st.session_state.get('grasa_extrapolada_medido', 0)
+        extreme_case = (grasa_corregida >= EXTREME_ADIPOSITY_THRESHOLD) or (grasa_extrapolada_medido >= EXTREME_ADIPOSITY_THRESHOLD)
+        
+        if extreme_case:
+            # CASO EXTREMO: Usar LBM para proteina y ajustar macros
+            st.session_state['trad_protein_lbm_used'] = True
+            
+            # Calcular TEI propuesto con cap de deficit
+            tei_propuesto = tmb * nivel_actividad
+            deficit_max = MAX_DEFICIT
+            tei_min = TEI_MIN_WOMAN if sexo == "Mujer" else TEI_MIN_MAN
+            tei_con_deficit = tei_propuesto * (1 - deficit_max)
+            ingesta_calorica = max(tei_con_deficit, tei_min)
+            
+            # Proteina basada en LBM
+            proteina_g = round(mlg * PROTEIN_FACTOR_TRAD_LBM, 1)
+            proteina_kcal = proteina_g * 4
+            
+            # Carbohidratos minimos
+            carbo_g = max(CARB_MIN_G, 50)
+            carbo_kcal = carbo_g * 4
+            
+            # Grasas: calcular lo que queda, respetando piso
+            calorias_restantes = ingesta_calorica - proteina_kcal - carbo_kcal
+            grasa_g = max(round(calorias_restantes / 9, 1), FAT_FLOOR_G)
+            grasa_kcal = grasa_g * 9
+            
+            # Verificar que la suma no exceda TEI
+            total_kcal = proteina_kcal + grasa_kcal + carbo_kcal
+            if total_kcal > ingesta_calorica:
+                # Reducir grasas primero
+                deficit_kcal = total_kcal - ingesta_calorica
+                grasa_g = max(round((grasa_kcal - deficit_kcal) / 9, 1), FAT_FLOOR_G)
+                grasa_kcal = grasa_g * 9
+                
+                # Si aun excede, ajustar TEI al minimo y recalcular
+                total_kcal = proteina_kcal + grasa_kcal + carbo_kcal
+                if total_kcal > ingesta_calorica:
+                    ingesta_calorica = tei_min
+                    carbo_g = CARB_MIN_G
+                    carbo_kcal = carbo_g * 4
+                    calorias_restantes = ingesta_calorica - proteina_kcal - carbo_kcal
+                    grasa_g = max(round(calorias_restantes / 9, 1), FAT_FLOOR_G)
+                    grasa_kcal = grasa_g * 9
+            
+            # Mostrar mensaje informativo
+            st.info(f"""
+            💡 **Ajuste por alta adiposidad:** Debido a tu nivel de grasa corporal ({grasa_corregida:.1f}%), 
+            estamos usando un calculo de proteina basado en masa libre de grasa (LBM) de {mlg:.1f} kg 
+            con factor de {PROTEIN_FACTOR_TRAD_LBM} g/kg LBM. Esto optimiza la retencion muscular 
+            durante la perdida de peso mientras mantiene las calorias en un rango seguro y sostenible.
+            """)
+        else:
+            # CASO NORMAL: Logica tradicional
+            st.session_state['trad_protein_lbm_used'] = False
+            ingesta_calorica = ingesta_calorica_tradicional
 
-        # PROTEÍNA: Variable según % grasa corporal corregido (sin cambios)
-        # GRASA: NUEVA LÓGICA - SIEMPRE 40% TMB independiente del % grasa corporal
-        # Escala de distribución actualizada para plan tradicional:
-        # - Si grasa_corregida < 10%: 2.2g/kg proteína
-        # - Si grasa_corregida < 15%: 2.0g/kg proteína  
-        # - Si grasa_corregida < 25%: 1.8g/kg proteína
-        # - Si grasa_corregida >= 25%: 1.6g/kg proteína
-        # - GRASA: SIEMPRE 40% TMB (mínimo 20% TEI, máximo 40% TEI)
-        factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
-        proteina_g = round(peso * factor_proteina, 1)
-        proteina_kcal = proteina_g * 4
+            # PROTEÍNA: Variable según % grasa corporal corregido (sin cambios)
+            # GRASA: NUEVA LÓGICA - SIEMPRE 40% TMB independiente del % grasa corporal
+            # Escala de distribución actualizada para plan tradicional:
+            # - Si grasa_corregida < 10%: 2.2g/kg proteína
+            # - Si grasa_corregida < 15%: 2.0g/kg proteína  
+            # - Si grasa_corregida < 25%: 1.8g/kg proteína
+            # - Si grasa_corregida >= 25%: 1.6g/kg proteína
+            # - GRASA: SIEMPRE 40% TMB (mínimo 20% TEI, máximo 40% TEI)
+            factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
+            proteina_g = round(peso * factor_proteina, 1)
+            proteina_kcal = proteina_g * 4
 
-        # GRASA: Porcentaje variable del TMB según % grasa, nunca menos del 20% ni más del 40% de calorías totales
-        grasa_min_kcal = ingesta_calorica * 0.20
-        porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo)
-        grasa_ideal_kcal = tmb * porcentaje_grasa_tmb
-        grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
-        grasa_min_g = round(grasa_min_kcal / 9, 1)
-        grasa_max_kcal = ingesta_calorica * 0.40  # La grasa nunca debe superar el 40% del TMB
-        grasa_g = max(grasa_min_g, grasa_ideal_g)
-        if grasa_g * 9 > grasa_max_kcal:
-            grasa_g = round(grasa_max_kcal / 9, 1)
-        grasa_kcal = grasa_g * 9
+            # GRASA: Porcentaje variable del TMB según % grasa, nunca menos del 20% ni más del 40% de calorías totales
+            grasa_min_kcal = ingesta_calorica * 0.20
+            porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo)
+            grasa_ideal_kcal = tmb * porcentaje_grasa_tmb
+            grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
+            grasa_min_g = round(grasa_min_kcal / 9, 1)
+            grasa_max_kcal = ingesta_calorica * 0.40  # La grasa nunca debe superar el 40% del TMB
+            grasa_g = max(grasa_min_g, grasa_ideal_g)
+            if grasa_g * 9 > grasa_max_kcal:
+                grasa_g = round(grasa_max_kcal / 9, 1)
+            grasa_kcal = grasa_g * 9
 
-        # CARBOHIDRATOS: el resto de las calorías según especificación
-        # Fórmula: (ingesta_calorica - (proteina_g * 4 + grasa_g * 9)) / 4
-        carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
-        carbo_g = round(carbo_kcal / 4, 1)
-        if carbo_g < 50:
-            st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
+            # CARBOHIDRATOS: el resto de las calorías según especificación
+            # Fórmula: (ingesta_calorica - (proteina_g * 4 + grasa_g * 9)) / 4
+            carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
+            carbo_g = round(carbo_kcal / 4, 1)
+            if carbo_g < 50:
+                st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorias o reducir grasa para una dieta mas sostenible.")
 
         # --- DESGLOSE FINAL VISUAL ---
         st.markdown("### 🍽️ Distribución de macronutrientes")
