@@ -1661,11 +1661,25 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 - Estatura: {estatura} cm
 - Método medición grasa: {metodo_grasa}
 - % Grasa corporal medido: {grasa_corporal}%
-- % Grasa corregido (DEXA): {grasa_corregida:.1f}%
+- % Grasa corregido (DEXA): {grasa_corregida:.1f}%"""
+    
+    # Add extrapolation note if applicable
+    if st.session_state.get('grasa_extrapolada', False):
+        resumen += """
+- ⚠️ Valor extrapolado (fuera de rango de calibración, menos preciso)"""
+    
+    resumen += f"""
 - Categoría de grasa corporal: {categoria_grasa}
 - % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
 - Grasa visceral: {grasa_visceral_g if grasa_visceral_g is not None and grasa_visceral_g > 0 else 'No especificado'} g
-- Masa Libre de Grasa: {mlg:.1f} kg
+- Masa Libre de Grasa: {mlg:.1f} kg"""
+    
+    # Add LBM-based calculation note if applicable
+    if st.session_state.get('psmf_lbm_based', False) or st.session_state.get('trad_protein_lbm_used', False):
+        resumen += f"""
+- ℹ️ Cálculos nutricionales basados en LBM (alta adiposidad)"""
+    
+    resumen += f"""
 
 =====================================
 ÍNDICES CLAVE:
@@ -3712,7 +3726,31 @@ PLAN NUTRICIONAL CALCULADO:
 DISTRIBUCIÓN DE MACRONUTRIENTES:
 - Proteína: {proteina_g}g ({proteina_kcal_safe:.0f} kcal) = {proteina_percent}%
 - Grasas: {grasa_g}g ({grasa_kcal_safe:.0f} kcal) = {grasa_percent}%
-- Carbohidratos: {carbo_g}g ({carbo_kcal_safe:.0f} kcal) = {carbo_percent}%
+- Carbohidratos: {carbo_g}g ({carbo_kcal_safe:.0f} kcal) = {carbo_percent}%"""
+
+# Add LBM-based calculation notes if applicable
+psmf_lbm_based = st.session_state.get('psmf_lbm_based', False)
+trad_protein_lbm_used = st.session_state.get('trad_protein_lbm_used', False)
+
+if psmf_lbm_based:
+    tabla_resumen += f"""
+
+ℹ️ NOTA PSMF - CÁLCULO BASADO EN MASA MAGRA:
+  Debido al alto porcentaje de grasa corporal ({grasa_corregida:.1f}%), se utilizó
+  Masa Libre de Grasa (LBM={mlg:.1f}kg) en lugar de peso total para calcular
+  los requerimientos proteicos: {PROTEIN_FACTOR_PSMF_LBM}g/kg LBM.
+  Esto proporciona mayor precisión en casos de alta adiposidad."""
+
+if trad_protein_lbm_used:
+    tabla_resumen += f"""
+
+ℹ️ NOTA PLAN TRADICIONAL - CASO EXTREMO:
+  Debido al alto porcentaje de grasa corporal ({grasa_corregida:.1f}% ≥45%),
+  se utilizó Masa Libre de Grasa (LBM={mlg:.1f}kg) en lugar de peso total
+  para calcular los requerimientos proteicos: {PROTEIN_FACTOR_TRAD_LBM}g/kg LBM.
+  Se aplicaron mínimos de seguridad: {CARB_MIN_G}g carbohidratos, {FAT_FLOOR_G}g grasas."""
+
+tabla_resumen += f"""
 
 =====================================
 RESUMEN PERSONALIZADO Y PROYECCIÓN
