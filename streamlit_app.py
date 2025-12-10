@@ -1009,7 +1009,6 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
             resultado = float(np.interp(medido, omron_values, dexa_values))
             # Limpiar flags de extrapolación si existen
             try:
-                import streamlit as st
                 if 'grasa_extrapolada' in st.session_state:
                     st.session_state['grasa_extrapolada'] = False
             except:
@@ -1040,7 +1039,6 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
                 
                 # Establecer flags de session_state para rastreo (con try/except para seguridad)
                 try:
-                    import streamlit as st
                     st.session_state['grasa_extrapolada'] = True
                     st.session_state['grasa_extrapolada_valor'] = result
                     st.session_state['grasa_extrapolada_medido'] = medido
@@ -3284,7 +3282,12 @@ if ffmi_conf_value is not None:
 - Potencial alcanzado: No evaluable"""
     else:
         # Calculate attenuated FFMI for the report
-        ffmi_attenuated = ffmi * ffmi_conf_value if ffmi_conf_value > 0 else ffmi
+        # Handle edge case where confidence could be exactly 0.0 but not flagged as low confidence
+        # (This shouldn't happen with current logic but safeguards against edge cases)
+        if ffmi_conf_value is not None and ffmi_conf_value >= 0:
+            ffmi_attenuated = ffmi * ffmi_conf_value
+        else:
+            ffmi_attenuated = ffmi
         nivel_ffmi_conf = clasificar_ffmi(ffmi_attenuated, sexo)
         porc_pot_text = f"{porc_potencial:.0f}%" if porc_potencial is not None else "No evaluable"
         tabla_resumen += f"""
