@@ -2052,7 +2052,7 @@ if datos_personales_completos and st.session_state.datos_completos:
             st.info(
                 f"ℹ️ **Extrapolacion automatica aplicada:** El valor medido de Omron ({medido_extrap:.1f}%) "
                 f"esta en rango de alta adiposidad (>=45%). Se ha aplicado extrapolacion automatica determinista "
-                f"con pendiente 1.0 %DEXA por unidad Omron. Valor corregido: {valor_extrap:.1f}% (limitado a max {max_extrapolate}%). "
+                f"con pendiente 1.0 %DEXA por unidad Omron. Valor corregido: {valor_extrap:.1f}% (limitado a max 60%). "
                 f"Se recomienda usar un metodo de medicion mas preciso como DEXA o InBody para estos niveles."
             )
         else:
