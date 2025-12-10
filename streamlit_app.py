@@ -2161,7 +2161,7 @@ try:
 
     # plausibility cap
     if ffmi_val > ffmi_plausible_max:
-        ffmi_val = min(ffmi_val, ffmi_plausible_max)
+        ffmi_val = ffmi_plausible_max
         w_ffmi_base *= 0.7
 
     # --- Pesos base resto ---
