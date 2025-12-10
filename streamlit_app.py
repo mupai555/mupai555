@@ -1048,7 +1048,7 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
             st.session_state['grasa_extrapolada_medido'] = None
             st.session_state['alta_adiposidad'] = False
             st.session_state['allow_extrapolate'] = False
-        except:
+        except Exception:
             pass
         
         # Si esta dentro del rango de la tabla (<=40), interpolar
@@ -1071,7 +1071,7 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
                 try:
                     import streamlit as st
                     st.session_state['grasa_extrapolada_medido'] = medido
-                except:
+                except Exception:
                     pass
                 return resultado
             
@@ -1094,7 +1094,7 @@ def corregir_porcentaje_grasa(medido, metodo, sexo, allow_extrapolate=False, max
                     st.session_state['grasa_extrapolada_medido'] = medido
                     st.session_state['alta_adiposidad'] = True
                     st.session_state['allow_extrapolate'] = True
-                except:
+                except Exception:
                     pass
                 
                 return float(result)
@@ -1186,7 +1186,7 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         try:
             import streamlit as st
             st.session_state['psmf_lbm_based'] = use_lbm
-        except:
+        except Exception:
             pass
         
         # PROTEINA Y GRASAS: Asignacion automatica segun % grasa corporal corregida
@@ -3383,11 +3383,11 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             # Recalcular ingesta calorica con los minimos
             ingesta_calorica_recalc = proteina_kcal + grasa_kcal + carbo_kcal
             
-            # Verificar coherencia con TEI_MIN (con fallback correcto por sexo)
+            # Verificar coherencia con TEI_MIN (usar constantes directamente)
             if sexo == "Hombre":
-                tei_min_value = TEI_MIN.get('Hombre', 1400)
+                tei_min_value = TEI_MIN['Hombre']
             else:
-                tei_min_value = TEI_MIN.get('Mujer', 1200)
+                tei_min_value = TEI_MIN['Mujer']
             
             if ingesta_calorica_recalc < tei_min_value:
                 ingesta_calorica = tei_min_value
