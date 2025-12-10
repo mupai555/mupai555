@@ -685,7 +685,12 @@ defaults = {
     "allow_extrapolate": False,
     # Variables para rastreo de confianza FFMI
     "ffmi_low_confidence": False,
-    "ffmi_confidence_value": None
+    "ffmi_confidence_value": None,
+    # Variable para grasa visceral
+    "grasa_visceral_g": None,
+    # Flags separados para envíos de correo
+    "correo_enviado_admin": False,
+    "correo_enviado_cliente": False
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -1495,7 +1500,173 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
     except Exception as e:
         st.error(f"Error al enviar email: {str(e)}")
         return False
-        # ==================== VISUALES INICIALES ====================
+
+def construir_resumen_corto():
+    """
+    Construye un resumen corto mejorado para enviar al cliente.
+    Incluye datos clave como edad metabólica, categoría de grasa corporal y grasa visceral.
+    """
+    # Obtener datos de session_state
+    nombre = st.session_state.get("nombre", "Cliente")
+    edad = st.session_state.get("edad", 0)
+    sexo = st.session_state.get("sexo", "Hombre")
+    peso = st.session_state.get("peso", 0)
+    estatura = st.session_state.get("estatura", 0)
+    grasa_corporal = st.session_state.get("grasa_corporal", 0)
+    metodo_grasa = st.session_state.get("metodo_grasa", "No especificado")
+    masa_muscular = st.session_state.get("masa_muscular", 0)
+    grasa_visceral_g = st.session_state.get("grasa_visceral_g", None)
+    fecha_llenado = st.session_state.get("fecha_llenado", datetime.now().strftime("%Y-%m-%d"))
+    
+    # Calcular valores derivados (usar las mismas variables que el flujo principal)
+    try:
+        allow_extrapolate = st.session_state.get("allow_extrapolate", False)
+        grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo, allow_extrapolate=allow_extrapolate)
+        mlg = calcular_mlg(peso, grasa_corregida)
+        tmb = calcular_tmb_cunningham(mlg)
+        if estatura > 0:
+            ffmi = calcular_ffmi(mlg, estatura)
+            nivel_ffmi = clasificar_ffmi(ffmi, sexo)
+        else:
+            ffmi = 0
+            nivel_ffmi = "No evaluable"
+        edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
+        
+        # Categoría de grasa corporal
+        if sexo == "Hombre":
+            if grasa_corregida < 6:
+                categoria_grasa = "Muy bajo (Competición)"
+            elif grasa_corregida < 12:
+                categoria_grasa = "Atlético"
+            elif grasa_corregida < 18:
+                categoria_grasa = "Fitness"
+            elif grasa_corregida < 25:
+                categoria_grasa = "Promedio"
+            else:
+                categoria_grasa = "Alto"
+        else:  # Mujer
+            if grasa_corregida < 12:
+                categoria_grasa = "Muy bajo (Competición)"
+            elif grasa_corregida < 17:
+                categoria_grasa = "Atlético"
+            elif grasa_corregida < 23:
+                categoria_grasa = "Fitness"
+            elif grasa_corregida < 30:
+                categoria_grasa = "Promedio"
+            else:
+                categoria_grasa = "Alto"
+    except Exception as e:
+        # Si hay algún error en los cálculos, usar valores por defecto
+        grasa_corregida = grasa_corporal
+        mlg = peso * 0.8
+        tmb = 1500
+        ffmi = 0
+        nivel_ffmi = "No evaluable"
+        edad_metabolica = edad
+        categoria_grasa = "No evaluable"
+    
+    # Construir resumen corto
+    resumen = f"""
+=====================================
+RESUMEN MUPAI - {nombre.upper()}
+=====================================
+Fecha: {fecha_llenado}
+Sistema: MUPAI v2.0
+
+=====================================
+DATOS PERSONALES:
+=====================================
+- Nombre: {nombre}
+- Edad cronológica: {edad} años
+- Edad metabólica calculada: {edad_metabolica} años (vs cronológica: {edad} años)
+- Sexo: {sexo}
+
+=====================================
+ANTROPOMETRÍA Y COMPOSICIÓN:
+=====================================
+- Peso: {peso} kg
+- Estatura: {estatura} cm
+- Método medición grasa: {metodo_grasa}
+- % Grasa corporal medido: {grasa_corporal}%
+- % Grasa corregido (DEXA): {grasa_corregida:.1f}%
+- Categoría de grasa corporal: {categoria_grasa}
+- % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
+- Grasa visceral: {grasa_visceral_g if grasa_visceral_g is not None and grasa_visceral_g > 0 else 'No especificado'} g
+- Masa Libre de Grasa: {mlg:.1f} kg
+
+=====================================
+ÍNDICES CLAVE:
+=====================================
+- TMB (Cunningham): {tmb:.0f} kcal
+- FFMI: {ffmi:.2f} ({nivel_ffmi})
+
+=====================================
+PRÓXIMOS PASOS:
+=====================================
+Tu evaluación completa ha sido procesada y enviada a administración.
+En breve recibirás tu plan nutricional personalizado y recomendaciones
+específicas basadas en tu evaluación integral.
+
+Para consultas o seguimiento:
+📧 administracion@muscleupgym.fitness
+🌐 muscleupgym.fitness
+
+=====================================
+© 2025 MUPAI - Muscle Up GYM
+Performance Assessment Intelligence
+=====================================
+"""
+    return resumen
+
+def enviar_email_a(destino_email, asunto, contenido):
+    """
+    Envía un email a cualquier destinatario especificado.
+    Simula el envío en modo desarrollo si no hay configuración de Zoho.
+    
+    Args:
+        destino_email: Email del destinatario
+        asunto: Asunto del email
+        contenido: Contenido del email
+    
+    Returns:
+        bool: True si el envío fue exitoso, False en caso contrario
+    """
+    try:
+        email_origen = "administracion@muscleupgym.fitness"
+        
+        # Comprobar si estamos en modo desarrollo
+        try:
+            password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+            development_mode = password == "TU_PASSWORD_AQUI"
+        except Exception:
+            # No hay secrets disponibles - modo desarrollo
+            development_mode = True
+        
+        # Crear mensaje
+        msg = MIMEMultipart()
+        msg['From'] = email_origen
+        msg['To'] = destino_email
+        msg['Subject'] = asunto
+        
+        msg.attach(MIMEText(contenido, 'plain'))
+        
+        # Enviar email solo en producción
+        if not development_mode:
+            server = smtplib.SMTP('smtp.zoho.com', 587)
+            server.starttls()
+            server.login(email_origen, password)
+            server.send_message(msg)
+            server.quit()
+            return True
+        else:
+            # Modo desarrollo - simular envío exitoso
+            return True
+            
+    except Exception as e:
+        st.error(f"Error al enviar email a {destino_email}: {str(e)}")
+        return False
+
+# ==================== VISUALES INICIALES ====================
 
 # Misión, Visión y Compromiso con diseño mejorado
 with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
@@ -1807,6 +1978,17 @@ if datos_personales_completos and st.session_state.datos_completos:
             step=0.1,
             key="masa_muscular",
             help="Introduce el % de masa muscular según tu medición. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
+        )
+
+        # Campo opcional - Grasa visceral en gramos
+        grasa_visceral = st.number_input(
+            "🧾 Grasa visceral (g) (opcional)",
+            min_value=0.0,
+            max_value=5000.0,
+            value=safe_float(st.session_state.get("grasa_visceral_g", 0.0), 0.0),
+            step=1.0,
+            key="grasa_visceral_g",
+            help="Introduce la grasa visceral en gramos (opcional). No afecta cálculos automáticos, solo se registra en el reporte."
         )
 
         st.markdown('</div>', unsafe_allow_html=True)
@@ -3254,6 +3436,7 @@ if st.session_state.get('grasa_extrapolada', False):
 
 tabla_resumen += f"""
 - % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
+- Grasa visceral: {st.session_state.get('grasa_visceral_g', 'No especificado')} g
 - Masa Libre de Grasa: {mlg:.1f} kg
 - Masa Grasa: {peso - mlg:.1f} kg
 
@@ -3740,22 +3923,42 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
     </div>
     """, unsafe_allow_html=True)
 
-# --- Botón para enviar email (solo si no se ha enviado y todo completo) ---
-if not st.session_state.get("correo_enviado", False):
+# --- Botón para enviar email (doble envío: admin + cliente) ---
+if not st.session_state.get("correo_enviado_admin", False) or not st.session_state.get("correo_enviado_cliente", False):
     if st.button("📧 Enviar Resumen por Email", key="enviar_email"):
         faltantes = datos_completos_para_email()
         if faltantes:
             st.error(f"❌ No se puede enviar el email. Faltan: {', '.join(faltantes)}")
         else:
-            with st.spinner("📧 Enviando resumen por email..."):
-                ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
-                if ok:
-                    st.session_state["correo_enviado"] = True
-                    st.success("✅ Email enviado exitosamente a administración")
+            # Enviar resumen completo a administración
+            with st.spinner("📧 Enviando resumen completo a administración..."):
+                ok_admin = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
+                if ok_admin:
+                    st.session_state["correo_enviado_admin"] = True
+                    st.success("✅ Resumen completo enviado exitosamente a administración")
                 else:
-                    st.error("❌ Error al enviar email. Contacta a soporte técnico.")
+                    st.error("❌ Error al enviar resumen a administración.")
+            
+            # Construir y enviar resumen corto al cliente
+            with st.spinner("📧 Enviando resumen corto al cliente..."):
+                resumen_corto = construir_resumen_corto()
+                asunto_cliente = f"Tu Evaluación MUPAI - {nombre} ({fecha_llenado})"
+                ok_cliente = enviar_email_a(email_cliente, asunto_cliente, resumen_corto)
+                if ok_cliente:
+                    st.session_state["correo_enviado_cliente"] = True
+                    st.success(f"✅ Resumen corto enviado exitosamente al cliente ({email_cliente})")
+                    
+                    # Mostrar vista previa del resumen corto
+                    st.markdown("### 📄 Vista previa del resumen enviado al cliente:")
+                    st.code(resumen_corto, language="text")
+                else:
+                    st.error(f"❌ Error al enviar resumen al cliente ({email_cliente}).")
+            
+            # Marcar correo_enviado general si ambos fueron exitosos
+            if ok_admin and ok_cliente:
+                st.session_state["correo_enviado"] = True
 else:
-    st.info("✅ El resumen ya fue enviado por email. Si requieres reenviarlo, refresca la página o usa el botón de 'Reenviar Email'.")
+    st.info("✅ Los resúmenes ya fueron enviados (administración y cliente). Si requieres reenviarlos, usa el botón de 'Reenviar Email'.")
 
 # --- Opción para reenviar manualmente (opcional) ---
 if st.button("📧 Reenviar Email", key="reenviar_email"):
@@ -3763,13 +3966,33 @@ if st.button("📧 Reenviar Email", key="reenviar_email"):
     if faltantes:
         st.error(f"❌ No se puede reenviar el email. Faltan: {', '.join(faltantes)}")
     else:
-        with st.spinner("📧 Reenviando resumen por email..."):
-            ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
-            if ok:
-                st.session_state["correo_enviado"] = True
-                st.success("✅ Email reenviado exitosamente a administración")
+        # Reenviar resumen completo a administración
+        with st.spinner("📧 Reenviando resumen completo a administración..."):
+            ok_admin = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
+            if ok_admin:
+                st.session_state["correo_enviado_admin"] = True
+                st.success("✅ Resumen completo reenviado exitosamente a administración")
             else:
-                st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
+                st.error("❌ Error al reenviar resumen a administración.")
+        
+        # Reenviar resumen corto al cliente
+        with st.spinner("📧 Reenviando resumen corto al cliente..."):
+            resumen_corto = construir_resumen_corto()
+            asunto_cliente = f"Tu Evaluación MUPAI - {nombre} ({fecha_llenado})"
+            ok_cliente = enviar_email_a(email_cliente, asunto_cliente, resumen_corto)
+            if ok_cliente:
+                st.session_state["correo_enviado_cliente"] = True
+                st.success(f"✅ Resumen corto reenviado exitosamente al cliente ({email_cliente})")
+                
+                # Mostrar vista previa del resumen corto
+                st.markdown("### 📄 Vista previa del resumen enviado al cliente:")
+                st.code(resumen_corto, language="text")
+            else:
+                st.error(f"❌ Error al reenviar resumen al cliente ({email_cliente}).")
+        
+        # Marcar correo_enviado general si ambos fueron exitosos
+        if ok_admin and ok_cliente:
+            st.session_state["correo_enviado"] = True
 
 # --- Limpieza de sesión y botón de nueva evaluación ---
 if st.button("🔄 Nueva Evaluación", key="nueva"):
