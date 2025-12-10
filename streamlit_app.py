@@ -9,6 +9,7 @@ import time
 import re
 import random
 import string
+import traceback
 
 # ==================== CONSTANTES PARA FFMI CONFIDENCE ====================
 # Rangos de grasa corporal saludable (límite superior) por sexo
@@ -2408,11 +2409,13 @@ try:
     map_ffmi = {"Bajo":1, "Promedio":2, "Bueno":3, "Avanzado":4, "Élite":5}
     puntos_ffmi = map_ffmi.get(nivel_ffmi, 1)
     score_ffmi = (puntos_ffmi - 1) / 4.0   # 0..1
+    st.session_state["puntos_ffmi"] = puntos_ffmi
 
     map_exp = {"A)":1, "B)":2, "C)":3, "D)":4}
     exp_key = experiencia[:2] if isinstance(experiencia, str) and len(experiencia) >= 2 else ""
     puntos_exp = map_exp.get(exp_key, 1)
     score_exp = (puntos_exp - 1) / 3.0     # 0..1
+    st.session_state["puntos_exp"] = puntos_exp
 
     if ejercicios_reportados > 0:
         map_nivel = {"Bajo":1, "Promedio":2, "Bueno":3, "Avanzado":4}
@@ -2421,6 +2424,14 @@ try:
     else:
         avg_puntos = 1.0
         score_func = 0.0
+    
+    # Store puntos_funcional for UI display
+    puntos_funcional = avg_puntos
+    st.session_state["puntos_funcional"] = puntos_funcional
+    
+    # Calculate and store en_rango_saludable for UI display
+    en_rango_saludable = esta_en_rango_saludable(grasa_corregida, sexo)
+    st.session_state["en_rango_saludable"] = en_rango_saludable
 
     # --- Soft‑weight FFMI según %grasa corregida (DEXA) ---
     if sexo == "Hombre":
@@ -2527,13 +2538,35 @@ try:
     # Guardar y mostrar transparencia
     nivel_entrenamiento = nivel_final
     st.session_state["nivel_entrenamiento"] = nivel_entrenamiento
+    st.session_state["puntaje_total"] = puntaje_total
+    st.session_state["confianza"] = confianza
 
     st.info(f"Nivel calculado: {nivel_entrenamiento} — Puntaje: {puntaje_total:.2f} — Confianza: {confianza:.2f}")
     st.caption(f"Contribución: FFMI {w_ffmi*100:.0f}%, Funcional {w_func*100:.0f}%, Experiencia {w_exp*100:.0f}% — Ejercicios: {ejercicios_reportados}/{total_ejercicios_esperados}")
+    
+    # DEBUG: Show detailed scoring breakdown (can be removed after testing)
+    st.write(f"🔍 DEBUG - Scores: puntaje_total={puntaje_total:.3f}, confianza={confianza:.3f}, w_ffmi={w_ffmi:.2f}, w_func={w_func:.2f}, w_exp={w_exp:.2f}")
 
 except Exception as e:
-    st.error(f"Error al calcular nivel de entrenamiento: {e}")
+    st.error(f"❌ Error al calcular nivel de entrenamiento: {e}")
+    st.write("Traceback completo:")
+    st.write(traceback.format_exc())
+    # Set fallback values
     nivel_entrenamiento = "intermedio"
+    puntaje_total = 0.5
+    confianza = 0.5
+    puntos_funcional = 2.0
+    puntos_ffmi = 2
+    puntos_exp = 2
+    en_rango_saludable = True
+    # Store fallback values in session_state
+    st.session_state["nivel_entrenamiento"] = nivel_entrenamiento
+    st.session_state["puntaje_total"] = puntaje_total
+    st.session_state["confianza"] = confianza
+    st.session_state["puntos_funcional"] = puntos_funcional
+    st.session_state["puntos_ffmi"] = puntos_ffmi
+    st.session_state["puntos_exp"] = puntos_exp
+    st.session_state["en_rango_saludable"] = en_rango_saludable
 
 # Validar si todos los ejercicios funcionales y experiencia están completos
 ejercicios_funcionales_completos = len(ejercicios_data) >= 5  # Debe tener los 5 ejercicios
@@ -2548,13 +2581,16 @@ if ejercicios_funcionales_completos and experiencia_completa:
     col1_global, col2_global, col3_global, col4_global = st.columns(4)
     
     with col1_global:
-        st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel_ffmi}")
+        puntos_ffmi_display = st.session_state.get("puntos_ffmi", 1)
+        st.metric("Desarrollo Muscular", f"{puntos_ffmi_display}/5", f"FFMI: {nivel_ffmi}")
 
     with col2_global:
-        st.metric("Rendimiento", f"{puntos_funcional:.1f}/4", "Capacidad funcional")
+        puntos_funcional_display = st.session_state.get("puntos_funcional", 1.0)
+        st.metric("Rendimiento", f"{puntos_funcional_display:.1f}/4", "Capacidad funcional")
 
     with col3_global:
-        st.metric("Experiencia", f"{puntos_exp}/4", experiencia[3:20] + "...")
+        puntos_exp_display = st.session_state.get("puntos_exp", 1)
+        st.metric("Experiencia", f"{puntos_exp_display}/4", experiencia[3:20] + "...")
 
     with col4_global:
         color_nivel_entrenamiento = {
@@ -2564,13 +2600,14 @@ if ejercicios_funcionales_completos and experiencia_completa:
             "élite": "success"
         }.get(nivel_entrenamiento, "info")
 
+        puntaje_total_display = st.session_state.get("puntaje_total", 0.5)
         st.markdown(f"""
         <div style="text-align: center;">
             <h3 style="margin: 0;">Nivel Global</h3>
             <span class="badge badge-{color_nivel_entrenamiento}" style="font-size: 1.2rem;">
                 {nivel_entrenamiento.upper()}
             </span><br>
-            <small>Score: {puntaje_total:.2f}/1.0</small>
+            <small>Score: {puntaje_total_display:.2f}/1.0</small>
         </div>
         """, unsafe_allow_html=True)
     
@@ -2581,7 +2618,8 @@ if ejercicios_funcionales_completos and experiencia_completa:
     """)
     
     # Mostrar advertencia si FFMI no se pondera por exceso de grasa
-    if not en_rango_saludable:
+    en_rango_saludable_display = st.session_state.get("en_rango_saludable", True)
+    if not en_rango_saludable_display:
         rango_texto = "≤25%" if sexo == "Hombre" else "≤32%"
         st.warning(f"""
         ⚠️ **ADVERTENCIA: FFMI no ponderado por exceso de grasa corporal**
@@ -3593,12 +3631,12 @@ EXPERIENCIA Y RESPUESTAS FUNCIONALES
 NIVEL GLOBAL DE ENTRENAMIENTO
 =====================================
 🎯 DESGLOSE DEL NIVEL GLOBAL:
-- Desarrollo muscular (FFMI): {puntos_ffmi if 'puntos_ffmi' in locals() else 0}/5 puntos → {nivel_ffmi}
-- Rendimiento funcional: {puntos_funcional if 'puntos_funcional' in locals() else 0:.1f}/4 puntos → Promedio de ejercicios
-- Experiencia declarada: {puntos_exp if 'puntos_exp' in locals() else 0}/4 puntos → {experiencia_text[:50]}...
-- PONDERACIÓN APLICADA: {'40% FFMI + 40% Funcional + 20% Experiencia (rango saludable)' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '0% FFMI + 80% Funcional + 20% Experiencia (fuera de rango saludable)'}
-- GRASA CORPORAL: {grasa_corregida:.1f}% ({'En rango saludable' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'Fuera de rango saludable (>{25 if sexo == "Hombre" else 32}%)'})
-- RESULTADO FINAL: {nivel_entrenamiento.upper() if 'nivel_entrenamiento' in locals() else 'INTERMEDIO'} (Score: {puntaje_total if 'puntaje_total' in locals() else 0:.2f}/1.0)
+- Desarrollo muscular (FFMI): {st.session_state.get('puntos_ffmi', 0)}/5 puntos → {nivel_ffmi}
+- Rendimiento funcional: {st.session_state.get('puntos_funcional', 0):.1f}/4 puntos → Promedio de ejercicios
+- Experiencia declarada: {st.session_state.get('puntos_exp', 0)}/4 puntos → {experiencia_text[:50]}...
+- PONDERACIÓN APLICADA: {'40% FFMI + 40% Funcional + 20% Experiencia (rango saludable)' if st.session_state.get('en_rango_saludable', True) else '0% FFMI + 80% Funcional + 20% Experiencia (fuera de rango saludable)'}
+- GRASA CORPORAL: {grasa_corregida:.1f}% ({'En rango saludable' if st.session_state.get('en_rango_saludable', True) else f'Fuera de rango saludable (>{25 if sexo == "Hombre" else 32}%)'})
+- RESULTADO FINAL: {nivel_entrenamiento.upper() if 'nivel_entrenamiento' in locals() else 'INTERMEDIO'} (Score: {st.session_state.get('puntaje_total', 0):.2f}/1.0)
 
 =====================================
 ACTIVIDAD FÍSICA DIARIA Y FACTORES
