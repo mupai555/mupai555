@@ -3383,21 +3383,47 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             # Recalcular ingesta calorica con los minimos
             ingesta_calorica_recalc = proteina_kcal + grasa_kcal + carbo_kcal
             
-            # Verificar coherencia con TEI_MIN
-            tei_min_value = TEI_MIN.get(sexo, 1200)
+            # Verificar coherencia con TEI_MIN (con fallback correcto por sexo)
+            if sexo == "Hombre":
+                tei_min_value = TEI_MIN.get('Hombre', 1400)
+            else:
+                tei_min_value = TEI_MIN.get('Mujer', 1200)
+            
             if ingesta_calorica_recalc < tei_min_value:
                 ingesta_calorica = tei_min_value
                 # Ajustar macros: mantener proteina, reducir grasa si es necesario
-                ingesta_disponible = ingesta_calorica - proteina_kcal - carbo_kcal
-                if ingesta_disponible < (FAT_FLOOR_G * 9):
-                    # No hay espacio suficiente, forzar TEI_min y recalcular todo
-                    ingesta_calorica = tei_min_value
-                    carbo_kcal = CARB_MIN_G * 4
-                    grasa_kcal = max(ingesta_calorica - proteina_kcal - carbo_kcal, FAT_FLOOR_G * 9)
-                    grasa_g = round(grasa_kcal / 9, 1)
+                carbo_kcal_min = CARB_MIN_G * 4
+                fat_floor_kcal = FAT_FLOOR_G * 9
+                
+                # Calcular espacio disponible para grasa despues de proteina y carbs minimos
+                ingesta_disponible = ingesta_calorica - proteina_kcal - carbo_kcal_min
+                
+                # Asegurar que no haya valores negativos
+                if ingesta_disponible < fat_floor_kcal:
+                    # Caso extremo: no hay suficiente espacio incluso con minimos
+                    # Prioridad: proteina > grasa minima > carbos
+                    if proteina_kcal + fat_floor_kcal > ingesta_calorica:
+                        # Incluso proteina + grasa minima excede TEI_min
+                        # Mantener proteina y grasa minima, ajustar TEI al minimo viable
+                        ingesta_calorica = proteina_kcal + fat_floor_kcal + carbo_kcal_min
+                        grasa_kcal = fat_floor_kcal
+                        grasa_g = FAT_FLOOR_G
+                        carbo_kcal = carbo_kcal_min
+                        carbo_g = CARB_MIN_G
+                        st.warning(f"⚠️ Ajuste extremo: Calorias totales ajustadas a {ingesta_calorica:.0f} kcal "
+                                  f"para cumplir minimos nutricionales (proteina LBM + minimos macro).")
+                    else:
+                        # Proteina + grasa minima caben, ajustar carbos al resto
+                        grasa_kcal = fat_floor_kcal
+                        grasa_g = FAT_FLOOR_G
+                        carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
+                        carbo_g = round(carbo_kcal / 4, 1)
                 else:
+                    # Hay espacio suficiente, asignar el resto a grasa
                     grasa_kcal = ingesta_disponible
                     grasa_g = round(grasa_kcal / 9, 1)
+                    carbo_kcal = carbo_kcal_min
+                    carbo_g = CARB_MIN_G
             else:
                 ingesta_calorica = ingesta_calorica_recalc
 
