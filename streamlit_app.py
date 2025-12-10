@@ -3104,12 +3104,23 @@ with col1:
     - **Evaluación:** {evaluacion}
     """)
 with col2:
+    # Handle FFMI display based on confidence
+    ffmi_low_conf = st.session_state.get('ffmi_low_confidence', False)
+    ffmi_conf_value = st.session_state.get('ffmi_confidence_value', None)
+    
+    if ffmi_low_conf:
+        ffmi_display_text = f"{ffmi:.2f} (No evaluable - confianza baja)"
+        potencial_display = "No evaluable"
+    else:
+        ffmi_display_text = f"{ffmi:.2f} ({nivel_ffmi})"
+        potencial_display = f"{porc_potencial:.0f}% alcanzado" if porc_potencial is not None else "No evaluable"
+    
     st.markdown(f"""
     ### 💪 Composición Corporal
     - **Peso:** {peso} kg | **Altura:** {estatura} cm
     - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
-    - **FFMI:** {ffmi:.2f} ({nivel_ffmi})
-    - **Potencial:** {porc_potencial:.0f}% alcanzado
+    - **FFMI:** {ffmi_display_text}
+    - **Potencial:** {potencial_display}
     """)
 with col3:
     # Safe calculations for display
