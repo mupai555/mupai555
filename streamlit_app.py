@@ -652,7 +652,8 @@ defaults = {
     "access_user_email": "",
     "access_user_whatsapp": "",
     "code_used": False,
-    "access_stage": "request"  # request, code_sent, verify, authenticated
+    "access_stage": "request",  # request, code_sent, verify, authenticated
+    "masa_muscular": ""
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -1696,6 +1697,18 @@ if datos_personales_completos and st.session_state.datos_completos:
             help="Valor medido con el método seleccionado"
         )
 
+        # Campo opcional - % Masa muscular (no afecta cálculos)
+        masa_muscular_default = st.session_state.get("masa_muscular", 40.0)
+        masa_muscular = st.number_input(
+            "💪 % Masa muscular (medición, opcional)",
+            min_value=0.0,
+            max_value=100.0,
+            value=safe_float(masa_muscular_default, 40.0),
+            step=0.1,
+            key="masa_muscular",
+            help="Introduce el % de masa muscular según tu medición. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
+        )
+
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
@@ -1707,6 +1720,7 @@ if datos_personales_completos and st.session_state.datos_completos:
     peso = st.session_state.peso
     estatura = st.session_state.estatura
     grasa_corporal = st.session_state.grasa_corporal
+    masa_muscular = st.session_state.get("masa_muscular", 0.0)
 
     grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
     mlg = calcular_mlg(peso, grasa_corregida)
@@ -1746,6 +1760,18 @@ if datos_personales_completos and st.session_state.datos_completos:
             edad_num = 25
             diferencia_edad = 0
         st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
+    
+    # Mostrar masa muscular si está disponible
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        try:
+            masa_muscular_val = safe_float(masa_muscular, 0.0)
+            if masa_muscular_val > 0:
+                st.metric("Masa muscular (%)", f"{masa_muscular_val:.1f}%")
+            else:
+                st.write("Masa muscular: –")
+        except:
+            st.write("Masa muscular: –")
 
     # FFMI con visualización mejorada
     st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
@@ -1797,6 +1823,8 @@ if 'edad' not in locals():
     edad = 25
 if 'metodo_grasa' not in locals():
     metodo_grasa = "Omron HBF-516 (BIA)"
+if 'masa_muscular' not in locals():
+    masa_muscular = st.session_state.get("masa_muscular", 0.0)
 if 'grasa_corregida' not in locals():
     grasa_corregida = 20.0
 if 'mlg' not in locals():
@@ -2890,6 +2918,7 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 - Método medición grasa: {metodo_grasa}
 - % Grasa medido: {grasa_corporal}%
 - % Grasa corregido (DEXA): {grasa_corregida:.1f}%
+- % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
 - Masa Libre de Grasa: {mlg:.1f} kg
 - Masa Grasa: {peso - mlg:.1f} kg
 
