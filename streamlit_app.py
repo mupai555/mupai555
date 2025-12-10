@@ -1762,16 +1762,14 @@ if datos_personales_completos and st.session_state.datos_completos:
         st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
     
     # Mostrar masa muscular si está disponible
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        try:
-            masa_muscular_val = safe_float(masa_muscular, 0.0)
-            if masa_muscular_val > 0:
+    try:
+        masa_muscular_val = safe_float(masa_muscular, 0.0)
+        if masa_muscular_val > 0:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
                 st.metric("Masa muscular (%)", f"{masa_muscular_val:.1f}%")
-            else:
-                st.write("Masa muscular: –")
-        except:
-            st.write("Masa muscular: –")
+    except (ValueError, TypeError):
+        pass  # No se muestra si hay error en el valor
 
     # FFMI con visualización mejorada
     st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
