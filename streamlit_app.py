@@ -956,13 +956,13 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
         # Clamp to valid range [4, 60]
         medido_clamped = max(4.0, min(60.0, medido))
         
-        # If exact integer match, return mapped value directly
-        if medido_clamped in omron_to_dexa:
-            return float(omron_to_dexa[medido_clamped])
+        # Check if value is an exact integer match in the table
+        lower_key = int(medido_clamped)
+        if lower_key == medido_clamped and lower_key in omron_to_dexa:
+            return float(omron_to_dexa[lower_key])
         
         # Linear interpolation between nearest keys
         # Example: 15.4 → interpolate between 15 (13.9) and 16 (14.7) → ~14.22
-        lower_key = int(medido_clamped)
         upper_key = lower_key + 1
         
         # Safety check: ensure upper_key exists in the table
