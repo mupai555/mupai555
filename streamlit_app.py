@@ -922,10 +922,14 @@ def calcular_mlg(peso, porcentaje_grasa):
 def corregir_porcentaje_grasa(medido, metodo, sexo):
     """
     Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron, ajusta con tablas especializadas por sexo.
-    Si InBody, aplica factor.
-    Si BodPod, aplica factor por sexo.
-    Si DEXA, devuelve el valor medido.
+    
+    Actualizado 2025-12-11: Para Omron, usa tabla unificada (ambos sexos) basada
+    en estudio validado con interpolación lineal para valores decimales.
+    
+    Si el método es Omron, ajusta con tabla unificada Omron→DEXA (rango 4-60%).
+    Si InBody, aplica factor 1.02.
+    Si BodPod, aplica factor por sexo (1.03 hombres, 1.0 mujeres).
+    Si DEXA, devuelve el valor medido sin cambios.
     """
     try:
         medido = float(medido)
@@ -933,33 +937,48 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
         medido = 0.0
 
     if metodo == "Omron HBF-516 (BIA)":
-        # Tablas especializadas por sexo para conversión Omron→DEXA
-        if sexo == "Hombre":
-            tabla = {
-                5: 2.8, 6: 3.8, 7: 4.8, 8: 5.8, 9: 6.8,
-                10: 7.8, 11: 8.8, 12: 9.8, 13: 10.8, 14: 11.8,
-                15: 13.8, 16: 14.8, 17: 15.8, 18: 16.8, 19: 17.8,
-                20: 20.8, 21: 21.8, 22: 22.8, 23: 23.8, 24: 24.8,
-                25: 27.3, 26: 28.3, 27: 29.3, 28: 30.3, 29: 31.3,
-                30: 33.8, 31: 34.8, 32: 35.8, 33: 36.8, 34: 37.8,
-                35: 40.3, 36: 41.3, 37: 42.3, 38: 43.3, 39: 44.3,
-                40: 45.3
-            }
-        else:  # Mujer
-            tabla = {
-                5: 2.2, 6: 3.2, 7: 4.2, 8: 5.2, 9: 6.2,
-                10: 7.2, 11: 8.2, 12: 9.2, 13: 10.2, 14: 11.2,
-                15: 13.2, 16: 14.2, 17: 15.2, 18: 16.2, 19: 17.2,
-                20: 20.2, 21: 21.2, 22: 22.2, 23: 23.2, 24: 24.2,
-                25: 26.7, 26: 27.7, 27: 28.7, 28: 29.7, 29: 30.7,
-                30: 33.2, 31: 34.2, 32: 35.2, 33: 36.2, 34: 37.2,
-                35: 39.7, 36: 40.7, 37: 41.7, 38: 42.7, 39: 43.7,
-                40: 44.7
-            }
+        # Tabla unificada Omron→DEXA (ambos sexos, estudio validado 2025-12-11)
+        omron_to_dexa = {
+            4: 4.6, 5: 5.4, 6: 6.3, 7: 7.1, 8: 7.9, 9: 8.8,
+            10: 9.6, 11: 10.5, 12: 11.3, 13: 12.2, 14: 13.0,
+            15: 13.9, 16: 14.7, 17: 15.6, 18: 16.4, 19: 17.3,
+            20: 18.0, 21: 18.9, 22: 19.8, 23: 20.7, 24: 21.5,
+            25: 22.4, 26: 23.1, 27: 23.9, 28: 24.8, 29: 25.6,
+            30: 26.5, 31: 27.3, 32: 28.2, 33: 29.0, 34: 29.9,
+            35: 30.7, 36: 31.6, 37: 32.4, 38: 33.3, 39: 34.1,
+            40: 35.0, 41: 35.8, 42: 36.7, 43: 37.5, 44: 38.4,
+            45: 39.2, 46: 40.1, 47: 40.9, 48: 41.8, 49: 42.6,
+            50: 43.5, 51: 44.1, 52: 44.9, 53: 45.7, 54: 46.6,
+            55: 47.4, 56: 48.3, 57: 49.1, 58: 49.9, 59: 50.8,
+            60: 51.6
+        }
         
-        grasa_redondeada = int(round(medido))
-        grasa_redondeada = min(max(grasa_redondeada, 5), 40)
-        return tabla.get(grasa_redondeada, medido)
+        # Clamp to valid range [4, 60]
+        medido_clamped = max(4.0, min(60.0, medido))
+        
+        # Check if value is an exact integer match in the table
+        lower_key = int(medido_clamped)
+        if lower_key == medido_clamped and lower_key in omron_to_dexa:
+            return float(omron_to_dexa[lower_key])
+        
+        # Linear interpolation between nearest keys
+        # Example: 15.4 → interpolate between 15 (13.9) and 16 (14.7) → ~14.22
+        upper_key = lower_key + 1
+        
+        # Safety check: ensure upper_key exists in the table
+        if upper_key not in omron_to_dexa:
+            # At maximum boundary, return the max value
+            return float(omron_to_dexa[lower_key])
+        
+        # Get mapped DXA values for lower and upper bounds
+        lower_val = omron_to_dexa[lower_key]
+        upper_val = omron_to_dexa[upper_key]
+        
+        # Linear interpolation: val = lower + (upper - lower) * fraction
+        fraction = medido_clamped - lower_key
+        interpolated = lower_val + (upper_val - lower_val) * fraction
+        
+        return interpolated
     elif metodo == "InBody 270 (BIA profesional)":
         return medido * 1.02
     elif metodo == "Bod Pod (Pletismografía)":
