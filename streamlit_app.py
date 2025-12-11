@@ -10,6 +10,69 @@ import re
 import random
 import string
 
+# ==================== CONSTANTES ====================
+# Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
+# Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
+OMRON_HBF516_TO_4C = {
+    4: 4.6,
+    5: 5.4,
+    6: 6.3,
+    7: 7.1,
+    8: 7.9,
+    9: 8.8,
+    10: 9.6,
+    11: 10.4,
+    12: 11.3,
+    13: 12.1,
+    14: 13.0,
+    15: 13.8,
+    16: 14.6,
+    17: 15.5,
+    18: 16.3,
+    19: 17.2,
+    20: 18.0,
+    21: 18.8,
+    22: 19.7,
+    23: 20.5,
+    24: 21.3,
+    25: 22.2,
+    26: 23.0,
+    27: 23.9,
+    28: 24.7,
+    29: 25.5,
+    30: 26.4,
+    31: 27.2,
+    32: 28.1,
+    33: 28.9,
+    34: 29.7,
+    35: 30.6,
+    36: 31.4,
+    37: 32.2,
+    38: 33.1,
+    39: 33.9,
+    40: 34.8,
+    41: 35.6,
+    42: 36.4,
+    43: 37.3,
+    44: 38.1,
+    45: 38.9,
+    46: 39.8,
+    47: 40.6,
+    48: 41.5,
+    49: 42.3,
+    50: 43.1,
+    51: 44.0,
+    52: 44.8,
+    53: 45.7,
+    54: 46.5,
+    55: 47.3,
+    56: 48.2,
+    57: 49.0,
+    58: 49.8,
+    59: 50.7,
+    60: 51.5,
+}
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -922,7 +985,8 @@ def calcular_mlg(peso, porcentaje_grasa):
 def corregir_porcentaje_grasa(medido, metodo, sexo):
     """
     Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron, ajusta con tablas especializadas por sexo.
+    Si el método es Omron HBF-516, convierte a modelo 4C usando la fórmula 
+    de Siedler & Tinsley (2022). Validación de rango 4%-60%.
     Si InBody, aplica factor.
     Si BodPod, aplica factor por sexo.
     Si DEXA, devuelve el valor medido.
@@ -933,33 +997,16 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
         medido = 0.0
 
     if metodo == "Omron HBF-516 (BIA)":
-        # Tablas especializadas por sexo para conversión Omron→DEXA
-        if sexo == "Hombre":
-            tabla = {
-                5: 2.8, 6: 3.8, 7: 4.8, 8: 5.8, 9: 6.8,
-                10: 7.8, 11: 8.8, 12: 9.8, 13: 10.8, 14: 11.8,
-                15: 13.8, 16: 14.8, 17: 15.8, 18: 16.8, 19: 17.8,
-                20: 20.8, 21: 21.8, 22: 22.8, 23: 23.8, 24: 24.8,
-                25: 27.3, 26: 28.3, 27: 29.3, 28: 30.3, 29: 31.3,
-                30: 33.8, 31: 34.8, 32: 35.8, 33: 36.8, 34: 37.8,
-                35: 40.3, 36: 41.3, 37: 42.3, 38: 43.3, 39: 44.3,
-                40: 45.3
-            }
-        else:  # Mujer
-            tabla = {
-                5: 2.2, 6: 3.2, 7: 4.2, 8: 5.2, 9: 6.2,
-                10: 7.2, 11: 8.2, 12: 9.2, 13: 10.2, 14: 11.2,
-                15: 13.2, 16: 14.2, 17: 15.2, 18: 16.2, 19: 17.2,
-                20: 20.2, 21: 21.2, 22: 22.2, 23: 23.2, 24: 24.2,
-                25: 26.7, 26: 27.7, 27: 28.7, 28: 29.7, 29: 30.7,
-                30: 33.2, 31: 34.2, 32: 35.2, 33: 36.2, 34: 37.2,
-                35: 39.7, 36: 40.7, 37: 41.7, 38: 42.7, 39: 43.7,
-                40: 44.7
-            }
-        
+        # Conversión unificada Omron→4C (sin dependencia de género)
+        # Validar rango: solo convertir si está entre 4% y 60%
         grasa_redondeada = int(round(medido))
-        grasa_redondeada = min(max(grasa_redondeada, 5), 40)
-        return tabla.get(grasa_redondeada, medido)
+        
+        # Si está fuera del rango 4%-60%, devolver el valor original
+        if grasa_redondeada < 4 or grasa_redondeada > 60:
+            return medido
+        
+        # Usar tabla de conversión OMRON_HBF516_TO_4C
+        return OMRON_HBF516_TO_4C.get(grasa_redondeada, medido)
     elif metodo == "InBody 270 (BIA profesional)":
         return medido * 1.02
     elif metodo == "Bod Pod (Pletismografía)":
