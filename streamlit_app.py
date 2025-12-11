@@ -1017,32 +1017,172 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
         return medido
 
 def calcular_ffmi(mlg, estatura_cm):
-    """Calcula el FFMI y lo normaliza a 1.80m de estatura."""
+    """
+    Calcula el FFMI (Fat-Free Mass Index) y lo normaliza a 1.80m de estatura.
+    
+    El FFMI es un indicador de la masa muscular ajustado por altura que permite
+    comparar el desarrollo muscular entre individuos de diferentes estaturas.
+    
+    PARAMETROS:
+    -----------
+    mlg : float
+        Masa Libre de Grasa (MLG) en kilogramos.
+        Se calcula como: MLG = Peso Total * (1 - Porcentaje_Grasa/100)
+        Representa todo el tejido corporal excepto la grasa (musculos, huesos, organos, agua).
+    
+    estatura_cm : float
+        Estatura del individuo en centimetros.
+    
+    CALCULO:
+    --------
+    1. FFMI Base = MLG / (Estatura_en_metros^2)
+       - Similar al IMC pero usando masa libre de grasa en lugar de peso total
+       - Refleja cuanta masa muscular tiene la persona por unidad de altura al cuadrado
+    
+    2. FFMI Normalizado = FFMI_Base + 6.3 * (1.8 - Estatura_en_metros)
+       - Formula de Kouri et al. (1995) para normalizar a 1.80m de referencia
+       - El factor 6.3 compensa las diferencias naturales de proporcion corporal
+       - Personas mas altas tienden a tener FFMI base mas bajo sin tener menos musculo
+       - La normalizacion permite comparaciones justas entre diferentes estaturas
+    
+    RETORNA:
+    --------
+    float
+        FFMI normalizado a 1.80m de estatura.
+        Valores tipicos:
+        - Hombres: 18-25 (natural), >25 (potencialmente no natural)
+        - Mujeres: 15-21 (natural), >21 (potencialmente no natural)
+    
+    REFERENCIAS:
+    -----------
+    - Kouri EM, et al. (1995). "Fat-free mass index in users and nonusers of 
+      anabolic-androgenic steroids." Clinical Journal of Sport Medicine.
+    """
+    # Validacion y conversion de parametros a valores numericos
     try:
         mlg = float(mlg)
         estatura_m = float(estatura_cm) / 100
     except (TypeError, ValueError):
+        # Si hay error en la conversion, usar valores por defecto seguros
         mlg = 0.0
         estatura_m = 1.80
+    
+    # Validar que la estatura sea positiva, usar 1.80m como fallback
     if estatura_m <= 0:
         estatura_m = 1.80
+    
+    # Paso 1: Calcular FFMI base (masa libre de grasa dividida por altura al cuadrado)
     ffmi = mlg / (estatura_m ** 2)
+    
+    # Paso 2: Normalizar a 1.80m usando la formula de Kouri
+    # Esta normalizacion permite comparar el FFMI entre personas de diferentes alturas
     ffmi_normalizado = ffmi + 6.3 * (1.8 - estatura_m)
+    
     return ffmi_normalizado
 
 def clasificar_ffmi(ffmi, sexo):
-    """Clasifica el FFMI según sexo."""
+    """
+    Clasifica el FFMI (Fat-Free Mass Index) en categorias segun el sexo del usuario.
+    
+    El FFMI refleja el desarrollo muscular y varia significativamente entre hombres
+    y mujeres debido a diferencias biologicas en composicion hormonal, cantidad de
+    testosterona, y distribucion natural de masa muscular.
+    
+    PARAMETROS:
+    -----------
+    ffmi : float
+        Valor de FFMI normalizado calculado previamente.
+    
+    sexo : str
+        "Hombre" o "Mujer" - determina que escala de clasificacion usar.
+    
+    CLASIFICACION PARA HOMBRES:
+    ---------------------------
+    - Bajo (<18):      Desarrollo muscular insuficiente. Tipico en sedentarios o con
+                       nutricion inadecuada. Indica necesidad de entrenamiento de fuerza
+                       y optimizacion nutricional.
+    
+    - Promedio (18-20): Desarrollo muscular normal en poblacion general. Presente en
+                        personas con actividad fisica moderada o principiantes en
+                        entrenamiento de fuerza (0-2 anos de experiencia).
+    
+    - Bueno (20-22):   Buen desarrollo muscular. Alcanzable naturalmente con
+                       entrenamiento de fuerza consistente (2-4 anos) y nutricion
+                       adecuada. Representa un fisico atletico.
+    
+    - Avanzado (22-25): Desarrollo muscular muy avanzado. Requiere anos de entrenamiento
+                        disciplinado (4-8+ anos) y optimizacion de todos los factores
+                        (entrenamiento, nutricion, descanso, genetica favorable).
+                        Limite superior del potencial natural para mayoria.
+    
+    - Elite (>25):     Desarrollo muscular excepcional. Dificil de alcanzar naturalmente.
+                       Puede indicar genetica excepcional o uso de farmacologia.
+                       Valores >26-27 son casi imposibles sin ayuda ergogenica.
+    
+    CLASIFICACION PARA MUJERES:
+    ---------------------------
+    - Bajo (<15):      Desarrollo muscular insuficiente. Requiere entrenamiento de
+                       fuerza y nutricion adecuada para salud y funcionalidad.
+    
+    - Promedio (15-17): Desarrollo muscular normal. Tipico en poblacion femenina
+                        general activa o con entrenamiento basico (0-2 anos).
+    
+    - Bueno (17-19):   Buen desarrollo muscular. Alcanzable con entrenamiento
+                       consistente (2-4 anos) y nutricion optimizada. Fisico atletico.
+    
+    - Avanzado (19-21): Desarrollo muy avanzado. Requiere anos de dedicacion (4-8+ anos).
+                        Limite superior del potencial natural para mayoria de mujeres.
+    
+    - Elite (>21):     Desarrollo excepcional. Raro naturalmente. Puede indicar genetica
+                       superior o uso de farmacologia. Valores >22-23 son altamente
+                       improbables sin ayuda ergogenica.
+    
+    RAZON DE DIFERENCIAS POR SEXO:
+    ------------------------------
+    Los umbrales son aproximadamente 3 puntos mas bajos para mujeres debido a:
+    
+    1. HORMONAS: Las mujeres tienen ~10-20% de la testosterona de los hombres, limitando
+       la capacidad de sintesis proteica y ganancia muscular.
+    
+    2. COMPOSICION: Las mujeres tienen naturalmente 6-11% mas grasa corporal esencial
+       (necesaria para funciones reproductivas), reduciendo el porcentaje de masa magra.
+    
+    3. DISTRIBUCION: Los hombres tienen mayor masa muscular en torso y brazos, mientras
+       que las mujeres tienen distribucion mas uniforme o concentrada en piernas.
+    
+    4. GENETICA: Diferencias en expresion genica relacionada con miogenesis (formacion
+       de tejido muscular) favorecen mayor desarrollo en hombres.
+    
+    RETORNA:
+    --------
+    str
+        Categoria de clasificacion: "Bajo", "Promedio", "Bueno", "Avanzado" o "Elite"
+    
+    REFERENCIAS:
+    -----------
+    - Kouri EM, et al. (1995). Clinical Journal of Sport Medicine.
+    - Schoenfeld BJ, et al. (2020). Sports Medicine - sex differences in training.
+    """
+    # Validar y convertir FFMI a valor numerico
     try:
         ffmi = float(ffmi)
     except (TypeError, ValueError):
         ffmi = 0.0
+    
+    # Definir umbrales de clasificacion especificos por sexo
     if sexo == "Hombre":
+        # Umbrales masculinos: reflejan mayor potencial de masa muscular
         limites = [(18, "Bajo"), (20, "Promedio"), (22, "Bueno"), (25, "Avanzado"), (100, "Élite")]
     else:
+        # Umbrales femeninos: ajustados ~3 puntos mas bajos por diferencias biologicas
         limites = [(15, "Bajo"), (17, "Promedio"), (19, "Bueno"), (21, "Avanzado"), (100, "Élite")]
+    
+    # Iterar sobre los limites y retornar la primera clasificacion que aplique
     for limite, clasificacion in limites:
         if ffmi < limite:
             return clasificacion
+    
+    # Si el FFMI supera todos los limites, clasificar como Elite
     return "Élite"
 
 def calculate_psmf(sexo, peso, grasa_corregida, mlg):
@@ -1819,8 +1959,26 @@ if datos_personales_completos and st.session_state.datos_completos:
     except (ValueError, TypeError):
         pass  # No se muestra si hay error en el valor
 
-    # FFMI con visualización mejorada
+    # FFMI con visualización mejorada y explicación detallada
     st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
+    
+    # Explicación del FFMI antes de mostrar el valor
+    st.markdown("""
+    <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;">
+    <p style="margin: 0; font-size: 14px; color: #333;">
+    <b>¿Qué es el FFMI?</b><br>
+    El Fat-Free Mass Index (FFMI) es un indicador científico que mide tu masa muscular 
+    ajustada por altura. Similar al IMC, pero usando solo masa libre de grasa (músculos, 
+    huesos, órganos) sin contar la grasa corporal. Este índice permite comparar el 
+    desarrollo muscular entre personas de diferentes estaturas de forma justa.
+    </p>
+    <p style="margin: 10px 0 0 0; font-size: 13px; color: #555;">
+    <b>Cálculo:</b> FFMI = (Masa Libre de Grasa / Altura²) + normalización a 1.80m<br>
+    <b>Tu MLG:</b> {mlg:.1f} kg | <b>Tu Altura:</b> {estatura} cm → <b>Tu FFMI:</b> {ffmi:.2f}
+    </p>
+    </div>
+    """.format(mlg=mlg, estatura=estatura, ffmi=ffmi), unsafe_allow_html=True)
+    
     col1, col2 = st.columns([2, 1])
     with col1:
         color_nivel = {
@@ -1843,6 +2001,26 @@ if datos_personales_completos and st.session_state.datos_completos:
         progreso_ffmi = min(ffmi / ffmi_max, 1.0)
         st.progress(progreso_ffmi)
         st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
+        
+        # Agregar interpretación específica del nivel actual
+        interpretaciones = {
+            "Hombre": {
+                "Bajo": "Indica desarrollo muscular insuficiente. Prioriza entrenamiento de fuerza y nutrición adecuada.",
+                "Promedio": "Desarrollo normal en población general. Con entrenamiento consistente puedes mejorar significativamente.",
+                "Bueno": "Buen desarrollo muscular alcanzable con 2-4 años de entrenamiento disciplinado. ¡Sigue así!",
+                "Avanzado": "Desarrollo muy avanzado. Estás cerca del límite natural. Optimiza detalles para máximo progreso.",
+                "Élite": "Desarrollo excepcional. Has alcanzado un nivel muy difícil de lograr naturalmente. ¡Excelente trabajo!"
+            },
+            "Mujer": {
+                "Bajo": "Indica desarrollo muscular insuficiente. El entrenamiento de fuerza te ayudará significativamente.",
+                "Promedio": "Desarrollo normal en población femenina. Hay mucho margen para mejorar con entrenamiento.",
+                "Bueno": "Buen desarrollo muscular. Refleja dedicación al entrenamiento de fuerza. ¡Continúa!",
+                "Avanzado": "Desarrollo muy avanzado para mujeres. Cercano al límite natural. Excelente dedicación.",
+                "Élite": "Desarrollo excepcional. Nivel muy difícil de alcanzar naturalmente. ¡Impresionante logro!"
+            }
+        }
+        st.info(f"📋 **Interpretación:** {interpretaciones[sexo][nivel_ffmi]}")
+        
     with col2:
         st.info(f"""
         **Referencia FFMI ({sexo}):**
@@ -1851,6 +2029,15 @@ if datos_personales_completos and st.session_state.datos_completos:
         - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
         - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
         - Élite: >{rangos_ffmi['Avanzado']}
+        
+        ---
+        
+        **¿Por qué diferentes rangos?**
+        
+        Los umbrales para mujeres son ~3 puntos más bajos debido a diferencias biológicas:
+        - Menos testosterona natural
+        - Mayor % grasa esencial
+        - Diferente distribución muscular
         """)
 
 else:
@@ -2840,12 +3027,23 @@ with col1:
     - **Evaluación:** {evaluacion}
     """)
 with col2:
+    # Determinar interpretación del FFMI para el resumen
+    if nivel_ffmi in ["Bajo", "Promedio"]:
+        ffmi_interpretacion = "Margen significativo de mejora"
+    elif nivel_ffmi == "Bueno":
+        ffmi_interpretacion = "Buen desarrollo, continúa mejorando"
+    elif nivel_ffmi == "Avanzado":
+        ffmi_interpretacion = "Desarrollo avanzado, cerca del límite natural"
+    else:  # Élite
+        ffmi_interpretacion = "Desarrollo excepcional alcanzado"
+    
     st.markdown(f"""
     ### 💪 Composición Corporal
     - **Peso:** {peso} kg | **Altura:** {estatura} cm
     - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
     - **FFMI:** {ffmi:.2f} ({nivel_ffmi})
-    - **Potencial:** {porc_potencial:.0f}% alcanzado
+      - *{ffmi_interpretacion}*
+      - *{porc_potencial:.0f}% del potencial máximo ({ffmi_genetico_max:.1f} FFMI)*
     """)
 with col3:
     # Safe calculations for display
@@ -2972,11 +3170,41 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 ÍNDICES METABÓLICOS:
 =====================================
 - TMB (Cunningham): {tmb:.0f} kcal
+
+---
+FFMI (FAT-FREE MASS INDEX) - ANÁLISIS DETALLADO:
+---
+El FFMI es un indicador científico del desarrollo muscular ajustado por altura.
+Permite comparar masa muscular entre personas de diferentes estaturas.
+
+CÁLCULO DE TU FFMI:
+- Masa Libre de Grasa (MLG): {mlg:.1f} kg
+- Estatura: {estatura} cm ({estatura/100:.2f} m)
+- FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f}
+- FFMI Normalizado (a 1.80m): {ffmi:.2f}
+  (Formula: FFMI_base + 6.3 * (1.8 - altura_m))
+
+TU CLASIFICACIÓN:
 - FFMI actual: {ffmi:.2f}
-- Clasificación FFMI: {nivel_ffmi}
-- FFMI máximo estimado: {ffmi_genetico_max:.1f}
+- Clasificación: {nivel_ffmi}
+- FFMI máximo estimado (genético): {ffmi_genetico_max:.1f}
 - Potencial alcanzado: {porc_potencial:.0f}%
 - Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos FFMI
+
+INTERPRETACIÓN PARA {sexo.upper()}:
+{f'''- Bajo (<18): Desarrollo insuficiente, priorizar fuerza y nutrición
+- Promedio (18-20): Normal en población general, gran margen de mejora
+- Bueno (20-22): Buen desarrollo, requiere 2-4 años de entrenamiento
+- Avanzado (22-25): Muy avanzado, cerca del límite natural
+- Élite (>25): Excepcional, difícil de alcanzar naturalmente''' if sexo == "Hombre" else '''- Bajo (<15): Desarrollo insuficiente, priorizar fuerza y nutrición
+- Promedio (15-17): Normal en población general, gran margen de mejora
+- Bueno (17-19): Buen desarrollo, requiere 2-4 años de entrenamiento
+- Avanzado (19-21): Muy avanzado, cerca del límite natural
+- Élite (>21): Excepcional, difícil de alcanzar naturalmente'''}
+
+NOTA: Los umbrales femeninos son ~3 puntos más bajos que masculinos debido a
+diferencias hormonales (menos testosterona), mayor % grasa esencial, y
+diferente distribución de masa muscular.
 
 =====================================
 FACTORES DE ACTIVIDAD:
@@ -3087,13 +3315,44 @@ EXPERIENCIA Y RESPUESTAS FUNCIONALES
 =====================================
 NIVEL GLOBAL DE ENTRENAMIENTO
 =====================================
+El nivel de entrenamiento se calcula mediante un sistema de puntuación ponderada
+que considera tres componentes clave: desarrollo muscular (FFMI), rendimiento
+funcional y experiencia autodeclarada.
+
 🎯 DESGLOSE DEL NIVEL GLOBAL:
-- Desarrollo muscular (FFMI): {puntos_ffmi if 'puntos_ffmi' in locals() else 0}/5 puntos → {nivel_ffmi}
-- Rendimiento funcional: {puntos_funcional if 'puntos_funcional' in locals() else 0:.1f}/4 puntos → Promedio de ejercicios
-- Experiencia declarada: {puntos_exp if 'puntos_exp' in locals() else 0}/4 puntos → {experiencia_text[:50]}...
-- PONDERACIÓN APLICADA: {'40% FFMI + 40% Funcional + 20% Experiencia (rango saludable)' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '0% FFMI + 80% Funcional + 20% Experiencia (fuera de rango saludable)'}
-- GRASA CORPORAL: {grasa_corregida:.1f}% ({'En rango saludable' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'Fuera de rango saludable (>{25 if sexo == "Hombre" else 32}%)'})
-- RESULTADO FINAL: {nivel_entrenamiento.upper() if 'nivel_entrenamiento' in locals() else 'INTERMEDIO'} (Score: {puntaje_total if 'puntaje_total' in locals() else 0:.2f}/1.0)
+
+1. DESARROLLO MUSCULAR (FFMI):
+   - Puntuación: {puntos_ffmi if 'puntos_ffmi' in locals() else 0}/5 puntos
+   - Clasificación: {nivel_ffmi}
+   - Interpretación: El FFMI mide objetivamente tu masa muscular ajustada por
+     altura. Es un indicador confiable del desarrollo muscular alcanzado.
+
+2. RENDIMIENTO FUNCIONAL:
+   - Puntuación: {puntos_funcional if 'puntos_funcional' in locals() else 0:.1f}/4 puntos
+   - Base: Promedio del rendimiento en ejercicios funcionales evaluados
+   - Interpretación: Mide tu capacidad física práctica en movimientos fundamentales.
+
+3. EXPERIENCIA AUTODECLARADA:
+   - Puntuación: {puntos_exp if 'puntos_exp' in locals() else 0}/4 puntos
+   - Respuesta: {experiencia_text[:80]}...
+   - Interpretación: Años de entrenamiento y conocimiento autodeclarado.
+
+SISTEMA DE PONDERACIÓN:
+{'- PONDERACIÓN ESTÁNDAR (grasa en rango saludable):' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '- PONDERACIÓN AJUSTADA (grasa fuera de rango saludable):'}
+  {'* FFMI (desarrollo muscular): 40%' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '* FFMI (desarrollo muscular): 0% (no se pondera por exceso de grasa)'}
+  {'* Rendimiento funcional: 40%' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '* Rendimiento funcional: 80% (peso aumentado por falta de ponderación FFMI)'}
+  * Experiencia declarada: 20%
+
+{'NOTA: Con % grasa en rango saludable, el FFMI es un indicador confiable del' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'NOTA IMPORTANTE: Tu % de grasa corporal ({grasa_corregida:.1f}%) está fuera del'}
+{'desarrollo muscular real y se pondera normalmente.' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'rango saludable (>{25 if sexo == "Hombre" else 32}%). Por ello, el FFMI NO se pondera ya que el'}
+{'' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else 'exceso de grasa puede distorsionar la medición de masa muscular real. El'}
+{'' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else 'rendimiento funcional se prioriza (80%) como mejor indicador actual.'}
+
+RESULTADO FINAL:
+- Nivel de entrenamiento: {nivel_entrenamiento.upper() if 'nivel_entrenamiento' in locals() else 'INTERMEDIO'}
+- Puntuación total: {puntaje_total if 'puntaje_total' in locals() else 0:.2f}/1.0
+- % Grasa corporal: {grasa_corregida:.1f}%
+- Estado: {'En rango saludable' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'Fuera de rango saludable (>{25 if sexo == "Hombre" else 32}%)'}
 
 =====================================
 ACTIVIDAD FÍSICA DIARIA Y FACTORES
