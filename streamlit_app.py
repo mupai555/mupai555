@@ -985,8 +985,9 @@ def calcular_mlg(peso, porcentaje_grasa):
 def corregir_porcentaje_grasa(medido, metodo, sexo):
     """
     Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron HBF-516, convierte a modelo 4C usando la fórmula 
-    de Siedler & Tinsley (2022). Validación de rango 4%-60%.
+    Si el método es Omron HBF-516, convierte a modelo 4C (4-compartment body composition) 
+    usando la fórmula de Siedler & Tinsley (2022): gc_4c = 1.226167 + 0.838294 * gc_omron.
+    Validación de rango 4%-60%.
     Si InBody, aplica factor.
     Si BodPod, aplica factor por sexo.
     Si DEXA, devuelve el valor medido.

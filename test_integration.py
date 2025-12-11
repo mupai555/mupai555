@@ -10,7 +10,9 @@ import os
 # This is a simpler approach to avoid streamlit dependency issues
 
 # Read the constant and function from the file
-with open("/home/runner/work/mupai555/mupai555/streamlit_app.py", "r") as f:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+streamlit_app_path = os.path.join(script_dir, "streamlit_app.py")
+with open(streamlit_app_path, "r") as f:
     content = f.read()
 
 # Check that OMRON_HBF516_TO_4C is defined
@@ -28,11 +30,35 @@ else:
     sys.exit(1)
 
 # Check that gender-specific tables are removed
-if "if sexo == \"Hombre\":" in content and "tabla = {" in content and "5: 2.8" in content:
-    print("✗ Old gender-specific tables still present")
+# Look for specific old table pattern in corregir_porcentaje_grasa function
+def check_old_tables_removed(content):
+    """Check if old gender-specific Omron tables are removed."""
+    # Extract the corregir_porcentaje_grasa function
+    func_start = content.find("def corregir_porcentaje_grasa(")
+    if func_start == -1:
+        return False, "Function not found"
+    
+    # Find the next function definition to get the end
+    next_func = content.find("\ndef ", func_start + 10)
+    if next_func == -1:
+        func_content = content[func_start:]
+    else:
+        func_content = content[func_start:next_func]
+    
+    # Check for old table patterns (5: 2.8 for men, 5: 2.2 for women)
+    has_old_men_table = "5: 2.8" in func_content
+    has_old_women_table = "5: 2.2" in func_content
+    
+    if has_old_men_table or has_old_women_table:
+        return False, "Old tables found"
+    return True, "Old tables removed"
+
+tables_removed, msg = check_old_tables_removed(content)
+if not tables_removed:
+    print(f"✗ {msg}")
     sys.exit(1)
 else:
-    print("✓ Old gender-specific tables removed")
+    print(f"✓ {msg}")
 
 # Check for range validation
 if "if grasa_redondeada < 4 or grasa_redondeada > 60:" in content:

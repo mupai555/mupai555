@@ -138,18 +138,13 @@ def test_omron_conversion():
     
     # Test 7: Verify formula alignment
     print("\nTest 7: Verify formula alignment (gc_4c = 1.226167 + 0.838294 * gc_omron)")
-    formula_checks = [
-        (10, 9.6),  # 1.226167 + 0.838294 * 10 = 9.6092 ≈ 9.6
-        (20, 18.0), # 1.226167 + 0.838294 * 20 = 17.992 ≈ 18.0
-        (30, 26.4), # 1.226167 + 0.838294 * 30 = 26.714 ≈ 26.4 (Note: rounding in table)
-        (40, 34.8), # 1.226167 + 0.838294 * 40 = 34.758 ≈ 34.8
-        (50, 43.1), # 1.226167 + 0.838294 * 50 = 43.141 ≈ 43.1
-    ]
+    formula_checks = [10, 20, 30, 40, 50]
     
-    for omron, tabla_valor in formula_checks:
+    for omron in formula_checks:
+        # Calculate using the actual formula
         formula_valor = 1.226167 + 0.838294 * omron
         resultado = corregir_porcentaje_grasa(omron, "Omron HBF-516 (BIA)", "Hombre")
-        # Check if table value is reasonable (within 0.5 of formula)
+        # Check if table value is reasonable (within 0.5 of formula due to rounding)
         status = "✓" if abs(resultado - formula_valor) < 0.5 else "✗"
         print(f"  {status} Omron {omron}%: Tabla={resultado}%, Formula={formula_valor:.1f}%")
     
