@@ -2407,6 +2407,12 @@ puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}.get(experiencia[:2] if experie
 puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
 
 # Mapeo de ejercicios a categorias con sus pesos
+# Los pesos reflejan la importancia relativa de cada categoria en el rendimiento funcional total
+# Upper push/pull: 15% cada uno (30% total tren superior)
+# Lower push/pull: 15% cada uno (30% total tren inferior) 
+# Core: 10% (estabilidad central)
+# Distribucion total: 30% superior + 30% inferior + 10% core = 70%
+# Pero se normaliza a 100% para el calculo final
 categoria_ejercicio = {
     "Flexiones": "upper_push",
     "Fondos": "upper_push",
@@ -2419,7 +2425,7 @@ categoria_ejercicio = {
     "L-sit": "core"
 }
 
-# Pesos por categoria funcional
+# Pesos por categoria funcional (suman 0.70, se normalizan a 1.0 en el calculo)
 pesos_categoria_funcional = {
     "upper_push": 0.15,
     "upper_pull": 0.15,
@@ -2438,7 +2444,9 @@ if niveles_ejercicios:
         # Normalizar puntos a escala 0-1 y aplicar peso de categoria
         puntos_funcional_ponderado += (puntos / 4.0) * peso_cat
     
-    # Normalizar a escala 1-4 para compatibilidad con el sistema existente
+    # Normalizar el resultado a escala 1-4 para compatibilidad con el sistema existente
+    # Dividir por la suma de pesos (0.70) normaliza la contribucion ponderada a escala 0-1
+    # Multiplicar por 4 lleva a escala 1-4 (compatible con puntuacion existente)
     puntos_funcional = puntos_funcional_ponderado / sum(pesos_categoria_funcional.values()) * 4.0
 else:
     puntos_funcional = 1
