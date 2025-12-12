@@ -2122,8 +2122,16 @@ if datos_personales_completos and st.session_state.datos_completos:
     }
     modo_color, modo_emoji, modo_desc = modo_colors.get(modo_ffmi, ("info", "⚪", ""))
     
+    # Border colors for mode badges
+    border_colors = {
+        "GREEN": "#4CAF50",
+        "AMBER": "#FF9800",
+        "RED": "#F44336"
+    }
+    border_color = border_colors.get(modo_ffmi, "#4CAF50")
+    
     st.markdown(f"""
-    <div style="background-color: #f0f8ff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid {'#4CAF50' if modo_ffmi == 'GREEN' else '#FF9800' if modo_ffmi == 'AMBER' else '#F44336'};">
+    <div style="background-color: #f0f8ff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid {border_color};">
     <p style="margin: 0; font-size: 13px; color: #333;">
     <b>Modo de interpretación FFMI:</b> {modo_emoji} <span class="badge badge-{modo_color}">{modo_ffmi}</span> - {modo_desc}
     </p>
@@ -3560,6 +3568,82 @@ except:
 if 'fbeo' not in locals():
     fbeo = 1.0
 
+# Helper function to generate FFMI classification text for email
+def generar_texto_clasificacion_ffmi(modo_ffmi, sexo, nivel_ffmi, ffmi_genetico_max, porc_potencial, ffmi):
+    """
+    Genera el texto de clasificación FFMI para el email según el modo.
+    """
+    if modo_ffmi == "GREEN":
+        # GREEN mode: Full classification with potential
+        if sexo == "Hombre":
+            interpretacion = """- Bajo (<18): Desarrollo insuficiente, priorizar fuerza y nutrición
+- Promedio (18-20): Normal en población general, gran margen de mejora
+- Bueno (20-22): Buen desarrollo, requiere 2-4 años de entrenamiento
+- Avanzado (22-25): Muy avanzado, cerca del límite natural
+- Élite (>25): Excepcional, difícil de alcanzar naturalmente"""
+        else:  # Mujer
+            interpretacion = """- Bajo (<15): Desarrollo insuficiente, priorizar fuerza y nutrición
+- Promedio (15-17): Normal en población general, gran margen de mejora
+- Bueno (17-19): Buen desarrollo, requiere 2-4 años de entrenamiento
+- Avanzado (19-21): Muy avanzado, cerca del límite natural
+- Élite (>21): Excepcional, difícil de alcanzar naturalmente"""
+        
+        return f"""- Clasificación: {nivel_ffmi}
+- FFMI máximo estimado (genético): {ffmi_genetico_max:.1f}
+- Potencial alcanzado: {porc_potencial:.0f}%
+- Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos FFMI
+
+INTERPRETACIÓN PARA {sexo.upper()}:
+{interpretacion}"""
+    
+    elif modo_ffmi == "AMBER":
+        # AMBER mode: Limited interpretation
+        return """- Clasificación: FFMI calculado; interpretación limitada por adiposidad
+- Valores de potencial: orientativos (reduce grasa para mayor precisión)"""
+    
+    else:  # RED
+        # RED mode: Not applicable
+        return """- Clasificación FFMI: No aplica
+
+EXPLICACIÓN:
+Con adiposidad muy alta, el FFMI puede elevarse por masa libre de grasa no muscular
+(incluyendo agua corporal expandida, órganos, masa estructural) y deja de ser un proxy
+válido de muscularidad atlética. Se reporta el valor pero no se clasifica.
+
+RECOMENDACIÓN:
+Enfócate en reducir tu porcentaje de grasa corporal a niveles más saludables.
+Una vez logrado, el FFMI será interpretable y útil para evaluar progreso muscular."""
+
+# Helper function to classify FMI for email
+def clasificar_fmi_email(fmi, sexo):
+    """
+    Clasifica el FMI para el email según sexo.
+    """
+    if sexo == "Hombre":
+        if fmi < 3:
+            return "Bajo (<3)"
+        elif fmi < 6:
+            return "Normal (3-6)"
+        elif fmi < 9:
+            return "Elevado (6-9)"
+        else:
+            return "Muy elevado (>9)"
+    else:  # Mujer
+        if fmi < 5:
+            return "Bajo (<5)"
+        elif fmi < 9:
+            return "Normal (5-9)"
+        elif fmi < 13:
+            return "Elevado (9-13)"
+        else:
+            return "Muy elevado (>13)"
+
+# Generate classification texts
+texto_clasificacion_ffmi = generar_texto_clasificacion_ffmi(
+    modo_ffmi, sexo, nivel_ffmi, ffmi_genetico_max, porc_potencial, ffmi
+)
+categoria_fmi = clasificar_fmi_email(fmi, sexo)
+
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -3617,41 +3701,11 @@ CÁLCULO DE TU FMI:
 
 TU CLASIFICACIÓN FFMI:
 - FFMI actual: {ffmi:.2f}
-{f'''- Clasificación: {nivel_ffmi}
-- FFMI máximo estimado (genético): {ffmi_genetico_max:.1f}
-- Potencial alcanzado: {porc_potencial:.0f}%
-- Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos FFMI
-
-INTERPRETACIÓN PARA {sexo.upper()}:
-- Bajo (<18): Desarrollo insuficiente, priorizar fuerza y nutrición
-- Promedio (18-20): Normal en población general, gran margen de mejora
-- Bueno (20-22): Buen desarrollo, requiere 2-4 años de entrenamiento
-- Avanzado (22-25): Muy avanzado, cerca del límite natural
-- Élite (>25): Excepcional, difícil de alcanzar naturalmente''' if modo_ffmi == "GREEN" and sexo == "Hombre" else f'''- Clasificación: {nivel_ffmi}
-- FFMI máximo estimado (genético): {ffmi_genetico_max:.1f}
-- Potencial alcanzado: {porc_potencial:.0f}%
-- Margen de crecimiento: {max(0, ffmi_genetico_max - ffmi):.1f} puntos FFMI
-
-INTERPRETACIÓN PARA {sexo.upper()}:
-- Bajo (<15): Desarrollo insuficiente, priorizar fuerza y nutrición
-- Promedio (15-17): Normal en población general, gran margen de mejora
-- Bueno (17-19): Buen desarrollo, requiere 2-4 años de entrenamiento
-- Avanzado (19-21): Muy avanzado, cerca del límite natural
-- Élite (>21): Excepcional, difícil de alcanzar naturalmente''' if modo_ffmi == "GREEN" and sexo == "Mujer" else f'''- Clasificación: FFMI calculado; interpretación limitada por adiposidad
-- Valores de potencial: orientativos (reduce grasa para mayor precisión)''' if modo_ffmi == "AMBER" else '''- Clasificación FFMI: No aplica
-
-EXPLICACIÓN:
-Con adiposidad muy alta, el FFMI puede elevarse por masa libre de grasa no muscular
-(incluyendo agua corporal expandida, órganos, masa estructural) y deja de ser un proxy
-válido de muscularidad atlética. Se reporta el valor pero no se clasifica.
-
-RECOMENDACIÓN:
-Enfócate en reducir tu porcentaje de grasa corporal a niveles más saludables.
-Una vez logrado, el FFMI será interpretable y útil para evaluar progreso muscular.'''}
+{texto_clasificacion_ffmi}
 
 TU CLASIFICACIÓN FMI:
 - FMI actual: {fmi:.2f}
-- Categoría: {"Bajo (<3)" if (sexo == "Hombre" and fmi < 3) or (sexo == "Mujer" and fmi < 5) else "Normal (3-6)" if sexo == "Hombre" and fmi < 6 else "Normal (5-9)" if sexo == "Mujer" and fmi < 9 else "Elevado (6-9)" if sexo == "Hombre" and fmi < 9 else "Elevado (9-13)" if sexo == "Mujer" and fmi < 13 else "Muy elevado (>9)" if sexo == "Hombre" else "Muy elevado (>13)"}
+- Categoría: {categoria_fmi}
 
 NOTA: Los umbrales femeninos difieren de masculinos debido a diferencias
 hormonales (menos testosterona), mayor % grasa esencial, y diferente
