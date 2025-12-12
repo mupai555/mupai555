@@ -2153,6 +2153,7 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
 
     st.markdown("### 📋 Experiencia en entrenamiento **(Requerido)**")
     st.markdown("*Este campo es obligatorio para continuar con la evaluación*")
+    # Using key parameter ensures experiencia is automatically stored in session_state
     experiencia = st.radio(
         "¿Cuál de las siguientes afirmaciones describe con mayor precisión tu hábito de entrenamiento en los últimos dos años?",
         [
@@ -2161,7 +2162,8 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
             "C) He seguido un programa de entrenamiento estructurado con objetivos claros y progresión semanal.",
             "D) He diseñado o ajustado personalmente mis planes de entrenamiento, monitoreando variables como volumen, intensidad y recuperación."
         ],
-        help="Campo obligatorio: Tu respuesta debe reflejar tu consistencia y planificación real."
+        help="Campo obligatorio: Tu respuesta debe reflejar tu consistencia y planificación real.",
+        key="experiencia_seleccion"
     )
 
     # Allow all users to access functional exercises regardless of experience level
@@ -3179,7 +3181,8 @@ def datos_completos_para_email():
         faltantes.append("Porcentaje de grasa corporal")
     
     # Validar experiencia de entrenamiento
-    experiencia_valor = st.session_state.get("experiencia", "")
+    # Check both the widget key and the old experiencia variable for backward compatibility
+    experiencia_valor = st.session_state.get("experiencia_seleccion", "") or st.session_state.get("experiencia", "")
     if not experiencia_valor or not isinstance(experiencia_valor, str) or len(experiencia_valor) < 3:
         faltantes.append("Nivel de experiencia en entrenamiento")
     
