@@ -1404,30 +1404,6 @@ def esta_en_rango_saludable(porcentaje_grasa, sexo):
     else:  # Mujer
         return grasa <= 32.0
 
-def es_ffmi_invalido(porcentaje_grasa, sexo):
-    """
-    Determina si el FFMI debe ser invalidado debido a un porcentaje de grasa corporal alto.
-    FFMI es invalidado cuando:
-    - Hombres: >25% de grasa corporal
-    - Mujeres: >32% de grasa corporal
-    
-    Args:
-        porcentaje_grasa: Porcentaje de grasa corporal
-        sexo: "Hombre" o "Mujer"
-    
-    Returns:
-        bool: True si el FFMI debe ser invalidado, False si es válido
-    """
-    try:
-        grasa = float(porcentaje_grasa)
-    except (TypeError, ValueError):
-        return False  # Si no se puede determinar, considerar válido
-    
-    if sexo == "Hombre":
-        return grasa > 25.0
-    else:  # Mujer
-        return grasa > 32.0
-
 def obtener_factor_proteina_tradicional(grasa_corregida):
     """
     Determina el factor de proteína en g/kg según el porcentaje de grasa corporal corregido
@@ -1986,9 +1962,6 @@ if datos_personales_completos and st.session_state.datos_completos:
     # FFMI con visualización mejorada y explicación detallada
     st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI)")
     
-    # Verificar si el FFMI debe ser invalidado
-    ffmi_es_invalido = es_ffmi_invalido(grasa_corregida, sexo)
-    
     # Explicación del FFMI antes de mostrar el valor
     st.markdown("""
     <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;">
@@ -1999,83 +1972,54 @@ if datos_personales_completos and st.session_state.datos_completos:
     huesos, órganos) sin contar la grasa corporal. Este índice permite comparar el 
     desarrollo muscular entre personas de diferentes estaturas de forma justa.
     </p>
+    <p style="margin: 10px 0 0 0; font-size: 13px; color: #555;">
+    <b>Cálculo:</b> FFMI = (Masa Libre de Grasa / Altura²) + normalización a 1.80m<br>
+    <b>Tu MLG:</b> {mlg:.1f} kg | <b>Tu Altura:</b> {estatura} cm → <b>Tu FFMI:</b> {ffmi:.2f}
+    </p>
     </div>
-    """, unsafe_allow_html=True)
+    """.format(mlg=mlg, estatura=estatura, ffmi=ffmi), unsafe_allow_html=True)
     
     col1, col2 = st.columns([2, 1])
     with col1:
-        if ffmi_es_invalido:
-            # Mostrar mensaje de prueba invalidada
-            st.markdown("""
-            <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ff9800;">
-                <h3 style="color: #856404; margin: 0 0 10px 0;">⚠️ PRUEBA INVALIDADA</h3>
-                <p style="color: #856404; margin: 0; font-size: 14px;">
-                El FFMI no puede ser evaluado de manera confiable debido al alto porcentaje de grasa corporal 
-                ({grasa_corregida:.1f}% > {25 if sexo == "Hombre" else 32}% límite).
-                </p>
-            </div>
-            """.format(grasa_corregida=grasa_corregida, sexo=sexo), unsafe_allow_html=True)
-            
-            st.warning(f"""
-            **¿Por qué se invalida el FFMI?**
-            
-            Con un porcentaje de grasa corporal superior al {'25%' if sexo == 'Hombre' else '32%'}, el FFMI puede 
-            sobrestimar significativamente el desarrollo muscular real, ya que incluye masa no muscular en el cálculo 
-            de masa libre de grasa (MLG). Esto genera una evaluación poco confiable del verdadero nivel de desarrollo 
-            muscular.
-            
-            **¿Cómo mejorar para una evaluación válida?**
-            
-            1. **Reducir grasa corporal:** Enfócate en crear un déficit calórico moderado y consistente
-            2. **Mantener masa muscular:** Continúa con entrenamiento de fuerza y proteína adecuada (1.6-2.0 g/kg)
-            3. **Optimizar composición:** Prioriza pérdida de grasa sobre pérdida de peso total
-            4. **Reevaluación:** Se recomienda volver a evaluar en aproximadamente 8 semanas
-            
-            **Tu evaluación actual se basa en:**
-            - Rendimiento funcional (60%)
-            - Experiencia declarada (40%)
-            - FFMI (0% - excluido por invalidación)
-            """)
+        color_nivel = {
+            "Bajo": "danger",
+            "Promedio": "warning",
+            "Bueno": "success",
+            "Avanzado": "info",
+            "Élite": "success"
+        }.get(nivel_ffmi, "info")
+        st.markdown(f"""
+        <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
+        <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
+        """, unsafe_allow_html=True)
+        if sexo == "Hombre":
+            ffmi_max = 25
+            rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
         else:
-            color_nivel = {
-                "Bajo": "danger",
-                "Promedio": "warning",
-                "Bueno": "success",
-                "Avanzado": "info",
-                "Élite": "success"
-            }.get(nivel_ffmi, "info")
-            st.markdown(f"""
-            <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
-            <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
-            """, unsafe_allow_html=True)
-            if sexo == "Hombre":
-                ffmi_max = 25
-                rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
-            else:
-                ffmi_max = 21
-                rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
-            progreso_ffmi = min(ffmi / ffmi_max, 1.0)
-            st.progress(progreso_ffmi)
-            st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
-            
-            # Agregar interpretación específica del nivel actual
-            interpretaciones = {
-                "Hombre": {
-                    "Bajo": "Indica desarrollo muscular insuficiente. Prioriza entrenamiento de fuerza y nutrición adecuada.",
-                    "Promedio": "Desarrollo normal en población general. Con entrenamiento consistente puedes mejorar significativamente.",
-                    "Bueno": "Buen desarrollo muscular alcanzable con 2-4 años de entrenamiento disciplinado. ¡Sigue así!",
-                    "Avanzado": "Desarrollo muy avanzado. Estás cerca del límite natural. Optimiza detalles para máximo progreso.",
-                    "Élite": "Desarrollo excepcional. Has alcanzado un nivel muy difícil de lograr naturalmente. ¡Excelente trabajo!"
-                },
-                "Mujer": {
-                    "Bajo": "Indica desarrollo muscular insuficiente. El entrenamiento de fuerza te ayudará significativamente.",
-                    "Promedio": "Desarrollo normal en población femenina. Hay mucho margen para mejorar con entrenamiento.",
-                    "Bueno": "Buen desarrollo muscular. Refleja dedicación al entrenamiento de fuerza. ¡Continúa!",
-                    "Avanzado": "Desarrollo muy avanzado para mujeres. Cercano al límite natural. Excelente dedicación.",
-                    "Élite": "Desarrollo excepcional. Nivel muy difícil de alcanzar naturalmente. ¡Impresionante logro!"
-                }
+            ffmi_max = 21
+            rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
+        progreso_ffmi = min(ffmi / ffmi_max, 1.0)
+        st.progress(progreso_ffmi)
+        st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
+        
+        # Agregar interpretación específica del nivel actual
+        interpretaciones = {
+            "Hombre": {
+                "Bajo": "Indica desarrollo muscular insuficiente. Prioriza entrenamiento de fuerza y nutrición adecuada.",
+                "Promedio": "Desarrollo normal en población general. Con entrenamiento consistente puedes mejorar significativamente.",
+                "Bueno": "Buen desarrollo muscular alcanzable con 2-4 años de entrenamiento disciplinado. ¡Sigue así!",
+                "Avanzado": "Desarrollo muy avanzado. Estás cerca del límite natural. Optimiza detalles para máximo progreso.",
+                "Élite": "Desarrollo excepcional. Has alcanzado un nivel muy difícil de lograr naturalmente. ¡Excelente trabajo!"
+            },
+            "Mujer": {
+                "Bajo": "Indica desarrollo muscular insuficiente. El entrenamiento de fuerza te ayudará significativamente.",
+                "Promedio": "Desarrollo normal en población femenina. Hay mucho margen para mejorar con entrenamiento.",
+                "Bueno": "Buen desarrollo muscular. Refleja dedicación al entrenamiento de fuerza. ¡Continúa!",
+                "Avanzado": "Desarrollo muy avanzado para mujeres. Cercano al límite natural. Excelente dedicación.",
+                "Élite": "Desarrollo excepcional. Nivel muy difícil de alcanzar naturalmente. ¡Impresionante logro!"
             }
-            st.info(f"📋 **Interpretación:** {interpretaciones[sexo][nivel_ffmi]}")
+        }
+        st.info(f"📋 **Interpretación:** {interpretaciones[sexo][nivel_ffmi]}")
         
     with col2:
         st.info(f"""
@@ -2403,56 +2347,8 @@ puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}
 puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}.get(experiencia[:2] if experiencia and len(experiencia) >= 2 else "", 1)
 
 # 3. Rendimiento Funcional: 1-4 puntos promedio de los 5 ejercicios funcionales
-# Aplicar subponderacion por categoria de ejercicio funcional
 puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
-
-# Mapeo de ejercicios a categorias con sus pesos
-# Los pesos reflejan la importancia relativa de cada categoria en el rendimiento funcional total
-# Upper push/pull: 15% cada uno (30% total tren superior)
-# Lower push/pull: 15% cada uno (30% total tren inferior) 
-# Core: 10% (estabilidad central)
-# Distribucion total: 30% superior + 30% inferior + 10% core = 70%
-# Pero se normaliza a 100% para el calculo final
-categoria_ejercicio = {
-    "Flexiones": "upper_push",
-    "Fondos": "upper_push",
-    "Dominadas": "upper_pull", 
-    "Remo invertido": "upper_pull",
-    "Sentadilla búlgara unilateral": "lower_push",
-    "Puente de glúteo unilateral": "lower_pull",
-    "Plancha": "core",
-    "Ab wheel": "core",
-    "L-sit": "core"
-}
-
-# Pesos por categoria funcional (suman 0.70, se normalizan a 1.0 en el calculo)
-pesos_categoria_funcional = {
-    "upper_push": 0.15,
-    "upper_pull": 0.15,
-    "lower_push": 0.15,
-    "lower_pull": 0.15,
-    "core": 0.10
-}
-
-# Calcular puntuacion funcional ponderada por categoria
-puntos_funcional_ponderado = 0.0
-if niveles_ejercicios:
-    for ejercicio, nivel in niveles_ejercicios.items():
-        puntos = puntos_por_nivel.get(nivel, 1)
-        categoria = categoria_ejercicio.get(ejercicio, "upper_push")
-        peso_cat = pesos_categoria_funcional.get(categoria, 0.15)
-        # Normalizar puntos a escala 0-1 y aplicar peso de categoria
-        puntos_funcional_ponderado += (puntos / 4.0) * peso_cat
-    
-    # Normalizar el resultado a escala 1-4 para compatibilidad con el sistema existente
-    # Dividir por la suma de pesos (0.70) normaliza la contribucion ponderada a escala 0-1
-    # Multiplicar por 4 lleva a escala 1-4 (compatible con puntuacion existente)
-    puntos_funcional = puntos_funcional_ponderado / sum(pesos_categoria_funcional.values()) * 4.0
-else:
-    puntos_funcional = 1
-
-# Determinar si el FFMI debe ser invalidado
-ffmi_invalido = es_ffmi_invalido(grasa_corregida, sexo)
+puntos_funcional = sum([puntos_por_nivel.get(n, 1) for n in niveles_ejercicios.values()]) / len(niveles_ejercicios) if niveles_ejercicios else 1
 
 # Determinar si el porcentaje de grasa está en rango saludable para ajustar ponderación
 # Hombres: ≤25% | Mujeres: ≤32%
@@ -2465,20 +2361,10 @@ en_rango_saludable = esta_en_rango_saludable(grasa_corregida, sexo)
 # FUNDAMENTO CIENTÍFICO:
 # - En rangos saludables de grasa, el FFMI es un indicador confiable de desarrollo muscular
 # - Con exceso de grasa corporal, el FFMI puede sobrestimar el desarrollo muscular real
-# - Con adiposidad muy alta (>25% hombres, >32% mujeres), el FFMI es invalidado completamente
 # - La capacidad funcional es siempre un indicador objetivo del nivel de entrenamiento
 # - La experiencia proporciona contexto sobre la madurez del entrenamiento
 
-if ffmi_invalido:
-    # FFMI INVALIDADO: Alta adiposidad invalida la medicion de FFMI
-    # - FFMI: 0% - Completamente invalidado por alto % de grasa
-    # - Funcional: 60% - Indicador mas objetivo del nivel real
-    # - Experiencia: 40% - Aumentado para compensar ausencia de FFMI
-    peso_ffmi = 0.0
-    peso_funcional = 0.60
-    peso_experiencia = 0.40
-    criterio_ponderacion = "FFMI Invalidado (alta adiposidad)"
-elif en_rango_saludable:
+if en_rango_saludable:
     # RANGO SALUDABLE: Ponderación balanceada
     # - FFMI: 40% - Alta confiabilidad en la medición de masa muscular
     # - Funcional: 40% - Refleja capacidad real de rendimiento
@@ -2506,7 +2392,6 @@ st.session_state.puntos_funcional = puntos_funcional
 st.session_state.puntos_exp = puntos_exp
 st.session_state.puntaje_total = puntaje_total
 st.session_state.en_rango_saludable = en_rango_saludable
-st.session_state.ffmi_invalido = ffmi_invalido
 st.session_state.criterio_ponderacion = criterio_ponderacion
 
 if puntaje_total < 0.3:
@@ -2531,10 +2416,7 @@ if ejercicios_funcionales_completos and experiencia_completa:
     col1_global, col2_global, col3_global, col4_global = st.columns(4)
     
     with col1_global:
-        if ffmi_invalido:
-            st.metric("Desarrollo Muscular", "N/A", "FFMI: Invalidado")
-        else:
-            st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel_ffmi}")
+        st.metric("Desarrollo Muscular", f"{puntos_ffmi}/5", f"FFMI: {nivel_ffmi}")
 
     with col2_global:
         st.metric("Rendimiento", f"{puntos_funcional:.1f}/4", "Capacidad funcional")
@@ -2567,29 +2449,7 @@ if ejercicios_funcionales_completos and experiencia_completa:
     """)
     
     # Mostrar información sobre la ponderación aplicada
-    if ffmi_invalido:
-        rango_texto = ">25%" if sexo == "Hombre" else ">32%"
-        st.error(f"""
-        🚫 **FFMI INVALIDADO - PONDERACIÓN ESPECIAL APLICADA**
-        
-        Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) excede significativamente el umbral ({rango_texto} para {sexo.lower()}s).
-        
-        **Ponderación aplicada (FFMI excluido):**
-        - 🏋️ FFMI (desarrollo muscular): **{peso_ffmi*100:.0f}%** (invalidado por alta adiposidad)
-        - 💪 Rendimiento funcional: **{peso_funcional*100:.0f}%** (indicador más objetivo)
-        - 📚 Experiencia: **{peso_experiencia*100:.0f}%** (compensando ausencia de FFMI)
-        
-        **Razón:** Con un porcentaje de grasa tan alto, el FFMI no puede evaluar confiablemente el desarrollo 
-        muscular real, ya que la masa libre de grasa incluye componentes no musculares inflados por la adiposidad.
-        
-        **Próximos pasos:**
-        - Enfócate en reducir grasa corporal manteniendo masa muscular
-        - Continúa con entrenamiento de fuerza y proteína adecuada
-        - **Reevaluación recomendada en 8 semanas** para validar progreso
-        
-        Una vez que reduzcas tu grasa corporal al rango saludable, el FFMI será incluido en la evaluación.
-        """)
-    elif not en_rango_saludable:
+    if not en_rango_saludable:
         rango_texto = "≤25%" if sexo == "Hombre" else "≤32%"
         st.warning(f"""
         ⚠️ **PONDERACIÓN AJUSTADA POR EXCESO DE GRASA CORPORAL**
