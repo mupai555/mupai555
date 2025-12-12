@@ -2151,7 +2151,9 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-    st.markdown("### 📋 Experiencia en entrenamiento")
+    st.markdown("### 📋 Experiencia en entrenamiento **(Requerido)**")
+    st.markdown("*Este campo es obligatorio para continuar con la evaluación*")
+    # Using key parameter ensures experiencia is automatically stored in session_state
     experiencia = st.radio(
         "¿Cuál de las siguientes afirmaciones describe con mayor precisión tu hábito de entrenamiento en los últimos dos años?",
         [
@@ -2160,13 +2162,19 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
             "C) He seguido un programa de entrenamiento estructurado con objetivos claros y progresión semanal.",
             "D) He diseñado o ajustado personalmente mis planes de entrenamiento, monitoreando variables como volumen, intensidad y recuperación."
         ],
-        help="Tu respuesta debe reflejar tu consistencia y planificación real."
+        help="Campo obligatorio: Tu respuesta debe reflejar tu consistencia y planificación real.",
+        key="experiencia_seleccion"
     )
 
     # Allow all users to access functional exercises regardless of experience level
     if experiencia:
         st.markdown("### 🏆 Evaluación de rendimiento por categoría")
-        st.info("💡 Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
+        st.info("💡 **Importante:** Debes completar las 5 categorías de ejercicios para poder enviar el cuestionario. Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
+        
+        # Show progress of completed exercises
+        ejercicios_previos = st.session_state.get("datos_ejercicios", {})
+        if ejercicios_previos and len(ejercicios_previos) > 0:
+            st.success(f"✅ Has completado {len(ejercicios_previos)} de 5 categorías de ejercicios")
 
         ejercicios_data = {}
         niveles_ejercicios = {}
@@ -2329,22 +2337,62 @@ if 'experiencia' not in locals() or experiencia is None:
 if 'niveles_ejercicios' not in locals() or niveles_ejercicios is None:
     niveles_ejercicios = {}  # Diccionario vacío por defecto
 
-# Calcular nivel global con ponderación
+# ==================== CÁLCULO DEL NIVEL GLOBAL DE ENTRENAMIENTO ====================
+# Calcular puntuaciones individuales de cada componente
+
+# 1. FFMI (Desarrollo Muscular): 1-5 puntos basado en masa muscular ajustada
 puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}.get(nivel_ffmi, 1)
+
+# 2. Experiencia: 1-4 puntos basado en historial de entrenamiento
 puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}.get(experiencia[:2] if experiencia and len(experiencia) >= 2 else "", 1)
+
+# 3. Rendimiento Funcional: 1-4 puntos promedio de los 5 ejercicios funcionales
 puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
 puntos_funcional = sum([puntos_por_nivel.get(n, 1) for n in niveles_ejercicios.values()]) / len(niveles_ejercicios) if niveles_ejercicios else 1
 
-# Determinar si el porcentaje de grasa está en rango saludable para ponderar FFMI
+# Determinar si el porcentaje de grasa está en rango saludable para ajustar ponderación
+# Hombres: ≤25% | Mujeres: ≤32%
 en_rango_saludable = esta_en_rango_saludable(grasa_corregida, sexo)
 
-# Ponderación adaptativa según el porcentaje de grasa corporal
+# ==================== PONDERACIÓN ADAPTATIVA MEJORADA ====================
+# La ponderación se ajusta según el porcentaje de grasa corporal para reflejar
+# la confiabilidad y relevancia de cada componente en diferentes contextos.
+#
+# FUNDAMENTO CIENTÍFICO:
+# - En rangos saludables de grasa, el FFMI es un indicador confiable de desarrollo muscular
+# - Con exceso de grasa corporal, el FFMI puede sobrestimar el desarrollo muscular real
+# - La capacidad funcional es siempre un indicador objetivo del nivel de entrenamiento
+# - La experiencia proporciona contexto sobre la madurez del entrenamiento
+
 if en_rango_saludable:
-    # Rango saludable: FFMI 40%, funcionalidad 40%, experiencia 20%
-    puntaje_total = (puntos_ffmi / 5 * 0.4) + (puntos_funcional / 4 * 0.4) + (puntos_exp / 4 * 0.2)
+    # RANGO SALUDABLE: Ponderación balanceada
+    # - FFMI: 40% - Alta confiabilidad en la medición de masa muscular
+    # - Funcional: 40% - Refleja capacidad real de rendimiento
+    # - Experiencia: 20% - Contexto de madurez en entrenamiento
+    peso_ffmi = 0.40
+    peso_funcional = 0.40
+    peso_experiencia = 0.20
+    criterio_ponderacion = "Rango saludable de grasa corporal"
 else:
-    # Fuera de rango saludable (obesidad): FFMI 0%, funcionalidad 80%, experiencia 20%
-    puntaje_total = (puntos_ffmi / 5 * 0.0) + (puntos_funcional / 4 * 0.8) + (puntos_exp / 4 * 0.2)
+    # EXCESO DE GRASA: Ponderación ajustada
+    # - FFMI: 20% - Reducido por posible sobrestimación de masa muscular
+    # - Funcional: 60% - Aumentado como indicador más objetivo
+    # - Experiencia: 20% - Mantiene su peso como contexto
+    peso_ffmi = 0.20
+    peso_funcional = 0.60
+    peso_experiencia = 0.20
+    criterio_ponderacion = "Exceso de grasa corporal (FFMI reducido)"
+
+# Calcular puntaje total normalizado (0.0 a 1.0)
+puntaje_total = (puntos_ffmi / 5 * peso_ffmi) + (puntos_funcional / 4 * peso_funcional) + (puntos_exp / 4 * peso_experiencia)
+
+# Almacenar en session_state para uso posterior
+st.session_state.puntos_ffmi = puntos_ffmi
+st.session_state.puntos_funcional = puntos_funcional
+st.session_state.puntos_exp = puntos_exp
+st.session_state.puntaje_total = puntaje_total
+st.session_state.en_rango_saludable = en_rango_saludable
+st.session_state.criterio_ponderacion = criterio_ponderacion
 
 if puntaje_total < 0.3:
     nivel_entrenamiento = "principiante"
@@ -2400,30 +2448,36 @@ if ejercicios_funcionales_completos and experiencia_completa:
     Este nivel se usará para personalizar todos los cálculos energéticos y nutricionales posteriores.
     """)
     
-    # Mostrar advertencia si FFMI no se pondera por exceso de grasa
+    # Mostrar información sobre la ponderación aplicada
     if not en_rango_saludable:
         rango_texto = "≤25%" if sexo == "Hombre" else "≤32%"
         st.warning(f"""
-        ⚠️ **ADVERTENCIA: FFMI no ponderado por exceso de grasa corporal**
+        ⚠️ **PONDERACIÓN AJUSTADA POR EXCESO DE GRASA CORPORAL**
         
         Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) está fuera del rango saludable para {sexo.lower()}s ({rango_texto}).
         
-        **Ponderación aplicada:**
-        - 🏋️ FFMI (desarrollo muscular): **0%** (no ponderado)
-        - 💪 Funcionalidad: **80%** 
-        - 📚 Experiencia: **20%**
+        **Ponderación aplicada (ajustada):**
+        - 🏋️ FFMI (desarrollo muscular): **{peso_ffmi*100:.0f}%** (reducido por posible sobrestimación)
+        - 💪 Rendimiento funcional: **{peso_funcional*100:.0f}%** (aumentado como indicador más objetivo)
+        - 📚 Experiencia: **{peso_experiencia*100:.0f}%** (mantenido)
         
-        Una vez que alcances el rango saludable de grasa corporal, se aplicará la ponderación estándar (40% FFMI, 40% funcionalidad, 20% experiencia).
+        **Razón:** Con exceso de grasa corporal, el FFMI puede sobrestimar el desarrollo muscular real. 
+        La capacidad funcional es un indicador más objetivo del nivel de entrenamiento en este rango.
+        
+        Una vez que alcances el rango saludable, se aplicará la ponderación estándar (40% FFMI, 40% funcional, 20% experiencia).
         """)
     else:
         st.info(f"""
-        ✅ **Ponderación completa aplicada**
+        ✅ **PONDERACIÓN ESTÁNDAR APLICADA**
         
-        Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) está en rango saludable. Se aplica la ponderación estándar:
+        Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) está en rango saludable. Ponderación aplicada:
         
-        - 🏋️ FFMI (desarrollo muscular): **40%**
-        - 💪 Funcionalidad: **40%** 
-        - 📚 Experiencia: **20%**
+        - 🏋️ FFMI (desarrollo muscular): **{peso_ffmi*100:.0f}%**
+        - 💪 Rendimiento funcional: **{peso_funcional*100:.0f}%** 
+        - 📚 Experiencia: **{peso_experiencia*100:.0f}%**
+        
+        Esta ponderación balanceada refleja de manera precisa tu nivel de entrenamiento considerando 
+        todos los componentes de desarrollo, rendimiento y experiencia.
         """)
 
 if ejercicios_funcionales_completos and experiencia_completa:
@@ -3100,15 +3154,43 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ====== BOTONES Y ENVÍO FINAL (SOLO POR BOTÓN, NUNCA AUTOMÁTICO) ======
 
 def datos_completos_para_email():
-    obligatorios = {
-        "Nombre": nombre,
-        "Peso": peso,
-        "Estatura": estatura,
-        "Edad": edad,
-        "Email": email_cliente,
-        "Teléfono": telefono
-    }
-    faltantes = [campo for campo, valor in obligatorios.items() if not valor]
+    """
+    Valida que todos los campos obligatorios del cuestionario estén completos.
+    
+    Returns:
+        list: Lista de nombres de campos faltantes. Lista vacía si todo está completo.
+    """
+    faltantes = []
+    
+    # Validar datos personales básicos
+    if not nombre or not nombre.strip():
+        faltantes.append("Nombre completo")
+    if not telefono or not telefono.strip():
+        faltantes.append("Teléfono")
+    if not email_cliente or not email_cliente.strip():
+        faltantes.append("Email")
+    if not edad or edad <= 0:
+        faltantes.append("Edad")
+    
+    # Validar datos antropométricos
+    if not peso or peso <= 0:
+        faltantes.append("Peso corporal")
+    if not estatura or estatura <= 0:
+        faltantes.append("Estatura")
+    if not grasa_corporal or grasa_corporal <= 0:
+        faltantes.append("Porcentaje de grasa corporal")
+    
+    # Validar experiencia de entrenamiento
+    # Check both the widget key and the old experiencia variable for backward compatibility
+    experiencia_valor = st.session_state.get("experiencia_seleccion", "") or st.session_state.get("experiencia", "")
+    if not experiencia_valor or not isinstance(experiencia_valor, str) or len(experiencia_valor) < 3:
+        faltantes.append("Nivel de experiencia en entrenamiento")
+    
+    # Validar ejercicios funcionales (deben ser 5)
+    ejercicios_data = st.session_state.get("datos_ejercicios", {})
+    if not ejercicios_data or len(ejercicios_data) < 5:
+        faltantes.append(f"Ejercicios funcionales completos (tienes {len(ejercicios_data) if ejercicios_data else 0} de 5 requeridos)")
+    
     return faltantes
 
 # Construir tabla_resumen robusta para el email (idéntica a tu estructura, NO resumida)
@@ -3679,10 +3761,22 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
 
 # --- Botón para enviar email (solo si no se ha enviado y todo completo) ---
 if not st.session_state.get("correo_enviado", False):
-    if st.button("📧 Enviar Resumen por Email", key="enviar_email"):
+    # Check if all required fields are complete before showing the button
+    faltantes = datos_completos_para_email()
+    
+    # Show button but disable if fields are missing
+    button_disabled = len(faltantes) > 0
+    
+    if st.button("📧 Enviar Resumen por Email", key="enviar_email", disabled=button_disabled, 
+                 help="Completa todos los campos requeridos para habilitar el envío" if button_disabled else "Enviar resumen por email"):
+        # Double-check validation before sending
         faltantes = datos_completos_para_email()
         if faltantes:
-            st.error(f"❌ No se puede enviar el email. Faltan: {', '.join(faltantes)}")
+            # Show detailed error message with all missing fields
+            st.error("❌ **No se puede enviar el resumen. Por favor completa los siguientes campos obligatorios:**")
+            for campo_faltante in faltantes:
+                st.markdown(f"- ❌ **{campo_faltante}**")
+            st.warning("⚠️ Revisa el formulario arriba y completa todos los campos requeridos, luego intenta enviar nuevamente.")
         else:
             with st.spinner("📧 Enviando resumen por email..."):
                 ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
@@ -3691,14 +3785,29 @@ if not st.session_state.get("correo_enviado", False):
                     st.success("✅ Email enviado exitosamente a administración")
                 else:
                     st.error("❌ Error al enviar email. Contacta a soporte técnico.")
+    
+    # Show validation status above the button
+    if faltantes:
+        st.warning(f"⚠️ **Faltan {len(faltantes)} campo(s) obligatorio(s) por completar:**")
+        for campo_faltante in faltantes:
+            st.markdown(f"- 📝 **{campo_faltante}**")
+        st.info("💡 **Tip:** Completa todos los campos del cuestionario para poder enviar el resumen.")
 else:
     st.info("✅ El resumen ya fue enviado por email. Si requieres reenviarlo, refresca la página o usa el botón de 'Reenviar Email'.")
 
 # --- Opción para reenviar manualmente (opcional) ---
-if st.button("📧 Reenviar Email", key="reenviar_email"):
+faltantes_reenvio = datos_completos_para_email()
+button_reenvio_disabled = len(faltantes_reenvio) > 0
+
+if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvio_disabled,
+             help="Completa todos los campos requeridos para habilitar el reenvío" if button_reenvio_disabled else "Reenviar resumen por email"):
     faltantes = datos_completos_para_email()
     if faltantes:
-        st.error(f"❌ No se puede reenviar el email. Faltan: {', '.join(faltantes)}")
+        # Show detailed error message with all missing fields
+        st.error("❌ **No se puede reenviar el resumen. Por favor completa los siguientes campos obligatorios:**")
+        for campo_faltante in faltantes:
+            st.markdown(f"- ❌ **{campo_faltante}**")
+        st.warning("⚠️ Revisa el formulario arriba y completa todos los campos requeridos, luego intenta enviar nuevamente.")
     else:
         with st.spinner("📧 Reenviando resumen por email..."):
             ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
