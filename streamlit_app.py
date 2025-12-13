@@ -1331,17 +1331,21 @@ def obtener_modo_interpretacion_ffmi(grasa_corregida, sexo):
         else:  # grasa > 38.2 o grasa < 20.8
             return "RED"
 
-def calculate_psmf(sexo, peso, grasa_corregida, mlg):
+def calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura_cm=None):
     """
     Calcula los parámetros para PSMF (Very Low Calorie Diet) actualizada
-    según el nuevo protocolo basado en proteína total y multiplicadores.
+    según el nuevo protocolo basado en tiers de adiposidad.
     
-    Requisitos actualizados:
-    - Proteína automática según % grasa: 1.8g/kg (<25% grasa) o 1.6g/kg (≥25% grasa)
-    - Grasas automáticas según % grasa: 30g/día (<25% grasa) o 50g/día (≥25% grasa)
-    - Calorías = proteína (g) × multiplicador según % grasa
+    Requisitos actualizados con sistema de tiers:
+    - Tier 1 (baja adiposidad): Base = peso total
+    - Tier 2 (adiposidad moderada): Base = MLG
+    - Tier 3 (alta adiposidad): Base = peso ideal (IMC 25)
+    - Proteína según % grasa: 1.8g/kg (<25% grasa) o 1.6g/kg (≥25% grasa)
+    - Grasas según % grasa: 30g/día (<25% grasa) o 50g/día (≥25% grasa)
+    - Calorías objetivo = proteína (g) × multiplicador según % grasa
     - Multiplicadores: 8.3 (alto % grasa), 9.0 (moderado), 9.5-9.7 (magro)
-    - Carbohidratos: Resto de calorías de vegetales fibrosos únicamente
+    - Carb cap por tier: Tier 1=50g, Tier 2=40g, Tier 3=30g
+    - Carbohidratos: Calculados desde calorías restantes, limitados por carb cap
     """
     try:
         peso = float(peso)
@@ -1363,17 +1367,60 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
         return {"psmf_aplicable": False}
     
     if psmf_aplicable:
-        # PROTEÍNA Y GRASAS: Asignación automática según % grasa corporal corregida
+        # Calcular variables necesarias
+        if estatura_cm is not None:
+            estatura_m = estatura_cm / 100
+            imc = peso / (estatura_m ** 2)
+            peso_ideal_ref_kg = 25 * (estatura_m ** 2)
+        else:
+            estatura_m = None
+            imc = None
+            peso_ideal_ref_kg = None
+        
+        # DETERMINACIÓN DE TIER basado en adiposidad
+        # Tier 3 predomina - verificar primero
+        if (imc is not None and imc >= 40) or \
+           (sexo == "Hombre" and grasa_corregida >= 35) or \
+           (sexo == "Mujer" and grasa_corregida >= 45):
+            tier = 3
+        # Tier 2
+        elif (sexo == "Hombre" and 25 <= grasa_corregida < 35) or \
+             (sexo == "Mujer" and 35 <= grasa_corregida < 45):
+            tier = 2
+        # Tier 1
+        elif (sexo == "Hombre" and grasa_corregida < 25) or \
+             (sexo == "Mujer" and grasa_corregida < 35):
+            tier = 1
+        else:
+            tier = 1  # Default fallback
+        
+        # ELECCIÓN DE BASE DE PROTEÍNA según tier
+        if tier == 1:
+            base_proteina_kg = peso
+            base_proteina_nombre = "Peso total"
+        elif tier == 2:
+            base_proteina_kg = mlg
+            base_proteina_nombre = "MLG"
+        elif tier == 3:
+            base_proteina_kg = peso_ideal_ref_kg if peso_ideal_ref_kg is not None else mlg
+            base_proteina_nombre = "Peso ideal (IMC 25)"
+        else:
+            base_proteina_kg = peso
+            base_proteina_nombre = "Peso total"
+        
+        # FACTORES DE PROTEÍNA Y GRASAS según % grasa corporal corregida
         if grasa_corregida < 25:
             # < 25% grasa: 1.8g/kg proteína + 30g grasas
-            proteina_g_dia = round(peso * 1.8, 1)
+            factor_proteina_psmf = 1.8
             grasa_g_dia = 30.0
         else:
             # ≥ 25% grasa: 1.6g/kg proteína + 50g grasas
-            proteina_g_dia = round(peso * 1.6, 1)
+            factor_proteina_psmf = 1.6
             grasa_g_dia = 50.0
         
-        # MULTIPLICADOR CALÓRICO según % grasa corporal
+        proteina_g_dia = round(base_proteina_kg * factor_proteina_psmf, 1)
+        
+        # MULTIPLICADOR CALÓRICO según % grasa corporal (para calorías objetivo)
         if grasa_corregida > 35:  # Alto % grasa - PSMF tradicional
             multiplicador = 8.3
             perfil_grasa = "alto % grasa (PSMF tradicional)"
@@ -1388,8 +1435,29 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
             multiplicador = 9.6
             perfil_grasa = "más magro (abdominales visibles)"
         
-        # CALORÍAS = proteína (g) × multiplicador
-        calorias_dia = round(proteina_g_dia * multiplicador, 0)
+        # CALORÍAS OBJETIVO = proteína (g) × multiplicador
+        kcal_psmf_obj = round(proteina_g_dia * multiplicador, 0)
+        
+        # CARB CAP por tier
+        if tier == 1:
+            carb_cap_g = 50
+        elif tier == 2:
+            carb_cap_g = 40
+        elif tier == 3:
+            carb_cap_g = 30
+        else:
+            carb_cap_g = 50  # Default
+        
+        # CÁLCULO DE CARBOHIDRATOS con cap
+        kcal_prot = 4 * proteina_g_dia
+        kcal_grasa = 9 * grasa_g_dia
+        carbs_g_calculado = max((kcal_psmf_obj - (kcal_prot + kcal_grasa)) / 4, 0)
+        
+        carbs_g = min(carbs_g_calculado, carb_cap_g)
+        carb_cap_aplicado = carbs_g_calculado > carb_cap_g
+        
+        # CALORÍAS FINALES recalculadas por macros
+        calorias_dia = kcal_prot + kcal_grasa + (4 * carbs_g)
         
         # Verificar que no esté por debajo del piso mínimo
         if calorias_dia < calorias_piso_dia:
@@ -1407,12 +1475,20 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg):
             "psmf_aplicable": True,
             "proteina_g_dia": proteina_g_dia,
             "grasa_g_dia": grasa_g_dia,
+            "carbs_g_dia": round(carbs_g, 1),
             "calorias_dia": calorias_dia,
             "calorias_piso_dia": calorias_piso_dia,
             "multiplicador": multiplicador,
             "perfil_grasa": perfil_grasa,
             "perdida_semanal_kg": (perdida_semanal_min, perdida_semanal_max),
-            "criterio": f"{criterio} - Nuevo protocolo: {perfil_grasa}"
+            "criterio": f"{criterio} - Protocolo con tiers: {perfil_grasa}",
+            # Nuevos campos de explainabilidad
+            "tier_psmf": tier,
+            "base_proteina_usada": base_proteina_nombre,
+            "base_proteina_kg": round(base_proteina_kg, 2),
+            "carb_cap_aplicado_g": carb_cap_g,
+            "carb_cap_fue_aplicado": carb_cap_aplicado,
+            "factor_proteina_psmf": factor_proteina_psmf
         }
     else:
         return {"psmf_aplicable": False}
@@ -2416,15 +2492,21 @@ grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
 mlg = calcular_mlg(peso, grasa_corregida)
 
 # --- Cálculo PSMF ---
-psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg)
+psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura)
 if psmf_recs.get("psmf_aplicable"):
     st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
     perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
+    tier_psmf = psmf_recs.get('tier_psmf', 1)
+    base_proteina_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
+    carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
     st.warning(f"""
     ⚡ **CANDIDATO PARA PROTOCOLO PSMF ACTUALIZADO**
     Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
     
-    🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día ({psmf_recs['proteina_g_dia']/peso:.2f} g/kg peso total)
+    🏷️ **Tier de adiposidad:** Tier {tier_psmf}
+    🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg {base_proteina_usada})
+    🥑 **Grasas diarias:** {psmf_recs['grasa_g_dia']} g/día
+    🌾 **Carbohidratos diarios:** {psmf_recs.get('carbs_g_dia', 0)} g/día (tope: {carb_cap}g)
     🔥 **Calorías diarias:** {psmf_recs['calorias_dia']:.0f} kcal/día
     📊 **Multiplicador:** {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
     📈 **Pérdida semanal proyectada:** {perdida_min}-{perdida_max} kg/semana
@@ -2434,7 +2516,7 @@ if psmf_recs.get("psmf_aplicable"):
     ⚠️ **ADVERTENCIAS DE SEGURIDAD:**
     • Duración máxima: 6-8 semanas
     • Requiere supervisión médica/nutricional
-    • Carbohidratos y grasas al mínimo (solo de fuentes magras y vegetales)
+    • Carbohidratos limitados según tier (solo de vegetales fibrosos)
     • Suplementación obligatoria: multivitamínico, omega-3, electrolitos
     
     *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
@@ -3259,14 +3341,18 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
             st.metric("Multiplicador", f"{multiplicador}", f"Perfil: {perfil_grasa}")
             st.metric("Pérdida esperada", f"{perdida_min}-{perdida_max} kg/semana")
+            tier_psmf = psmf_recs.get('tier_psmf', 1)
+            base_prot_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
+            carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
             st.markdown(f"""
             **Consideraciones:**
             - ⚠️ Muy restrictivo
             - ⚠️ Máximo 6-8 semanas
             - ⚠️ Requiere supervisión médica
+            - 🏷️ Tier {tier_psmf} (base: {base_prot_usada})
             - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} automático)
             - ⚠️ Grasas: {psmf_recs.get('grasa_g_dia', 40)}g/día (automático según % grasa)
-            - ⚠️ Carbos: resto de calorías (solo vegetales fibrosos)
+            - ⚠️ Carbos: {psmf_recs.get('carbs_g_dia', 0)}g/día (tope: {carb_cap}g)
             - ⚠️ Suplementación necesaria
             """)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -3289,29 +3375,37 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         grasa_g = psmf_recs.get('grasa_g_dia', 40.0)
         grasa_kcal = grasa_g * 9
         
-        # CARBOHIDRATOS: El resto de calorías de vegetales fibrosos únicamente
-        carbo_kcal = max(ingesta_calorica - proteina_kcal - grasa_kcal, 0)
-        carbo_g = round(carbo_kcal / 4, 1)
+        # CARBOHIDRATOS: Usar el valor calculado con carb cap aplicado
+        carbo_g = psmf_recs.get('carbs_g_dia', 0)
+        carbo_kcal = carbo_g * 4
         
         multiplicador = psmf_recs.get('multiplicador', 8.3)
         perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
         perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
+        tier_psmf = psmf_recs.get('tier_psmf', 1)
+        base_proteina_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
+        carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
+        carb_cap_fue_aplicado = psmf_recs.get('carb_cap_fue_aplicado', False)
         
-        fase = f"PSMF Actualizado - Pérdida rápida (déficit ~{deficit_psmf}%, multiplicador {multiplicador})"
+        fase = f"PSMF Actualizado - Pérdida rápida (déficit ~{deficit_psmf}%, multiplicador {multiplicador}, Tier {tier_psmf})"
 
         st.error(f"""
         ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
-        - Es un protocolo **MUY RESTRICTIVO** con nuevo cálculo basado en proteína total
+        - Es un protocolo **MUY RESTRICTIVO** con cálculo basado en tiers de adiposidad
         - **Duración máxima:** 6-8 semanas
-        - **Proteína:** {proteina_g}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} según {grasa_corregida:.1f}% grasa corporal)
+        - **Tier de adiposidad:** Tier {tier_psmf} (base proteína: {base_proteina_usada})
+        - **Proteína:** {proteina_g}g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg según {grasa_corregida:.1f}% grasa corporal)
         - **Grasas:** {grasa_g}g/día (asignación automática según {grasa_corregida:.1f}% grasa corporal)
+        - **Carbohidratos:** {carbo_g}g/día (tope Tier {tier_psmf}: {carb_cap}g) - Solo de vegetales fibrosos
         - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
         - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
         - **Requiere:** Supervisión médica y análisis de sangre regulares
-        - **Carbohidratos:** Solo de vegetales fibrosos ({carbo_g}g calculados según calorías restantes)
         - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
         - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
         """)
+        
+        if carb_cap_fue_aplicado:
+            st.info("💡 Se aplicó tope de carbohidratos para mantener PSMF consistente; kcal finales recalculadas por macros.")
     else:
         # ----------- TRADICIONAL -----------
         ingesta_calorica = ingesta_calorica_tradicional
