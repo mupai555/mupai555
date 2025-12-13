@@ -3937,7 +3937,10 @@ usar_mlg_para_proteina_email = debe_usar_mlg_para_proteina(sexo, grasa_corregida
 base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
 base_proteina_nombre_email = "MLG" if usar_mlg_para_proteina_email else "Peso total"
 
-proteina_g_tradicional = base_proteina_kg_email * obtener_factor_proteina_tradicional(grasa_corregida) if 'peso' in locals() and peso > 0 and 'grasa_corregida' in locals() else 0
+# Calcular factor de proteína una sola vez
+factor_proteina_tradicional_email = obtener_factor_proteina_tradicional(grasa_corregida) if 'grasa_corregida' in locals() else 1.6
+
+proteina_g_tradicional = base_proteina_kg_email * factor_proteina_tradicional_email if 'base_proteina_kg_email' in locals() and base_proteina_kg_email > 0 else 0
 proteina_kcal_tradicional = proteina_g_tradicional * 4
 
 # Calcular grasas tradicional - NUEVA LÓGICA CIENTÍFICA
@@ -3959,7 +3962,7 @@ grasa_kcal_tradicional = grasa_g_tradicional * 9
 carbo_kcal_tradicional = plan_tradicional_calorias - proteina_kcal_tradicional - grasa_kcal_tradicional
 carbo_g_tradicional = carbo_kcal_tradicional / 4
 
-nota_mlg_email = f"\n  (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {obtener_factor_proteina_tradicional(grasa_corregida):.1f} g/kg)" if usar_mlg_para_proteina_email else ""
+nota_mlg_email = f"\n  (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
 if usar_mlg_para_proteina_email:
     nota_mlg_email += "\n  ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
 
