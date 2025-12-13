@@ -209,6 +209,8 @@ def get_flow_phase():
     
     Returns:
         str: Current flow phase ('intake', 'review', 'final')
+              Currently, application transitions directly from 'intake' to 'final'.
+              'review' phase is reserved for future enhancement.
     """
     return st.session_state.get("flow_phase", "intake")
 
@@ -285,8 +287,11 @@ def hide_during_intake(render_func):
     Shows content during 'review' and 'final' phases.
     
     Use this for:
-    - Intermediate results shown during review
-    - Summary metrics visible during review but not intake
+    - Intermediate results shown during review (future enhancement)
+    - Summary metrics visible during review but not intake (future enhancement)
+    
+    Note: Currently, application transitions directly from 'intake' to 'final'.
+          This wrapper is provided for future multi-phase workflows.
     
     Example:
         @hide_during_intake
@@ -3211,7 +3216,9 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-    # ETA calculation always runs (for background calculations)
+    # ===== ETA CALCULATION (ALWAYS RUNS) =====
+    # This calculation happens regardless of flow phase to ensure values are available
+    # for downstream calorie calculations. Only the display is conditional.
     if grasa_corregida <= 10 and sexo == "Hombre":
         eta = 1.15
         eta_desc = "ETA alto (muy magro, ≤10% grasa)"
