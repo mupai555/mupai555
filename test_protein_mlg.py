@@ -43,6 +43,24 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
         return 1.6
 
 
+def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
+    """
+    Determina si se debe usar MLG como base para el cálculo de proteína
+    según las reglas 30/42 para alta adiposidad.
+    """
+    try:
+        grasa = float(grasa_corregida)
+    except (TypeError, ValueError):
+        return False
+    
+    if sexo == "Hombre" and grasa >= 30:
+        return True
+    elif sexo == "Mujer" and grasa >= 42:
+        return True
+    else:
+        return False
+
+
 def test_karina_case():
     """
     Test case for Karina:
@@ -67,11 +85,7 @@ def test_karina_case():
     print(f"MLG calculado: {mlg:.2f} kg")
     
     # Check if we should use MLG (30/42 rules)
-    usar_mlg_para_proteina = False
-    if sexo == "Hombre" and grasa_corregida >= 30:
-        usar_mlg_para_proteina = True
-    elif sexo == "Mujer" and grasa_corregida >= 42:
-        usar_mlg_para_proteina = True
+    usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
     
     print(f"Usar MLG para proteína: {usar_mlg_para_proteina}")
     print(f"Razón: {sexo} con {grasa_corregida}% grasa (umbral para mujeres: 42%)")
@@ -126,11 +140,7 @@ def test_man_high_adiposity():
     print(f"MLG calculado: {mlg:.2f} kg")
     
     # Check if we should use MLG (30/42 rules)
-    usar_mlg_para_proteina = False
-    if sexo == "Hombre" and grasa_corregida >= 30:
-        usar_mlg_para_proteina = True
-    elif sexo == "Mujer" and grasa_corregida >= 42:
-        usar_mlg_para_proteina = True
+    usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
     
     print(f"Usar MLG para proteína: {usar_mlg_para_proteina}")
     
@@ -182,11 +192,7 @@ def test_woman_moderate_adiposity():
     print(f"MLG calculado: {mlg:.2f} kg")
     
     # Check if we should use MLG (30/42 rules)
-    usar_mlg_para_proteina = False
-    if sexo == "Hombre" and grasa_corregida >= 30:
-        usar_mlg_para_proteina = True
-    elif sexo == "Mujer" and grasa_corregida >= 42:
-        usar_mlg_para_proteina = True
+    usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
     
     print(f"Usar MLG para proteína: {usar_mlg_para_proteina}")
     
@@ -234,11 +240,7 @@ def test_man_low_adiposity():
     print(f"MLG calculado: {mlg:.2f} kg")
     
     # Check if we should use MLG (30/42 rules)
-    usar_mlg_para_proteina = False
-    if sexo == "Hombre" and grasa_corregida >= 30:
-        usar_mlg_para_proteina = True
-    elif sexo == "Mujer" and grasa_corregida >= 42:
-        usar_mlg_para_proteina = True
+    usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
     
     print(f"Usar MLG para proteína: {usar_mlg_para_proteina}")
     

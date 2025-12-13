@@ -1584,6 +1584,37 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
     else:  # grasa >= 25
         return 1.6
 
+def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
+    """
+    Determina si se debe usar MLG como base para el cálculo de proteína
+    según las reglas 30/42 para alta adiposidad.
+    
+    Reglas:
+    - Hombres: usar MLG si grasa_corregida >= 30%
+    - Mujeres: usar MLG si grasa_corregida >= 42%
+    - De lo contrario: usar peso total
+    
+    Razón: En obesidad alta, usar peso total infla inapropiadamente la proteína.
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        grasa_corregida: Porcentaje de grasa corporal corregido
+    
+    Returns:
+        bool: True si se debe usar MLG, False si se debe usar peso total
+    """
+    try:
+        grasa = float(grasa_corregida)
+    except (TypeError, ValueError):
+        return False
+    
+    if sexo == "Hombre" and grasa >= 30:
+        return True
+    elif sexo == "Mujer" and grasa >= 42:
+        return True
+    else:
+        return False
+
 def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo):
     """
     Determina el porcentaje del TMB/BMR que debe destinarse a grasas para el plan tradicional.
@@ -3298,11 +3329,7 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         # - Hombres: usar MLG si grasa_corregida >= 30%
         # - Mujeres: usar MLG si grasa_corregida >= 42%
         # Razón: En obesidad alta, usar peso total infla inapropiadamente la proteína
-        usar_mlg_para_proteina = False
-        if sexo == "Hombre" and grasa_corregida >= 30:
-            usar_mlg_para_proteina = True
-        elif sexo == "Mujer" and grasa_corregida >= 42:
-            usar_mlg_para_proteina = True
+        usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
         
         base_proteina_kg = mlg if usar_mlg_para_proteina else peso
         base_proteina_nombre = "MLG" if usar_mlg_para_proteina else "Peso total"
@@ -3905,12 +3932,7 @@ COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
 
 # Calcular macros del plan tradicional para el resumen del email
 # Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
-usar_mlg_para_proteina_email = False
-if 'sexo' in locals() and 'grasa_corregida' in locals():
-    if sexo == "Hombre" and grasa_corregida >= 30:
-        usar_mlg_para_proteina_email = True
-    elif sexo == "Mujer" and grasa_corregida >= 42:
-        usar_mlg_para_proteina_email = True
+usar_mlg_para_proteina_email = debe_usar_mlg_para_proteina(sexo, grasa_corregida) if 'sexo' in locals() and 'grasa_corregida' in locals() else False
 
 base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
 base_proteina_nombre_email = "MLG" if usar_mlg_para_proteina_email else "Peso total"
