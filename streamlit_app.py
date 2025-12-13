@@ -201,6 +201,143 @@ def verify_access_code(entered_code, stored_code):
     """Verifica si el código ingresado coincide con el almacenado."""
     return entered_code.upper().strip() == stored_code.upper().strip()
 
+# ==================== FLOW STATE MANAGEMENT & CONDITIONAL RENDERING ====================
+def get_flow_phase():
+    """
+    Returns the current flow phase from session state.
+    Provides a fallback if flow_phase is not defined.
+    
+    Returns:
+        str: Current flow phase ('intake', 'review', 'final')
+    """
+    return st.session_state.get("flow_phase", "intake")
+
+def set_flow_phase(phase):
+    """
+    Sets the current flow phase in session state.
+    
+    Args:
+        phase (str): The flow phase to set ('intake', 'review', 'final')
+    """
+    if phase not in ["intake", "review", "final"]:
+        raise ValueError(f"Invalid flow phase: {phase}. Must be 'intake', 'review', or 'final'.")
+    st.session_state.flow_phase = phase
+
+def render_user_safe(render_func):
+    """
+    Wrapper decorator for components that are ALWAYS safe to show to users.
+    These are user-facing outputs without technical implementation details.
+    
+    Use this for:
+    - Basic user inputs and forms
+    - High-level summaries and recommendations
+    - Non-technical metrics (weight, height, age, etc.)
+    
+    Example:
+        @render_user_safe
+        def show_basic_info():
+            st.write("Your weight:", weight)
+    
+    Args:
+        render_func: Function to execute (always runs regardless of flow phase)
+    
+    Returns:
+        Wrapper function that executes the original function
+    """
+    def wrapper(*args, **kwargs):
+        return render_func(*args, **kwargs)
+    return wrapper
+
+def render_if_final(render_func):
+    """
+    Wrapper decorator for TECHNICAL/PRO-ONLY components shown only in 'final' phase.
+    Prevents exposure of intermediate technical outputs during 'intake' and 'review'.
+    
+    Use this for:
+    - FFMI detailed calculations and classifications
+    - FMI technical metrics and formulas
+    - ETA calculation methodology and factors
+    - GEAF detailed breakdowns
+    - Technical plan comparisons with formulas
+    - Implementation details and reasoning
+    
+    Example:
+        @render_if_final
+        def show_ffmi_technical_details():
+            st.write("FFMI calculation:", formula)
+    
+    Args:
+        render_func: Function to execute only in 'final' phase
+    
+    Returns:
+        Wrapper function that conditionally executes based on flow phase
+    """
+    def wrapper(*args, **kwargs):
+        if get_flow_phase() == "final":
+            return render_func(*args, **kwargs)
+        # During intake/review: calculations still run in background, but display is suppressed
+        return None
+    return wrapper
+
+def hide_during_intake(render_func):
+    """
+    Wrapper decorator for components hidden ONLY during 'intake' phase.
+    Shows content during 'review' and 'final' phases.
+    
+    Use this for:
+    - Intermediate results shown during review
+    - Summary metrics visible during review but not intake
+    
+    Example:
+        @hide_during_intake
+        def show_intermediate_results():
+            st.write("Intermediate calculation:", value)
+    
+    Args:
+        render_func: Function to execute in 'review' and 'final' phases
+    
+    Returns:
+        Wrapper function that conditionally executes based on flow phase
+    """
+    def wrapper(*args, **kwargs):
+        if get_flow_phase() != "intake":
+            return render_func(*args, **kwargs)
+        # During intake: suppress display but calculations continue
+        return None
+    return wrapper
+
+def should_render_technical():
+    """
+    Helper function to check if technical outputs should be rendered.
+    Returns True only in 'final' phase.
+    
+    Use this for inline conditional checks without decorators.
+    
+    Example:
+        if should_render_technical():
+            st.write("Technical details...")
+    
+    Returns:
+        bool: True if current phase is 'final', False otherwise
+    """
+    return get_flow_phase() == "final"
+
+def should_hide_during_intake():
+    """
+    Helper function to check if output should be hidden during intake.
+    Returns True if NOT in 'intake' phase.
+    
+    Use this for inline conditional checks without decorators.
+    
+    Example:
+        if should_hide_during_intake():
+            st.write("Review phase content...")
+    
+    Returns:
+        bool: True if NOT in 'intake' phase, False otherwise
+    """
+    return get_flow_phase() != "intake"
+
 # ==================== CONFIGURACIÓN DE PÁGINA Y CSS MEJORADO ====================
 st.set_page_config(
     page_title="MUPAI - Evaluación Fitness Personalizada",
@@ -716,7 +853,9 @@ defaults = {
     "access_user_whatsapp": "",
     "code_used": False,
     "access_stage": "request",  # request, code_sent, verify, authenticated
-    "masa_muscular": ""
+    "masa_muscular": "",
+    # Flow state for conditional rendering of technical outputs
+    "flow_phase": "intake"  # Can be: 'intake', 'review', 'final'
 }
 for k, v in defaults.items():
     if k not in st.session_state:
