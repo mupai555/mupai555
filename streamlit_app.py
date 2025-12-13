@@ -201,6 +201,148 @@ def verify_access_code(entered_code, stored_code):
     """Verifica si el código ingresado coincide con el almacenado."""
     return entered_code.upper().strip() == stored_code.upper().strip()
 
+# ==================== FLOW STATE MANAGEMENT & CONDITIONAL RENDERING ====================
+def get_flow_phase():
+    """
+    Returns the current flow phase from session state.
+    Provides a fallback if flow_phase is not defined.
+    
+    Returns:
+        str: Current flow phase ('intake', 'review', 'final')
+              Currently, application transitions directly from 'intake' to 'final'.
+              'review' phase is reserved for future enhancement.
+    """
+    return st.session_state.get("flow_phase", "intake")
+
+def set_flow_phase(phase):
+    """
+    Sets the current flow phase in session state.
+    
+    Args:
+        phase (str): The flow phase to set ('intake', 'review', 'final')
+    """
+    if phase not in ["intake", "review", "final"]:
+        raise ValueError(f"Invalid flow phase: {phase}. Must be 'intake', 'review', or 'final'.")
+    st.session_state.flow_phase = phase
+
+def render_user_safe(render_func):
+    """
+    Wrapper decorator for components that are ALWAYS safe to show to users.
+    These are user-facing outputs without technical implementation details.
+    
+    Use this for:
+    - Basic user inputs and forms
+    - High-level summaries and recommendations
+    - Non-technical metrics (weight, height, age, etc.)
+    
+    Example:
+        @render_user_safe
+        def show_basic_info():
+            st.write("Your weight:", weight)
+    
+    Args:
+        render_func: Function to execute (always runs regardless of flow phase)
+    
+    Returns:
+        Wrapper function that executes the original function
+    """
+    def wrapper(*args, **kwargs):
+        return render_func(*args, **kwargs)
+    return wrapper
+
+def render_if_final(render_func):
+    """
+    Wrapper decorator for TECHNICAL/PRO-ONLY components shown only in 'final' phase.
+    Prevents exposure of intermediate technical outputs during 'intake' and 'review'.
+    
+    Use this for:
+    - FFMI detailed calculations and classifications
+    - FMI technical metrics and formulas
+    - ETA calculation methodology and factors
+    - GEAF detailed breakdowns
+    - Technical plan comparisons with formulas
+    - Implementation details and reasoning
+    
+    Example:
+        @render_if_final
+        def show_ffmi_technical_details():
+            st.write("FFMI calculation:", formula)
+    
+    Args:
+        render_func: Function to execute only in 'final' phase
+    
+    Returns:
+        Wrapper function that conditionally executes based on flow phase
+    """
+    def wrapper(*args, **kwargs):
+        if get_flow_phase() == "final":
+            return render_func(*args, **kwargs)
+        # During intake/review: calculations still run in background, but display is suppressed
+        return None
+    return wrapper
+
+def hide_during_intake(render_func):
+    """
+    Wrapper decorator for components hidden ONLY during 'intake' phase.
+    Shows content during 'review' and 'final' phases.
+    
+    Use this for:
+    - Intermediate results shown during review (future enhancement)
+    - Summary metrics visible during review but not intake (future enhancement)
+    
+    Note: Currently, application transitions directly from 'intake' to 'final'.
+          This wrapper is provided for future multi-phase workflows.
+    
+    Example:
+        @hide_during_intake
+        def show_intermediate_results():
+            st.write("Intermediate calculation:", value)
+    
+    Args:
+        render_func: Function to execute in 'review' and 'final' phases
+    
+    Returns:
+        Wrapper function that conditionally executes based on flow phase
+    """
+    def wrapper(*args, **kwargs):
+        if get_flow_phase() != "intake":
+            return render_func(*args, **kwargs)
+        # During intake: suppress display but calculations continue
+        return None
+    return wrapper
+
+def should_render_technical():
+    """
+    Helper function to check if technical outputs should be rendered.
+    Returns True only in 'final' phase.
+    
+    Use this for inline conditional checks without decorators.
+    
+    Example:
+        if should_render_technical():
+            st.write("Technical details...")
+    
+    Returns:
+        bool: True if current phase is 'final', False otherwise
+    """
+    return get_flow_phase() == "final"
+
+def should_hide_during_intake():
+    """
+    Helper function to check if output should be hidden during intake.
+    Returns True if NOT in 'intake' phase.
+    
+    Use this for inline conditional checks without decorators.
+    
+    Example:
+        if should_hide_during_intake():
+            st.write("Review phase content...")
+    
+    Returns:
+        bool: True if NOT in 'intake' phase, False otherwise
+    """
+    return get_flow_phase() != "intake"
+
 # ==================== CONFIGURACIÓN DE PÁGINA Y CSS MEJORADO ====================
 st.set_page_config(
     page_title="MUPAI - Evaluación Fitness Personalizada",
@@ -716,7 +858,9 @@ defaults = {
     "access_user_whatsapp": "",
     "code_used": False,
     "access_stage": "request",  # request, code_sent, verify, authenticated
-    "masa_muscular": ""
+    "masa_muscular": "",
+    # Flow state for conditional rendering of technical outputs
+    "flow_phase": "intake"  # Can be: 'intake', 'review', 'final'
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -1997,6 +2141,8 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.s
         st.session_state.sexo = sexo
         st.session_state.fecha_llenado = fecha_llenado
         st.session_state.acepto_terminos = acepto_terminos
+        # Transition to 'final' phase to show technical outputs
+        set_flow_phase("final")
         st.success("✅ Datos registrados correctamente. ¡Continuemos con tu evaluación!")
     else:
         # Mostrar todos los errores de validación
@@ -2221,46 +2367,48 @@ if datos_personales_completos and st.session_state.datos_completos:
     # FFMI con visualización mejorada y explicación detallada
     st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI) y Adiposidad (FMI)")
     
-    # Mostrar modo de interpretación con badge
-    modo_colors = {
-        "GREEN": ("success", "🟢", "Interpretación válida como muscularidad"),
-        "AMBER": ("warning", "🟡", "Interpretación limitada por adiposidad"),
-        "RED": ("danger", "🔴", "No aplicable clasificación atlética")
-    }
-    modo_color, modo_emoji, modo_desc = modo_colors.get(modo_ffmi, ("info", "⚪", ""))
-    
-    # Border colors for mode badges
-    border_colors = {
-        "GREEN": "#4CAF50",
-        "AMBER": "#FF9800",
-        "RED": "#F44336"
-    }
-    border_color = border_colors.get(modo_ffmi, "#4CAF50")
-    
-    st.markdown(f"""
-    <div style="background-color: #f0f8ff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid {border_color};">
-    <p style="margin: 0; font-size: 13px; color: #333;">
-    <b>Modo de interpretación FFMI:</b> {modo_emoji} <span class="badge badge-{modo_color}">{modo_ffmi}</span> - {modo_desc}
-    </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Explicación del FFMI antes de mostrar el valor
-    st.markdown("""
-    <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;">
-    <p style="margin: 0; font-size: 14px; color: #333;">
-    <b>¿Qué es el FFMI?</b><br>
-    El Fat-Free Mass Index (FFMI) es un indicador científico que mide tu masa muscular 
-    ajustada por altura. Similar al IMC, pero usando solo masa libre de grasa (músculos, 
-    huesos, órganos) sin contar la grasa corporal. Este índice permite comparar el 
-    desarrollo muscular entre personas de diferentes estaturas de forma justa.
-    </p>
-    <p style="margin: 10px 0 0 0; font-size: 13px; color: #555;">
-    <b>Cálculo:</b> FFMI = (Masa Libre de Grasa / Altura²) + normalización a 1.80m<br>
-    <b>Tu MLG:</b> {mlg:.1f} kg | <b>Tu Altura:</b> {estatura} cm → <b>Tu FFMI:</b> {ffmi:.2f}
-    </p>
-    </div>
-    """.format(mlg=mlg, estatura=estatura, ffmi=ffmi), unsafe_allow_html=True)
+    # Technical details: FFMI mode interpretation (only shown in final phase)
+    if should_render_technical():
+        # Mostrar modo de interpretación con badge
+        modo_colors = {
+            "GREEN": ("success", "🟢", "Interpretación válida como muscularidad"),
+            "AMBER": ("warning", "🟡", "Interpretación limitada por adiposidad"),
+            "RED": ("danger", "🔴", "No aplicable clasificación atlética")
+        }
+        modo_color, modo_emoji, modo_desc = modo_colors.get(modo_ffmi, ("info", "⚪", ""))
+        
+        # Border colors for mode badges
+        border_colors = {
+            "GREEN": "#4CAF50",
+            "AMBER": "#FF9800",
+            "RED": "#F44336"
+        }
+        border_color = border_colors.get(modo_ffmi, "#4CAF50")
+        
+        st.markdown(f"""
+        <div style="background-color: #f0f8ff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid {border_color};">
+        <p style="margin: 0; font-size: 13px; color: #333;">
+        <b>Modo de interpretación FFMI:</b> {modo_emoji} <span class="badge badge-{modo_color}">{modo_ffmi}</span> - {modo_desc}
+        </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Explicación del FFMI antes de mostrar el valor
+        st.markdown("""
+        <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;">
+        <p style="margin: 0; font-size: 14px; color: #333;">
+        <b>¿Qué es el FFMI?</b><br>
+        El Fat-Free Mass Index (FFMI) es un indicador científico que mide tu masa muscular 
+        ajustada por altura. Similar al IMC, pero usando solo masa libre de grasa (músculos, 
+        huesos, órganos) sin contar la grasa corporal. Este índice permite comparar el 
+        desarrollo muscular entre personas de diferentes estaturas de forma justa.
+        </p>
+        <p style="margin: 10px 0 0 0; font-size: 13px; color: #555;">
+        <b>Cálculo:</b> FFMI = (Masa Libre de Grasa / Altura²) + normalización a 1.80m<br>
+        <b>Tu MLG:</b> {mlg:.1f} kg | <b>Tu Altura:</b> {estatura} cm → <b>Tu FFMI:</b> {ffmi:.2f}
+        </p>
+        </div>
+        """.format(mlg=mlg, estatura=estatura, ffmi=ffmi), unsafe_allow_html=True)
     
     # Mostrar FFMI y FMI en columnas
     col1, col2 = st.columns(2)
@@ -2268,7 +2416,8 @@ if datos_personales_completos and st.session_state.datos_completos:
     with col1:
         st.markdown("#### FFMI (Masa Libre de Grasa / Altura²)")
         
-        if modo_ffmi == "GREEN":
+        # Technical details: Detailed FFMI classifications (only shown in final phase)
+        if should_render_technical() and modo_ffmi == "GREEN":
             # MODO GREEN: Mostrar clasificación completa
             color_nivel = {
                 "Bajo": "danger",
@@ -2322,7 +2471,7 @@ if datos_personales_completos and st.session_state.datos_completos:
             - Élite: >{rangos_ffmi['Avanzado']}
             """)
             
-        elif modo_ffmi == "AMBER":
+        elif should_render_technical() and modo_ffmi == "AMBER":
             # MODO AMBER: Mostrar valor pero con interpretación limitada
             st.markdown(f"""
             <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
@@ -2341,7 +2490,7 @@ if datos_personales_completos and st.session_state.datos_completos:
             un indicador más preciso de tu muscularidad.
             """)
             
-        else:  # RED
+        elif should_render_technical():  # RED mode
             # MODO RED: Mostrar valor con explicación clara de no aplicabilidad
             st.markdown(f"""
             <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
@@ -2367,56 +2516,58 @@ if datos_personales_completos and st.session_state.datos_completos:
         <h2 style="margin: 0;">FMI: {fmi:.2f}</h2>
         """, unsafe_allow_html=True)
         
-        # Clasificar FMI según sexo
-        if sexo == "Hombre":
-            if fmi < 3:
-                fmi_cat = "Bajo"
-                fmi_color = "info"
-            elif fmi < 6:
-                fmi_cat = "Normal"
-                fmi_color = "success"
-            elif fmi < 9:
-                fmi_cat = "Elevado"
-                fmi_color = "warning"
-            else:
-                fmi_cat = "Muy elevado"
-                fmi_color = "danger"
-        else:  # Mujer
-            if fmi < 5:
-                fmi_cat = "Bajo"
-                fmi_color = "info"
-            elif fmi < 9:
-                fmi_cat = "Normal"
-                fmi_color = "success"
-            elif fmi < 13:
-                fmi_cat = "Elevado"
-                fmi_color = "warning"
-            else:
-                fmi_cat = "Muy elevado"
-                fmi_color = "danger"
-        
-        st.markdown(f"""
-        <span class="badge badge-{fmi_color}">{fmi_cat}</span>
-        """, unsafe_allow_html=True)
-        
-        st.info(f"""
-        **Referencia FMI ({sexo}):**
-        {"- Bajo: <3" if sexo == "Hombre" else "- Bajo: <5"}
-        {"- Normal: 3-6" if sexo == "Hombre" else "- Normal: 5-9"}
-        {"- Elevado: 6-9" if sexo == "Hombre" else "- Elevado: 9-13"}
-        {"- Muy elevado: >9" if sexo == "Hombre" else "- Muy elevado: >13"}
-        """)
-        
-        st.info("""
-        **¿Qué es el FMI?**
-        
-        El FMI (Fat Mass Index) complementa al FFMI al medir la adiposidad 
-        ajustada por altura. Siempre se reporta para contextualizar la 
-        composición corporal completa.
-        """)
+        # Technical details: FMI classification (only shown in final phase)
+        if should_render_technical():
+            # Clasificar FMI según sexo
+            if sexo == "Hombre":
+                if fmi < 3:
+                    fmi_cat = "Bajo"
+                    fmi_color = "info"
+                elif fmi < 6:
+                    fmi_cat = "Normal"
+                    fmi_color = "success"
+                elif fmi < 9:
+                    fmi_cat = "Elevado"
+                    fmi_color = "warning"
+                else:
+                    fmi_cat = "Muy elevado"
+                    fmi_color = "danger"
+            else:  # Mujer
+                if fmi < 5:
+                    fmi_cat = "Bajo"
+                    fmi_color = "info"
+                elif fmi < 9:
+                    fmi_cat = "Normal"
+                    fmi_color = "success"
+                elif fmi < 13:
+                    fmi_cat = "Elevado"
+                    fmi_color = "warning"
+                else:
+                    fmi_cat = "Muy elevado"
+                    fmi_color = "danger"
+            
+            st.markdown(f"""
+            <span class="badge badge-{fmi_color}">{fmi_cat}</span>
+            """, unsafe_allow_html=True)
+            
+            st.info(f"""
+            **Referencia FMI ({sexo}):**
+            {"- Bajo: <3" if sexo == "Hombre" else "- Bajo: <5"}
+            {"- Normal: 3-6" if sexo == "Hombre" else "- Normal: 5-9"}
+            {"- Elevado: 6-9" if sexo == "Hombre" else "- Elevado: 9-13"}
+            {"- Muy elevado: >9" if sexo == "Hombre" else "- Muy elevado: >13"}
+            """)
+            
+            st.info("""
+            **¿Qué es el FMI?**
+            
+            El FMI (Fat Mass Index) complementa al FFMI al medir la adiposidad 
+            ajustada por altura. Siempre se reporta para contextualizar la 
+            composición corporal completa.
+            """)
     
-    # Agregar explicación adicional según modo
-    if modo_ffmi != "GREEN":
+    # Technical details: Additional FFMI mode explanation (only shown in final phase)
+    if should_render_technical() and modo_ffmi != "GREEN":
         st.info(f"""
         💡 **Nota sobre interpretación FFMI:**
         
@@ -3048,12 +3199,14 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     st.session_state.nivel_actividad = nivel_actividad_text
     st.session_state.geaf = geaf
 
-    # Mensaje resumen
-    st.success(
-        f"✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**\n\n"
-        f"- Factor GEAF: **{geaf}**\n"
-        f"- Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%"
-    )
+    # Technical details: Display GEAF factor details (only shown in final phase)
+    if should_render_technical():
+        # Mensaje resumen
+        st.success(
+            f"✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**\n\n"
+            f"- Factor GEAF: **{geaf}**\n"
+            f"- Esto multiplicará tu gasto energético basal en un {(geaf-1)*100:.0f}%"
+        )
 
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
@@ -3063,7 +3216,9 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-    st.markdown("### 🔥 Determinación automática del ETA")
+    # ===== ETA CALCULATION (ALWAYS RUNS) =====
+    # This calculation happens regardless of flow phase to ensure values are available
+    # for downstream calorie calculations. Only the display is conditional.
     if grasa_corregida <= 10 and sexo == "Hombre":
         eta = 1.15
         eta_desc = "ETA alto (muy magro, ≤10% grasa)"
@@ -3090,22 +3245,25 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     st.session_state.eta_desc = eta_desc
     st.session_state.eta_color = eta_color
 
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown(f"""
-        <div class="content-card" style="text-align: center;">
-            <h2 style="margin: 0;">ETA: {eta}</h2>
-            <span class="badge badge-{eta_color}">{eta_desc}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.info(f"""
-        **¿Qué es el ETA?**
+    # Technical details: Display ETA calculation details (only shown in final phase)
+    if should_render_technical():
+        st.markdown("### 🔥 Determinación automática del ETA")
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown(f"""
+            <div class="content-card" style="text-align: center;">
+                <h2 style="margin: 0;">ETA: {eta}</h2>
+                <span class="badge badge-{eta_color}">{eta_desc}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.info(f"""
+            **¿Qué es el ETA?**
 
-        Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
+            Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
 
-        Aumenta tu gasto total en un {(eta-1)*100:.0f}%
-        """)
+            Aumenta tu gasto total en un {(eta-1)*100:.0f}%
+            """)
 
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
@@ -3311,51 +3469,52 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         else:
             grasa_psmf_seleccionada = 40.0  # Valor por defecto para plan tradicional
 
-        # Mostrar comparativa visual
-        st.markdown("### 📊 Comparativa de planes")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
-            st.markdown("#### ✅ Plan Tradicional")
-            st.metric("Déficit", f"{porcentaje}%", "Moderado")
-            st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
-            st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
-            st.markdown("""
-            **Ventajas:**
-            - ✅ Mayor adherencia
-            - ✅ Más energía para entrenar  
-            - ✅ Sostenible largo plazo
-            - ✅ Menor pérdida muscular
-            - ✅ Vida social normal
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
-        with col2:
-            deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
-            perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
-            multiplicador = psmf_recs.get('multiplicador', 8.3)
-            perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
-            
-            st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-            st.markdown("#### ⚡ Protocolo PSMF Actualizado")
-            st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
-            st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
-            st.metric("Multiplicador", f"{multiplicador}", f"Perfil: {perfil_grasa}")
-            st.metric("Pérdida esperada", f"{perdida_min}-{perdida_max} kg/semana")
-            tier_psmf = psmf_recs.get('tier_psmf', 1)
-            base_prot_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
-            carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
-            st.markdown(f"""
-            **Consideraciones:**
-            - ⚠️ Muy restrictivo
-            - ⚠️ Máximo 6-8 semanas
-            - ⚠️ Requiere supervisión médica
-            - 🏷️ Tier {tier_psmf} (base: {base_prot_usada})
-            - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} automático)
-            - ⚠️ Grasas: {psmf_recs.get('grasa_g_dia', 40)}g/día (automático según % grasa)
-            - ⚠️ Carbos: {psmf_recs.get('carbs_g_dia', 0)}g/día (tope: {carb_cap}g)
-            - ⚠️ Suplementación necesaria
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Technical details: Detailed plan comparison (only shown in final phase)
+        if should_render_technical():
+            st.markdown("### 📊 Comparativa de planes")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown('<div class="content-card card-success">', unsafe_allow_html=True)
+                st.markdown("#### ✅ Plan Tradicional")
+                st.metric("Déficit", f"{porcentaje}%", "Moderado")
+                st.metric("Calorías", f"{ingesta_calorica_tradicional:.0f} kcal/día")
+                st.metric("Pérdida esperada", "0.5-0.7 kg/semana")
+                st.markdown("""
+                **Ventajas:**
+                - ✅ Mayor adherencia
+                - ✅ Más energía para entrenar  
+                - ✅ Sostenible largo plazo
+                - ✅ Menor pérdida muscular
+                - ✅ Vida social normal
+                """)
+                st.markdown('</div>', unsafe_allow_html=True)
+            with col2:
+                deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
+                perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
+                multiplicador = psmf_recs.get('multiplicador', 8.3)
+                perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
+                
+                st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
+                st.markdown("#### ⚡ Protocolo PSMF Actualizado")
+                st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
+                st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
+                st.metric("Multiplicador", f"{multiplicador}", f"Perfil: {perfil_grasa}")
+                st.metric("Pérdida esperada", f"{perdida_min}-{perdida_max} kg/semana")
+                tier_psmf = psmf_recs.get('tier_psmf', 1)
+                base_prot_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
+                carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
+                st.markdown(f"""
+                **Consideraciones:**
+                - ⚠️ Muy restrictivo
+                - ⚠️ Máximo 6-8 semanas
+                - ⚠️ Requiere supervisión médica
+                - 🏷️ Tier {tier_psmf} (base: {base_prot_usada})
+                - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} automático)
+                - ⚠️ Grasas: {psmf_recs.get('grasa_g_dia', 40)}g/día (automático según % grasa)
+                - ⚠️ Carbos: {psmf_recs.get('carbs_g_dia', 0)}g/día (tope: {carb_cap}g)
+                - ⚠️ Suplementación necesaria
+                """)
+                st.markdown('</div>', unsafe_allow_html=True)
 
     # FORZAR actualización de variables clave desde session_state
     peso = st.session_state.get("peso", 0)
