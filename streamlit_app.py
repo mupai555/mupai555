@@ -1584,6 +1584,37 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
     else:  # grasa >= 25
         return 1.6
 
+def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
+    """
+    Determina si se debe usar MLG como base para el cálculo de proteína
+    según las reglas 30/42 para alta adiposidad.
+    
+    Reglas:
+    - Hombres: usar MLG si grasa_corregida >= 30%
+    - Mujeres: usar MLG si grasa_corregida >= 42%
+    - De lo contrario: usar peso total
+    
+    Razón: En obesidad alta, usar peso total infla inapropiadamente la proteína.
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        grasa_corregida: Porcentaje de grasa corporal corregido
+    
+    Returns:
+        bool: True si se debe usar MLG, False si se debe usar peso total
+    """
+    try:
+        grasa = float(grasa_corregida)
+    except (TypeError, ValueError):
+        return False
+    
+    if sexo == "Hombre" and grasa >= 30:
+        return True
+    elif sexo == "Mujer" and grasa >= 42:
+        return True
+    else:
+        return False
+
 def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo):
     """
     Determina el porcentaje del TMB/BMR que debe destinarse a grasas para el plan tradicional.
@@ -3293,8 +3324,18 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         # - Si grasa_corregida < 25%: 1.8g/kg proteína
         # - Si grasa_corregida >= 25%: 1.6g/kg proteína
         # - GRASA: SIEMPRE 40% TMB (mínimo 20% TEI, máximo 40% TEI)
+        
+        # Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
+        # - Hombres: usar MLG si grasa_corregida >= 30%
+        # - Mujeres: usar MLG si grasa_corregida >= 42%
+        # Razón: En obesidad alta, usar peso total infla inapropiadamente la proteína
+        usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
+        
+        base_proteina_kg = mlg if usar_mlg_para_proteina else peso
+        base_proteina_nombre = "MLG" if usar_mlg_para_proteina else "Peso total"
+        
         factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
-        proteina_g = round(peso * factor_proteina, 1)
+        proteina_g = round(base_proteina_kg * factor_proteina, 1)
         proteina_kcal = proteina_g * 4
 
         # GRASA: Porcentaje variable del TMB según % grasa, nunca menos del 20% ni más del 40% de calorías totales
@@ -3318,7 +3359,9 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
         # --- DESGLOSE FINAL VISUAL ---
         st.markdown("### 🍽️ Distribución de macronutrientes")
-        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%)")
+        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%) - Base: {base_proteina_nombre} ({base_proteina_kg:.1f} kg × {factor_proteina} g/kg)")
+        if usar_mlg_para_proteina:
+            st.info("ℹ️ En alta adiposidad, usar peso total infla la proteína de forma inapropiada; por eso se usa MLG como base.")
         st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
         st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
 
@@ -3888,7 +3931,16 @@ COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
 ====================================="""
 
 # Calcular macros del plan tradicional para el resumen del email
-proteina_g_tradicional = peso * obtener_factor_proteina_tradicional(grasa_corregida) if 'peso' in locals() and peso > 0 and 'grasa_corregida' in locals() else 0
+# Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
+usar_mlg_para_proteina_email = debe_usar_mlg_para_proteina(sexo, grasa_corregida) if 'sexo' in locals() and 'grasa_corregida' in locals() else False
+
+base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
+base_proteina_nombre_email = "MLG" if usar_mlg_para_proteina_email else "Peso total"
+
+# Calcular factor de proteína una sola vez
+factor_proteina_tradicional_email = obtener_factor_proteina_tradicional(grasa_corregida) if 'grasa_corregida' in locals() else 1.6
+
+proteina_g_tradicional = base_proteina_kg_email * factor_proteina_tradicional_email if 'base_proteina_kg_email' in locals() and base_proteina_kg_email > 0 else 0
 proteina_kcal_tradicional = proteina_g_tradicional * 4
 
 # Calcular grasas tradicional - NUEVA LÓGICA CIENTÍFICA
@@ -3910,11 +3962,15 @@ grasa_kcal_tradicional = grasa_g_tradicional * 9
 carbo_kcal_tradicional = plan_tradicional_calorias - proteina_kcal_tradicional - grasa_kcal_tradicional
 carbo_g_tradicional = carbo_kcal_tradicional / 4
 
+nota_mlg_email = f"\n  (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
+if usar_mlg_para_proteina_email:
+    nota_mlg_email += "\n  ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
+
 tabla_resumen += f"""
 📊 PLAN TRADICIONAL (DÉFICIT/SUPERÁVIT MODERADO):
 - Calorías: {plan_tradicional_calorias:.0f} kcal/día
 - Estrategia: {fase}
-- Proteína: {proteina_g_tradicional:.1f}g ({proteina_kcal_tradicional:.0f} kcal) = {proteina_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
+- Proteína: {proteina_g_tradicional:.1f}g ({proteina_kcal_tradicional:.0f} kcal) = {proteina_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%{nota_mlg_email}
 - Grasas: {grasa_g_tradicional:.1f}g ({grasa_kcal_tradicional:.0f} kcal) = {grasa_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
 - Carbohidratos: {carbo_g_tradicional:.1f}g ({carbo_kcal_tradicional:.0f} kcal) = {carbo_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
 - Sostenibilidad: ALTA - Recomendado para adherencia a largo plazo
