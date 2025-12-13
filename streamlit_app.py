@@ -2514,33 +2514,33 @@ if datos_personales_completos and st.session_state.datos_completos:
         # Technical details: FMI classification (only shown in final phase)
         if should_render_technical():
             # Clasificar FMI según sexo
-        if sexo == "Hombre":
-            if fmi < 3:
-                fmi_cat = "Bajo"
-                fmi_color = "info"
-            elif fmi < 6:
-                fmi_cat = "Normal"
-                fmi_color = "success"
-            elif fmi < 9:
-                fmi_cat = "Elevado"
-                fmi_color = "warning"
-            else:
-                fmi_cat = "Muy elevado"
-                fmi_color = "danger"
-        else:  # Mujer
-            if fmi < 5:
-                fmi_cat = "Bajo"
-                fmi_color = "info"
-            elif fmi < 9:
-                fmi_cat = "Normal"
-                fmi_color = "success"
-            elif fmi < 13:
-                fmi_cat = "Elevado"
-                fmi_color = "warning"
-            else:
-                fmi_cat = "Muy elevado"
-                fmi_color = "danger"
-        
+            if sexo == "Hombre":
+                if fmi < 3:
+                    fmi_cat = "Bajo"
+                    fmi_color = "info"
+                elif fmi < 6:
+                    fmi_cat = "Normal"
+                    fmi_color = "success"
+                elif fmi < 9:
+                    fmi_cat = "Elevado"
+                    fmi_color = "warning"
+                else:
+                    fmi_cat = "Muy elevado"
+                    fmi_color = "danger"
+            else:  # Mujer
+                if fmi < 5:
+                    fmi_cat = "Bajo"
+                    fmi_color = "info"
+                elif fmi < 9:
+                    fmi_cat = "Normal"
+                    fmi_color = "success"
+                elif fmi < 13:
+                    fmi_cat = "Elevado"
+                    fmi_color = "warning"
+                else:
+                    fmi_cat = "Muy elevado"
+                    fmi_color = "danger"
+            
             st.markdown(f"""
             <span class="badge badge-{fmi_color}">{fmi_cat}</span>
             """, unsafe_allow_html=True)
