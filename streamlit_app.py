@@ -3137,14 +3137,15 @@ if modo_ffmi == "GREEN":
     peso_experiencia = 0.20
     criterio_ponderacion = "Modo GREEN - FFMI interpretable como muscularidad"
 elif modo_ffmi == "AMBER":
-    # MODO AMBER: FFMI reducido por interpretación limitada
-    # - FFMI: 20% - Reducido por inflación moderada de masa libre de grasa
-    # - Funcional: 60% - Aumentado como indicador más objetivo
-    # - Experiencia: 20% - Mantiene su peso como contexto
-    peso_ffmi = 0.20
-    peso_funcional = 0.60
-    peso_experiencia = 0.20
-    criterio_ponderacion = "Modo AMBER - Interpretación FFMI limitada por adiposidad"
+    # MODO AMBER: FFMI excluido por interpretación dudosa
+    # El FFMI no puntúa en AMBER debido a que su validez como proxy de muscularidad es dudosa
+    # - FFMI: 0% - Excluido por inflación moderada de masa libre de grasa (interpretación dudosa)
+    # - Funcional: 70% - Maximizado como indicador objetivo de capacidad real
+    # - Experiencia: 30% - Aumentado para compensar la ausencia de FFMI
+    peso_ffmi = 0.0
+    peso_funcional = 0.70
+    peso_experiencia = 0.30
+    criterio_ponderacion = "Modo AMBER - FFMI excluido por validez dudosa"
 else:  # RED
     # MODO RED: FFMI excluido o mínimamente ponderado
     # - FFMI: 0% - Excluido por pérdida de validez como indicador muscular
@@ -3239,15 +3240,15 @@ if ejercicios_funcionales_completos and experiencia_completa:
         st.warning(f"""
         ⚠️ **PONDERACIÓN AJUSTADA (Modo AMBER)**
         
-        Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) está en zona de interpretación limitada 
-        del FFMI, donde comienza a inflarse por componentes no musculares.
+        Tu porcentaje de grasa corporal ({grasa_corregida:.1f}%) está en zona de interpretación dudosa 
+        del FFMI, donde su validez como indicador de muscularidad no es confiable.
         
         **Ponderación aplicada (ajustada):**
-        - 🏋️ FFMI (desarrollo muscular): **{peso_ffmi*100:.0f}%** (reducido por inflación moderada)
-        - 💪 Rendimiento funcional: **{peso_funcional*100:.0f}%** (aumentado como indicador más objetivo)
-        - 📚 Experiencia: **{peso_experiencia*100:.0f}%**
+        - 🏋️ FFMI (desarrollo muscular): **{peso_ffmi*100:.0f}%** (excluido por validez dudosa)
+        - 💪 Rendimiento funcional: **{peso_funcional*100:.0f}%** (maximizado como indicador objetivo)
+        - 📚 Experiencia: **{peso_experiencia*100:.0f}%** (aumentado para compensar)
         
-        **Razón:** En esta zona de adiposidad, el FFMI comienza a sobrestimar el desarrollo muscular. 
+        **Razón:** En esta zona de adiposidad, el FFMI no es confiable como indicador de desarrollo muscular. 
         La capacidad funcional es un indicador más objetivo del nivel de entrenamiento.
         """)
     else:  # RED

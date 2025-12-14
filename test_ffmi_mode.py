@@ -70,10 +70,11 @@ def test_training_level_weighting():
     assert "peso_ffmi = 0.40" in content, "❌ GREEN FFMI weight (40%) not found"
     print("  ✓ GREEN mode: 40% FFMI weight found")
     
-    assert "peso_ffmi = 0.20" in content, "❌ AMBER FFMI weight (20%) not found"
-    print("  ✓ AMBER mode: 20% FFMI weight found")
-    
-    assert "peso_ffmi = 0.0" in content, "❌ RED FFMI weight (0%) not found"
+    # AMBER and RED both should have 0% FFMI weight
+    # Count occurrences of "peso_ffmi = 0.0" - should be at least 2 (AMBER and RED)
+    zero_ffmi_count = content.count("peso_ffmi = 0.0")
+    assert zero_ffmi_count >= 2, f"❌ Expected at least 2 occurrences of 'peso_ffmi = 0.0' (AMBER and RED), found {zero_ffmi_count}"
+    print("  ✓ AMBER mode: 0% FFMI weight found")
     print("  ✓ RED mode: 0% FFMI weight found")
     
     print("✅ Test 3 PASSED\n")

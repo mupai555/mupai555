@@ -52,13 +52,15 @@ The training level score now adjusts FFMI weighting based on mode:
 | Mode   | FFMI Weight | Functional Weight | Experience Weight |
 |--------|-------------|-------------------|-------------------|
 | GREEN  | 40%         | 40%               | 20%               |
-| AMBER  | 20%         | 60%               | 20%               |
+| AMBER  | 0%          | 70%               | 30%               |
 | RED    | 0%          | 70%               | 30%               |
 
 **Rationale**: 
 - GREEN: FFMI is reliable, standard weighting
-- AMBER: FFMI starts inflating, reduced weight, functional increased
-- RED: FFMI invalid, excluded, functional maximized
+- AMBER: FFMI validity is doubtful, excluded (0%), functional maximized
+- RED: FFMI invalid, excluded (0%), functional maximized
+
+**Note**: Both AMBER and RED modes now exclude FFMI entirely (0% weight) because the FFMI is not considered a reliable indicator of muscular development in these adiposity ranges. The score relies entirely on functional capacity and experience.
 
 ### 3. UI Display Changes
 
