@@ -3721,10 +3721,15 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 peso = st.session_state.get("peso", 0)
 estatura = st.session_state.get("estatura", 0)
 grasa_corporal = st.session_state.get("grasa_corporal", 0)
+sexo = st.session_state.get("sexo", "Hombre")
+metodo_grasa = st.session_state.get("metodo_grasa", "DEXA")
+
+# Recalculate grasa_corregida for consistency with earlier calculations
+grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
 
 # Recalculate FMI for the final summary section
-# Note: FMI is calculated earlier (line 2391) but needs to be recalculated here
-# to ensure it's available in this scope for the summary display
+# Note: FMI is calculated in the body composition section but needs to be 
+# recalculated here to ensure it's available in this scope for the summary display
 fmi = calcular_fmi(peso, grasa_corregida, estatura)
 
 # RESUMEN FINAL MEJORADO
