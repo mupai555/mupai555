@@ -2038,32 +2038,32 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
        - Resultado final con puntuación total
     
     SECCIÓN 9 - ACTIVIDAD FÍSICA Y FACTORES DETALLADOS:
-        - Nivel de actividad diaria con factor GEAF y descripción
-        - Factor ETA con criterio aplicado y justificación
-        - Entrenamiento de fuerza: frecuencia, gasto por sesión, gasto semanal
+       - Nivel de actividad diaria con factor GEAF y descripción
+       - Factor ETA con criterio aplicado y justificación
+       - Entrenamiento de fuerza: frecuencia, gasto por sesión, gasto semanal
     
     SECCIÓN 10 - COMPARATIVA COMPLETA DE PLANES NUTRICIONALES:
-        - Plan Tradicional (déficit/superávit moderado):
-          * Calorías, estrategia, macros detallados
-          * Sostenibilidad, pérdida/ganancia esperada, duración
-          * Notas sobre uso de MLG vs peso total para proteína
-        - Protocolo PSMF (si aplica):
-          * Criterio de aplicabilidad según % grasa
-          * Calorías, macros, multiplicador calórico
-          * Déficit estimado, pérdida esperada
-          * Advertencias sobre duración, suplementación y monitoreo
-        - Análisis comparativo: velocidad, riesgos, adherencia, impacto
+       - Plan Tradicional (déficit/superávit moderado):
+         * Calorías, estrategia, macros detallados
+         * Sostenibilidad, pérdida/ganancia esperada, duración
+         * Notas sobre uso de MLG vs peso total para proteína
+       - Protocolo PSMF (si aplica):
+         * Criterio de aplicabilidad según % grasa
+         * Calorías, macros, multiplicador calórico
+         * Déficit estimado, pérdida esperada
+         * Advertencias sobre duración, suplementación y monitoreo
+       - Análisis comparativo: velocidad, riesgos, adherencia, impacto
     
     SECCIÓN 11 - PREFERENCIAS Y HÁBITOS ADICIONALES:
-        - Información nutricional: método de medición, edad metabólica
-        - Suplementación recomendada (creatina, vitamina D3, omega-3, etc.)
+       - Información nutricional: método de medición, edad metabólica
+       - Suplementación recomendada (creatina, vitamina D3, omega-3, etc.)
     
     SECCIÓN 12 - NOTAS, ADVERTENCIAS Y RECOMENDACIONES:
-        - Advertencias importantes sobre uso del análisis
-        - Necesidad de supervisión médica/profesional
-        - Recomendaciones específicas: reevaluación, timing, descanso, estrés
-        - Métricas de seguimiento sugeridas
-        - Nota sobre naturaleza de estimaciones y factores individuales
+       - Advertencias importantes sobre uso del análisis
+       - Necesidad de supervisión médica/profesional
+       - Recomendaciones específicas: reevaluación, timing, descanso, estrés
+       - Métricas de seguimiento sugeridas
+       - Nota sobre naturaleza de estimaciones y factores individuales
     
     PARÁMETROS:
     -----------
