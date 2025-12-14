@@ -4181,6 +4181,7 @@ grasa_visceral_report = safe_int(grasa_visceral, 0)
 grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
 
 # Construir el contenido completo del email como texto plano
+# SECCIÓN 1: Información personal y de contacto del cliente
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -4191,7 +4192,6 @@ Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence
 =====================================
 DATOS DEL CLIENTE:
 =====================================
-# SECCIÓN 1: Información personal y de contacto del cliente
 - Nombre completo: {nombre}
 - Edad: {edad} años
 - Sexo: {sexo}
@@ -4202,7 +4202,6 @@ DATOS DEL CLIENTE:
 =====================================
 ANTROPOMETRÍA Y COMPOSICIÓN:
 =====================================
-# SECCIÓN 2: Medidas corporales, composición corporal y métodos de medición
 - Peso: {peso} kg
 - Estatura: {estatura} cm
 - IMC: {imc:.1f} kg/m²
@@ -4217,14 +4216,11 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 =====================================
 ÍNDICES METABÓLICOS:
 =====================================
-# SECCIÓN 3: Tasa Metabólica Basal e índices antropométricos avanzados
 - TMB (Cunningham): {tmb:.0f} kcal
 
 ---
 FFMI (FAT-FREE MASS INDEX) Y FMI (FAT MASS INDEX) - ANÁLISIS DETALLADO:
 ---
-# FFMI: Indicador científico de desarrollo muscular ajustado por altura
-# FMI: Medida de adiposidad ajustada por altura que complementa al FFMI
 El FFMI es un indicador científico del desarrollo muscular ajustado por altura.
 El FMI complementa midiendo la adiposidad ajustada por altura.
 
@@ -4257,7 +4253,6 @@ distribución de masa muscular.
 =====================================
 FACTORES DE ACTIVIDAD:
 =====================================
-# SECCIÓN 4: Nivel de actividad diaria, factores de gasto energético y entrenamiento
 - Nivel actividad diaria: {nivel_actividad.split('(')[0].strip()}
 - Factor GEAF: {geaf}
 - Factor ETA: {eta}
@@ -4269,7 +4264,6 @@ FACTORES DE ACTIVIDAD:
 =====================================
 PLAN NUTRICIONAL CALCULADO:
 =====================================
-# SECCIÓN 5: Plan nutricional con fase, calorías y distribución de macronutrientes
 - Fase: {fase}
 - Factor FBEO: {fbeo:.2f}
 - Ingesta calórica: {ingesta_calorica:.0f} kcal/día
@@ -4283,7 +4277,6 @@ DISTRIBUCIÓN DE MACRONUTRIENTES:
 =====================================
 RESUMEN PERSONALIZADO Y PROYECCIÓN
 =====================================
-# SECCIÓN 6: Diagnóstico del estado actual y proyección científica a 6 semanas
 📊 DIAGNÓSTICO PERSONALIZADO:
 - Categoría grasa corporal: {
     "Muy bajo (Competición)" if (sexo == "Hombre" and grasa_corregida < 6) or (sexo == "Mujer" and grasa_corregida < 12)
@@ -4357,7 +4350,6 @@ tabla_resumen += f"""
 =====================================
 EXPERIENCIA Y RESPUESTAS FUNCIONALES
 =====================================
-# SECCIÓN 7: Experiencia autodeclarada y evaluación de 5 ejercicios funcionales
 📋 EXPERIENCIA DE ENTRENAMIENTO:
 {experiencia_text}
 
@@ -4367,8 +4359,6 @@ EXPERIENCIA Y RESPUESTAS FUNCIONALES
 =====================================
 NIVEL GLOBAL DE ENTRENAMIENTO
 =====================================
-# SECCIÓN 8: Sistema de puntuación ponderada que combina FFMI, rendimiento y experiencia
-# Ponderación adaptativa según % grasa corporal (GREEN/AMBER/RED mode)
 El nivel de entrenamiento se calcula mediante un sistema de puntuación ponderada
 que considera tres componentes clave: desarrollo muscular (FFMI), rendimiento
 funcional y experiencia autodeclarada.
@@ -4411,7 +4401,6 @@ RESULTADO FINAL:
 =====================================
 ACTIVIDAD FÍSICA DIARIA Y FACTORES
 =====================================
-# SECCIÓN 9: Desglose detallado de factores de actividad y gasto energético
 🚶 NIVEL DE ACTIVIDAD DIARIA:
 - Clasificación: {nivel_actividad_text}
 - Factor GEAF aplicado: {geaf if 'geaf' in locals() else 1.0}
@@ -4435,9 +4424,7 @@ ENTRENAMIENTO DE FUERZA - DETALLE
 
 =====================================
 COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
-=====================================
-# SECCIÓN 10: Comparación detallada entre Plan Tradicional y Protocolo PSMF
-# Incluye criterios de aplicabilidad, macros, sostenibilidad y advertencias"""
+====================================="""
 
 # Calcular macros del plan tradicional para el resumen del email
 # Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
@@ -4527,7 +4514,6 @@ tabla_resumen += f"""
 =====================================
 PREFERENCIAS Y HÁBITOS ADICIONALES
 =====================================
-# SECCIÓN 11: Información complementaria sobre medición, edad metabólica y suplementación
 🍽️ INFORMACIÓN NUTRICIONAL ADICIONAL:
 - Método medición grasa: {metodo_grasa} → Ajuste DEXA: {grasa_corregida - grasa_corporal:+.1f}%
 - Edad metabólica calculada: {edad_metabolica} años (vs cronológica: {edad} años)
@@ -4549,7 +4535,6 @@ PREFERENCIAS Y HÁBITOS ADICIONALES
 =====================================
 NOTAS, ADVERTENCIAS Y RECOMENDACIONES
 =====================================
-# SECCIÓN 12: Advertencias profesionales, recomendaciones específicas y métricas de seguimiento
 ⚠️ ADVERTENCIAS IMPORTANTES:
 - Este análisis es una herramienta de apoyo, NO sustituye supervisión profesional
 - Los cálculos están basados en ecuaciones científicas validadas pero la respuesta individual varía
