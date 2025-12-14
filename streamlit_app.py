@@ -1967,6 +1967,207 @@ def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
         # Para plan tradicional, usar el porcentaje tradicional
         return porcentaje if porcentaje is not None else 0
 
+def clasificar_grasa_visceral(grasa_visceral):
+    """
+    Clasifica el nivel de grasa visceral.
+    Retorna clasificación según rangos de salud.
+    """
+    try:
+        nivel = safe_int(grasa_visceral, 0)
+        if nivel < 1:
+            return "N/D"
+        elif nivel <= 12:
+            return "Saludable (1-12)"
+        elif nivel <= 15:
+            return "Elevado (13-15)"
+        else:
+            return "Alto riesgo (≥16)"
+    except:
+        return "N/D"
+
+def clasificar_masa_muscular(masa_muscular, sexo):
+    """
+    Clasifica el porcentaje de masa muscular.
+    Retorna clasificación según sexo y rangos.
+    """
+    try:
+        porcentaje = safe_float(masa_muscular, 0.0)
+        if porcentaje <= 0:
+            return "N/D"
+        
+        if sexo == "Hombre":
+            if porcentaje < 33:
+                return "Bajo (<33%)"
+            elif porcentaje < 40:
+                return "Normal (33-40%)"
+            elif porcentaje < 45:
+                return "Alto (40-45%)"
+            else:
+                return "Muy alto (≥45%)"
+        else:  # Mujer
+            if porcentaje < 28:
+                return "Bajo (<28%)"
+            elif porcentaje < 35:
+                return "Normal (28-35%)"
+            elif porcentaje < 40:
+                return "Alto (35-40%)"
+            else:
+                return "Muy alto (≥40%)"
+    except:
+        return "N/D"
+
+def enviar_email_parte2(datos_formulario):
+    """
+    Envía el segundo correo interno (PARTE 2 - Lectura Visual) a administración con CC a login.fitness.
+    
+    Args:
+        datos_formulario: diccionario con todos los datos calculados del formulario
+    """
+    try:
+        email_origen = "administracion@muscleupgym.fitness"
+        email_destino = "administracion@muscleupgym.fitness"
+        email_cc = "login.fitness"
+        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+        
+        # Extraer datos del formulario con conversiones seguras
+        nombre = datos_formulario.get("nombre", "[____]")
+        fecha = datos_formulario.get("fecha", "[____]")
+        edad = datos_formulario.get("edad", "[____]")
+        sexo = datos_formulario.get("sexo", "[____]")
+        peso = safe_float(datos_formulario.get("peso", 0), 0)
+        estatura = safe_float(datos_formulario.get("estatura", 0), 0)
+        imc = safe_float(datos_formulario.get("imc", 0), 0)
+        grasa_corporal = safe_float(datos_formulario.get("grasa_corporal", 0), 0)
+        grasa_corregida = safe_float(datos_formulario.get("grasa_corregida", 0), 0)
+        masa_muscular = datos_formulario.get("masa_muscular", "")
+        grasa_visceral = datos_formulario.get("grasa_visceral", "")
+        mlg = safe_float(datos_formulario.get("mlg", 0), 0)
+        metodo_grasa = datos_formulario.get("metodo_grasa", "[____]")
+        
+        # Calcular masa grasa usando la fórmula correcta: peso * (grasa_corregida / 100)
+        if peso > 0 and grasa_corregida > 0:
+            masa_grasa = peso * (grasa_corregida / 100)
+        else:
+            masa_grasa = 0
+        
+        # Clasificaciones automáticas
+        clasificacion_grasa_visceral = clasificar_grasa_visceral(grasa_visceral)
+        clasificacion_masa_muscular = clasificar_masa_muscular(masa_muscular, sexo)
+        
+        # Formatear valores con clasificación
+        if not masa_muscular or masa_muscular == "" or masa_muscular == 0:
+            masa_muscular_texto = f"[____] - Clasificación: {clasificacion_masa_muscular}"
+        else:
+            masa_muscular_val = safe_float(masa_muscular, 0.0)
+            masa_muscular_texto = f"{masa_muscular_val:.1f}% - Clasificación: {clasificacion_masa_muscular}"
+        
+        if not grasa_visceral or grasa_visceral == "" or safe_int(grasa_visceral, 0) < 1:
+            grasa_visceral_texto = f"[____] - Clasificación: {clasificacion_grasa_visceral}"
+        else:
+            grasa_visceral_val = safe_int(grasa_visceral, 0)
+            grasa_visceral_texto = f"{grasa_visceral_val} - Clasificación: {clasificacion_grasa_visceral}"
+        
+        # Formatear valores con validación
+        peso_texto = f"{peso:.1f}" if peso > 0 else "[____]"
+        estatura_texto = f"{estatura:.0f}" if estatura > 0 else "[____]"
+        imc_texto = f"{imc:.1f}" if imc > 0 else "[____]"
+        grasa_corporal_texto = f"{grasa_corporal:.1f}" if grasa_corporal > 0 else "[____]"
+        grasa_corregida_texto = f"{grasa_corregida:.1f}" if grasa_corregida > 0 else "[____]"
+        mlg_texto = f"{mlg:.1f}" if mlg > 0 else "[____]"
+        masa_grasa_texto = f"{masa_grasa:.1f}" if masa_grasa > 0 else "[____]"
+        
+        # Construir el cuerpo del email en formato PARTE 2
+        contenido = f"""
+=====================================
+REPORTE – PARTE 2 (Lectura Visual)
+=====================================
+Cliente: {nombre}
+Fecha de evaluación: {fecha}
+
+=====================================
+DATOS PERSONALES
+=====================================
+- Nombre completo: {nombre}
+- Edad: {edad} años
+- Sexo: {sexo}
+- Fecha de evaluación: {fecha}
+
+=====================================
+ANTROPOMETRÍA BÁSICA
+=====================================
+- Peso corporal: {peso_texto} kg
+- Estatura: {estatura_texto} cm
+- IMC (Índice de Masa Corporal): {imc_texto} kg/m²
+
+=====================================
+COMPOSICIÓN CORPORAL (Lectura Visual)
+=====================================
+
+📊 MÉTODO DE MEDICIÓN:
+- Método utilizado: {metodo_grasa}
+
+📊 PORCENTAJE DE GRASA CORPORAL:
+- % Grasa medido: {grasa_corporal_texto}%
+- % Grasa corregido (equivalente DEXA): {grasa_corregida_texto}%
+
+💪 MASA MUSCULAR:
+- % Masa muscular: {masa_muscular_texto}
+- Interpretación: La masa muscular indica el porcentaje de tejido muscular en el cuerpo
+
+🫀 GRASA VISCERAL:
+- Nivel de grasa visceral: {grasa_visceral_texto}
+- Interpretación: La grasa visceral rodea los órganos internos
+  * Saludable: 1-12
+  * Elevado: 13-15
+  * Alto riesgo: ≥16
+
+=====================================
+DISTRIBUCIÓN DE MASA CORPORAL
+=====================================
+- Masa Libre de Grasa (MLG): {mlg_texto} kg
+- Masa Grasa total: {masa_grasa_texto} kg
+- Proporción MLG/Peso: {(mlg/peso*100 if peso > 0 else 0):.1f}%
+- Proporción Grasa/Peso: {(masa_grasa/peso*100 if peso > 0 else 0):.1f}%
+
+=====================================
+OBSERVACIONES
+=====================================
+- Los valores marcados con [____] no fueron medidos o no están disponibles
+- Las clasificaciones se generan automáticamente según los rangos establecidos
+- Este reporte complementa el informe técnico completo (PARTE 1)
+- Para detalles sobre proyecciones y planes nutricionales, consultar informe principal
+
+=====================================
+Generado por: MUPAI v2.0
+Sistema: Muscle Up Performance Assessment Intelligence
+Fecha de generación: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+=====================================
+"""
+        
+        # Crear mensaje con CC
+        msg = MIMEMultipart()
+        msg['From'] = email_origen
+        msg['To'] = email_destino
+        msg['Cc'] = email_cc
+        msg['Subject'] = f"Reporte – PARTE 2 (Lectura Visual) – {nombre} – {fecha}"
+        
+        msg.attach(MIMEText(contenido, 'plain'))
+        
+        # Enviar email
+        server = smtplib.SMTP('smtp.zoho.com', 587)
+        server.starttls()
+        server.login(email_origen, password)
+        
+        # Enviar a destinatario y CC
+        recipients = [email_destino, email_cc]
+        server.send_message(msg, to_addrs=recipients)
+        server.quit()
+        
+        return True
+    except Exception as e:
+        st.error(f"Error al enviar email PARTE 2: {str(e)}")
+        return False
+
 def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, telefono):
     """Envía el email con el resumen completo de la evaluación."""
     try:
@@ -4547,10 +4748,35 @@ if not st.session_state.get("correo_enviado", False):
             st.warning("⚠️ Revisa el formulario arriba y completa todos los campos requeridos, luego intenta enviar nuevamente.")
         else:
             with st.spinner("📧 Enviando resumen por email..."):
+                # Enviar email principal (PARTE 1)
                 ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
-                if ok:
+                
+                # Preparar datos para email PARTE 2
+                datos_parte2 = {
+                    "nombre": nombre,
+                    "fecha": fecha_llenado,
+                    "edad": edad,
+                    "sexo": sexo,
+                    "peso": peso,
+                    "estatura": estatura,
+                    "imc": imc,
+                    "grasa_corporal": grasa_corporal,
+                    "grasa_corregida": grasa_corregida,
+                    "masa_muscular": masa_muscular,
+                    "grasa_visceral": grasa_visceral,
+                    "mlg": mlg,
+                    "metodo_grasa": metodo_grasa
+                }
+                
+                # Enviar email PARTE 2 (Lectura Visual)
+                ok2 = enviar_email_parte2(datos_parte2)
+                
+                if ok and ok2:
                     st.session_state["correo_enviado"] = True
-                    st.success("✅ Email enviado exitosamente a administración")
+                    st.success("✅ Emails enviados exitosamente a administración (PARTE 1 y PARTE 2)")
+                elif ok:
+                    st.session_state["correo_enviado"] = True
+                    st.warning("⚠️ Email principal enviado, pero hubo un problema con el email PARTE 2")
                 else:
                     st.error("❌ Error al enviar email. Contacta a soporte técnico.")
     
@@ -4578,10 +4804,35 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
         st.warning("⚠️ Revisa el formulario arriba y completa todos los campos requeridos, luego intenta enviar nuevamente.")
     else:
         with st.spinner("📧 Reenviando resumen por email..."):
+            # Reenviar email principal (PARTE 1)
             ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
-            if ok:
+            
+            # Preparar datos para email PARTE 2
+            datos_parte2 = {
+                "nombre": nombre,
+                "fecha": fecha_llenado,
+                "edad": edad,
+                "sexo": sexo,
+                "peso": peso,
+                "estatura": estatura,
+                "imc": imc,
+                "grasa_corporal": grasa_corporal,
+                "grasa_corregida": grasa_corregida,
+                "masa_muscular": masa_muscular,
+                "grasa_visceral": grasa_visceral,
+                "mlg": mlg,
+                "metodo_grasa": metodo_grasa
+            }
+            
+            # Reenviar email PARTE 2 (Lectura Visual)
+            ok2 = enviar_email_parte2(datos_parte2)
+            
+            if ok and ok2:
                 st.session_state["correo_enviado"] = True
-                st.success("✅ Email reenviado exitosamente a administración")
+                st.success("✅ Emails reenviados exitosamente a administración (PARTE 1 y PARTE 2)")
+            elif ok:
+                st.session_state["correo_enviado"] = True
+                st.warning("⚠️ Email principal reenviado, pero hubo un problema con el email PARTE 2")
             else:
                 st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
 
