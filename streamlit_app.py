@@ -3722,6 +3722,9 @@ peso = st.session_state.get("peso", 0)
 estatura = st.session_state.get("estatura", 0)
 grasa_corporal = st.session_state.get("grasa_corporal", 0)
 
+# Recalculate FMI for the final summary section
+fmi = calcular_fmi(peso, grasa_corregida, estatura)
+
 # RESUMEN FINAL MEJORADO
 st.markdown("---")
 st.markdown('<div class="content-card" style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); color: #1E1E1E;">', unsafe_allow_html=True)
@@ -4023,7 +4026,7 @@ MODO DE INTERPRETACIÓN FFMI: {modo_ffmi}
 CÁLCULO DE TU FFMI:
 - Masa Libre de Grasa (MLG): {mlg:.1f} kg
 - Estatura: {estatura} cm ({estatura/100:.2f} m)
-- FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f}
+- FFMI Base = MLG / Altura²: {(mlg / ((estatura/100)**2) if estatura > 0 else 0):.2f}
 - FFMI Normalizado (a 1.80m): {ffmi:.2f}
   (Formula: FFMI_base + 6.3 * (1.8 - altura_m))
 
