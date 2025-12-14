@@ -859,6 +859,7 @@ defaults = {
     "code_used": False,
     "access_stage": "request",  # request, code_sent, verify, authenticated
     "masa_muscular": "",
+    "grasa_visceral": "",
     # Flow state for conditional rendering of technical outputs
     "flow_phase": "intake"  # Can be: 'intake', 'review', 'final'
 }
@@ -2296,6 +2297,18 @@ if datos_personales_completos and st.session_state.datos_completos:
             help="Introduce el % de masa muscular según tu medición. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
         )
 
+        # Campo opcional - Grasa visceral (no afecta cálculos)
+        grasa_visceral_default = st.session_state.get("grasa_visceral", 0)
+        grasa_visceral = st.number_input(
+            "🫀 Grasa visceral (nivel, opcional)",
+            min_value=1,
+            max_value=59,
+            value=safe_int(grasa_visceral_default, 0) if safe_int(grasa_visceral_default, 0) >= 1 else 1,
+            step=1,
+            key="grasa_visceral",
+            help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
+        )
+
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
@@ -2308,6 +2321,7 @@ if datos_personales_completos and st.session_state.datos_completos:
     estatura = st.session_state.estatura
     grasa_corporal = st.session_state.grasa_corporal
     masa_muscular = st.session_state.get("masa_muscular", 0.0)
+    grasa_visceral = st.session_state.get("grasa_visceral", 0)
 
     grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
     mlg = calcular_mlg(peso, grasa_corregida)
@@ -2348,13 +2362,27 @@ if datos_personales_completos and st.session_state.datos_completos:
             diferencia_edad = 0
         st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
     
-    # Mostrar masa muscular si está disponible
+    # Mostrar masa muscular y grasa visceral si están disponibles
     try:
         masa_muscular_val = safe_float(masa_muscular, 0.0)
-        if masa_muscular_val > 0:
+        grasa_visceral_val = safe_int(grasa_visceral, 0)
+        
+        # Mostrar solo si hay al menos uno con valor
+        if masa_muscular_val > 0 or grasa_visceral_val >= 1:
             col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("Masa muscular (%)", f"{masa_muscular_val:.1f}%")
+            if masa_muscular_val > 0:
+                with col1:
+                    st.metric("Masa muscular (%)", f"{masa_muscular_val:.1f}%")
+            if grasa_visceral_val >= 1:
+                with col2:
+                    # Determinar estado basado en rangos saludables
+                    if grasa_visceral_val <= 12:
+                        estado = "Saludable"
+                    elif grasa_visceral_val <= 15:
+                        estado = "Elevado"
+                    else:
+                        estado = "Alto riesgo"
+                    st.metric("Grasa visceral (nivel)", f"{grasa_visceral_val}", estado)
     except (ValueError, TypeError):
         pass  # No se muestra si hay error en el valor
 
@@ -2597,6 +2625,8 @@ if 'metodo_grasa' not in locals():
     metodo_grasa = "Omron HBF-516 (BIA)"
 if 'masa_muscular' not in locals():
     masa_muscular = st.session_state.get("masa_muscular", 0.0)
+if 'grasa_visceral' not in locals():
+    grasa_visceral = st.session_state.get("grasa_visceral", 0)
 if 'grasa_corregida' not in locals():
     grasa_corregida = 20.0
 if 'mlg' not in locals():
@@ -3967,6 +3997,7 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 - % Grasa medido: {grasa_corporal}%
 - % Grasa corregido (DEXA): {grasa_corregida:.1f}%
 - % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
+- Grasa visceral (nivel): {safe_int(grasa_visceral, 0) if safe_int(grasa_visceral, 0) >= 1 else 'No medido'}
 - Masa Libre de Grasa: {mlg:.1f} kg
 - Masa Grasa: {peso - mlg:.1f} kg
 
