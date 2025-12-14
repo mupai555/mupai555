@@ -1991,6 +1991,188 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
     except Exception as e:
         st.error(f"Error al enviar email: {str(e)}")
         return False
+
+def clasificar_grasa_visceral(nivel):
+    """
+    Clasifica el nivel de grasa visceral según rangos saludables.
+    
+    Args:
+        nivel: Nivel de grasa visceral (1-59)
+        
+    Returns:
+        str: Clasificación (Saludable, Elevado, Alto riesgo, o N/D)
+    """
+    if nivel <= 0:
+        return "N/D"
+    elif nivel <= 12:
+        return "Saludable"
+    elif nivel <= 15:
+        return "Elevado"
+    else:
+        return "Alto riesgo"
+
+def clasificar_masa_muscular(porcentaje, edad, sexo):
+    """
+    Clasifica el porcentaje de masa muscular según edad y sexo.
+    Solo aplica cuando el campo está vacío o es N/D.
+    
+    Args:
+        porcentaje: Porcentaje de masa muscular
+        edad: Edad del cliente
+        sexo: "Hombre" o "Mujer"
+        
+    Returns:
+        str: Clasificación (Bajo, Normal, Alto, o N/D)
+    """
+    if porcentaje <= 0:
+        return "N/D"
+    
+    # Rangos aproximados basados en edad y sexo
+    if sexo == "Hombre":
+        if edad < 40:
+            if porcentaje < 33:
+                return "Bajo"
+            elif porcentaje < 40:
+                return "Normal"
+            else:
+                return "Alto"
+        elif edad < 60:
+            if porcentaje < 30:
+                return "Bajo"
+            elif porcentaje < 37:
+                return "Normal"
+            else:
+                return "Alto"
+        else:
+            if porcentaje < 27:
+                return "Bajo"
+            elif porcentaje < 34:
+                return "Normal"
+            else:
+                return "Alto"
+    else:  # Mujer
+        if edad < 40:
+            if porcentaje < 24:
+                return "Bajo"
+            elif porcentaje < 31:
+                return "Normal"
+            else:
+                return "Alto"
+        elif edad < 60:
+            if porcentaje < 22:
+                return "Bajo"
+            elif porcentaje < 28:
+                return "Normal"
+            else:
+                return "Alto"
+        else:
+            if porcentaje < 20:
+                return "Bajo"
+            elif porcentaje < 26:
+                return "Normal"
+            else:
+                return "Alto"
+
+def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
+                        masa_muscular, grasa_visceral, mlg, tmb):
+    """
+    Envía el email interno (Parte 2) con reporte profesional de composición corporal.
+    Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
+    """
+    try:
+        email_origen = "administracion@muscleupgym.fitness"
+        email_destino = "administracion@muscleupgym.fitness"
+        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+
+        # Formatear valores con safe conversions
+        masa_muscular_val = safe_float(masa_muscular, 0.0)
+        grasa_visceral_val = safe_int(grasa_visceral, 0)
+        
+        # Clasificaciones automáticas SOLO cuando N/D
+        clasificacion_grasa_visceral = clasificar_grasa_visceral(grasa_visceral_val)
+        clasificacion_masa_muscular = clasificar_masa_muscular(masa_muscular_val, edad, sexo)
+        
+        # Construir el cuerpo del email profesional
+        contenido = f"""
+=====================================
+REPORTE DE EVALUACIÓN — PARTE 2
+(Lectura Visual, Línea Base)
+=====================================
+Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence
+Generado: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+=====================================
+INFORMACIÓN DEL CLIENTE
+=====================================
+Nombre completo: {nombre_cliente}
+Fecha de evaluación: {fecha}
+Edad: {edad} años
+Sexo: {sexo}
+
+=====================================
+COMPOSICIÓN CORPORAL — LÍNEA BASE
+=====================================
+
+📊 ANTROPOMETRÍA BÁSICA:
+   • Peso corporal: {peso:.1f} kg
+   • Estatura: {estatura:.0f} cm ({estatura/100:.2f} m)
+   • IMC: {imc:.1f} kg/m²
+
+📊 COMPOSICIÓN CORPORAL (MÉTODO DEXA-EQUIVALENTE):
+   • % Grasa corporal (corregido DEXA): {grasa_corregida:.1f}%
+   • Masa Libre de Grasa (MLG): {mlg:.1f} kg
+   • Masa Grasa: {peso - mlg:.1f} kg
+
+📊 INDICADORES OPCIONALES MEDIDOS:
+   • % Masa muscular: {f"{masa_muscular_val:.1f}%" if masa_muscular_val > 0 else "[____]"}
+     {f"→ Clasificación: {clasificacion_masa_muscular}" if masa_muscular_val > 0 else ""}
+     
+   • Grasa visceral (nivel): {grasa_visceral_val if grasa_visceral_val >= 1 else "[____]"}
+     {f"→ Clasificación: {clasificacion_grasa_visceral}" if grasa_visceral_val >= 1 else ""}
+
+📊 METABOLISMO BASAL:
+   • TMB (Cunningham): {tmb:.0f} kcal/día
+
+=====================================
+NOTAS IMPORTANTES
+=====================================
+✓ Este es un reporte de LÍNEA BASE (baseline evaluation)
+✓ No incluye comparaciones con sesiones previas
+✓ Las clasificaciones automáticas se aplican SOLO cuando los campos están vacíos o marcados como N/D
+✓ Los datos existentes y sus clasificaciones originales se respetan sin sustitución
+
+=====================================
+RECORDATORIO PROFESIONAL
+=====================================
+• Este reporte es exclusivamente para uso interno administrativo
+• Basado en evaluación científica con corrección DEXA
+• Requiere interpretación por profesional calificado
+• Los valores [____] indican datos no medidos o no disponibles
+
+=====================================
+© 2025 MUPAI - Muscle Up GYM
+Digital Training Science
+muscleupgym.fitness
+=====================================
+"""
+
+        msg = MIMEMultipart()
+        msg['From'] = email_origen
+        msg['To'] = email_destino
+        msg['Subject'] = f"Reporte de Evaluación — Parte 2 (Lectura Visual, Línea Base) — {nombre_cliente} — {fecha}"
+
+        msg.attach(MIMEText(contenido, 'plain'))
+
+        server = smtplib.SMTP('smtp.zoho.com', 587)
+        server.starttls()
+        server.login(email_origen, password)
+        server.send_message(msg)
+        server.quit()
+
+        return True
+    except Exception as e:
+        st.error(f"Error al enviar email Parte 2: {str(e)}")
+        return False
         # ==================== VISUALES INICIALES ====================
 
 # Misión, Visión y Compromiso con diseño mejorado
@@ -4551,6 +4733,15 @@ if not st.session_state.get("correo_enviado", False):
                 if ok:
                     st.session_state["correo_enviado"] = True
                     st.success("✅ Email enviado exitosamente a administración")
+                    # Enviar email Parte 2 (interno)
+                    ok_parte2 = enviar_email_parte2(
+                        nombre, fecha_llenado, edad, sexo, peso, estatura, 
+                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb
+                    )
+                    if ok_parte2:
+                        st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
+                    else:
+                        st.warning("⚠️ Email principal enviado, pero hubo un error con el reporte interno")
                 else:
                     st.error("❌ Error al enviar email. Contacta a soporte técnico.")
     
@@ -4582,6 +4773,15 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
             if ok:
                 st.session_state["correo_enviado"] = True
                 st.success("✅ Email reenviado exitosamente a administración")
+                # Reenviar email Parte 2 (interno)
+                ok_parte2 = enviar_email_parte2(
+                    nombre, fecha_llenado, edad, sexo, peso, estatura, 
+                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb
+                )
+                if ok_parte2:
+                    st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
+                else:
+                    st.warning("⚠️ Email principal reenviado, pero hubo un error con el reporte interno")
             else:
                 st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
 
