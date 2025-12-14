@@ -3723,6 +3723,8 @@ estatura = st.session_state.get("estatura", 0)
 grasa_corporal = st.session_state.get("grasa_corporal", 0)
 
 # Recalculate FMI for the final summary section
+# Note: FMI is calculated earlier (line 2391) but needs to be recalculated here
+# to ensure it's available in this scope for the summary display
 fmi = calcular_fmi(peso, grasa_corregida, estatura)
 
 # RESUMEN FINAL MEJORADO
@@ -3978,6 +3980,9 @@ categoria_fmi = clasificar_fmi_email(fmi, sexo)
 grasa_visceral_report = safe_int(grasa_visceral, 0)
 grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
 
+# Calculate FFMI base for report (safe division)
+ffmi_base_report = mlg / ((estatura/100)**2) if estatura > 0 else 0
+
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -4026,7 +4031,7 @@ MODO DE INTERPRETACIÓN FFMI: {modo_ffmi}
 CÁLCULO DE TU FFMI:
 - Masa Libre de Grasa (MLG): {mlg:.1f} kg
 - Estatura: {estatura} cm ({estatura/100:.2f} m)
-- FFMI Base = MLG / Altura²: {(mlg / ((estatura/100)**2) if estatura > 0 else 0):.2f}
+- FFMI Base = MLG / Altura²: {ffmi_base_report:.2f}
 - FFMI Normalizado (a 1.80m): {ffmi:.2f}
   (Formula: FFMI_base + 6.3 * (1.8 - altura_m))
 
