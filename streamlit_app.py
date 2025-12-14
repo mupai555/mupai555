@@ -4157,16 +4157,16 @@ categoria_fmi = clasificar_fmi_email(fmi, sexo)
 # Sección 11: Preferencias y Hábitos - Suplementación y edad metabólica
 # Sección 12: Notas y Advertencias - Recomendaciones y advertencias profesionales
 #
-# VARIABLES CLAVE UTILIZADAS:
-# ---------------------------
-# - Datos personales: nombre, edad, sexo, telefono, email_cliente, fecha_llenado
-# - Antropometría: peso, estatura, imc, grasa_corporal, grasa_corregida, mlg
-# - Índices: ffmi, fmi, tmb, modo_ffmi, nivel_ffmi, categoria_fmi
-# - Actividad: nivel_actividad, geaf, eta, dias_fuerza, kcal_sesion, gee_prom_dia, GE
-# - Nutrición: fase, fbeo, ingesta_calorica, proteina_g, grasa_g, carbo_g
-# - Evaluación: nivel_entrenamiento, experiencia, ejercicios_data
-# - Planes: plan_tradicional_calorias, psmf_recs (si aplica)
-# - Proyección: proyeccion_email con rangos semanales y totales
+# CATEGORÍAS DE DATOS UTILIZADOS:
+# --------------------------------
+# - Datos personales: nombre, edad, sexo, contacto, fecha
+# - Antropometría: peso, altura, IMC, composición corporal (grasa, músculo, MLG)
+# - Índices metabólicos: TMB, FFMI, FMI con clasificaciones
+# - Actividad física: nivel diario, factores GEAF/ETA, frecuencia entrenamiento
+# - Nutrición: fase, calorías, distribución de macronutrientes
+# - Evaluación: nivel de entrenamiento, experiencia, ejercicios funcionales
+# - Planes nutricionales: tradicional y PSMF (cuando aplica)
+# - Proyección: rangos de cambio semanal y total a 6 semanas
 #
 # FORMATO:
 # --------
