@@ -2029,21 +2029,26 @@ def enviar_email_parte2(datos_formulario):
         email_cc = "login.fitness"
         password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
         
-        # Extraer datos del formulario
+        # Extraer datos del formulario con conversiones seguras
         nombre = datos_formulario.get("nombre", "[____]")
         fecha = datos_formulario.get("fecha", "[____]")
         edad = datos_formulario.get("edad", "[____]")
         sexo = datos_formulario.get("sexo", "[____]")
-        peso = datos_formulario.get("peso", "[____]")
-        estatura = datos_formulario.get("estatura", "[____]")
-        imc = datos_formulario.get("imc", "[____]")
-        grasa_corporal = datos_formulario.get("grasa_corporal", "[____]")
-        grasa_corregida = datos_formulario.get("grasa_corregida", "[____]")
+        peso = safe_float(datos_formulario.get("peso", 0), 0)
+        estatura = safe_float(datos_formulario.get("estatura", 0), 0)
+        imc = safe_float(datos_formulario.get("imc", 0), 0)
+        grasa_corporal = safe_float(datos_formulario.get("grasa_corporal", 0), 0)
+        grasa_corregida = safe_float(datos_formulario.get("grasa_corregida", 0), 0)
         masa_muscular = datos_formulario.get("masa_muscular", "")
         grasa_visceral = datos_formulario.get("grasa_visceral", "")
-        mlg = datos_formulario.get("mlg", "[____]")
-        masa_grasa = datos_formulario.get("masa_grasa", "[____]")
+        mlg = safe_float(datos_formulario.get("mlg", 0), 0)
         metodo_grasa = datos_formulario.get("metodo_grasa", "[____]")
+        
+        # Calcular masa grasa usando la fórmula correcta: peso * (grasa_corregida / 100)
+        if peso > 0 and grasa_corregida > 0:
+            masa_grasa = peso * (grasa_corregida / 100)
+        else:
+            masa_grasa = 0
         
         # Clasificaciones automáticas
         clasificacion_grasa_visceral = clasificar_grasa_visceral(grasa_visceral)
@@ -2061,6 +2066,15 @@ def enviar_email_parte2(datos_formulario):
         else:
             grasa_visceral_val = safe_int(grasa_visceral, 0)
             grasa_visceral_texto = f"{grasa_visceral_val} - Clasificación: {clasificacion_grasa_visceral}"
+        
+        # Formatear valores con validación
+        peso_texto = f"{peso:.1f}" if peso > 0 else "[____]"
+        estatura_texto = f"{estatura:.0f}" if estatura > 0 else "[____]"
+        imc_texto = f"{imc:.1f}" if imc > 0 else "[____]"
+        grasa_corporal_texto = f"{grasa_corporal:.1f}" if grasa_corporal > 0 else "[____]"
+        grasa_corregida_texto = f"{grasa_corregida:.1f}" if grasa_corregida > 0 else "[____]"
+        mlg_texto = f"{mlg:.1f}" if mlg > 0 else "[____]"
+        masa_grasa_texto = f"{masa_grasa:.1f}" if masa_grasa > 0 else "[____]"
         
         # Construir el cuerpo del email en formato PARTE 2
         contenido = f"""
@@ -2081,9 +2095,9 @@ DATOS PERSONALES
 =====================================
 ANTROPOMETRÍA BÁSICA
 =====================================
-- Peso corporal: {peso} kg
-- Estatura: {estatura} cm
-- IMC (Índice de Masa Corporal): {imc:.1f} kg/m²
+- Peso corporal: {peso_texto} kg
+- Estatura: {estatura_texto} cm
+- IMC (Índice de Masa Corporal): {imc_texto} kg/m²
 
 =====================================
 COMPOSICIÓN CORPORAL (Lectura Visual)
@@ -2093,8 +2107,8 @@ COMPOSICIÓN CORPORAL (Lectura Visual)
 - Método utilizado: {metodo_grasa}
 
 📊 PORCENTAJE DE GRASA CORPORAL:
-- % Grasa medido: {grasa_corporal}%
-- % Grasa corregido (equivalente DEXA): {grasa_corregida:.1f}%
+- % Grasa medido: {grasa_corporal_texto}%
+- % Grasa corregido (equivalente DEXA): {grasa_corregida_texto}%
 
 💪 MASA MUSCULAR:
 - % Masa muscular: {masa_muscular_texto}
@@ -2110,8 +2124,8 @@ COMPOSICIÓN CORPORAL (Lectura Visual)
 =====================================
 DISTRIBUCIÓN DE MASA CORPORAL
 =====================================
-- Masa Libre de Grasa (MLG): {mlg:.1f} kg
-- Masa Grasa total: {masa_grasa:.1f} kg
+- Masa Libre de Grasa (MLG): {mlg_texto} kg
+- Masa Grasa total: {masa_grasa_texto} kg
 - Proporción MLG/Peso: {(mlg/peso*100 if peso > 0 else 0):.1f}%
 - Proporción Grasa/Peso: {(masa_grasa/peso*100 if peso > 0 else 0):.1f}%
 
@@ -4751,7 +4765,6 @@ if not st.session_state.get("correo_enviado", False):
                     "masa_muscular": masa_muscular,
                     "grasa_visceral": grasa_visceral,
                     "mlg": mlg,
-                    "masa_grasa": peso - mlg,
                     "metodo_grasa": metodo_grasa
                 }
                 
@@ -4808,7 +4821,6 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                 "masa_muscular": masa_muscular,
                 "grasa_visceral": grasa_visceral,
                 "mlg": mlg,
-                "masa_grasa": peso - mlg,
                 "metodo_grasa": metodo_grasa
             }
             
