@@ -2002,7 +2002,7 @@ def clasificar_grasa_visceral(nivel):
     Returns:
         str: Clasificación (Saludable, Elevado, Alto riesgo, o N/D)
     """
-    if nivel <= 0:
+    if nivel < 1:
         return "N/D"
     elif nivel <= 12:
         return "Saludable"
@@ -2017,13 +2017,15 @@ def clasificar_masa_muscular(porcentaje, edad, sexo):
     Solo aplica cuando el campo está vacío o es N/D.
     
     Args:
-        porcentaje: Porcentaje de masa muscular
+        porcentaje: Porcentaje de masa muscular (0-100)
         edad: Edad del cliente
         sexo: "Hombre" o "Mujer"
         
     Returns:
         str: Clasificación (Bajo, Normal, Alto, o N/D)
     """
+    # Values <= 0 indicate unmeasured/unavailable data
+    # (session state default "" converts to 0.0 via safe_float)
     if porcentaje <= 0:
         return "N/D"
     
