@@ -889,7 +889,7 @@ if not st.session_state.authenticated:
         with request_container:
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                if st.button("📝 Solicitar Acceso", use_container_width=True, type="primary"):
+                if st.button("📝 Solicitar Acceso", width='stretch', type="primary"):
                     st.session_state.access_stage = "form"
                     st.rerun()
     
@@ -929,12 +929,12 @@ if not st.session_state.authenticated:
                 col_btn1, col_btn2 = st.columns(2)
                 
                 with col_btn1:
-                    if st.button("⬅️ Volver", use_container_width=True):
+                    if st.button("⬅️ Volver", width='stretch'):
                         st.session_state.access_stage = "request"
                         st.rerun()
                 
                 with col_btn2:
-                    if st.button("🚀 Enviar Solicitud", use_container_width=True, type="primary"):
+                    if st.button("🚀 Enviar Solicitud", width='stretch', type="primary"):
                         # Validar datos
                         name_valid, name_error = validate_name(user_name)
                         email_valid, email_error = validate_email(user_email)
@@ -1001,7 +1001,7 @@ if not st.session_state.authenticated:
                 col_btn1, col_btn2 = st.columns(2)
                 
                 with col_btn1:
-                    if st.button("🔄 Nueva Solicitud", use_container_width=True):
+                    if st.button("🔄 Nueva Solicitud", width='stretch'):
                         # Limpiar datos y volver al inicio
                         st.session_state.access_stage = "request"
                         st.session_state.access_code = ""
@@ -1011,7 +1011,7 @@ if not st.session_state.authenticated:
                         st.rerun()
                 
                 with col_btn2:
-                    if st.button("🔓 Verificar Código", use_container_width=True, type="primary"):
+                    if st.button("🔓 Verificar Código", width='stretch', type="primary"):
                         if not entered_code:
                             st.error("❌ Debes ingresar el código de acceso")
                         elif st.session_state.code_used:
@@ -3685,7 +3685,7 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         df_macros = pd.DataFrame(macro_data)
         st.dataframe(
             df_macros,
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
             column_config={
                 "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
