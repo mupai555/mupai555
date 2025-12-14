@@ -889,7 +889,7 @@ if not st.session_state.authenticated:
         with request_container:
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                if st.button("📝 Solicitar Acceso", use_container_width=True, type="primary"):
+                if st.button("📝 Solicitar Acceso", width='stretch', type="primary"):
                     st.session_state.access_stage = "form"
                     st.rerun()
     
@@ -929,12 +929,12 @@ if not st.session_state.authenticated:
                 col_btn1, col_btn2 = st.columns(2)
                 
                 with col_btn1:
-                    if st.button("⬅️ Volver", use_container_width=True):
+                    if st.button("⬅️ Volver", width='stretch'):
                         st.session_state.access_stage = "request"
                         st.rerun()
                 
                 with col_btn2:
-                    if st.button("🚀 Enviar Solicitud", use_container_width=True, type="primary"):
+                    if st.button("🚀 Enviar Solicitud", width='stretch', type="primary"):
                         # Validar datos
                         name_valid, name_error = validate_name(user_name)
                         email_valid, email_error = validate_email(user_email)
@@ -1001,7 +1001,7 @@ if not st.session_state.authenticated:
                 col_btn1, col_btn2 = st.columns(2)
                 
                 with col_btn1:
-                    if st.button("🔄 Nueva Solicitud", use_container_width=True):
+                    if st.button("🔄 Nueva Solicitud", width='stretch'):
                         # Limpiar datos y volver al inicio
                         st.session_state.access_stage = "request"
                         st.session_state.access_code = ""
@@ -1011,7 +1011,7 @@ if not st.session_state.authenticated:
                         st.rerun()
                 
                 with col_btn2:
-                    if st.button("🔓 Verificar Código", use_container_width=True, type="primary"):
+                    if st.button("🔓 Verificar Código", width='stretch', type="primary"):
                         if not entered_code:
                             st.error("❌ Debes ingresar el código de acceso")
                         elif st.session_state.code_used:
@@ -3685,7 +3685,7 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         df_macros = pd.DataFrame(macro_data)
         st.dataframe(
             df_macros,
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
             column_config={
                 "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
@@ -3721,6 +3721,16 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 peso = st.session_state.get("peso", 0)
 estatura = st.session_state.get("estatura", 0)
 grasa_corporal = st.session_state.get("grasa_corporal", 0)
+sexo = st.session_state.get("sexo", "Hombre")
+metodo_grasa = st.session_state.get("metodo_grasa", "DEXA")
+
+# Recalculate grasa_corregida for consistency with earlier calculations
+grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
+
+# Recalculate FMI for the final summary section
+# Note: FMI is calculated in the body composition section but needs to be 
+# recalculated here to ensure it's available in this scope for the summary display
+fmi = calcular_fmi(peso, grasa_corregida, estatura)
 
 # RESUMEN FINAL MEJORADO
 st.markdown("---")
@@ -3975,6 +3985,9 @@ categoria_fmi = clasificar_fmi_email(fmi, sexo)
 grasa_visceral_report = safe_int(grasa_visceral, 0)
 grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
 
+# Calculate FFMI base for report (safe division)
+ffmi_base_report = mlg / ((estatura/100)**2) if estatura > 0 else 0
+
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -4023,7 +4036,7 @@ MODO DE INTERPRETACIÓN FFMI: {modo_ffmi}
 CÁLCULO DE TU FFMI:
 - Masa Libre de Grasa (MLG): {mlg:.1f} kg
 - Estatura: {estatura} cm ({estatura/100:.2f} m)
-- FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f}
+- FFMI Base = MLG / Altura²: {ffmi_base_report:.2f}
 - FFMI Normalizado (a 1.80m): {ffmi:.2f}
   (Formula: FFMI_base + 6.3 * (1.8 - altura_m))
 
