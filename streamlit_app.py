@@ -1968,7 +1968,131 @@ def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
         return porcentaje if porcentaje is not None else 0
 
 def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, telefono):
-    """Envía el email con el resumen completo de la evaluación."""
+    """
+    Envía el email con el resumen completo de la evaluación a administracion@muscleupgym.fitness.
+    
+    ESTRUCTURA DEL EMAIL ENVIADO:
+    =============================
+    El contenido del email incluye un informe completo y detallado de la evaluación MUPAI
+    con las siguientes secciones principales:
+    
+    1. ENCABEZADO DEL INFORME:
+       - Fecha y hora de generación
+       - Versión del sistema MUPAI
+    
+    2. DATOS DEL CLIENTE:
+       - Información personal: nombre, edad, sexo, contacto (teléfono y email)
+       - Fecha de evaluación
+    
+    3. ANTROPOMETRÍA Y COMPOSICIÓN CORPORAL:
+       - Medidas básicas: peso, estatura, IMC
+       - Composición corporal: % grasa medido y corregido (DEXA), % masa muscular
+       - Grasa visceral (nivel), Masa Libre de Grasa (MLG), Masa Grasa
+       - Método de medición de grasa utilizado
+    
+    4. ÍNDICES METABÓLICOS Y ANTROPOMÉTRICOS AVANZADOS:
+       - Tasa Metabólica Basal (TMB Cunningham)
+       - FFMI (Fat-Free Mass Index): indicador de desarrollo muscular ajustado por altura
+         * Modo de interpretación (GREEN/AMBER/RED según % grasa)
+         * Cálculo detallado con fórmula normalizada a 1.80m
+         * Clasificación según nivel (Bajo/Promedio/Bueno/Avanzado/Élite)
+         * FFMI máximo genético estimado y porcentaje de potencial alcanzado
+       - FMI (Fat Mass Index): indicador de adiposidad ajustado por altura
+         * Cálculo y clasificación según sexo
+    
+    5. FACTORES DE ACTIVIDAD Y GASTO ENERGÉTICO:
+       - Nivel de actividad diaria y factor GEAF
+       - Factor ETA (Efecto Térmico de los Alimentos)
+       - Frecuencia de entrenamiento: días por semana y gasto por sesión
+       - Gasto Energético de Ejercicio (GEE) promedio diario
+       - Gasto Energético Total (GET)
+    
+    6. PLAN NUTRICIONAL CALCULADO:
+       - Fase recomendada (déficit/superávit/mantenimiento)
+       - Factor FBEO aplicado
+       - Ingesta calórica diaria y ratio kcal/kg
+       - Distribución completa de macronutrientes:
+         * Proteína (g, kcal, %)
+         * Grasas (g, kcal, %)
+         * Carbohidratos (g, kcal, %)
+    
+    7. RESUMEN PERSONALIZADO Y PROYECCIÓN CIENTÍFICA:
+       - Diagnóstico: categoría de grasa corporal, nivel de entrenamiento
+       - Objetivo recomendado y porcentaje de déficit/superávit
+       - Proyección científica a 6 semanas:
+         * Rango semanal en % y kg
+         * Cambio total estimado
+         * Rango de peso proyectado
+         * Explicación científica del pronóstico
+    
+    8. EXPERIENCIA Y EVALUACIÓN FUNCIONAL:
+       - Experiencia de entrenamiento autodeclarada
+       - Detalle de 5 ejercicios funcionales evaluados con nivel alcanzado
+    
+    9. NIVEL GLOBAL DE ENTRENAMIENTO:
+       - Desglose del sistema de puntuación ponderada:
+         * Desarrollo Muscular (FFMI)
+         * Rendimiento Funcional
+         * Experiencia Autodeclarada
+       - Sistema de ponderación adaptativo según % grasa
+       - Resultado final con puntuación total
+    
+    10. ACTIVIDAD FÍSICA Y FACTORES DETALLADOS:
+        - Nivel de actividad diaria con factor GEAF y descripción
+        - Factor ETA con criterio aplicado y justificación
+        - Entrenamiento de fuerza: frecuencia, gasto por sesión, gasto semanal
+    
+    11. COMPARATIVA COMPLETA DE PLANES NUTRICIONALES:
+        - Plan Tradicional (déficit/superávit moderado):
+          * Calorías, estrategia, macros detallados
+          * Sostenibilidad, pérdida/ganancia esperada, duración
+          * Notas sobre uso de MLG vs peso total para proteína
+        - Protocolo PSMF (si aplica):
+          * Criterio de aplicabilidad según % grasa
+          * Calorías, macros, multiplicador calórico
+          * Déficit estimado, pérdida esperada
+          * Advertencias sobre duración, suplementación y monitoreo
+        - Análisis comparativo: velocidad, riesgos, adherencia, impacto
+    
+    12. PREFERENCIAS Y HÁBITOS ADICIONALES:
+        - Información nutricional: método de medición, edad metabólica
+        - Suplementación recomendada (creatina, vitamina D3, omega-3, etc.)
+    
+    13. NOTAS, ADVERTENCIAS Y RECOMENDACIONES:
+        - Advertencias importantes sobre uso del análisis
+        - Necesidad de supervisión médica/profesional
+        - Recomendaciones específicas: reevaluación, timing, descanso, estrés
+        - Métricas de seguimiento sugeridas
+        - Nota sobre naturaleza de estimaciones y factores individuales
+    
+    PARÁMETROS:
+    -----------
+    contenido : str
+        El texto completo del resumen (variable tabla_resumen) que contiene
+        todas las secciones detalladas arriba en formato texto plano.
+    nombre_cliente : str
+        Nombre completo del cliente para incluir en el asunto del email.
+    email_cliente : str
+        Email del cliente (incluido en el contenido del resumen).
+    fecha : str
+        Fecha de la evaluación en formato YYYY-MM-DD.
+    edad : int
+        Edad del cliente en años.
+    telefono : str
+        Número de teléfono del cliente.
+    
+    CONFIGURACIÓN SMTP:
+    -------------------
+    - Servidor: smtp.zoho.com (puerto 587)
+    - Autenticación: TLS/STARTTLS
+    - Credenciales: Obtenidas de st.secrets['zoho_password']
+    - Email origen y destino: administracion@muscleupgym.fitness
+    
+    Returns:
+    --------
+    bool
+        True si el email se envió exitosamente, False en caso de error.
+    """
     try:
         email_origen = "administracion@muscleupgym.fitness"
         email_destino = "administracion@muscleupgym.fitness"
@@ -3832,10 +3956,47 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 def datos_completos_para_email():
     """
-    Valida que todos los campos obligatorios del cuestionario estén completos.
+    Valida que todos los campos obligatorios del cuestionario estén completos antes de
+    enviar el email a administracion@muscleupgym.fitness.
+    
+    CAMPOS VALIDADOS (Obligatorios):
+    ---------------------------------
+    1. Datos Personales:
+       - Nombre completo (no vacío)
+       - Teléfono (no vacío)
+       - Email (no vacío)
+       - Edad (mayor a 0)
+    
+    2. Datos Antropométricos:
+       - Peso corporal (mayor a 0)
+       - Estatura (mayor a 0)
+       - Porcentaje de grasa corporal (mayor a 0)
+    
+    3. Experiencia de Entrenamiento:
+       - Nivel de experiencia seleccionado (mínimo 3 caracteres)
+    
+    4. Evaluación Funcional:
+       - 5 ejercicios funcionales completos (datos_ejercicios con 5 entradas)
+    
+    FLUJO DE VALIDACIÓN:
+    --------------------
+    Esta función se llama antes de habilitar el botón de envío de email.
+    Si devuelve una lista con campos faltantes, el botón permanece deshabilitado
+    y se muestra una lista de campos por completar al usuario.
     
     Returns:
-        list: Lista de nombres de campos faltantes. Lista vacía si todo está completo.
+    --------
+    list
+        Lista de nombres descriptivos de campos faltantes. 
+        Lista vacía si todos los campos obligatorios están completos.
+        
+    Example:
+    --------
+    >>> faltantes = datos_completos_para_email()
+    >>> if faltantes:
+    ...     print(f"Faltan: {', '.join(faltantes)}")
+    ... else:
+    ...     print("Todos los campos completos, listo para enviar email")
     """
     faltantes = []
     
@@ -3971,10 +4132,54 @@ texto_clasificacion_ffmi = generar_texto_clasificacion_ffmi(
 )
 categoria_fmi = clasificar_fmi_email(fmi, sexo)
 
+# ==============================================================================
+# CONSTRUCCIÓN DEL CONTENIDO DEL EMAIL (tabla_resumen)
+# ==============================================================================
+# Esta sección construye el contenido completo del email que será enviado a
+# administracion@muscleupgym.fitness cuando el usuario complete el cuestionario.
+#
+# ESTRUCTURA DEL CONTENIDO:
+# -------------------------
+# El email contiene un informe exhaustivo en formato texto plano con 13 secciones:
+#
+# 1. Encabezado: Fecha/hora de generación y versión del sistema
+# 2. Datos del Cliente: Información personal y de contacto
+# 3. Antropometría y Composición: Medidas corporales y composición
+# 4. Índices Metabólicos: TMB, FFMI, FMI con cálculos detallados
+# 5. Factores de Actividad: GEAF, ETA, frecuencia de entrenamiento
+# 6. Plan Nutricional: Calorías y distribución de macronutrientes
+# 7. Resumen Personalizado: Diagnóstico y proyección a 6 semanas
+# 8. Experiencia y Evaluación Funcional: Ejercicios y niveles alcanzados
+# 9. Nivel Global de Entrenamiento: Sistema de puntuación ponderada
+# 10. Actividad Física Detallada: Desglose de factores y gastos energéticos
+# 11. Comparativa de Planes: Tradicional vs PSMF (si aplica)
+# 12. Preferencias y Hábitos: Suplementación y edad metabólica
+# 13. Notas y Advertencias: Recomendaciones y advertencias profesionales
+#
+# VARIABLES CLAVE UTILIZADAS:
+# ---------------------------
+# - Datos personales: nombre, edad, sexo, telefono, email_cliente, fecha_llenado
+# - Antropometría: peso, estatura, imc, grasa_corporal, grasa_corregida, mlg
+# - Índices: ffmi, fmi, tmb, modo_ffmi, nivel_ffmi, categoria_fmi
+# - Actividad: nivel_actividad, geaf, eta, dias_fuerza, kcal_sesion, gee_prom_dia, GE
+# - Nutrición: fase, fbeo, ingesta_calorica, proteina_g, grasa_g, carbo_g
+# - Evaluación: nivel_entrenamiento, experiencia, ejercicios_data
+# - Planes: plan_tradicional_calorias, psmf_recs (si aplica)
+# - Proyección: proyeccion_email con rangos semanales y totales
+#
+# FORMATO:
+# --------
+# - Texto plano con secciones delimitadas por líneas de '='
+# - Valores numéricos formateados con precisión apropiada
+# - Explicaciones científicas y clasificaciones detalladas
+# - Advertencias y recomendaciones profesionales
+# ==============================================================================
+
 # Format grasa_visceral for report
 grasa_visceral_report = safe_int(grasa_visceral, 0)
 grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
 
+# Construir el contenido completo del email como texto plano
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -3985,6 +4190,7 @@ Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence
 =====================================
 DATOS DEL CLIENTE:
 =====================================
+# SECCIÓN 1: Información personal y de contacto del cliente
 - Nombre completo: {nombre}
 - Edad: {edad} años
 - Sexo: {sexo}
@@ -3995,6 +4201,7 @@ DATOS DEL CLIENTE:
 =====================================
 ANTROPOMETRÍA Y COMPOSICIÓN:
 =====================================
+# SECCIÓN 2: Medidas corporales, composición corporal y métodos de medición
 - Peso: {peso} kg
 - Estatura: {estatura} cm
 - IMC: {imc:.1f} kg/m²
@@ -4009,11 +4216,14 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 =====================================
 ÍNDICES METABÓLICOS:
 =====================================
+# SECCIÓN 3: Tasa Metabólica Basal e índices antropométricos avanzados
 - TMB (Cunningham): {tmb:.0f} kcal
 
 ---
 FFMI (FAT-FREE MASS INDEX) Y FMI (FAT MASS INDEX) - ANÁLISIS DETALLADO:
 ---
+# FFMI: Indicador científico de desarrollo muscular ajustado por altura
+# FMI: Medida de adiposidad ajustada por altura que complementa al FFMI
 El FFMI es un indicador científico del desarrollo muscular ajustado por altura.
 El FMI complementa midiendo la adiposidad ajustada por altura.
 
@@ -4046,6 +4256,7 @@ distribución de masa muscular.
 =====================================
 FACTORES DE ACTIVIDAD:
 =====================================
+# SECCIÓN 4: Nivel de actividad diaria, factores de gasto energético y entrenamiento
 - Nivel actividad diaria: {nivel_actividad.split('(')[0].strip()}
 - Factor GEAF: {geaf}
 - Factor ETA: {eta}
@@ -4057,6 +4268,7 @@ FACTORES DE ACTIVIDAD:
 =====================================
 PLAN NUTRICIONAL CALCULADO:
 =====================================
+# SECCIÓN 5: Plan nutricional con fase, calorías y distribución de macronutrientes
 - Fase: {fase}
 - Factor FBEO: {fbeo:.2f}
 - Ingesta calórica: {ingesta_calorica:.0f} kcal/día
@@ -4070,6 +4282,7 @@ DISTRIBUCIÓN DE MACRONUTRIENTES:
 =====================================
 RESUMEN PERSONALIZADO Y PROYECCIÓN
 =====================================
+# SECCIÓN 6: Diagnóstico del estado actual y proyección científica a 6 semanas
 📊 DIAGNÓSTICO PERSONALIZADO:
 - Categoría grasa corporal: {
     "Muy bajo (Competición)" if (sexo == "Hombre" and grasa_corregida < 6) or (sexo == "Mujer" and grasa_corregida < 12)
@@ -4143,6 +4356,7 @@ tabla_resumen += f"""
 =====================================
 EXPERIENCIA Y RESPUESTAS FUNCIONALES
 =====================================
+# SECCIÓN 7: Experiencia autodeclarada y evaluación de 5 ejercicios funcionales
 📋 EXPERIENCIA DE ENTRENAMIENTO:
 {experiencia_text}
 
@@ -4152,6 +4366,8 @@ EXPERIENCIA Y RESPUESTAS FUNCIONALES
 =====================================
 NIVEL GLOBAL DE ENTRENAMIENTO
 =====================================
+# SECCIÓN 8: Sistema de puntuación ponderada que combina FFMI, rendimiento y experiencia
+# Ponderación adaptativa según % grasa corporal (GREEN/AMBER/RED mode)
 El nivel de entrenamiento se calcula mediante un sistema de puntuación ponderada
 que considera tres componentes clave: desarrollo muscular (FFMI), rendimiento
 funcional y experiencia autodeclarada.
@@ -4194,6 +4410,7 @@ RESULTADO FINAL:
 =====================================
 ACTIVIDAD FÍSICA DIARIA Y FACTORES
 =====================================
+# SECCIÓN 9: Desglose detallado de factores de actividad y gasto energético
 🚶 NIVEL DE ACTIVIDAD DIARIA:
 - Clasificación: {nivel_actividad_text}
 - Factor GEAF aplicado: {geaf if 'geaf' in locals() else 1.0}
@@ -4217,7 +4434,9 @@ ENTRENAMIENTO DE FUERZA - DETALLE
 
 =====================================
 COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
-====================================="""
+=====================================
+# SECCIÓN 10: Comparación detallada entre Plan Tradicional y Protocolo PSMF
+# Incluye criterios de aplicabilidad, macros, sostenibilidad y advertencias"""
 
 # Calcular macros del plan tradicional para el resumen del email
 # Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
@@ -4307,6 +4526,7 @@ tabla_resumen += f"""
 =====================================
 PREFERENCIAS Y HÁBITOS ADICIONALES
 =====================================
+# SECCIÓN 11: Información complementaria sobre medición, edad metabólica y suplementación
 🍽️ INFORMACIÓN NUTRICIONAL ADICIONAL:
 - Método medición grasa: {metodo_grasa} → Ajuste DEXA: {grasa_corregida - grasa_corporal:+.1f}%
 - Edad metabólica calculada: {edad_metabolica} años (vs cronológica: {edad} años)
@@ -4328,6 +4548,7 @@ PREFERENCIAS Y HÁBITOS ADICIONALES
 =====================================
 NOTAS, ADVERTENCIAS Y RECOMENDACIONES
 =====================================
+# SECCIÓN 12: Advertencias profesionales, recomendaciones específicas y métricas de seguimiento
 ⚠️ ADVERTENCIAS IMPORTANTES:
 - Este análisis es una herramienta de apoyo, NO sustituye supervisión profesional
 - Los cálculos están basados en ecuaciones científicas validadas pero la respuesta individual varía
@@ -4365,6 +4586,13 @@ según tu progreso real. Se recomienda evaluación periódica cada 2-3
 semanas para optimizar resultados.
 
 """
+# ==============================================================================
+# FIN DE CONSTRUCCIÓN DEL CONTENIDO DEL EMAIL (tabla_resumen)
+# ==============================================================================
+# La variable 'tabla_resumen' ahora contiene el informe completo en formato texto
+# que será enviado a administracion@muscleupgym.fitness mediante la función
+# enviar_email_resumen() cuando el usuario presione el botón de envío.
+# ==============================================================================
 
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
@@ -4526,6 +4754,40 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+# ==============================================================================
+# SECCIÓN DE ENVÍO DE EMAIL
+# ==============================================================================
+# Esta sección maneja el envío del resumen completo por email a
+# administracion@muscleupgym.fitness
+#
+# FLUJO DE ENVÍO:
+# ---------------
+# 1. Validación: Se verifica que todos los campos obligatorios estén completos
+#    mediante datos_completos_para_email()
+# 2. Habilitación: El botón se habilita solo si la validación es exitosa
+# 3. Contenido: Se envía la variable 'tabla_resumen' construida arriba
+# 4. Confirmación: Se marca en session_state que el correo fue enviado
+# 5. Reenvío: Disponible mediante botón secundario si es necesario
+#
+# DATOS ENVIADOS EN EL EMAIL:
+# ---------------------------
+# - Destinatario: administracion@muscleupgym.fitness
+# - Asunto: "Resumen evaluación MUPAI - {nombre_cliente} ({fecha})"
+# - Contenido: Variable 'tabla_resumen' con 12 secciones detalladas:
+#   1. Datos del Cliente
+#   2. Antropometría y Composición
+#   3. Índices Metabólicos (TMB, FFMI, FMI)
+#   4. Factores de Actividad
+#   5. Plan Nutricional
+#   6. Resumen Personalizado y Proyección
+#   7. Experiencia y Evaluación Funcional
+#   8. Nivel Global de Entrenamiento
+#   9. Actividad Física Detallada
+#   10. Comparativa de Planes Nutricionales
+#   11. Preferencias y Hábitos
+#   12. Notas, Advertencias y Recomendaciones
+# ==============================================================================
 
 # --- Botón para enviar email (solo si no se ha enviado y todo completo) ---
 if not st.session_state.get("correo_enviado", False):
