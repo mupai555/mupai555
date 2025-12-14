@@ -1978,18 +1978,391 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
         msg['From'] = email_origen
         msg['To'] = email_destino
         msg['Subject'] = f"Resumen evaluación MUPAI - {nombre_cliente} ({fecha})"
+        msg['Cc'] = email_cliente  # CC al cliente
 
         msg.attach(MIMEText(contenido, 'plain'))
 
         server = smtplib.SMTP('smtp.zoho.com', 587)
         server.starttls()
         server.login(email_origen, password)
-        server.send_message(msg)
+        # Enviar a todos los destinatarios (To + Cc)
+        all_recipients = [email_destino, email_cliente]
+        server.sendmail(email_origen, all_recipients, msg.as_string())
         server.quit()
 
         return True
     except Exception as e:
         st.error(f"Error al enviar email: {str(e)}")
+        return False
+
+def enviar_email_parte2(nombre_cliente, email_cliente, fecha, sexo, edad, peso, estatura, 
+                        grasa_corporal, grasa_corregida, metodo_grasa, masa_muscular, 
+                        grasa_visceral, imc, mlg, masa_grasa, tmb, ffmi, fmi, 
+                        modo_ffmi, nivel_ffmi, categoria_fmi, nivel_entrenamiento,
+                        puntos_ffmi, puntos_funcional, puntos_exp, puntaje_total,
+                        ejercicios_data, niveles_ejercicios):
+    """Envía el email PARTE 2 (Lectura Visual) con el reporte de composición corporal."""
+    try:
+        email_origen = "administracion@muscleupgym.fitness"
+        email_destino = "administracion@muscleupgym.fitness"
+        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+        
+        # Helper para formateo seguro
+        def safe_format(value, default=0, decimals=1):
+            """Formatea valores de forma segura, retornando placeholder si no disponible."""
+            try:
+                val = float(value) if value is not None else default
+                if val > 0:
+                    return f"{val:.{decimals}f}"
+                else:
+                    return "[____]"
+            except:
+                return "[____]"
+        
+        # Construir detalle de ejercicios funcionales
+        ejercicios_detalle = ""
+        if ejercicios_data and niveles_ejercicios:
+            for ejercicio, valor in ejercicios_data.items():
+                nivel_ej = niveles_ejercicios.get(ejercicio, "No evaluado")
+                if ejercicio in ["Plancha", "L-sit"]:
+                    ejercicios_detalle += f"  - {ejercicio}: {valor} segundos → Nivel: {nivel_ej}\n"
+                else:
+                    ejercicios_detalle += f"  - {ejercicio}: {valor} repeticiones → Nivel: {nivel_ej}\n"
+        else:
+            ejercicios_detalle = "  - No se completaron las evaluaciones funcionales\n"
+        
+        # Clasificación de grasa corporal
+        if sexo == "Hombre":
+            if grasa_corregida < 6:
+                categoria_grasa = "Muy bajo (Competición)"
+            elif grasa_corregida < 12:
+                categoria_grasa = "Atlético"
+            elif grasa_corregida < 18:
+                categoria_grasa = "Fitness"
+            elif grasa_corregida < 25:
+                categoria_grasa = "Promedio"
+            else:
+                categoria_grasa = "Alto"
+        else:  # Mujer
+            if grasa_corregida < 12:
+                categoria_grasa = "Muy bajo (Competición)"
+            elif grasa_corregida < 17:
+                categoria_grasa = "Atlético"
+            elif grasa_corregida < 23:
+                categoria_grasa = "Fitness"
+            elif grasa_corregida < 30:
+                categoria_grasa = "Promedio"
+            else:
+                categoria_grasa = "Alto"
+        
+        # Clasificación de grasa visceral
+        masa_muscular_val = safe_float(masa_muscular, 0)
+        grasa_visceral_val = safe_float(grasa_visceral, 0)
+        
+        if grasa_visceral_val > 0:
+            if grasa_visceral_val <= 12:
+                estado_visceral = "Saludable"
+            elif grasa_visceral_val <= 15:
+                estado_visceral = "Elevado"
+            else:
+                estado_visceral = "Alto riesgo"
+            grasa_visceral_str = f"{grasa_visceral_val:.0f} ({estado_visceral})"
+        else:
+            grasa_visceral_str = "[____]"
+        
+        masa_muscular_str = f"{masa_muscular_val:.1f}%" if masa_muscular_val > 0 else "[____]"
+        
+        # Interpretación del modo FFMI
+        if modo_ffmi == "GREEN":
+            interpretacion_modo = "🟢 GREEN - Interpretación válida como muscularidad"
+            nota_ffmi = "El % de grasa está en rango saludable, por lo que el FFMI es un indicador confiable del desarrollo muscular real."
+        elif modo_ffmi == "AMBER":
+            interpretacion_modo = "🟡 AMBER - Interpretación limitada por adiposidad"
+            nota_ffmi = "El % de grasa está ligeramente elevado, lo que puede afectar la precisión del FFMI. Se recomienda reducir grasa para mayor precisión."
+        else:  # RED
+            interpretacion_modo = "🔴 RED - No aplicable clasificación atlética"
+            nota_ffmi = "El % de grasa está muy elevado. El FFMI puede estar inflado por masa libre de grasa no muscular (agua, órganos). No es un indicador confiable en este rango."
+        
+        # Construir contenido del email PARTE 2
+        contenido = f"""
+=====================================
+REPORTE – PARTE 2 (Lectura Visual)
+=====================================
+Generado: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence
+
+=====================================
+DATOS DEL CLIENTE
+=====================================
+- Nombre completo: {nombre_cliente}
+- Edad: {edad} años
+- Sexo biológico: {sexo}
+- Fecha de evaluación: {fecha}
+
+=====================================
+RESUMEN DE EVALUACIÓN
+=====================================
+Esta evaluación proporciona un análisis detallado de la composición corporal
+y nivel de entrenamiento del cliente, basado en métodos científicos validados.
+
+=====================================
+COMPOSICIÓN CORPORAL
+=====================================
+
+ANTROPOMETRÍA BÁSICA:
+- Peso corporal: {peso:.1f} kg
+- Estatura: {estatura:.0f} cm ({estatura/100:.2f} m)
+- IMC (Índice de Masa Corporal): {imc:.1f} kg/m²
+
+ANÁLISIS DE GRASA CORPORAL:
+- Método de medición: {metodo_grasa}
+- % Grasa corporal medido: {grasa_corporal:.1f}%
+- % Grasa corregido (DEXA): {grasa_corregida:.1f}%
+- Ajuste aplicado: {grasa_corregida - grasa_corporal:+.1f}%
+- Categoría: {categoria_grasa}
+
+COMPOSICIÓN DETALLADA:
+- Masa Libre de Grasa (MLG): {mlg:.1f} kg
+- Masa Grasa (MG): {masa_grasa:.1f} kg
+- % Masa muscular esquelética: {masa_muscular_str}
+- Grasa visceral: {grasa_visceral_str}
+
+=====================================
+TABLAS METODOLÓGICAS
+=====================================
+
+ÍNDICE DE MASA LIBRE DE GRASA (FFMI):
+El FFMI es un indicador científico del desarrollo muscular ajustado por altura.
+Permite evaluar el progreso muscular independientemente del peso y altura.
+
+CÁLCULO:
+- MLG: {mlg:.1f} kg
+- Altura: {estatura/100:.2f} m
+- FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2) if estatura > 0 else 0:.2f}
+- FFMI Normalizado (a 1.80m): {ffmi:.2f}
+  Fórmula: FFMI_base + 6.3 × (1.8 - altura_m)
+
+ÍNDICE DE MASA GRASA (FMI):
+El FMI mide la adiposidad ajustada por altura, complementando al FFMI.
+
+CÁLCULO:
+- Masa Grasa: {masa_grasa:.1f} kg
+- FMI = MG / Altura²: {fmi:.2f}
+
+=====================================
+CLASIFICACIÓN AUTOMÁTICA
+=====================================
+
+MODO DE INTERPRETACIÓN FFMI:
+{interpretacion_modo}
+
+NOTA INTERPRETATIVA:
+{nota_ffmi}
+
+CLASIFICACIÓN FFMI:
+- FFMI actual: {ffmi:.2f}
+- Categoría: {nivel_ffmi}
+
+RANGOS DE REFERENCIA para {sexo.upper()}:
+"""
+        
+        # Agregar rangos según sexo
+        if sexo == "Hombre":
+            contenido += """- Bajo (<18): Desarrollo insuficiente
+- Promedio (18-20): Normal en población general
+- Bueno (20-22): Buen desarrollo, 2-4 años de entrenamiento
+- Avanzado (22-25): Muy avanzado, cerca del límite natural
+- Élite (>25): Excepcional, difícil naturalmente
+"""
+        else:  # Mujer
+            contenido += """- Bajo (<15): Desarrollo insuficiente
+- Promedio (15-17): Normal en población general
+- Bueno (17-19): Buen desarrollo, 2-4 años de entrenamiento
+- Avanzado (19-21): Muy avanzado, cerca del límite natural
+- Élite (>21): Excepcional, difícil naturalmente
+"""
+        
+        contenido += f"""
+CLASIFICACIÓN FMI:
+- FMI actual: {fmi:.2f}
+- Categoría: {categoria_fmi}
+
+RANGOS DE REFERENCIA FMI para {sexo.upper()}:
+"""
+        
+        if sexo == "Hombre":
+            contenido += """- Bajo (<3): Muy bajo en grasa
+- Normal (3-6): Rango saludable
+- Elevado (6-9): Por encima del promedio
+- Alto (>9): Exceso de adiposidad
+"""
+        else:  # Mujer
+            contenido += """- Bajo (<5): Muy bajo en grasa
+- Normal (5-9): Rango saludable
+- Elevado (9-13): Por encima del promedio
+- Alto (>13): Exceso de adiposidad
+"""
+        
+        contenido += f"""
+=====================================
+DETALLES FUNCIONALES
+=====================================
+
+EVALUACIÓN DE RENDIMIENTO FUNCIONAL:
+{ejercicios_detalle}
+
+ANÁLISIS DE CAPACIDADES:
+El rendimiento funcional mide la capacidad práctica en movimientos
+fundamentales del entrenamiento de fuerza, evaluando:
+- Fuerza de empuje superior e inferior
+- Fuerza de tracción superior e inferior  
+- Estabilidad y resistencia del core
+
+=====================================
+NOTAS INTERPRETATIVAS
+=====================================
+
+TASA METABÓLICA BASAL (TMB):
+- TMB (Cunningham): {tmb:.0f} kcal/día
+- Base de cálculo: Masa Libre de Grasa ({mlg:.1f} kg)
+- Significado: Energía que tu cuerpo necesita en reposo completo
+
+INTERPRETACIÓN INTEGRADA:
+La evaluación considera múltiples factores para proporcionar una visión
+holística del estado físico actual:
+
+1. COMPOSICIÓN CORPORAL: Tu % de grasa ({grasa_corregida:.1f}%) te coloca
+   en la categoría "{categoria_grasa}". Este es un factor clave para
+   determinar objetivos y estrategias de entrenamiento.
+
+2. DESARROLLO MUSCULAR (FFMI): Con un FFMI de {ffmi:.2f}, tu nivel es
+   "{nivel_ffmi}". Esto refleja tu masa muscular ajustada por altura.
+
+3. ADIPOSIDAD (FMI): Tu FMI de {fmi:.2f} indica un nivel "{categoria_fmi}"
+   de adiposidad relativa a tu altura.
+
+=====================================
+DESGLOSE GLOBAL DEL NIVEL
+=====================================
+
+SISTEMA DE PUNTUACIÓN PONDERADA:
+El nivel de entrenamiento se calcula mediante tres componentes:
+
+1. DESARROLLO MUSCULAR (FFMI):
+   - Puntuación: {puntos_ffmi if puntos_ffmi is not None else 0:.1f}/5.0 puntos
+   - Clasificación: {nivel_ffmi}
+   - Peso en cálculo: Variable según modo FFMI
+
+2. RENDIMIENTO FUNCIONAL:
+   - Puntuación: {puntos_funcional if puntos_funcional is not None else 0:.1f}/4.0 puntos
+   - Base: Promedio de evaluaciones funcionales
+   - Peso en cálculo: 40-70% según modo
+
+3. EXPERIENCIA AUTODECLARADA:
+   - Puntuación: {puntos_exp if puntos_exp is not None else 0:.1f}/4.0 puntos
+   - Peso en cálculo: 20-40% según modo
+
+PONDERACIÓN APLICADA:
+"""
+        
+        # Determinar ponderación según modo FFMI
+        if modo_ffmi == "GREEN":
+            contenido += """- FFMI (desarrollo muscular): 40%
+- Rendimiento funcional: 40%
+- Experiencia declarada: 20%
+
+NOTA: Con % grasa en rango saludable, el FFMI es confiable y se pondera normalmente.
+"""
+        elif modo_ffmi == "AMBER":
+            contenido += """- FFMI (desarrollo muscular): 20%
+- Rendimiento funcional: 60%
+- Experiencia declarada: 20%
+
+NOTA: Con % grasa elevado, el FFMI tiene menor peso y el rendimiento funcional se prioriza.
+"""
+        else:  # RED
+            contenido += """- FFMI (desarrollo muscular): 0%
+- Rendimiento funcional: 70%
+- Experiencia declarada: 30%
+
+NOTA: Con % grasa muy alto, el FFMI no se pondera. El rendimiento funcional es el indicador principal.
+"""
+        
+        contenido += f"""
+RESULTADO FINAL:
+- Nivel de entrenamiento: {nivel_entrenamiento.upper() if nivel_entrenamiento else 'INTERMEDIO'}
+- Puntuación total ponderada: {puntaje_total if puntaje_total is not None else 0:.2f}/1.0
+- % Grasa corporal: {grasa_corregida:.1f}%
+- Modo de interpretación: {modo_ffmi}
+
+=====================================
+RECOMENDACIONES GENERALES
+=====================================
+
+ENFOQUE SUGERIDO:
+Basado en tu composición corporal actual ({categoria_grasa}, {grasa_corregida:.1f}% grasa)
+y nivel de entrenamiento ({nivel_entrenamiento if nivel_entrenamiento else 'intermedio'}),
+se recomienda:
+
+1. PRIORIDAD NUTRICIONAL: 
+   - Ajustar ingesta calórica según objetivos específicos
+   - Mantener proteína adecuada para preservar/desarrollar músculo
+   - Monitorear progreso cada 2-3 semanas
+
+2. PRIORIDAD DE ENTRENAMIENTO:
+   - Mantener programa de fuerza consistente
+   - Progresar cargas gradualmente
+   - Evaluar rendimiento funcional periódicamente
+
+3. MONITOREO:
+   - Peso corporal (diario, misma hora)
+   - Medidas corporales (semanal)
+   - Fotos de progreso (bisemanal)
+   - Rendimiento en ejercicios (cada sesión)
+
+=====================================
+NOTAS FINALES
+=====================================
+
+⚠️ IMPORTANTE:
+Este reporte está basado en ecuaciones científicas validadas y proporciona
+estimaciones objetivas. Sin embargo, la respuesta individual puede variar
+según múltiples factores (genética, adherencia, sueño, estrés, etc.).
+
+✅ VALIDEZ:
+Los datos son válidos al momento de la evaluación ({fecha}). Se recomienda
+reevaluación cada 4-6 semanas para ajustes precisos.
+
+📞 SOPORTE:
+Para consultas adicionales o interpretación personalizada, contactar a
+administracion@muscleupgym.fitness
+
+=====================================
+FIN DEL REPORTE PARTE 2
+=====================================
+"""
+        
+        # Crear mensaje
+        msg = MIMEMultipart()
+        msg['From'] = email_origen
+        msg['To'] = email_destino
+        msg['Cc'] = "login.fitness"  # CC a login.fitness como se especifica
+        msg['Subject'] = f"Reporte – PARTE 2 (Lectura Visual) – {nombre_cliente} – {fecha}"
+        
+        msg.attach(MIMEText(contenido, 'plain'))
+        
+        # Enviar email
+        server = smtplib.SMTP('smtp.zoho.com', 587)
+        server.starttls()
+        server.login(email_origen, password)
+        # Enviar a todos los destinatarios (To + Cc)
+        all_recipients = [email_destino, "login.fitness"]
+        server.sendmail(email_origen, all_recipients, msg.as_string())
+        server.quit()
+        
+        return True
+    except Exception as e:
+        st.error(f"Error al enviar email PARTE 2: {str(e)}")
         return False
         # ==================== VISUALES INICIALES ====================
 
@@ -4551,6 +4924,49 @@ if not st.session_state.get("correo_enviado", False):
                 if ok:
                     st.session_state["correo_enviado"] = True
                     st.success("✅ Email enviado exitosamente a administración")
+                    
+                    # Enviar email PARTE 2 (Lectura Visual)
+                    with st.spinner("📧 Enviando reporte PARTE 2 (Lectura Visual)..."):
+                        # Obtener variables necesarias para el email PARTE 2
+                        masa_grasa = peso - mlg if 'mlg' in locals() and mlg > 0 else 0
+                        ejercicios_data_email = st.session_state.get("datos_ejercicios", {})
+                        niveles_ejercicios_email = st.session_state.get("niveles_ejercicios", {})
+                        
+                        ok_parte2 = enviar_email_parte2(
+                            nombre_cliente=nombre,
+                            email_cliente=email_cliente,
+                            fecha=fecha_llenado,
+                            sexo=sexo,
+                            edad=edad,
+                            peso=peso,
+                            estatura=estatura,
+                            grasa_corporal=grasa_corporal,
+                            grasa_corregida=grasa_corregida,
+                            metodo_grasa=metodo_grasa,
+                            masa_muscular=st.session_state.get("masa_muscular", 0),
+                            grasa_visceral=st.session_state.get("grasa_visceral", 0),
+                            imc=imc if 'imc' in locals() else 0,
+                            mlg=mlg if 'mlg' in locals() else 0,
+                            masa_grasa=masa_grasa,
+                            tmb=tmb if 'tmb' in locals() else 0,
+                            ffmi=ffmi if 'ffmi' in locals() else 0,
+                            fmi=fmi if 'fmi' in locals() else 0,
+                            modo_ffmi=modo_ffmi if 'modo_ffmi' in locals() else "GREEN",
+                            nivel_ffmi=nivel_ffmi if 'nivel_ffmi' in locals() else "Bajo",
+                            categoria_fmi=categoria_fmi if 'categoria_fmi' in locals() else "Normal",
+                            nivel_entrenamiento=nivel_entrenamiento if 'nivel_entrenamiento' in locals() else "intermedio",
+                            puntos_ffmi=puntos_ffmi if 'puntos_ffmi' in locals() else 0,
+                            puntos_funcional=puntos_funcional if 'puntos_funcional' in locals() else 0,
+                            puntos_exp=puntos_exp if 'puntos_exp' in locals() else 0,
+                            puntaje_total=puntaje_total if 'puntaje_total' in locals() else 0,
+                            ejercicios_data=ejercicios_data_email,
+                            niveles_ejercicios=niveles_ejercicios_email
+                        )
+                        
+                        if ok_parte2:
+                            st.success("✅ Reporte PARTE 2 enviado exitosamente")
+                        else:
+                            st.warning("⚠️ Email principal enviado pero hubo un error al enviar el reporte PARTE 2")
                 else:
                     st.error("❌ Error al enviar email. Contacta a soporte técnico.")
     
@@ -4582,6 +4998,49 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
             if ok:
                 st.session_state["correo_enviado"] = True
                 st.success("✅ Email reenviado exitosamente a administración")
+                
+                # Reenviar email PARTE 2 (Lectura Visual)
+                with st.spinner("📧 Reenviando reporte PARTE 2 (Lectura Visual)..."):
+                    # Obtener variables necesarias para el email PARTE 2
+                    masa_grasa = peso - mlg if 'mlg' in locals() and mlg > 0 else 0
+                    ejercicios_data_email = st.session_state.get("datos_ejercicios", {})
+                    niveles_ejercicios_email = st.session_state.get("niveles_ejercicios", {})
+                    
+                    ok_parte2 = enviar_email_parte2(
+                        nombre_cliente=nombre,
+                        email_cliente=email_cliente,
+                        fecha=fecha_llenado,
+                        sexo=sexo,
+                        edad=edad,
+                        peso=peso,
+                        estatura=estatura,
+                        grasa_corporal=grasa_corporal,
+                        grasa_corregida=grasa_corregida,
+                        metodo_grasa=metodo_grasa,
+                        masa_muscular=st.session_state.get("masa_muscular", 0),
+                        grasa_visceral=st.session_state.get("grasa_visceral", 0),
+                        imc=imc if 'imc' in locals() else 0,
+                        mlg=mlg if 'mlg' in locals() else 0,
+                        masa_grasa=masa_grasa,
+                        tmb=tmb if 'tmb' in locals() else 0,
+                        ffmi=ffmi if 'ffmi' in locals() else 0,
+                        fmi=fmi if 'fmi' in locals() else 0,
+                        modo_ffmi=modo_ffmi if 'modo_ffmi' in locals() else "GREEN",
+                        nivel_ffmi=nivel_ffmi if 'nivel_ffmi' in locals() else "Bajo",
+                        categoria_fmi=categoria_fmi if 'categoria_fmi' in locals() else "Normal",
+                        nivel_entrenamiento=nivel_entrenamiento if 'nivel_entrenamiento' in locals() else "intermedio",
+                        puntos_ffmi=puntos_ffmi if 'puntos_ffmi' in locals() else 0,
+                        puntos_funcional=puntos_funcional if 'puntos_funcional' in locals() else 0,
+                        puntos_exp=puntos_exp if 'puntos_exp' in locals() else 0,
+                        puntaje_total=puntaje_total if 'puntaje_total' in locals() else 0,
+                        ejercicios_data=ejercicios_data_email,
+                        niveles_ejercicios=niveles_ejercicios_email
+                    )
+                    
+                    if ok_parte2:
+                        st.success("✅ Reporte PARTE 2 reenviado exitosamente")
+                    else:
+                        st.warning("⚠️ Email principal reenviado pero hubo un error al reenviar el reporte PARTE 2")
             else:
                 st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
 
