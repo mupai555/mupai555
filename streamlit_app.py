@@ -2299,11 +2299,12 @@ if datos_personales_completos and st.session_state.datos_completos:
 
         # Campo opcional - Grasa visceral (no afecta cálculos)
         grasa_visceral_default = st.session_state.get("grasa_visceral", 0)
+        grasa_visceral_safe = safe_int(grasa_visceral_default, 0)
         grasa_visceral = st.number_input(
             "🫀 Grasa visceral (nivel, opcional)",
             min_value=1,
             max_value=59,
-            value=safe_int(grasa_visceral_default, 0) if safe_int(grasa_visceral_default, 0) >= 1 else 1,
+            value=grasa_visceral_safe if grasa_visceral_safe >= 1 else 1,
             step=1,
             key="grasa_visceral",
             help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
@@ -3970,6 +3971,10 @@ texto_clasificacion_ffmi = generar_texto_clasificacion_ffmi(
 )
 categoria_fmi = clasificar_fmi_email(fmi, sexo)
 
+# Format grasa_visceral for report
+grasa_visceral_report = safe_int(grasa_visceral, 0)
+grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
+
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -3997,7 +4002,7 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 - % Grasa medido: {grasa_corporal}%
 - % Grasa corregido (DEXA): {grasa_corregida:.1f}%
 - % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
-- Grasa visceral (nivel): {safe_int(grasa_visceral, 0) if safe_int(grasa_visceral, 0) >= 1 else 'No medido'}
+- Grasa visceral (nivel): {grasa_visceral_str}
 - Masa Libre de Grasa: {mlg:.1f} kg
 - Masa Grasa: {peso - mlg:.1f} kg
 
