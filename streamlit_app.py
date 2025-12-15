@@ -10,68 +10,16 @@ import re
 import random
 import string
 
-# ==================== CONSTANTES ====================
-# Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
-# Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
-OMRON_HBF516_TO_4C = {
-    4: 4.6,
-    5: 5.4,
-    6: 6.3,
-    7: 7.1,
-    8: 7.9,
-    9: 8.8,
-    10: 9.6,
-    11: 10.4,
-    12: 11.3,
-    13: 12.1,
-    14: 13.0,
-    15: 13.8,
-    16: 14.6,
-    17: 15.5,
-    18: 16.3,
-    19: 17.2,
-    20: 18.0,
-    21: 18.8,
-    22: 19.7,
-    23: 20.5,
-    24: 21.3,
-    25: 22.2,
-    26: 23.0,
-    27: 23.9,
-    28: 24.7,
-    29: 25.5,
-    30: 26.4,
-    31: 27.2,
-    32: 28.1,
-    33: 28.9,
-    34: 29.7,
-    35: 30.6,
-    36: 31.4,
-    37: 32.2,
-    38: 33.1,
-    39: 33.9,
-    40: 34.8,
-    41: 35.6,
-    42: 36.4,
-    43: 37.3,
-    44: 38.1,
-    45: 38.9,
-    46: 39.8,
-    47: 40.6,
-    48: 41.5,
-    49: 42.3,
-    50: 43.1,
-    51: 44.0,
-    52: 44.8,
-    53: 45.7,
-    54: 46.5,
-    55: 47.3,
-    56: 48.2,
-    57: 49.0,
-    58: 49.8,
-    59: 50.7,
-    60: 51.5,
-}
+# Import proprietary methodology (implementation details protected)
+# The methodology_core module provides a clean public interface for all calculations
+# while protecting the specific algorithms, thresholds, and classification logic.
+# Use the public functions provided; do not attempt to access internal implementation.
+import methodology_core as mcore
+
+# ==================== CONSTANTS (PROTECTED) ====================
+# Proprietary conversion tables and methodology constants are now
+# encapsulated in the methodology_core module to protect intellectual property.
+# External code should only use the public interface functions provided.
 
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
@@ -1110,840 +1058,159 @@ def safe_int(value, default=0):
         return int(default)
 
 def calcular_tmb_cunningham(mlg):
-    """Calcula el TMB usando la fórmula de Cunningham."""
-    try:
-        mlg = float(mlg)
-    except (TypeError, ValueError):
-        mlg = 0.0
-    return 370 + (21.6 * mlg)
+    """
+    Calculate basal metabolic rate.
+    Implementation details are protected in methodology_core module.
+    """
+    return mcore.calculate_basal_metabolic_rate(mlg)
 
 def calcular_mlg(peso, porcentaje_grasa):
-    """Calcula la Masa Libre de Grasa."""
-    try:
-        peso = float(peso)
-        porcentaje_grasa = float(porcentaje_grasa)
-    except (TypeError, ValueError):
-        peso = 0.0
-        porcentaje_grasa = 0.0
-    return peso * (1 - porcentaje_grasa / 100)
+    """
+    Calculate lean body mass.
+    Implementation details are protected in methodology_core module.
+    """
+    return mcore.calculate_lean_mass(peso, porcentaje_grasa)
 
 def corregir_porcentaje_grasa(medido, metodo, sexo):
     """
-    Corrige el porcentaje de grasa según el método de medición.
-    Si el método es Omron HBF-516, convierte a modelo 4C (4-compartment body composition) 
-    usando la fórmula de Siedler & Tinsley (2022): gc_4c = 1.226167 + 0.838294 * gc_omron.
-    Validación de rango 4%-60%.
-    Si InBody, aplica factor.
-    Si BodPod, aplica factor por sexo.
-    Si DEXA, devuelve el valor medido.
+    Correct body fat percentage based on measurement method.
+    Converts readings to DEXA-equivalent values using proprietary correction factors.
+    Implementation details are protected in methodology_core module.
     """
-    try:
-        medido = float(medido)
-    except (TypeError, ValueError):
-        medido = 0.0
-
-    if metodo == "Omron HBF-516 (BIA)":
-        # Conversión unificada Omron→4C (sin dependencia de género)
-        # Validar rango: solo convertir si está entre 4% y 60%
-        grasa_redondeada = int(round(medido))
-        
-        # Si está fuera del rango 4%-60%, devolver el valor original
-        if grasa_redondeada < 4 or grasa_redondeada > 60:
-            return medido
-        
-        # Usar tabla de conversión OMRON_HBF516_TO_4C
-        return OMRON_HBF516_TO_4C.get(grasa_redondeada, medido)
-    elif metodo == "InBody 270 (BIA profesional)":
-        return medido * 1.02
-    elif metodo == "Bod Pod (Pletismografía)":
-        factor = 1.0 if sexo == "Mujer" else 1.03
-        return medido * factor
-    else:  # DEXA (Gold Standard) u otros
-        return medido
+    return mcore.correct_body_fat_measurement(medido, metodo, sexo)
 
 def calcular_ffmi(mlg, estatura_cm):
     """
-    Calcula el FFMI (Fat-Free Mass Index) y lo normaliza a 1.80m de estatura.
+    Calculate Fat-Free Mass Index (FFMI) normalized to standard height.
     
-    El FFMI es un indicador de la masa muscular ajustado por altura que permite
-    comparar el desarrollo muscular entre individuos de diferentes estaturas.
+    FFMI is an indicator of muscle mass adjusted for height, allowing comparison
+    of muscular development between individuals of different heights.
     
-    PARAMETROS:
-    -----------
-    mlg : float
-        Masa Libre de Grasa (MLG) en kilogramos.
-        Se calcula como: MLG = Peso Total * (1 - Porcentaje_Grasa/100)
-        Representa todo el tejido corporal excepto la grasa (musculos, huesos, organos, agua).
+    Implementation details and normalization formulas are protected in methodology_core module.
     
-    estatura_cm : float
-        Estatura del individuo en centimetros.
-    
-    CALCULO:
-    --------
-    1. FFMI Base = MLG / (Estatura_en_metros^2)
-       - Similar al IMC pero usando masa libre de grasa en lugar de peso total
-       - Refleja cuanta masa muscular tiene la persona por unidad de altura al cuadrado
-    
-    2. FFMI Normalizado = FFMI_Base + 6.3 * (1.8 - Estatura_en_metros)
-       - Formula de Kouri et al. (1995) para normalizar a 1.80m de referencia
-       - El factor 6.3 compensa las diferencias naturales de proporcion corporal
-       - Personas mas altas tienden a tener FFMI base mas bajo sin tener menos musculo
-       - La normalizacion permite comparaciones justas entre diferentes estaturas
-    
-    RETORNA:
-    --------
-    float
-        FFMI normalizado a 1.80m de estatura.
-        Valores tipicos:
-        - Hombres: 18-25 (natural), >25 (potencialmente no natural)
-        - Mujeres: 15-21 (natural), >21 (potencialmente no natural)
-    
-    REFERENCIAS:
-    -----------
-    - Kouri EM, et al. (1995). "Fat-free mass index in users and nonusers of 
-      anabolic-androgenic steroids." Clinical Journal of Sport Medicine.
+    Returns:
+        float: Normalized FFMI value
     """
-    # Validacion y conversion de parametros a valores numericos
-    try:
-        mlg = float(mlg)
-        estatura_m = float(estatura_cm) / 100
-    except (TypeError, ValueError):
-        # Si hay error en la conversion, usar valores por defecto seguros
-        mlg = 0.0
-        estatura_m = 1.80
-    
-    # Validar que la estatura sea positiva, usar 1.80m como fallback
-    if estatura_m <= 0:
-        estatura_m = 1.80
-    
-    # Paso 1: Calcular FFMI base (masa libre de grasa dividida por altura al cuadrado)
-    ffmi = mlg / (estatura_m ** 2)
-    
-    # Paso 2: Normalizar a 1.80m usando la formula de Kouri
-    # Esta normalizacion permite comparar el FFMI entre personas de diferentes alturas
-    ffmi_normalizado = ffmi + 6.3 * (1.8 - estatura_m)
-    
-    return ffmi_normalizado
+    return mcore.calculate_ffmi_normalized(mlg, estatura_cm)
 
 def clasificar_ffmi(ffmi, sexo):
     """
-    Clasifica el FFMI (Fat-Free Mass Index) en categorias segun el sexo del usuario.
+    Classify FFMI (Fat-Free Mass Index) level.
     
-    El FFMI refleja el desarrollo muscular y varia significativamente entre hombres
-    y mujeres debido a diferencias biologicas en composicion hormonal, cantidad de
-    testosterona, y distribucion natural de masa muscular.
+    FFMI reflects muscular development and varies between sexes due to biological differences.
+    Classification thresholds and criteria are proprietary and protected in methodology_core module.
     
-    PARAMETROS:
-    -----------
-    ffmi : float
-        Valor de FFMI normalizado calculado previamente.
-    
-    sexo : str
-        "Hombre" o "Mujer" - determina que escala de clasificacion usar.
-    
-    CLASIFICACION PARA HOMBRES:
-    ---------------------------
-    - Bajo (<18):      Desarrollo muscular insuficiente. Tipico en sedentarios o con
-                       nutricion inadecuada. Indica necesidad de entrenamiento de fuerza
-                       y optimizacion nutricional.
-    
-    - Promedio (18-20): Desarrollo muscular normal en poblacion general. Presente en
-                        personas con actividad fisica moderada o principiantes en
-                        entrenamiento de fuerza (0-2 anos de experiencia).
-    
-    - Bueno (20-22):   Buen desarrollo muscular. Alcanzable naturalmente con
-                       entrenamiento de fuerza consistente (2-4 anos) y nutricion
-                       adecuada. Representa un fisico atletico.
-    
-    - Avanzado (22-25): Desarrollo muscular muy avanzado. Requiere anos de entrenamiento
-                        disciplinado (4-8+ anos) y optimizacion de todos los factores
-                        (entrenamiento, nutricion, descanso, genetica favorable).
-                        Limite superior del potencial natural para mayoria.
-    
-    - Elite (>25):     Desarrollo muscular excepcional. Dificil de alcanzar naturalmente.
-                       Puede indicar genetica excepcional o uso de farmacologia.
-                       Valores >26-27 son casi imposibles sin ayuda ergogenica.
-    
-    CLASIFICACION PARA MUJERES:
-    ---------------------------
-    - Bajo (<15):      Desarrollo muscular insuficiente. Requiere entrenamiento de
-                       fuerza y nutricion adecuada para salud y funcionalidad.
-    
-    - Promedio (15-17): Desarrollo muscular normal. Tipico en poblacion femenina
-                        general activa o con entrenamiento basico (0-2 anos).
-    
-    - Bueno (17-19):   Buen desarrollo muscular. Alcanzable con entrenamiento
-                       consistente (2-4 anos) y nutricion optimizada. Fisico atletico.
-    
-    - Avanzado (19-21): Desarrollo muy avanzado. Requiere anos de dedicacion (4-8+ anos).
-                        Limite superior del potencial natural para mayoria de mujeres.
-    
-    - Elite (>21):     Desarrollo excepcional. Raro naturalmente. Puede indicar genetica
-                       superior o uso de farmacologia. Valores >22-23 son altamente
-                       improbables sin ayuda ergogenica.
-    
-    RAZON DE DIFERENCIAS POR SEXO:
-    ------------------------------
-    Los umbrales son aproximadamente 3 puntos mas bajos para mujeres debido a:
-    
-    1. HORMONAS: Las mujeres tienen ~10-20% de la testosterona de los hombres, limitando
-       la capacidad de sintesis proteica y ganancia muscular.
-    
-    2. COMPOSICION: Las mujeres tienen naturalmente 6-11% mas grasa corporal esencial
-       (necesaria para funciones reproductivas), reduciendo el porcentaje de masa magra.
-    
-    3. DISTRIBUCION: Los hombres tienen mayor masa muscular en torso y brazos, mientras
-       que las mujeres tienen distribucion mas uniforme o concentrada en piernas.
-    
-    4. GENETICA: Diferencias en expresion genica relacionada con miogenesis (formacion
-       de tejido muscular) favorecen mayor desarrollo en hombres.
-    
-    RETORNA:
-    --------
-    str
-        Categoria de clasificacion: "Bajo", "Promedio", "Bueno", "Avanzado" o "Elite"
-    
-    REFERENCIAS:
-    -----------
-    - Kouri EM, et al. (1995). Clinical Journal of Sport Medicine.
-    - Schoenfeld BJ, et al. (2020). Sports Medicine - sex differences in training.
+    Returns:
+        str: Classification category
     """
-    # Validar y convertir FFMI a valor numerico
-    try:
-        ffmi = float(ffmi)
-    except (TypeError, ValueError):
-        ffmi = 0.0
-    
-    # Definir umbrales de clasificacion especificos por sexo
-    if sexo == "Hombre":
-        # Umbrales masculinos: reflejan mayor potencial de masa muscular
-        limites = [(18, "Bajo"), (20, "Promedio"), (22, "Bueno"), (25, "Avanzado"), (100, "Élite")]
-    else:
-        # Umbrales femeninos: ajustados ~3 puntos mas bajos por diferencias biologicas
-        limites = [(15, "Bajo"), (17, "Promedio"), (19, "Bueno"), (21, "Avanzado"), (100, "Élite")]
-    
-    # Iterar sobre los limites y retornar la primera clasificacion que aplique
-    for limite, clasificacion in limites:
-        if ffmi < limite:
-            return clasificacion
-    
-    # Si el FFMI supera todos los limites, clasificar como Elite
-    return "Élite"
+    return mcore.classify_ffmi_level(ffmi, sexo)
 
 def calcular_fmi(peso, grasa_corregida, estatura_cm):
     """
-    Calcula el FMI/BFMI (Fat Mass Index / Body Fat Mass Index).
+    Calculate Fat Mass Index (FMI/BFMI).
     
-    El FMI es un indicador de adiposidad ajustado por altura que complementa
-    al FFMI. Permite evaluar la cantidad de grasa corporal de forma normalizada
-    por la estatura del individuo.
+    FMI is an adiposity indicator adjusted for height that complements FFMI.
+    Implementation details are protected in methodology_core module.
     
-    PARAMETROS:
-    -----------
-    peso : float
-        Peso total del individuo en kilogramos.
-    
-    grasa_corregida : float
-        Porcentaje de grasa corporal corregido (equivalente DEXA).
-    
-    estatura_cm : float
-        Estatura del individuo en centímetros.
-    
-    CALCULO:
-    --------
-    1. Masa Grasa (kg) = Peso Total * (Porcentaje_Grasa / 100)
-    2. FMI = Masa Grasa / (Estatura_en_metros^2)
-    
-    RETORNA:
-    --------
-    float
-        FMI (índice de masa grasa por altura al cuadrado).
-        Valores de referencia:
-        - Hombres: <3 (bajo), 3-6 (normal), 6-9 (elevado), >9 (muy elevado)
-        - Mujeres: <5 (bajo), 5-9 (normal), 9-13 (elevado), >13 (muy elevado)
-    
-    REFERENCIAS:
-    -----------
-    - Kelly TL, et al. (2009). "Dual energy X-Ray absorptiometry body composition
-      reference values from NHANES." PLoS ONE.
+    Returns:
+        float: FMI value
     """
-    try:
-        peso = float(peso)
-        grasa_corregida = float(grasa_corregida)
-        estatura_m = float(estatura_cm) / 100
-    except (TypeError, ValueError):
-        return 0.0
-    
-    # Validar que la estatura sea positiva
-    if estatura_m <= 0:
-        return 0.0
-    
-    # Calcular masa grasa
-    masa_grasa = peso * (grasa_corregida / 100)
-    
-    # Calcular FMI
-    fmi = masa_grasa / (estatura_m ** 2)
-    
-    return fmi
+    return mcore.calculate_fat_mass_index(peso, grasa_corregida, estatura_cm)
 
 def obtener_modo_interpretacion_ffmi(grasa_corregida, sexo):
     """
-    Determina el modo de interpretación del FFMI basado en el porcentaje de grasa
-    corporal corregido y el sexo del usuario.
+    Determine FFMI interpretation mode based on body fat percentage.
     
-    Este sistema controla cómo se interpreta y reporta el FFMI, reconociendo que
-    en casos de adiposidad elevada, la masa libre de grasa puede estar inflada por
-    componentes no musculares (agua corporal, órganos, masa estructural), haciendo
-    que el FFMI pierda validez como proxy de muscularidad atlética.
+    This system controls how FFMI is interpreted and reported, recognizing that
+    at elevated adiposity levels, the FFMI may be less reliable as an indicator
+    of muscular development.
     
-    PARAMETROS:
-    -----------
-    grasa_corregida : float
-        Porcentaje de grasa corporal corregido (equivalente DEXA).
+    Mode thresholds and interpretation criteria are proprietary and protected
+    in methodology_core module.
     
-    sexo : str
-        "Hombre" o "Mujer" - determina qué umbrales aplicar.
-    
-    MODOS DE INTERPRETACIÓN:
-    ------------------------
-    GREEN (Verde) - Interpretación válida como muscularidad:
-        - Hombres: 11.9% - 22.7% grasa corporal
-        - Mujeres: 20.8% - 31.0% grasa corporal
-        - El FFMI es un buen indicador de desarrollo muscular
-        - Se muestran clasificaciones atléticas (Bajo-Élite)
-        - Se incluyen módulos de potencial genético
-    
-    AMBER (Ámbar) - Interpretación limitada:
-        - Hombres: >22.7% - 26.5% grasa corporal
-        - Mujeres: >31.0% - 38.2% grasa corporal
-        - El FFMI comienza a ser menos confiable
-        - Se reporta valor numérico con advertencia
-        - Se ocultan o degradan clasificaciones atléticas
-        - Se reducen/ocultan módulos de potencial
-    
-    RED (Rojo) - No aplica clasificación atlética:
-        - Hombres: >26.5% grasa corporal
-        - Mujeres: >38.2% grasa corporal
-        - El FFMI pierde validez como indicador de muscularidad
-        - Se reporta valor pero con explicación clara
-        - No se muestran clasificaciones atléticas
-        - No se muestran módulos de potencial
-    
-    FUNDAMENTO CIENTÍFICO:
-    ---------------------
-    Con adiposidad elevada, la masa libre de grasa (MLG) incluye proporcionalmente
-    más agua corporal, masa de órganos y tejido estructural, no solo músculo. Esto
-    hace que el FFMI se eleve artificialmente y no refleje el desarrollo muscular
-    real. Los umbrales están diseñados para:
-    
-    - GREEN: Rango donde la MLG es principalmente músculo esquelético
-    - AMBER: Zona de transición donde comienza la inflación
-    - RED: Rango donde la inflación es significativa y el FFMI no es interpretable
-    
-    RETORNA:
-    --------
-    str
-        Modo de interpretación: "GREEN", "AMBER" o "RED"
-    
-    REFERENCIAS:
-    -----------
-    - Kouri EM, et al. (1995). Clinical Journal of Sport Medicine.
-    - VanItallie TB, et al. (1990). "Height-normalized indices of body's fat-free
-      mass and fat mass: potentially useful indicators of nutritional status."
-    - Kyle UG, et al. (2004). "Fat-free and fat mass percentiles in 5225 healthy
-      subjects aged 15 to 98 years." Nutrition.
+    Returns:
+        str: Interpretation mode ("GREEN", "AMBER", or "RED")
     """
-    try:
-        grasa = float(grasa_corregida)
-    except (TypeError, ValueError):
-        # Si no se puede determinar, usar GREEN por defecto (conservador)
-        return "GREEN"
-    
-    if sexo == "Hombre":
-        # Umbrales para hombres
-        if 11.9 <= grasa <= 22.7:
-            return "GREEN"
-        elif 22.7 < grasa <= 26.5:
-            return "AMBER"
-        else:  # grasa > 26.5 o grasa < 11.9
-            return "RED"
-    else:  # Mujer
-        # Umbrales para mujeres
-        if 20.8 <= grasa <= 31.0:
-            return "GREEN"
-        elif 31.0 < grasa <= 38.2:
-            return "AMBER"
-        else:  # grasa > 38.2 o grasa < 20.8
-            return "RED"
+    return mcore.determine_ffmi_interpretation_mode(grasa_corregida, sexo)
 
 def calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura_cm=None):
     """
-    Calcula los parámetros para PSMF (Very Low Calorie Diet) actualizada
-    según el nuevo protocolo basado en tiers de adiposidad.
+    Calculate PSMF (Protein-Sparing Modified Fast) protocol parameters.
     
-    Requisitos actualizados con sistema de tiers:
-    - Tier 1 (baja adiposidad): Base = peso total
-    - Tier 2 (adiposidad moderada): Base = MLG
-    - Tier 3 (alta adiposidad): Base = peso ideal (IMC 25)
-    - Proteína según % grasa: 1.8g/kg (<25% grasa) o 1.6g/kg (≥25% grasa)
-    - Grasas según % grasa: 30g/día (<25% grasa) o 50g/día (≥25% grasa)
-    - Calorías objetivo = proteína (g) × multiplicador según % grasa
-    - Multiplicadores: 8.3 (alto % grasa), 9.0 (moderado), 9.5-9.7 (magro)
-    - Carb cap por tier: Tier 1=50g, Tier 2=40g, Tier 3=30g
-    - Carbohidratos: Calculados desde calorías restantes, limitados por carb cap
+    PSMF is a very low calorie diet protocol for rapid fat loss while preserving
+    lean mass. The calculation uses a proprietary tier-based system that adjusts
+    protein, fat, and carbohydrate targets based on individual characteristics.
+    
+    Implementation details, tier system, and calculation logic are protected
+    in methodology_core module.
+    
+    Returns:
+        dict: PSMF parameters or {"psmf_aplicable": False} if not eligible
     """
-    try:
-        peso = float(peso)
-        grasa_corregida = float(grasa_corregida)
-    except (TypeError, ValueError):
-        peso = 70.0
-        grasa_corregida = 20.0
-    
-    # Determinar elegibilidad para PSMF según sexo y % grasa
-    if sexo == "Hombre" and grasa_corregida > 18:
-        psmf_aplicable = True
-        criterio = "PSMF recomendado por % grasa >18%"
-        calorias_piso_dia = 800
-    elif sexo == "Mujer" and grasa_corregida > 23:
-        psmf_aplicable = True
-        criterio = "PSMF recomendado por % grasa >23%"
-        calorias_piso_dia = 700
-    else:
-        return {"psmf_aplicable": False}
-    
-    if psmf_aplicable:
-        # Calcular variables necesarias
-        if estatura_cm is not None:
-            estatura_m = estatura_cm / 100
-            imc = peso / (estatura_m ** 2)
-            peso_ideal_ref_kg = 25 * (estatura_m ** 2)
-        else:
-            estatura_m = None
-            imc = None
-            peso_ideal_ref_kg = None
-        
-        # DETERMINACIÓN DE TIER basado en adiposidad
-        # Tier 3 predomina - verificar primero
-        if (imc is not None and imc >= 40) or \
-           (sexo == "Hombre" and grasa_corregida >= 35) or \
-           (sexo == "Mujer" and grasa_corregida >= 45):
-            tier = 3
-        # Tier 2
-        elif (sexo == "Hombre" and 25 <= grasa_corregida < 35) or \
-             (sexo == "Mujer" and 35 <= grasa_corregida < 45):
-            tier = 2
-        # Tier 1
-        elif (sexo == "Hombre" and grasa_corregida < 25) or \
-             (sexo == "Mujer" and grasa_corregida < 35):
-            tier = 1
-        else:
-            tier = 1  # Default fallback
-        
-        # ELECCIÓN DE BASE DE PROTEÍNA según tier
-        if tier == 1:
-            base_proteina_kg = peso
-            base_proteina_nombre = "Peso total"
-        elif tier == 2:
-            base_proteina_kg = mlg
-            base_proteina_nombre = "MLG"
-        elif tier == 3:
-            base_proteina_kg = peso_ideal_ref_kg if peso_ideal_ref_kg is not None else mlg
-            base_proteina_nombre = "Peso ideal (IMC 25)"
-        else:
-            base_proteina_kg = peso
-            base_proteina_nombre = "Peso total"
-        
-        # FACTORES DE PROTEÍNA Y GRASAS según % grasa corporal corregida
-        if grasa_corregida < 25:
-            # < 25% grasa: 1.8g/kg proteína + 30g grasas
-            factor_proteina_psmf = 1.8
-            grasa_g_dia = 30.0
-        else:
-            # ≥ 25% grasa: 1.6g/kg proteína + 50g grasas
-            factor_proteina_psmf = 1.6
-            grasa_g_dia = 50.0
-        
-        proteina_g_dia = round(base_proteina_kg * factor_proteina_psmf, 1)
-        
-        # MULTIPLICADOR CALÓRICO según % grasa corporal (para calorías objetivo)
-        if grasa_corregida > 35:  # Alto % grasa - PSMF tradicional
-            multiplicador = 8.3
-            perfil_grasa = "alto % grasa (PSMF tradicional)"
-        elif grasa_corregida >= 25 and sexo == "Hombre":  # Moderado para hombres
-            multiplicador = 9.0
-            perfil_grasa = "% grasa moderado"
-        elif grasa_corregida >= 30 and sexo == "Mujer":  # Moderado para mujeres
-            multiplicador = 9.0
-            perfil_grasa = "% grasa moderado"
-        else:  # Casos más magros - visible abdominals/lower %
-            # Usar 9.6 como punto medio del rango 9.5-9.7
-            multiplicador = 9.6
-            perfil_grasa = "más magro (abdominales visibles)"
-        
-        # CALORÍAS OBJETIVO = proteína (g) × multiplicador
-        kcal_psmf_obj = round(proteina_g_dia * multiplicador, 0)
-        
-        # CARB CAP por tier
-        if tier == 1:
-            carb_cap_g = 50
-        elif tier == 2:
-            carb_cap_g = 40
-        elif tier == 3:
-            carb_cap_g = 30
-        else:
-            carb_cap_g = 50  # Default
-        
-        # CÁLCULO DE CARBOHIDRATOS con cap
-        kcal_prot = 4 * proteina_g_dia
-        kcal_grasa = 9 * grasa_g_dia
-        carbs_g_calculado = max((kcal_psmf_obj - (kcal_prot + kcal_grasa)) / 4, 0)
-        
-        carbs_g = min(carbs_g_calculado, carb_cap_g)
-        carb_cap_aplicado = carbs_g_calculado > carb_cap_g
-        
-        # CALORÍAS FINALES recalculadas por macros
-        calorias_dia = kcal_prot + kcal_grasa + (4 * carbs_g)
-        
-        # Verificar que no esté por debajo del piso mínimo
-        if calorias_dia < calorias_piso_dia:
-            calorias_dia = calorias_piso_dia
-        
-        # Calcular rango de pérdida semanal proyectada (estimación conservadora)
-        if sexo == "Hombre":
-            perdida_semanal_min = 0.8  # kg/semana
-            perdida_semanal_max = 1.2
-        else:  # Mujer
-            perdida_semanal_min = 0.6  # kg/semana
-            perdida_semanal_max = 1.0
-        
-        return {
-            "psmf_aplicable": True,
-            "proteina_g_dia": proteina_g_dia,
-            "grasa_g_dia": grasa_g_dia,
-            "carbs_g_dia": round(carbs_g, 1),
-            "calorias_dia": calorias_dia,
-            "calorias_piso_dia": calorias_piso_dia,
-            "multiplicador": multiplicador,
-            "perfil_grasa": perfil_grasa,
-            "perdida_semanal_kg": (perdida_semanal_min, perdida_semanal_max),
-            "criterio": f"{criterio} - Protocolo con tiers: {perfil_grasa}",
-            # Nuevos campos de explainabilidad
-            "tier_psmf": tier,
-            "base_proteina_usada": base_proteina_nombre,
-            "base_proteina_kg": round(base_proteina_kg, 2),
-            "carb_cap_aplicado_g": carb_cap_g,
-            "carb_cap_fue_aplicado": carb_cap_aplicado,
-            "factor_proteina_psmf": factor_proteina_psmf
-        }
-    else:
-        return {"psmf_aplicable": False}
+    return mcore.calculate_psmf_protocol(sexo, peso, grasa_corregida, mlg, estatura_cm)
 
 def sugerir_deficit(porcentaje_grasa, sexo):
-    """Sugiere el déficit calórico recomendado por % de grasa y sexo."""
-    try:
-        porcentaje_grasa = float(porcentaje_grasa)
-    except (TypeError, ValueError):
-        porcentaje_grasa = 0.0
-    rangos_hombre = [
-        (0, 8, 3), (8.1, 10.5, 5), (10.6, 13, 10), (13.1, 15.5, 15),
-        (15.6, 18, 20), (18.1, 20.5, 25), (20.6, 23, 27), (23.1, 25.5, 29),
-        (25.6, 30, 30), (30.1, 32.5, 35), (32.6, 40, 35), (40.1, 45, 40),
-        (45.1, 100, 50)
-    ]
-    rangos_mujer = [
-        (0, 14, 3), (14.1, 16.5, 5), (16.6, 19, 10), (19.1, 21.5, 15),
-        (21.6, 24, 20), (24.1, 26.5, 25), (26.6, 29, 27), (29.1, 31.5, 29),
-        (31.6, 35, 30), (35.1, 40, 30), (40.1, 45, 35), (45.1, 50, 40),
-        (50.1, 100, 50)
-    ]
-    tabla = rangos_hombre if sexo == "Hombre" else rangos_mujer
-    tope = 30
-    limite_extra = 30 if sexo == "Hombre" else 35
-    for minimo, maximo, deficit in tabla:
-        if minimo <= porcentaje_grasa <= maximo:
-            return min(deficit, tope) if porcentaje_grasa <= limite_extra else deficit
-    return 20  # Déficit por defecto
+    """
+    Suggest caloric deficit percentage based on body fat and sex.
+    Deficit ranges are proprietary and protected in methodology_core module.
+    """
+    return mcore.suggest_caloric_deficit(porcentaje_grasa, sexo)
 
 def determinar_fase_nutricional_refinada(grasa_corregida, sexo):
     """
-    Determina la fase nutricional refinada basada en % de grasa corporal y sexo.
-    Usa la tabla completa de rangos para decisiones más precisas.
+    Determine nutritional phase based on body fat percentage and sex.
+    Phase determination logic is proprietary and protected in methodology_core module.
     """
-    try:
-        grasa_corregida = float(grasa_corregida)
-    except (TypeError, ValueError):
-        grasa_corregida = 0.0
-    
-    if sexo == "Hombre":
-        # Rangos refinados para hombres
-        if grasa_corregida < 6:
-            # Muy bajo - competición
-            fase = "Superávit recomendado: 10-15%"
-            porcentaje = 12.5
-        elif grasa_corregida <= 10:
-            # Bajo - atlético
-            fase = "Superávit recomendado: 5-10%"
-            porcentaje = 7.5
-        elif grasa_corregida <= 15:
-            # Fitness/atlético - puede mantener o ligero superávit
-            fase = "Mantenimiento o ligero superávit: 0-5%"
-            porcentaje = 2.5
-        elif grasa_corregida <= 18:
-            # Buena condición - mantenimiento
-            fase = "Mantenimiento"
-            porcentaje = 0
-        else:
-            # Sobrepeso - déficit según tabla
-            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
-            porcentaje = -deficit_valor
-            fase = f"Déficit recomendado: {deficit_valor}%"
-    else:  # Mujer
-        # Rangos refinados para mujeres
-        if grasa_corregida < 12:
-            # Muy bajo - competición
-            fase = "Superávit recomendado: 10-15%"
-            porcentaje = 12.5
-        elif grasa_corregida <= 16:
-            # Bajo - atlético
-            fase = "Superávit recomendado: 5-10%"
-            porcentaje = 7.5
-        elif grasa_corregida <= 20:
-            # Fitness/atlético - puede mantener o ligero superávit
-            fase = "Mantenimiento o ligero superávit: 0-5%"
-            porcentaje = 2.5
-        elif grasa_corregida <= 23:
-            # Buena condición - mantenimiento
-            fase = "Mantenimiento"
-            porcentaje = 0
-        else:
-            # Sobrepeso - déficit según tabla
-            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
-            porcentaje = -deficit_valor
-            fase = f"Déficit recomendado: {deficit_valor}%"
-    
-    return fase, porcentaje
+    return mcore.determine_nutritional_phase(grasa_corregida, sexo)
 
 def calcular_edad_metabolica(edad_cronologica, porcentaje_grasa, sexo):
-    """Calcula la edad metabólica ajustada por % de grasa."""
-    try:
-        edad_cronologica = float(edad_cronologica)
-        porcentaje_grasa = float(porcentaje_grasa)
-    except (TypeError, ValueError):
-        edad_cronologica = 18
-        porcentaje_grasa = 0.0
-    if sexo == "Hombre":
-        grasa_ideal = 15
-    else:
-        grasa_ideal = 22
-    diferencia_grasa = porcentaje_grasa - grasa_ideal
-    ajuste_edad = diferencia_grasa * 0.3
-    edad_metabolica = edad_cronologica + ajuste_edad
-    return max(18, min(80, round(edad_metabolica)))
+    """
+    Calculate metabolic age adjusted for body fat percentage.
+    Calculation algorithm is proprietary and protected in methodology_core module.
+    """
+    return mcore.calculate_metabolic_age(edad_cronologica, porcentaje_grasa, sexo)
 
 def obtener_geaf(nivel):
-    """Devuelve el factor de actividad física (GEAF) según el nivel."""
-    valores = {
-        "Sedentario": 1.00,
-        "Moderadamente-activo": 1.11,
-        "Activo": 1.25,
-        "Muy-activo": 1.45
-    }
-    return valores.get(nivel, 1.00)
+    """
+    Get physical activity factor (GEAF) by activity level.
+    Activity factors are proprietary and protected in methodology_core module.
+    """
+    return mcore.get_activity_factor(nivel)
 
 def esta_en_rango_saludable(porcentaje_grasa, sexo):
     """
-    Determina si el porcentaje de grasa corporal está en rango saludable para ponderar FFMI.
-    
-    Args:
-        porcentaje_grasa: Porcentaje de grasa corporal
-        sexo: "Hombre" o "Mujer"
-    
-    Returns:
-        bool: True si está en rango saludable, False si no
+    Determine if body fat percentage is in healthy range.
+    Healthy range criteria are proprietary and protected in methodology_core module.
     """
-    try:
-        grasa = float(porcentaje_grasa)
-    except (TypeError, ValueError):
-        return True  # Si no se puede determinar, usar ponderación normal por seguridad
-    
-    if sexo == "Hombre":
-        return grasa <= 25.0
-    else:  # Mujer
-        return grasa <= 32.0
+    return mcore.is_in_healthy_range(porcentaje_grasa, sexo)
 
 def obtener_factor_proteina_tradicional(grasa_corregida):
     """
-    Determina el factor de proteína en g/kg según el porcentaje de grasa corporal corregido
-    para el plan tradicional.
-    
-    NOTA: La lógica de proteína NO ha cambiado (según requerimientos)
-    Escala de distribución:
-    - Si grasa_corregida < 10%: 2.2g/kg proteína
-    - Si grasa_corregida < 15%: 2.0g/kg proteína  
-    - Si grasa_corregida < 25%: 1.8g/kg proteína
-    - Si grasa_corregida >= 25%: 1.6g/kg proteína
-    
-    GRASA: Ahora SIEMPRE 40% TMB (independiente del % grasa corporal)
-    
-    Args:
-        grasa_corregida: Porcentaje de grasa corporal corregido
-    
-    Returns:
-        float: Factor de proteína en g/kg peso corporal
+    Get protein factor for traditional plan based on body fat percentage.
+    Protein factor logic is proprietary and protected in methodology_core module.
     """
-    try:
-        grasa = float(grasa_corregida)
-    except (TypeError, ValueError):
-        grasa = 20.0  # Valor por defecto
-    
-    if grasa < 10:
-        return 2.2
-    elif grasa < 15:
-        return 2.0
-    elif grasa < 25:
-        return 1.8
-    else:  # grasa >= 25
-        return 1.6
+    return mcore.get_traditional_protein_factor(grasa_corregida)
 
 def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
     """
-    Determina si se debe usar MLG como base para el cálculo de proteína
-    según las reglas 30/42 para alta adiposidad.
-    
-    Reglas:
-    - Hombres: usar MLG si grasa_corregida >= 30%
-    - Mujeres: usar MLG si grasa_corregida >= 42%
-    - De lo contrario: usar peso total
-    
-    Razón: En obesidad alta, usar peso total infla inapropiadamente la proteína.
-    
-    Args:
-        sexo: "Hombre" o "Mujer"
-        grasa_corregida: Porcentaje de grasa corporal corregido
-    
-    Returns:
-        bool: True si se debe usar MLG, False si se debe usar peso total
+    Determine if lean mass should be used as base for protein calculation.
+    Decision logic (30/42 rule) is proprietary and protected in methodology_core module.
     """
-    try:
-        grasa = float(grasa_corregida)
-    except (TypeError, ValueError):
-        return False
-    
-    if sexo == "Hombre" and grasa >= 30:
-        return True
-    elif sexo == "Mujer" and grasa >= 42:
-        return True
-    else:
-        return False
+    return mcore.should_use_lean_mass_for_protein(sexo, grasa_corregida)
 
 def obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo):
     """
-    Determina el porcentaje del TMB/BMR que debe destinarse a grasas para el plan tradicional.
-    
-    NUEVA LÓGICA CIENTÍFICA (implementada según requerimientos):
-    - Fat intake se establece SIEMPRE en 40% del TMB/BMR para CUALQUIER % de grasa corporal
-    - Esto se basa en evidencia científica que demuestra beneficios metabólicos óptimos
-    - La ingesta mínima se garantiza mediante restricción del 20% del TEI (aplicada posteriormente)
-    
-    Referencias científicas:
-    - Hämäläinen et al., 1984: Efectos metabólicos de diferentes ratios de grasas
-    - Volek et al., 1997: Adaptaciones metabólicas al entrenamiento de resistencia
-    - Smith et al., 2011: Optimización de macronutrientes para composición corporal
-    - Riechman et al., 2007: Síntesis proteica y balance energético
-    - Burke et al., 2011: Estrategias nutricionales para deportistas
-    
-    Args:
-        grasa_corregida: Porcentaje de grasa corporal corregido (no utilizado en nueva lógica)
-        sexo: "Hombre" o "Mujer" (no utilizado en nueva lógica)
-    
-    Returns:
-        float: Porcentaje del TMB destinado a grasas (0.40 = 40%)
+    Get fat percentage of BMR for traditional plan.
+    Fat percentage logic is proprietary and protected in methodology_core module.
     """
-    # Nueva lógica científica: SIEMPRE 40% del TMB/BMR para grasas
-    # independientemente del % de grasa corporal o sexo
-    return 0.40  # 40% TMB (aplicable a todos los usuarios del plan TRADICIONAL)
+    return mcore.get_traditional_fat_percentage(grasa_corregida, sexo)
 
 def calcular_proyeccion_cientifica(sexo, grasa_corregida, nivel_entrenamiento, peso_actual, porcentaje_deficit_superavit):
     """
-    Calcula la proyección científica realista de ganancia o pérdida de peso semanal y total.
-    
-    Args:
-        sexo: "Hombre" o "Mujer"
-        grasa_corregida: Porcentaje de grasa corporal corregido
-        nivel_entrenamiento: "principiante", "intermedio", "avanzado", "élite"
-        peso_actual: Peso actual en kg
-        porcentaje_deficit_superavit: Porcentaje de déficit (-) o superávit (+)
-    
-    Returns:
-        dict con rango_semanal_pct, rango_semanal_kg, rango_total_6sem_kg, explicacion_textual
+    Calculate realistic weight change projection (weekly and total).
+    Projection ranges and adjustment factors are proprietary and protected in methodology_core module.
     """
-    try:
-        peso_actual = float(peso_actual)
-        grasa_corregida = float(grasa_corregida)
-        porcentaje = float(porcentaje_deficit_superavit)
-    except (ValueError, TypeError):
-        peso_actual = 70.0
-        grasa_corregida = 20.0
-        porcentaje = 0.0
-    
-    # Rangos científicos según objetivo, sexo y nivel
-    if porcentaje < 0:  # Déficit (pérdida) - valor negativo
-        if sexo == "Hombre":
-            if nivel_entrenamiento in ["principiante", "intermedio"]:
-                rango_pct_min, rango_pct_max = -1.0, -0.5
-            else:  # avanzado, élite
-                rango_pct_min, rango_pct_max = -0.7, -0.3
-        else:  # Mujer
-            if nivel_entrenamiento in ["principiante", "intermedio"]:
-                rango_pct_min, rango_pct_max = -0.8, -0.3
-            else:  # avanzado, élite
-                rango_pct_min, rango_pct_max = -0.6, -0.2
-        
-        # Ajuste por % grasa (personas con más grasa pueden perder más rápido inicialmente)
-        if grasa_corregida > (25 if sexo == "Hombre" else 30):
-            factor_grasa = 1.2  # 20% más rápido
-        elif grasa_corregida < (12 if sexo == "Hombre" else 18):
-            factor_grasa = 0.8  # 20% más conservador
-        else:
-            factor_grasa = 1.0
-        
-        rango_pct_min *= factor_grasa
-        rango_pct_max *= factor_grasa
-        
-        explicacion = f"Con {grasa_corregida:.1f}% de grasa y nivel {nivel_entrenamiento}, se recomienda una pérdida conservadora pero efectiva. {'Nivel alto de grasa permite pérdida inicial más rápida.' if factor_grasa > 1 else 'Nivel bajo de grasa requiere enfoque más conservador.' if factor_grasa < 1 else 'Nivel óptimo de grasa para pérdida sostenible.'}"
-        
-    elif porcentaje > 0:  # Superávit (ganancia) - valor positivo
-        if sexo == "Hombre":
-            if nivel_entrenamiento in ["principiante", "intermedio"]:
-                rango_pct_min, rango_pct_max = 0.2, 0.5
-            else:  # avanzado, élite
-                rango_pct_min, rango_pct_max = 0.1, 0.3
-        else:  # Mujer
-            if nivel_entrenamiento in ["principiante", "intermedio"]:
-                rango_pct_min, rango_pct_max = 0.1, 0.3
-            else:  # avanzado, élite
-                rango_pct_min, rango_pct_max = 0.05, 0.2
-        
-        explicacion = f"Como {sexo.lower()} con nivel {nivel_entrenamiento}, la ganancia muscular será gradual y sostenible. Los principiantes pueden ganar músculo más rápido que los avanzados."
-        
-    else:  # Mantenimiento
-        rango_pct_min, rango_pct_max = -0.1, 0.1
-        explicacion = f"En mantenimiento, el peso debe mantenerse estable con fluctuaciones menores del ±0.1% semanal debido a variaciones normales de hidratación y contenido intestinal."
-    
-    # Convertir porcentajes a kg
-    rango_kg_min = peso_actual * (rango_pct_min / 100)
-    rango_kg_max = peso_actual * (rango_pct_max / 100)
-    
-    # Proyección total 6 semanas
-    rango_total_min_6sem = rango_kg_min * 6
-    rango_total_max_6sem = rango_kg_max * 6
-    
-    return {
-        "rango_semanal_pct": (rango_pct_min, rango_pct_max),
-        "rango_semanal_kg": (rango_kg_min, rango_kg_max),
-        "rango_total_6sem_kg": (rango_total_min_6sem, rango_total_max_6sem),
-        "explicacion_textual": explicacion
-    }
+    return mcore.calculate_scientific_projection(sexo, grasa_corregida, nivel_entrenamiento, peso_actual, porcentaje_deficit_superavit)
 
 def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
     """
@@ -1994,86 +1261,17 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
 
 def clasificar_grasa_visceral(nivel):
     """
-    Clasifica el nivel de grasa visceral según rangos saludables.
-    
-    Args:
-        nivel: Nivel de grasa visceral (1-59)
-        
-    Returns:
-        str: Clasificación (Saludable, Elevado, Alto riesgo, o N/D)
+    Classify visceral fat level.
+    Classification ranges are proprietary and protected in methodology_core module.
     """
-    if nivel < 1:
-        return "N/D"
-    elif nivel <= 12:
-        return "Saludable"
-    elif nivel <= 15:
-        return "Elevado"
-    else:
-        return "Alto riesgo"
+    return mcore.classify_visceral_fat(nivel)
 
 def clasificar_masa_muscular(porcentaje, edad, sexo):
     """
-    Clasifica el porcentaje de masa muscular según edad y sexo.
-    Solo aplica cuando el campo está vacío o es N/D.
-    
-    Args:
-        porcentaje: Porcentaje de masa muscular (0-100)
-        edad: Edad del cliente
-        sexo: "Hombre" o "Mujer"
-        
-    Returns:
-        str: Clasificación (Bajo, Normal, Alto, o N/D)
+    Classify muscle mass percentage by age and sex.
+    Classification ranges are proprietary and protected in methodology_core module.
     """
-    # Values <= 0 indicate unmeasured/unavailable data
-    # (session state default "" converts to 0.0 via safe_float)
-    if porcentaje <= 0:
-        return "N/D"
-    
-    # Rangos aproximados basados en edad y sexo
-    if sexo == "Hombre":
-        if edad < 40:
-            if porcentaje < 33:
-                return "Bajo"
-            elif porcentaje < 40:
-                return "Normal"
-            else:
-                return "Alto"
-        elif edad < 60:
-            if porcentaje < 30:
-                return "Bajo"
-            elif porcentaje < 37:
-                return "Normal"
-            else:
-                return "Alto"
-        else:
-            if porcentaje < 27:
-                return "Bajo"
-            elif porcentaje < 34:
-                return "Normal"
-            else:
-                return "Alto"
-    else:  # Mujer
-        if edad < 40:
-            if porcentaje < 24:
-                return "Bajo"
-            elif porcentaje < 31:
-                return "Normal"
-            else:
-                return "Alto"
-        elif edad < 60:
-            if porcentaje < 22:
-                return "Bajo"
-            elif porcentaje < 28:
-                return "Normal"
-            else:
-                return "Alto"
-        else:
-            if porcentaje < 20:
-                return "Bajo"
-            elif porcentaje < 26:
-                return "Normal"
-            else:
-                return "Alto"
+    return mcore.classify_muscle_mass(porcentaje, edad, sexo)
 
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
                         masa_muscular, grasa_visceral, mlg, tmb):
@@ -2866,26 +2064,22 @@ if psmf_recs.get("psmf_aplicable"):
     base_proteina_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
     carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
     st.warning(f"""
-    ⚡ **CANDIDATO PARA PROTOCOLO PSMF ACTUALIZADO**
-    Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
+    ⚡ **CANDIDATO PARA PROTOCOLO PSMF**
+    Según tu composición corporal ({grasa_corregida:.1f}% grasa), podrías beneficiarte de una fase de pérdida rápida:
     
-    🏷️ **Tier de adiposidad:** Tier {tier_psmf}
-    🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg {base_proteina_usada})
+    🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día (optimizada para preservar masa muscular)
     🥑 **Grasas diarias:** {psmf_recs['grasa_g_dia']} g/día
-    🌾 **Carbohidratos diarios:** {psmf_recs.get('carbs_g_dia', 0)} g/día (tope: {carb_cap}g)
+    🌾 **Carbohidratos diarios:** {psmf_recs.get('carbs_g_dia', 0)} g/día (limitados, solo vegetales)
     🔥 **Calorías diarias:** {psmf_recs['calorias_dia']:.0f} kcal/día
-    📊 **Multiplicador:** {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
     📈 **Pérdida semanal proyectada:** {perdida_min}-{perdida_max} kg/semana
-    ⚠️ **Mínimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/día
-    📋 **Criterio:** {psmf_recs['criterio']}
     
     ⚠️ **ADVERTENCIAS DE SEGURIDAD:**
     • Duración máxima: 6-8 semanas
     • Requiere supervisión médica/nutricional
-    • Carbohidratos limitados según tier (solo de vegetales fibrosos)
+    • Carbohidratos muy limitados (solo vegetales fibrosos)
     • Suplementación obligatoria: multivitamínico, omega-3, electrolitos
     
-    *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
+    *PSMF = Protein Sparing Modified Fast (protocolo de pérdida rápida preservando músculo)*
     """)
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -3707,27 +2901,20 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             with col2:
                 deficit_psmf = int((1 - psmf_recs['calorias_dia']/GE) * 100)
                 perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
-                multiplicador = psmf_recs.get('multiplicador', 8.3)
-                perfil_grasa = psmf_recs.get('perfil_grasa', 'alto % grasa')
                 
                 st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-                st.markdown("#### ⚡ Protocolo PSMF Actualizado")
+                st.markdown("#### ⚡ Protocolo PSMF")
                 st.metric("Déficit", f"~{deficit_psmf}%", "Agresivo")
                 st.metric("Calorías", f"{psmf_recs['calorias_dia']:.0f} kcal/día")
-                st.metric("Multiplicador", f"{multiplicador}", f"Perfil: {perfil_grasa}")
                 st.metric("Pérdida esperada", f"{perdida_min}-{perdida_max} kg/semana")
-                tier_psmf = psmf_recs.get('tier_psmf', 1)
-                base_prot_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
-                carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
                 st.markdown(f"""
                 **Consideraciones:**
                 - ⚠️ Muy restrictivo
                 - ⚠️ Máximo 6-8 semanas
                 - ⚠️ Requiere supervisión médica
-                - 🏷️ Tier {tier_psmf} (base: {base_prot_usada})
-                - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día ({'1.8g/kg' if grasa_corregida < 25 else '1.6g/kg'} automático)
-                - ⚠️ Grasas: {psmf_recs.get('grasa_g_dia', 40)}g/día (automático según % grasa)
-                - ⚠️ Carbos: {psmf_recs.get('carbs_g_dia', 0)}g/día (tope: {carb_cap}g)
+                - ⚠️ Proteína: {psmf_recs['proteina_g_dia']}g/día (optimizada)
+                - ⚠️ Grasas: {psmf_recs.get('grasa_g_dia', 40)}g/día (optimizada)
+                - ⚠️ Carbos: {psmf_recs.get('carbs_g_dia', 0)}g/día (limitados)
                 - ⚠️ Suplementación necesaria
                 """)
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -3762,17 +2949,15 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
         carb_cap_fue_aplicado = psmf_recs.get('carb_cap_fue_aplicado', False)
         
-        fase = f"PSMF Actualizado - Pérdida rápida (déficit ~{deficit_psmf}%, multiplicador {multiplicador}, Tier {tier_psmf})"
+        fase = f"PSMF - Pérdida rápida (déficit ~{deficit_psmf}%)"
 
         st.error(f"""
-        ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
-        - Es un protocolo **MUY RESTRICTIVO** con cálculo basado en tiers de adiposidad
+        ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PROTOCOLO PSMF:**
+        - Es un protocolo **MUY RESTRICTIVO** calculado específicamente para tu composición corporal
         - **Duración máxima:** 6-8 semanas
-        - **Tier de adiposidad:** Tier {tier_psmf} (base proteína: {base_proteina_usada})
-        - **Proteína:** {proteina_g}g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg según {grasa_corregida:.1f}% grasa corporal)
-        - **Grasas:** {grasa_g}g/día (asignación automática según {grasa_corregida:.1f}% grasa corporal)
-        - **Carbohidratos:** {carbo_g}g/día (tope Tier {tier_psmf}: {carb_cap}g) - Solo de vegetales fibrosos
-        - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
+        - **Proteína:** {proteina_g}g/día (calculada según tu composición)
+        - **Grasas:** {grasa_g}g/día (asignación optimizada)
+        - **Carbohidratos:** {carbo_g}g/día (solo de vegetales fibrosos)
         - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
         - **Requiere:** Supervisión médica y análisis de sangre regulares
         - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
@@ -3780,7 +2965,7 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         """)
         
         if carb_cap_fue_aplicado:
-            st.info("💡 Se aplicó tope de carbohidratos para mantener PSMF consistente; kcal finales recalculadas por macros.")
+            st.info("💡 Los carbohidratos han sido optimizados para tu protocolo PSMF.")
     else:
         # ----------- TRADICIONAL -----------
         ingesta_calorica = ingesta_calorica_tradicional
@@ -3828,9 +3013,9 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
 
         # --- DESGLOSE FINAL VISUAL ---
         st.markdown("### 🍽️ Distribución de macronutrientes")
-        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%) - Base: {base_proteina_nombre} ({base_proteina_kg:.1f} kg × {factor_proteina} g/kg)")
+        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%) - Calculada según tu composición corporal")
         if usar_mlg_para_proteina:
-            st.info("ℹ️ En alta adiposidad, usar peso total infla la proteína de forma inapropiada; por eso se usa MLG como base.")
+            st.info("ℹ️ Tu proteína ha sido calculada optimizando para tu composición corporal actual.")
         st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
         st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
 
@@ -4129,26 +3314,10 @@ Una vez logrado, el FFMI será interpretable y útil para evaluar progreso muscu
 # Helper function to classify FMI for email
 def clasificar_fmi_email(fmi, sexo):
     """
-    Clasifica el FMI para el email según sexo.
+    Classify FMI for email reporting.
+    Classification ranges are proprietary and protected in methodology_core module.
     """
-    if sexo == "Hombre":
-        if fmi < 3:
-            return "Bajo (<3)"
-        elif fmi < 6:
-            return "Normal (3-6)"
-        elif fmi < 9:
-            return "Elevado (6-9)"
-        else:
-            return "Muy elevado (>9)"
-    else:  # Mujer
-        if fmi < 5:
-            return "Bajo (<5)"
-        elif fmi < 9:
-            return "Normal (5-9)"
-        elif fmi < 13:
-            return "Elevado (9-13)"
-        else:
-            return "Muy elevado (>13)"
+    return mcore.classify_fmi(fmi, sexo)
 
 # Generate classification texts
 texto_clasificacion_ffmi = generar_texto_clasificacion_ffmi(
@@ -4436,9 +3605,7 @@ grasa_kcal_tradicional = grasa_g_tradicional * 9
 carbo_kcal_tradicional = plan_tradicional_calorias - proteina_kcal_tradicional - grasa_kcal_tradicional
 carbo_g_tradicional = carbo_kcal_tradicional / 4
 
-nota_mlg_email = f"\n  (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
-if usar_mlg_para_proteina_email:
-    nota_mlg_email += "\n  ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
+nota_mlg_email = f"\n  (Proteína calculada según composición corporal)" if usar_mlg_para_proteina_email else ""
 
 tabla_resumen += f"""
 📊 PLAN TRADICIONAL (DÉFICIT/SUPERÁVIT MODERADO):
@@ -4451,7 +3618,7 @@ tabla_resumen += f"""
 - Pérdida/ganancia esperada: 0.3-0.7% peso corporal/semana
 - Duración recomendada: Indefinida con ajustes periódicos
 
-⚡ PROTOCOLO PSMF ACTUALIZADO {'(APLICABLE)' if plan_psmf_disponible else '(NO APLICABLE)'}:"""
+⚡ PROTOCOLO PSMF {'(APLICABLE)' if plan_psmf_disponible else '(NO APLICABLE)'}:"""
 
 if plan_psmf_disponible:
     # Calcular carbohidratos PSMF usando la fórmula especificada
@@ -4461,12 +3628,10 @@ if plan_psmf_disponible:
     grasa_kcal_psmf = psmf_recs['grasa_g_dia'] * 9
     
     tabla_resumen += f"""
-- Calorías: {psmf_recs['calorias_dia']:.0f} kcal/día
-- Criterio de aplicabilidad: {psmf_recs.get('criterio', 'No especificado')}
-- Proteína: {psmf_recs['proteina_g_dia']:.1f}g ({proteina_kcal_psmf:.0f} kcal) = {proteina_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}%
-- Grasas: {psmf_recs['grasa_g_dia']:.1f}g ({grasa_kcal_psmf:.0f} kcal) = {grasa_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}%
-- Carbohidratos: {carbo_g_psmf:.1f}g ({carbo_kcal_psmf:.0f} kcal) = {carbo_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}% (solo vegetales fibrosos)
-- Multiplicador calórico: {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
+- Calorías: {psmf_recs['calorias_dia']:.0f} kcal/día (calculadas según composición corporal)
+- Proteína: {psmf_recs['proteina_g_dia']:.1f}g ({proteina_kcal_psmf:.0f} kcal) = {proteina_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}% (optimizada)
+- Grasas: {psmf_recs['grasa_g_dia']:.1f}g ({grasa_kcal_psmf:.0f} kcal) = {grasa_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}% (optimizada)
+- Carbohidratos: {carbo_g_psmf:.1f}g ({carbo_kcal_psmf:.0f} kcal) = {carbo_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}% (limitados - solo vegetales)
 - Déficit estimado: ~{int((1 - psmf_recs['calorias_dia']/(GE if 'GE' in locals() else 2000)) * 100) if psmf_recs.get('calorias_dia', 0) > 0 else 0}%
 - Pérdida esperada: {psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[0]}-{psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[1]} kg/semana
 - Sostenibilidad: BAJA - Máximo 6-8 semanas
@@ -4475,10 +3640,8 @@ if plan_psmf_disponible:
 - Monitoreo requerido: Análisis de sangre regulares"""
 else:
     tabla_resumen += f"""
-- RAZÓN DE NO APLICABILIDAD: % grasa no cumple criterios mínimos
-- Criterio hombres: >18% grasa corporal (actual: {grasa_corregida:.1f}%)
-- Criterio mujeres: >23% grasa corporal (actual: {grasa_corregida:.1f}%)
-- RECOMENDACIÓN: Usar plan tradicional hasta alcanzar % grasa objetivo"""
+- No aplicable según tu composición corporal actual
+- RECOMENDACIÓN: Usar plan tradicional"""
 
 tabla_resumen += f"""
 
