@@ -11,6 +11,13 @@ import random
 import string
 
 # ==================== CONSTANTES ====================
+
+# Global flag to control visibility of technical details in UI
+# When False: Hide technical calculations, formulas, factors, and detailed breakdowns
+# When True: Show all technical details for internal testing and validation
+# Note: Email report generation is ALWAYS unaffected by this flag
+SHOW_TECH_DETAILS = False
+
 # Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
 # Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
 OMRON_HBF516_TO_4C = {
@@ -342,6 +349,51 @@ def should_hide_during_intake():
         bool: True if NOT in 'intake' phase, False otherwise
     """
     return get_flow_phase() != "intake"
+
+# ==================== UI RENDERING HELPERS FOR TECHNICAL DETAILS ====================
+
+def render_metric(label, value, delta=None, help_text=None):
+    """
+    Conditionally renders a metric based on SHOW_TECH_DETAILS flag.
+    
+    When SHOW_TECH_DETAILS is False, this function does nothing (hides technical metrics).
+    When SHOW_TECH_DETAILS is True, renders the metric using st.metric().
+    
+    Args:
+        label (str): The metric label
+        value (str): The metric value
+        delta (str, optional): The delta value for the metric
+        help_text (str, optional): Help text for the metric
+    
+    Example:
+        render_metric("FFMI", f"{ffmi:.2f}", help_text="Fat-Free Mass Index")
+    """
+    if SHOW_TECH_DETAILS:
+        st.metric(label, value, delta=delta, help=help_text)
+
+def render_technical_block(render_func):
+    """
+    Conditionally renders a block of technical content based on SHOW_TECH_DETAILS flag.
+    
+    When SHOW_TECH_DETAILS is False, the render function is NOT executed (hides technical content).
+    When SHOW_TECH_DETAILS is True, executes the render function to display technical details.
+    
+    Use this for entire sections or blocks of technical information that should be hidden
+    from clients but available for internal testing.
+    
+    Args:
+        render_func: A callable (function or lambda) that renders the technical content
+    
+    Example:
+        render_technical_block(lambda: st.markdown("### Technical Details..."))
+        
+        # Or with a defined function:
+        def show_technical_info():
+            st.write("Detailed calculations...")
+        render_technical_block(show_technical_info)
+    """
+    if SHOW_TECH_DETAILS:
+        render_func()
 
 # ==================== CONFIGURACIÓN DE PÁGINA Y CSS MEJORADO ====================
 st.set_page_config(
@@ -2580,8 +2632,8 @@ if datos_personales_completos and st.session_state.datos_completos:
     # FFMI con visualización mejorada y explicación detallada
     st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI) y Adiposidad (FMI)")
     
-    # Technical details: FFMI mode interpretation (only shown in final phase)
-    if should_render_technical():
+    # Technical details: FFMI mode interpretation (controlled by SHOW_TECH_DETAILS flag)
+    if SHOW_TECH_DETAILS:
         # Mostrar modo de interpretación con badge
         modo_colors = {
             "GREEN": ("success", "🟢", "Interpretación válida como muscularidad"),
@@ -2629,8 +2681,13 @@ if datos_personales_completos and st.session_state.datos_completos:
     with col1:
         st.markdown("#### FFMI (Masa Libre de Grasa / Altura²)")
         
-        # Technical details: Detailed FFMI classifications (only shown in final phase)
-        if should_render_technical() and modo_ffmi == "GREEN":
+        # Always show basic classification, hide technical details
+        if not SHOW_TECH_DETAILS:
+            # Client-facing: Show only high-level classification
+            st.markdown(f"""
+            <h2 style="margin: 0;">Nivel: {nivel_ffmi}</h2>
+            """, unsafe_allow_html=True)
+        elif SHOW_TECH_DETAILS and modo_ffmi == "GREEN":
             # MODO GREEN: Mostrar clasificación completa
             color_nivel = {
                 "Bajo": "danger",
@@ -2684,7 +2741,7 @@ if datos_personales_completos and st.session_state.datos_completos:
             - Élite: >{rangos_ffmi['Avanzado']}
             """)
             
-        elif should_render_technical() and modo_ffmi == "AMBER":
+        elif SHOW_TECH_DETAILS and modo_ffmi == "AMBER":
             # MODO AMBER: Mostrar valor pero con interpretación limitada
             st.markdown(f"""
             <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
@@ -2703,7 +2760,7 @@ if datos_personales_completos and st.session_state.datos_completos:
             un indicador más preciso de tu muscularidad.
             """)
             
-        elif should_render_technical():  # RED mode
+        elif SHOW_TECH_DETAILS:  # RED mode
             # MODO RED: Mostrar valor con explicación clara de no aplicabilidad
             st.markdown(f"""
             <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
@@ -2725,12 +2782,15 @@ if datos_personales_completos and st.session_state.datos_completos:
     
     with col2:
         st.markdown("#### FMI/BFMI (Masa Grasa / Altura²)")
-        st.markdown(f"""
-        <h2 style="margin: 0;">FMI: {fmi:.2f}</h2>
-        """, unsafe_allow_html=True)
         
-        # Technical details: FMI classification (only shown in final phase)
-        if should_render_technical():
+        # Technical details: FMI classification (controlled by SHOW_TECH_DETAILS flag)
+        if not SHOW_TECH_DETAILS:
+            # Client-facing: Hide FMI technical details entirely
+            pass
+        elif SHOW_TECH_DETAILS:
+            st.markdown(f"""
+            <h2 style="margin: 0;">FMI: {fmi:.2f}</h2>
+            """, unsafe_allow_html=True)
             # Clasificar FMI según sexo
             if sexo == "Hombre":
                 if fmi < 3:
@@ -2779,8 +2839,8 @@ if datos_personales_completos and st.session_state.datos_completos:
             composición corporal completa.
             """)
     
-    # Technical details: Additional FFMI mode explanation (only shown in final phase)
-    if should_render_technical() and modo_ffmi != "GREEN":
+    # Technical details: Additional FFMI mode explanation (controlled by SHOW_TECH_DETAILS flag)
+    if SHOW_TECH_DETAILS and modo_ffmi != "GREEN":
         st.info(f"""
         💡 **Nota sobre interpretación FFMI:**
         
@@ -2861,32 +2921,48 @@ mlg = calcular_mlg(peso, grasa_corregida)
 psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura)
 if psmf_recs.get("psmf_aplicable"):
     st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
-    perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
-    tier_psmf = psmf_recs.get('tier_psmf', 1)
-    base_proteina_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
-    carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
-    st.warning(f"""
-    ⚡ **CANDIDATO PARA PROTOCOLO PSMF ACTUALIZADO**
-    Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
     
-    🏷️ **Tier de adiposidad:** Tier {tier_psmf}
-    🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg {base_proteina_usada})
-    🥑 **Grasas diarias:** {psmf_recs['grasa_g_dia']} g/día
-    🌾 **Carbohidratos diarios:** {psmf_recs.get('carbs_g_dia', 0)} g/día (tope: {carb_cap}g)
-    🔥 **Calorías diarias:** {psmf_recs['calorias_dia']:.0f} kcal/día
-    📊 **Multiplicador:** {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
-    📈 **Pérdida semanal proyectada:** {perdida_min}-{perdida_max} kg/semana
-    ⚠️ **Mínimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/día
-    📋 **Criterio:** {psmf_recs['criterio']}
-    
-    ⚠️ **ADVERTENCIAS DE SEGURIDAD:**
-    • Duración máxima: 6-8 semanas
-    • Requiere supervisión médica/nutricional
-    • Carbohidratos limitados según tier (solo de vegetales fibrosos)
-    • Suplementación obligatoria: multivitamínico, omega-3, electrolitos
-    
-    *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
-    """)
+    # High-level message for clients (always shown)
+    if not SHOW_TECH_DETAILS:
+        st.warning(f"""
+        ⚡ **CANDIDATO PARA PROTOCOLO PSMF**
+        Por tu composición corporal, podrías beneficiarte de una fase de pérdida rápida.
+        
+        ⚠️ **ADVERTENCIAS DE SEGURIDAD:**
+        • Duración máxima: 6-8 semanas
+        • Requiere supervisión médica/nutricional
+        • Suplementación obligatoria: multivitamínico, omega-3, electrolitos
+        
+        *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
+        """)
+    else:
+        # Technical details (only shown when SHOW_TECH_DETAILS = True)
+        perdida_min, perdida_max = psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))
+        tier_psmf = psmf_recs.get('tier_psmf', 1)
+        base_proteina_usada = psmf_recs.get('base_proteina_usada', 'Peso total')
+        carb_cap = psmf_recs.get('carb_cap_aplicado_g', 50)
+        st.warning(f"""
+        ⚡ **CANDIDATO PARA PROTOCOLO PSMF ACTUALIZADO**
+        Por tu % de grasa corporal ({grasa_corregida:.1f}%), podrías beneficiarte de una fase de pérdida rápida:
+        
+        🏷️ **Tier de adiposidad:** Tier {tier_psmf}
+        🥩 **Proteína diaria:** {psmf_recs['proteina_g_dia']} g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg {base_proteina_usada})
+        🥑 **Grasas diarias:** {psmf_recs['grasa_g_dia']} g/día
+        🌾 **Carbohidratos diarios:** {psmf_recs.get('carbs_g_dia', 0)} g/día (tope: {carb_cap}g)
+        🔥 **Calorías diarias:** {psmf_recs['calorias_dia']:.0f} kcal/día
+        📊 **Multiplicador:** {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
+        📈 **Pérdida semanal proyectada:** {perdida_min}-{perdida_max} kg/semana
+        ⚠️ **Mínimo absoluto:** {psmf_recs['calorias_piso_dia']} kcal/día
+        📋 **Criterio:** {psmf_recs['criterio']}
+        
+        ⚠️ **ADVERTENCIAS DE SEGURIDAD:**
+        • Duración máxima: 6-8 semanas
+        • Requiere supervisión médica/nutricional
+        • Carbohidratos limitados según tier (solo de vegetales fibrosos)
+        • Suplementación obligatoria: multivitamínico, omega-3, electrolitos
+        
+        *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
+        """)
     st.markdown('</div>', unsafe_allow_html=True)
     
 rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
@@ -3415,8 +3491,8 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
     st.session_state.nivel_actividad = nivel_actividad_text
     st.session_state.geaf = geaf
 
-    # Technical details: Display GEAF factor details (only shown in final phase)
-    if should_render_technical():
+    # Technical details: Display GEAF factor details (controlled by SHOW_TECH_DETAILS flag)
+    if SHOW_TECH_DETAILS:
         # Mensaje resumen
         st.success(
             f"✅ **Tu nivel de actividad física diaria: {nivel_actividad_text}**\n\n"
@@ -3461,8 +3537,8 @@ with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", e
     st.session_state.eta_desc = eta_desc
     st.session_state.eta_color = eta_color
 
-    # Technical details: Display ETA calculation details (only shown in final phase)
-    if should_render_technical():
+    # Technical details: Display ETA calculation details (controlled by SHOW_TECH_DETAILS flag)
+    if SHOW_TECH_DETAILS:
         st.markdown("### 🔥 Determinación automática del ETA")
         col1, col2 = st.columns([2, 1])
         with col1:
@@ -3685,8 +3761,8 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         else:
             grasa_psmf_seleccionada = 40.0  # Valor por defecto para plan tradicional
 
-        # Technical details: Detailed plan comparison (only shown in final phase)
-        if should_render_technical():
+        # Technical details: Detailed plan comparison (controlled by SHOW_TECH_DETAILS flag)
+        if SHOW_TECH_DETAILS:
             st.markdown("### 📊 Comparativa de planes")
             col1, col2 = st.columns(2)
             with col1:
@@ -3764,22 +3840,33 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         
         fase = f"PSMF Actualizado - Pérdida rápida (déficit ~{deficit_psmf}%, multiplicador {multiplicador}, Tier {tier_psmf})"
 
-        st.error(f"""
-        ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
-        - Es un protocolo **MUY RESTRICTIVO** con cálculo basado en tiers de adiposidad
-        - **Duración máxima:** 6-8 semanas
-        - **Tier de adiposidad:** Tier {tier_psmf} (base proteína: {base_proteina_usada})
-        - **Proteína:** {proteina_g}g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg según {grasa_corregida:.1f}% grasa corporal)
-        - **Grasas:** {grasa_g}g/día (asignación automática según {grasa_corregida:.1f}% grasa corporal)
-        - **Carbohidratos:** {carbo_g}g/día (tope Tier {tier_psmf}: {carb_cap}g) - Solo de vegetales fibrosos
-        - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
-        - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
-        - **Requiere:** Supervisión médica y análisis de sangre regulares
-        - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
-        - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
-        """)
+        # Client-facing vs technical warnings
+        if not SHOW_TECH_DETAILS:
+            st.error(f"""
+            ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF:**
+            - Es un protocolo **MUY RESTRICTIVO**
+            - **Duración máxima:** 6-8 semanas
+            - **Requiere:** Supervisión médica y análisis de sangre regulares
+            - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
+            - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
+            """)
+        else:
+            st.error(f"""
+            ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
+            - Es un protocolo **MUY RESTRICTIVO** con cálculo basado en tiers de adiposidad
+            - **Duración máxima:** 6-8 semanas
+            - **Tier de adiposidad:** Tier {tier_psmf} (base proteína: {base_proteina_usada})
+            - **Proteína:** {proteina_g}g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg según {grasa_corregida:.1f}% grasa corporal)
+            - **Grasas:** {grasa_g}g/día (asignación automática según {grasa_corregida:.1f}% grasa corporal)
+            - **Carbohidratos:** {carbo_g}g/día (tope Tier {tier_psmf}: {carb_cap}g) - Solo de vegetales fibrosos
+            - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
+            - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
+            - **Requiere:** Supervisión médica y análisis de sangre regulares
+            - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
+            - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
+            """)
         
-        if carb_cap_fue_aplicado:
+        if SHOW_TECH_DETAILS and carb_cap_fue_aplicado:
             st.info("💡 Se aplicó tope de carbohidratos para mantener PSMF consistente; kcal finales recalculadas por macros.")
     else:
         # ----------- TRADICIONAL -----------
@@ -3827,58 +3914,69 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
             st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
 
         # --- DESGLOSE FINAL VISUAL ---
-        st.markdown("### 🍽️ Distribución de macronutrientes")
-        st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%) - Base: {base_proteina_nombre} ({base_proteina_kg:.1f} kg × {factor_proteina} g/kg)")
-        if usar_mlg_para_proteina:
-            st.info("ℹ️ En alta adiposidad, usar peso total infla la proteína de forma inapropiada; por eso se usa MLG como base.")
-        st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
-        st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
+        # Technical details: Hide detailed breakdown formulas
+        if SHOW_TECH_DETAILS:
+            st.markdown("### 🍽️ Distribución de macronutrientes")
+            st.write(f"- **Proteína:** {proteina_g}g ({proteina_kcal:.0f} kcal, {proteina_kcal/ingesta_calorica*100:.1f}%) - Base: {base_proteina_nombre} ({base_proteina_kg:.1f} kg × {factor_proteina} g/kg)")
+            if usar_mlg_para_proteina:
+                st.info("ℹ️ En alta adiposidad, usar peso total infla la proteína de forma inapropiada; por eso se usa MLG como base.")
+            st.write(f"- **Grasas:** {grasa_g}g ({grasa_kcal:.0f} kcal, {grasa_kcal/ingesta_calorica*100:.1f}%)")
+            st.write(f"- **Carbohidratos:** {carbo_g}g ({carbo_kcal:.0f} kcal, {carbo_kcal/ingesta_calorica*100:.1f}%)")
 
 
 
         # Resultado final con diseño premium
         st.markdown("### 🎯 Tu plan nutricional personalizado")
 
-        # Métricas principales
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
-                     f"{ingesta_calorica/peso:.1f} kcal/kg" if peso > 0 else "– kcal/kg")
-        with col2:
-            st.metric("🥩 Proteína", f"{proteina_g} g", 
-                     f"{proteina_g/peso:.2f} g/kg" if peso > 0 else "– g/kg")
-        with col3:
-            st.metric("🥑 Grasas", f"{grasa_g} g", 
-                     f"{round(grasa_kcal/ingesta_calorica*100)}%" if ingesta_calorica > 0 else "–%")
-        with col4:
-            st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
-                     f"{round(carbo_kcal/ingesta_calorica*100)}%")
+        # Client-facing: Always show high-level results
+        st.markdown(f"""
+        **Calorías objetivo:** {ingesta_calorica:.0f} kcal/día
+        
+        **Macros finales (P/F/C):** {proteina_g}g / {grasa_g}g / {carbo_g}g
+        """)
+        
+        # Technical details: Show detailed metrics and breakdowns
+        if SHOW_TECH_DETAILS:
+            # Métricas principales
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("🔥 Calorías", f"{ingesta_calorica:.0f} kcal/día", 
+                         f"{ingesta_calorica/peso:.1f} kcal/kg" if peso > 0 else "– kcal/kg")
+            with col2:
+                st.metric("🥩 Proteína", f"{proteina_g} g", 
+                         f"{proteina_g/peso:.2f} g/kg" if peso > 0 else "– g/kg")
+            with col3:
+                st.metric("🥑 Grasas", f"{grasa_g} g", 
+                         f"{round(grasa_kcal/ingesta_calorica*100)}%" if ingesta_calorica > 0 else "–%")
+            with col4:
+                st.metric("🍞 Carbohidratos", f"{carbo_g} g", 
+                         f"{round(carbo_kcal/ingesta_calorica*100)}%")
 
-        # Visualización de distribución de macros
-        st.markdown("### 📊 Distribución de macronutrientes")
-        import pandas as pd
-        macro_data = {
-            "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
-            "Gramos": [proteina_g, grasa_g, carbo_g],
-            "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
-            "% del total": [
-                f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
-                f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
-            ]
-        }
-        df_macros = pd.DataFrame(macro_data)
-        st.dataframe(
-            df_macros,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
-                "Gramos": st.column_config.TextColumn("Gramos/día", width="small"),
-                "Calorías": st.column_config.TextColumn("Calorías", width="small"),
-                "% del total": st.column_config.TextColumn("% Total", width="small"),
+            # Visualización de distribución de macros
+            st.markdown("### 📊 Distribución de macronutrientes")
+            import pandas as pd
+            macro_data = {
+                "Macronutriente": ["Proteína", "Grasas", "Carbohidratos"],
+                "Gramos": [proteina_g, grasa_g, carbo_g],
+                "Calorías": [f"{proteina_kcal:.0f}", f"{grasa_kcal:.0f}", f"{carbo_kcal:.0f}"],
+                "% del total": [
+                    f"{round(proteina_kcal/ingesta_calorica*100, 1)}%",
+                    f"{round(grasa_kcal/ingesta_calorica*100, 1)}%",
+                    f"{round(carbo_kcal/ingesta_calorica*100, 1)}%"
+                ]
             }
-        )
+            df_macros = pd.DataFrame(macro_data)
+            st.dataframe(
+                df_macros,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Macronutriente": st.column_config.TextColumn("Macronutriente", width="medium"),
+                    "Gramos": st.column_config.TextColumn("Gramos/día", width="small"),
+                    "Calorías": st.column_config.TextColumn("Calorías", width="small"),
+                    "% del total": st.column_config.TextColumn("% Total", width="small"),
+                }
+            )
 
         # Recomendaciones adicionales
         st.markdown("### 💡 Recomendaciones para optimizar resultados")
