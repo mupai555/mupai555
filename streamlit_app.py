@@ -11,6 +11,9 @@ import random
 import string
 
 # Import proprietary methodology (implementation details protected)
+# The methodology_core module provides a clean public interface for all calculations
+# while protecting the specific algorithms, thresholds, and classification logic.
+# Use the public functions provided; do not attempt to access internal implementation.
 import methodology_core as mcore
 
 # ==================== CONSTANTS (PROTECTED) ====================
