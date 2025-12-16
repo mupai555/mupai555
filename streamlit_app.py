@@ -3588,7 +3588,20 @@ if MOSTRAR_ETA_AL_USUARIO:
                 """)
 
         st.markdown('</div>', unsafe_allow_html=True)
-    # BLOQUE 5: Entrenamiento de fuerza
+else:
+    # BLOQUE 4: Placeholder when ETA details are hidden from users
+    with st.expander("📊 **Paso 4: Cálculo Automático de Factores Metabólicos**", expanded=False):
+        progress.progress(70)
+        progress_text.text("Paso 4 de 5: Procesamiento automático")
+        
+        st.info("""
+        ℹ️ **Este paso se calcula automáticamente en función de los datos que has proporcionado.**
+        
+        Nuestro sistema procesa tu información de composición corporal y nivel de actividad para 
+        ajustar de manera precisa tus requerimientos energéticos totales.
+        """)
+
+# BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
     progress.progress(80)
     progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
