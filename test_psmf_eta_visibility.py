@@ -27,6 +27,9 @@ def test_visibility_flags_defined():
         "MOSTRAR_ETA_AL_USUARIO flag not found or not set to False"
     print("✓ MOSTRAR_ETA_AL_USUARIO flag is properly defined as False")
 
+# Constants for test validation
+CONTEXT_LINES_TO_CHECK = 5  # Number of preceding lines to check for conditional blocks
+
 def test_psmf_calculations_always_run():
     """Test that PSMF calculations execute unconditionally."""
     with open('streamlit_app.py', 'r', encoding='utf-8') as f:
@@ -46,7 +49,7 @@ def test_psmf_calculations_always_run():
     assert calc_line is not None, "Could not find PSMF calculation line"
     
     # Check preceding lines to ensure it's not in a conditional block
-    preceding_lines = lines[max(0, calc_line-5):calc_line]
+    preceding_lines = lines[max(0, calc_line-CONTEXT_LINES_TO_CHECK):calc_line]
     for line in preceding_lines:
         if 'if MOSTRAR_PSMF_AL_USUARIO' in line:
             raise AssertionError("PSMF calculation should not be inside MOSTRAR_PSMF_AL_USUARIO conditional")
@@ -234,7 +237,7 @@ def test_flags_have_comments():
     for i, line in enumerate(lines):
         if 'MOSTRAR_PSMF_AL_USUARIO' in line and '=' in line:
             # Check for comment explaining the flag
-            preceding_lines = ''.join(lines[max(0, i-5):i+1])
+            preceding_lines = ''.join(lines[max(0, i-CONTEXT_LINES_TO_CHECK):i+1])
             assert 'Control' in preceding_lines or 'visibility' in preceding_lines.lower(), \
                 "MOSTRAR_PSMF_AL_USUARIO should have explanatory comments"
             break

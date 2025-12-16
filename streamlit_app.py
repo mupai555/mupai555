@@ -3522,6 +3522,16 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
 # ETA calculations ALWAYS run regardless of UI visibility flag
 # This ensures values are available for downstream calorie calculations, backend processing, and reporting
 # UI display is controlled by MOSTRAR_ETA_AL_USUARIO flag
+#
+# ETA (Thermal Effect of Food) Logic:
+# - Leaner individuals have higher ETA due to more metabolically active muscle tissue
+# - Higher ETA means more calories burned through food digestion and processing
+# 
+# ETA Ranges:
+# Men:   ≤10% BF → 1.15 (High),  11-20% BF → 1.12 (Medium),  >20% BF → 1.10 (Standard)
+# Women: ≤20% BF → 1.15 (High),  21-30% BF → 1.12 (Medium),  >30% BF → 1.10 (Standard)
+#
+# These factors multiply TMB × GEAF to get total daily energy expenditure (TDEE)
 if grasa_corregida <= 10 and sexo == "Hombre":
     eta = 1.15
     eta_desc = "ETA alto (muy magro, ≤10% grasa)"
