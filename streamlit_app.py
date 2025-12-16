@@ -3588,7 +3588,20 @@ if MOSTRAR_ETA_AL_USUARIO:
                 """)
 
         st.markdown('</div>', unsafe_allow_html=True)
-    # BLOQUE 5: Entrenamiento de fuerza
+else:
+    # BLOQUE 4: Placeholder when ETA is hidden - maintains step numbering continuity
+    with st.expander("ℹ️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=False):
+        st.markdown('<div class="content-card">', unsafe_allow_html=True)
+        st.info("""
+        **Paso 4: Calculado automáticamente según la información proporcionada por ti.**
+        
+        El efecto térmico de los alimentos (ETA) representa la energía que tu cuerpo gasta 
+        en digerir y procesar los alimentos. Este valor se calcula automáticamente en función 
+        de tu composición corporal y se integra en tus resultados finales.
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
     progress.progress(80)
     progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
