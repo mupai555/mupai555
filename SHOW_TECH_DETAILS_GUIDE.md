@@ -49,6 +49,12 @@ SHOW_TECH_DETAILS = False
   - GEAF factor values
   - Multiplier details
 
+- Training frequency and energy expenditure metrics:
+  - Days per week training (dias_fuerza)
+  - Calories per session (kcal_sesion)
+  - Daily average expenditure (promedio_diario/gee_prom_dia)
+  - Detailed technical message about session calculations
+
 **What remains visible:**
 - Nivel global de entrenamiento (training level)
 - Plan selection (Tradicional vs PSMF)
@@ -175,5 +181,13 @@ Potential future improvements:
 ---
 
 **Version:** 1.0  
-**Last Updated:** 2025-12-15  
+**Last Updated:** 2025-12-16  
 **Maintained By:** Development Team
+
+## Recent Updates
+
+### 2025-12-16: Training Frequency Metrics Hidden
+- Hidden training frequency metrics from client UI (dias_fuerza, kcal_sesion, promedio_diario)
+- Updated blue info message to be more general and client-friendly
+- Email reports continue to include all technical variables
+- Added test_ui_hidden_logic.py for validation
