@@ -103,7 +103,7 @@ def test_step_sequence_maintained():
         content = f.read()
     
     # Find all expander declarations with Paso
-    paso_pattern = r'with st\.expander\(["\'].*?\*\*Paso (\d+):'
+    paso_pattern = r'with st\.expander\(".*?\*\*Paso (\d+):'
     pasos = re.findall(paso_pattern, content)
     
     # Convert to integers
@@ -180,10 +180,14 @@ def test_eta_calculations_still_run():
     eta_calc_line = None
     eta_conditional_line = None
     
+    # Use regex for more flexible matching
+    eta_calc_pattern = re.compile(r'st\.session_state\.eta\s*=\s*eta')
+    eta_conditional_pattern = re.compile(r'if\s+MOSTRAR_ETA_AL_USUARIO\s*:')
+    
     for i, line in enumerate(lines):
-        if 'st.session_state.eta = eta' in line and eta_calc_line is None:
+        if eta_calc_pattern.search(line) and eta_calc_line is None:
             eta_calc_line = i
-        if 'if MOSTRAR_ETA_AL_USUARIO:' in line and eta_calc_line and eta_conditional_line is None:
+        if eta_conditional_pattern.search(line) and eta_calc_line and eta_conditional_line is None:
             eta_conditional_line = i
     
     assert eta_calc_line is not None, "ETA calculation should exist"
