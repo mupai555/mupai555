@@ -3647,22 +3647,31 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     st.session_state.gee_semanal = gee_semanal
     st.session_state.gee_prom_dia = gee_prom_dia
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Días/semana", f"{dias_fuerza} días", "Sin entrenar" if dias_fuerza == 0 else "Activo")
-    with col2:
-        current_level = nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() and nivel_entrenamiento else "Sin calcular"
-        st.metric("Gasto/sesión", f"{kcal_sesion} kcal", f"Nivel {current_level}")
-    with col3:
-        st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día", f"Total: {gee_semanal} kcal/sem")
+    # Display metrics conditionally based on SHOW_TECH_DETAILS flag
+    if SHOW_TECH_DETAILS:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Días/semana", f"{dias_fuerza} días", "Sin entrenar" if dias_fuerza == 0 else "Activo")
+        with col2:
+            current_level = nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() and nivel_entrenamiento else "Sin calcular"
+            st.metric("Gasto/sesión", f"{kcal_sesion} kcal", f"Nivel {current_level}")
+        with col3:
+            st.metric("Promedio diario", f"{gee_prom_dia:.0f} kcal/día", f"Total: {gee_semanal} kcal/sem")
 
-    st.markdown(f"""
-    <div class="content-card" style="background: #D6EAF8; color: #1E1E1E; border: 2px solid #3498DB; padding: 1.5rem;">
-        💡 <strong style="color: #1E1E1E; font-weight: bold;">Cálculo personalizado:</strong> Tu gasto por sesión ({nivel_gee}) 
-        se basa en tu <strong>nivel global de entrenamiento</strong> ({current_level}), que combina desarrollo muscular, 
-        rendimiento funcional y experiencia. Esto proporciona una estimación más precisa de tu gasto energético real.
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="content-card" style="background: #D6EAF8; color: #1E1E1E; border: 2px solid #3498DB; padding: 1.5rem;">
+            💡 <strong style="color: #1E1E1E; font-weight: bold;">Cálculo personalizado:</strong> Tu gasto por sesión ({nivel_gee}) 
+            se basa en tu <strong>nivel global de entrenamiento</strong> ({current_level}), que combina desarrollo muscular, 
+            rendimiento funcional y experiencia. Esto proporciona una estimación más precisa de tu gasto energético real.
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Client-friendly message without technical details
+        st.markdown("""
+        <div class="content-card" style="background: #D6EAF8; color: #1E1E1E; border: 2px solid #3498DB; padding: 1.5rem;">
+            💡 <strong style="color: #1E1E1E; font-weight: bold;">Cálculo personalizado:</strong> En base a tu nivel global de entrenamiento – que combina desarrollo muscular, rendimiento funcional y experiencia – se han realizado los cálculos personalizados.
+        </div>
+        """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 6: Cálculo final con comparativa PSMF
 with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
