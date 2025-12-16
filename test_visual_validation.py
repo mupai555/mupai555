@@ -13,15 +13,21 @@ def extract_step4_ui_structure():
     with open('streamlit_app.py', 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # Find the Step 4 section (in the else clause)
-    else_marker = 'else:\n    # BLOQUE 4: Placeholder when ETA details are hidden from users'
-    else_start = content.find(else_marker)
+    # Find the Step 4 section using the unique marker comment
+    placeholder_marker = '# BLOQUE 4: Placeholder when ETA details are hidden from users'
+    marker_start = content.find(placeholder_marker)
     
-    if else_start == -1:
+    if marker_start == -1:
         print("❌ Could not find Step 4 placeholder block")
         return
     
-    # Extract the placeholder block (until the next major block)
+    # Extract the placeholder block (from else: to the next major block)
+    # Find the 'else:' that precedes the marker
+    else_start = content.rfind('else:', max(0, marker_start - 50), marker_start)
+    if else_start == -1:
+        else_start = marker_start
+    
+    # Extract until the next major block
     placeholder_end = content.find('\n# BLOQUE 5:', else_start)
     placeholder_block = content[else_start:placeholder_end]
     

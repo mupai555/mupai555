@@ -37,46 +37,47 @@ def test_step4_placeholder():
     print("✓ if/else structure exists for ETA visibility")
     
     # Test 3: Check that placeholder maintains "Paso 4" numbering
-    lines = content.split('\n')
-    found_placeholder = False
-    for i, line in enumerate(lines):
-        if 'else:' in line and i > 0:
-            # Check if this is the ETA else block by looking at context
-            if 'MOSTRAR_ETA_AL_USUARIO' in lines[i-1] or 'ETA' in lines[i-2]:
-                # Look ahead for Paso 4
-                for j in range(i, min(i+20, len(lines))):
-                    if 'Paso 4' in lines[j]:
-                        found_placeholder = True
-                        print(f"✓ Placeholder maintains 'Paso 4' numbering (line {j+1})")
-                        break
+    # Look for the unique comment marker that identifies the placeholder block
+    placeholder_marker = '# BLOQUE 4: Placeholder when ETA details are hidden from users'
+    placeholder_idx = content.find(placeholder_marker)
+    assert placeholder_idx != -1, "Could not find placeholder marker comment"
+    
+    # Search for "Paso 4" within a reasonable range after the marker
+    search_range = content[placeholder_idx:placeholder_idx+500]
+    found_placeholder = 'Paso 4' in search_range
     
     assert found_placeholder, "Placeholder must maintain 'Paso 4' numbering"
+    print(f"✓ Placeholder maintains 'Paso 4' numbering")
     
     # Test 4: Check that placeholder message avoids explicit 'ETA' reference in title
-    # Find the else block content
-    else_start = content.find('else:\n    # BLOQUE 4: Placeholder')
-    if else_start == -1:
-        else_start = content.find('else:\n    # BLOQUE 4')
+    # Find the placeholder block using the unique marker comment
+    placeholder_marker = '# BLOQUE 4: Placeholder when ETA details are hidden from users'
+    placeholder_start = content.find(placeholder_marker)
+    assert placeholder_start != -1, "Could not find placeholder marker comment"
     
-    assert else_start != -1, "Could not find placeholder else block"
-    
-    # Get the expander title (next few hundred chars after else)
-    placeholder_section = content[else_start:else_start+800]
+    # Get the placeholder section (next 800 chars)
+    placeholder_section = content[placeholder_start:placeholder_start+800]
     
     # Find the expander line
     expander_line_start = placeholder_section.find('with st.expander(')
     assert expander_line_start != -1, "Placeholder must have st.expander"
     
+    # Extract the full expander call to get the title
     expander_line_end = placeholder_section.find(')', expander_line_start)
     expander_title = placeholder_section[expander_line_start:expander_line_end+1]
     
-    # The title should not contain "ETA" or "Efecto Térmico de los Alimentos"
-    # We allow it in comments but not in the actual expander title
+    # Extract just the title string (between quotes)
     title_start = expander_title.find('"')
     title_end = expander_title.rfind('"')
-    actual_title = expander_title[title_start:title_end+1] if title_start != -1 else expander_title
+    actual_title = expander_title[title_start+1:title_end] if title_start != -1 else ""
     
-    assert 'ETA' not in actual_title or 'Paso 4' in actual_title, \
+    # The title should not contain explicit "ETA" reference or "Efecto Térmico de los Alimentos"
+    # Check for ETA as a standalone word/term, not as part of other words
+    has_eta_reference = (
+        ' ETA' in actual_title or 'ETA ' in actual_title or '(ETA)' in actual_title or
+        'Efecto Térmico' in actual_title
+    )
+    assert not has_eta_reference, \
         f"Placeholder title should not explicitly mention 'ETA': {actual_title}"
     print(f"✓ Placeholder avoids explicit 'ETA' reference in title")
     
@@ -108,7 +109,7 @@ def test_step4_placeholder():
     print("✓ Placeholder updates progress bar to 70 (Step 4)")
     
     # Test 9: Verify "Paso 5" still exists after the placeholder
-    paso5_idx = content.find('Paso 5:', else_start + 500)
+    paso5_idx = content.find('Paso 5:', placeholder_start + 500)
     assert paso5_idx != -1, "Paso 5 must exist after Step 4 placeholder"
     print("✓ Step 5 follows Step 4 placeholder, maintaining sequence")
     
