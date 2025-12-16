@@ -11,8 +11,8 @@ def extract_ui_section():
     with open('streamlit_app.py', 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # Find the section we modified
-    pattern = r'# Display metrics conditionally.*?st\.markdown\(\'</div>\'.*?\)'
+    # Find the specific section we modified - using more specific anchor
+    pattern = r'# Display metrics conditionally based on SHOW_TECH_DETAILS flag.*?st\.markdown\(""".*?En base a tu nivel global.*?""", unsafe_allow_html=True\)'
     match = re.search(pattern, content, re.DOTALL)
     
     if match:
@@ -20,6 +20,9 @@ def extract_ui_section():
     return None
 
 def main():
+    # Maximum length for display to avoid cluttering output
+    MAX_DISPLAY_LENGTH = 1000
+    
     print("=" * 80)
     print("UI CHANGES VERIFICATION")
     print("=" * 80)
@@ -32,7 +35,7 @@ def main():
     
     print("📋 EXTRACTED UI SECTION:")
     print("-" * 80)
-    print(section[:1000] + "..." if len(section) > 1000 else section)
+    print(section[:MAX_DISPLAY_LENGTH] + "..." if len(section) > MAX_DISPLAY_LENGTH else section)
     print("-" * 80)
     print()
     
