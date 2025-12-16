@@ -18,6 +18,14 @@ import string
 # Note: Email report generation is ALWAYS unaffected by this flag
 SHOW_TECH_DETAILS = False
 
+# Visibility flags for specific methodologies - Control display to end users
+# These flags protect proprietary methodologies while maintaining backend functionality
+# When False: Hide methodology details from user UI (calculations still run, emails include details)
+# When True: Show methodology details to users
+# Note: All calculations always run; email reports always include full details
+MOSTRAR_PSMF_AL_USUARIO = False  # Controls PSMF (Protein Sparing Modified Fast) UI visibility
+MOSTRAR_ETA_AL_USUARIO = False   # Controls ETA (Thermal Effect of Food) UI visibility
+
 # Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
 # Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
 OMRON_HBF516_TO_4C = {
@@ -2918,8 +2926,16 @@ grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
 mlg = calcular_mlg(peso, grasa_corregida)
 
 # --- Cálculo PSMF ---
+# PSMF calculations ALWAYS run to ensure backend processing and reporting
+# UI display is controlled by MOSTRAR_PSMF_AL_USUARIO flag
 psmf_recs = calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura)
-if psmf_recs.get("psmf_aplicable"):
+
+# Store PSMF results in session_state for downstream use (calculations, reporting, emails)
+st.session_state.psmf_recs = psmf_recs
+st.session_state.psmf_aplicable = psmf_recs.get("psmf_aplicable", False)
+
+# UI Display: Only show if MOSTRAR_PSMF_AL_USUARIO is True
+if psmf_recs.get("psmf_aplicable") and MOSTRAR_PSMF_AL_USUARIO:
     st.markdown('<div class="content-card card-psmf">', unsafe_allow_html=True)
     
     # High-level message for clients (always shown)
@@ -3501,63 +3517,77 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
         )
 
     st.markdown('</div>', unsafe_allow_html=True)
+
+# ===== ETA CALCULATION (ALWAYS RUNS) =====
+# ETA calculations ALWAYS run regardless of UI visibility flag
+# This ensures values are available for downstream calorie calculations, backend processing, and reporting
+# UI display is controlled by MOSTRAR_ETA_AL_USUARIO flag
+#
+# ETA (Thermal Effect of Food) Logic:
+# - Leaner individuals have higher ETA due to more metabolically active muscle tissue
+# - Higher ETA means more calories burned through food digestion and processing
+# 
+# ETA Ranges:
+# Men:   ≤10% BF → 1.15 (High),  11-20% BF → 1.12 (Medium),  >20% BF → 1.10 (Standard)
+# Women: ≤20% BF → 1.15 (High),  21-30% BF → 1.12 (Medium),  >30% BF → 1.10 (Standard)
+#
+# These factors multiply TMB × GEAF to get total daily energy expenditure (TDEE)
+if grasa_corregida <= 10 and sexo == "Hombre":
+    eta = 1.15
+    eta_desc = "ETA alto (muy magro, ≤10% grasa)"
+    eta_color = "success"
+elif grasa_corregida <= 20 and sexo == "Mujer":
+    eta = 1.15
+    eta_desc = "ETA alto (muy magra, ≤20% grasa)"
+    eta_color = "success"
+elif grasa_corregida <= 20 and sexo == "Hombre":
+    eta = 1.12
+    eta_desc = "ETA medio (magro, 11-20% grasa)"
+    eta_color = "info"
+elif grasa_corregida <= 30 and sexo == "Mujer":
+    eta = 1.12
+    eta_desc = "ETA medio (normal, 21-30% grasa)"
+    eta_color = "info"
+else:
+    eta = 1.10
+    eta_desc = f"ETA estándar (>{20 if sexo == 'Hombre' else 30}% grasa)"
+    eta_color = "warning"
+
+# Store ETA results in session_state for downstream use (calculations, reporting, emails)
+st.session_state.eta = eta
+st.session_state.eta_desc = eta_desc
+st.session_state.eta_color = eta_color
+
+# UI Display: Only show ETA expander if MOSTRAR_ETA_AL_USUARIO is True
+if MOSTRAR_ETA_AL_USUARIO:
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
-with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
-    progress.progress(70)
-    progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
+    with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
+        progress.progress(70)
+        progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
 
-    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+        st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
-    # ===== ETA CALCULATION (ALWAYS RUNS) =====
-    # This calculation happens regardless of flow phase to ensure values are available
-    # for downstream calorie calculations. Only the display is conditional.
-    if grasa_corregida <= 10 and sexo == "Hombre":
-        eta = 1.15
-        eta_desc = "ETA alto (muy magro, ≤10% grasa)"
-        eta_color = "success"
-    elif grasa_corregida <= 20 and sexo == "Mujer":
-        eta = 1.15
-        eta_desc = "ETA alto (muy magra, ≤20% grasa)"
-        eta_color = "success"
-    elif grasa_corregida <= 20 and sexo == "Hombre":
-        eta = 1.12
-        eta_desc = "ETA medio (magro, 11-20% grasa)"
-        eta_color = "info"
-    elif grasa_corregida <= 30 and sexo == "Mujer":
-        eta = 1.12
-        eta_desc = "ETA medio (normal, 21-30% grasa)"
-        eta_color = "info"
-    else:
-        eta = 1.10
-        eta_desc = f"ETA estándar (>{20 if sexo == 'Hombre' else 30}% grasa)"
-        eta_color = "warning"
+        # Technical details: Display ETA calculation details (controlled by SHOW_TECH_DETAILS flag)
+        if SHOW_TECH_DETAILS:
+            st.markdown("### 🔥 Determinación automática del ETA")
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                st.markdown(f"""
+                <div class="content-card" style="text-align: center;">
+                    <h2 style="margin: 0;">ETA: {eta}</h2>
+                    <span class="badge badge-{eta_color}">{eta_desc}</span>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                st.info(f"""
+                **¿Qué es el ETA?**
 
-    # Guarda ETA en session_state para usarlo en los cálculos finales
-    st.session_state.eta = eta
-    st.session_state.eta_desc = eta_desc
-    st.session_state.eta_color = eta_color
+                Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
 
-    # Technical details: Display ETA calculation details (controlled by SHOW_TECH_DETAILS flag)
-    if SHOW_TECH_DETAILS:
-        st.markdown("### 🔥 Determinación automática del ETA")
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown(f"""
-            <div class="content-card" style="text-align: center;">
-                <h2 style="margin: 0;">ETA: {eta}</h2>
-                <span class="badge badge-{eta_color}">{eta_desc}</span>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.info(f"""
-            **¿Qué es el ETA?**
+                Aumenta tu gasto total en un {(eta-1)*100:.0f}%
+                """)
 
-            Es la energía que tu cuerpo gasta digiriendo y procesando alimentos.
-
-            Aumenta tu gasto total en un {(eta-1)*100:.0f}%
-            """)
-
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     # BLOQUE 5: Entrenamiento de fuerza
 with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
     progress.progress(80)
@@ -3735,8 +3765,9 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
     ingesta_calorica_tradicional = GE * fbeo
 
     # COMPARATIVA PSMF si aplica
+    # UI Display: Only show plan selection if MOSTRAR_PSMF_AL_USUARIO is True
     plan_elegido = "Tradicional"
-    if psmf_recs.get("psmf_aplicable"):
+    if psmf_recs.get("psmf_aplicable") and MOSTRAR_PSMF_AL_USUARIO:
         st.markdown("### ⚡ Opciones de plan nutricional")
         st.warning("Eres candidato para el protocolo PSMF. Puedes elegir entre dos estrategias:")
 
@@ -3840,33 +3871,35 @@ with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", 
         
         fase = f"PSMF Actualizado - Pérdida rápida (déficit ~{deficit_psmf}%, multiplicador {multiplicador}, Tier {tier_psmf})"
 
-        # Client-facing vs technical warnings
-        if not SHOW_TECH_DETAILS:
-            st.error(f"""
-            ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF:**
-            - Es un protocolo **MUY RESTRICTIVO**
-            - **Duración máxima:** 6-8 semanas
-            - **Requiere:** Supervisión médica y análisis de sangre regulares
-            - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
-            - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
-            """)
-        else:
-            st.error(f"""
-            ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
-            - Es un protocolo **MUY RESTRICTIVO** con cálculo basado en tiers de adiposidad
-            - **Duración máxima:** 6-8 semanas
-            - **Tier de adiposidad:** Tier {tier_psmf} (base proteína: {base_proteina_usada})
-            - **Proteína:** {proteina_g}g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg según {grasa_corregida:.1f}% grasa corporal)
-            - **Grasas:** {grasa_g}g/día (asignación automática según {grasa_corregida:.1f}% grasa corporal)
-            - **Carbohidratos:** {carbo_g}g/día (tope Tier {tier_psmf}: {carb_cap}g) - Solo de vegetales fibrosos
-            - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
-            - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
-            - **Requiere:** Supervisión médica y análisis de sangre regulares
-            - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
-            - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
-            """)
+        # UI Display: Only show warnings if MOSTRAR_PSMF_AL_USUARIO is True
+        if MOSTRAR_PSMF_AL_USUARIO:
+            # Client-facing vs technical warnings
+            if not SHOW_TECH_DETAILS:
+                st.error(f"""
+                ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF:**
+                - Es un protocolo **MUY RESTRICTIVO**
+                - **Duración máxima:** 6-8 semanas
+                - **Requiere:** Supervisión médica y análisis de sangre regulares
+                - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
+                - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
+                """)
+            else:
+                st.error(f"""
+                ⚠️ **ADVERTENCIA IMPORTANTE SOBRE PSMF ACTUALIZADO:**
+                - Es un protocolo **MUY RESTRICTIVO** con cálculo basado en tiers de adiposidad
+                - **Duración máxima:** 6-8 semanas
+                - **Tier de adiposidad:** Tier {tier_psmf} (base proteína: {base_proteina_usada})
+                - **Proteína:** {proteina_g}g/día ({psmf_recs.get('factor_proteina_psmf', 1.6)}g/kg × {psmf_recs.get('base_proteina_kg', peso):.1f}kg según {grasa_corregida:.1f}% grasa corporal)
+                - **Grasas:** {grasa_g}g/día (asignación automática según {grasa_corregida:.1f}% grasa corporal)
+                - **Carbohidratos:** {carbo_g}g/día (tope Tier {tier_psmf}: {carb_cap}g) - Solo de vegetales fibrosos
+                - **Multiplicador calórico:** {multiplicador} (perfil: {perfil_grasa})
+                - **Pérdida proyectada:** {perdida_min}-{perdida_max} kg/semana
+                - **Requiere:** Supervisión médica y análisis de sangre regulares
+                - **Suplementación obligatoria:** Multivitamínico, omega-3, electrolitos, magnesio
+                - **No apto para:** Personas con historial de TCA, problemas médicos o embarazo
+                """)
         
-        if SHOW_TECH_DETAILS and carb_cap_fue_aplicado:
+        if SHOW_TECH_DETAILS and MOSTRAR_PSMF_AL_USUARIO and carb_cap_fue_aplicado:
             st.info("💡 Se aplicó tope de carbohidratos para mantener PSMF consistente; kcal finales recalculadas por macros.")
     else:
         # ----------- TRADICIONAL -----------
@@ -4098,7 +4131,7 @@ st.success(f"""
 nivel de entrenamiento, actividad diaria y objetivos. La fase recomendada es **{fase}** 
 con una ingesta de **{ingesta_calorica:.0f} kcal/día**.
 
-{'⚠️ **Nota:** Elegiste el protocolo PSMF. Recuerda que es temporal (6-8 semanas máximo) y requiere supervisión.' if 'PSMF' in plan_elegido else ''}
+{'⚠️ **Nota:** Elegiste el protocolo PSMF. Recuerda que es temporal (6-8 semanas máximo) y requiere supervisión.' if 'PSMF' in plan_elegido and MOSTRAR_PSMF_AL_USUARIO else ''}
 """)
 # Advertencias finales si aplican
 if fuera_rango:
