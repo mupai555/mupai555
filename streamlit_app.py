@@ -4991,6 +4991,8 @@ else:
 """
 
 tabla_resumen += """
+"""
+
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
 if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
