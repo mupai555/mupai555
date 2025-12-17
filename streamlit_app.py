@@ -9,6 +9,9 @@ import time
 import re
 import random
 import string
+from PIL import Image
+from io import BytesIO
+import base64
 
 # ==================== CONSTANTES ====================
 
@@ -147,6 +150,106 @@ def validate_email(email):
         return False, "El email debe tener un formato válido (ejemplo: usuario@dominio.com)"
     
     return True, ""
+
+# ==================== FUNCIONES PARA GESTIÓN DE FOTOGRAFÍAS ====================
+def validate_photo_format(uploaded_file):
+    """
+    Valida que el archivo subido sea una imagen en formato PNG o JPG/JPEG.
+    Retorna (es_válido, mensaje_error)
+    """
+    if uploaded_file is None:
+        return False, "No se ha seleccionado ningún archivo"
+    
+    # Verificar extensión
+    file_extension = uploaded_file.name.split('.')[-1].lower()
+    valid_extensions = ['png', 'jpg', 'jpeg']
+    
+    if file_extension not in valid_extensions:
+        return False, f"Formato no válido. Solo se aceptan archivos PNG o JPG/JPEG. Archivo recibido: {uploaded_file.name}"
+    
+    # Verificar tipo MIME
+    if uploaded_file.type not in ['image/png', 'image/jpeg']:
+        return False, f"Tipo de archivo no válido. Solo se aceptan imágenes PNG o JPG/JPEG."
+    
+    return True, ""
+
+def validate_photo_count(photos_dict, max_photos=6):
+    """
+    Valida que no se excedan el máximo de fotos permitidas.
+    Retorna (es_válido, mensaje_error, cantidad_actual)
+    """
+    current_count = sum(1 for v in photos_dict.values() if v is not None)
+    
+    if current_count > max_photos:
+        return False, f"Has excedido el límite de {max_photos} fotos. Actualmente tienes {current_count} fotos.", current_count
+    
+    return True, "", current_count
+
+def process_uploaded_photo(uploaded_file):
+    """
+    Procesa una foto subida y la convierte a un formato adecuado para almacenamiento.
+    Retorna los datos de la imagen como base64 para almacenamiento en session_state.
+    """
+    try:
+        # Leer la imagen
+        image = Image.open(uploaded_file)
+        
+        # Opcional: Redimensionar si es muy grande (mantener calidad razonable)
+        max_size = (1920, 1920)  # Máximo Full HD
+        if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
+            image.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Convertir a RGB si es necesario (para PNG con transparencia)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            if image.mode == 'P':
+                image = image.convert('RGBA')
+            background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
+            image = background
+        
+        # Guardar en buffer como JPEG
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG', quality=85, optimize=True)
+        buffer.seek(0)
+        
+        # Convertir a base64 para almacenamiento
+        img_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        return True, img_base64, uploaded_file.name
+    except Exception as e:
+        return False, None, f"Error al procesar la imagen: {str(e)}"
+
+def initialize_photos_session_state():
+    """
+    Inicializa el estado de sesión para las fotografías si no existe.
+    """
+    if "fotos_evaluacion" not in st.session_state:
+        st.session_state.fotos_evaluacion = {
+            "frontal": None,
+            "posterior": None,
+            "lateral_izquierda": None,
+            "lateral_derecha": None,
+            "libre_1": None,
+            "libre_2": None
+        }
+    
+    if "fotos_metadata" not in st.session_state:
+        st.session_state.fotos_metadata = {
+            "frontal": {"nombre": "", "fecha": ""},
+            "posterior": {"nombre": "", "fecha": ""},
+            "lateral_izquierda": {"nombre": "", "fecha": ""},
+            "lateral_derecha": {"nombre": "", "fecha": ""},
+            "libre_1": {"nombre": "", "fecha": ""},
+            "libre_2": {"nombre": "", "fecha": ""}
+        }
+
+def get_photo_count():
+    """
+    Retorna el número actual de fotos subidas.
+    """
+    if "fotos_evaluacion" not in st.session_state:
+        return 0
+    return sum(1 for v in st.session_state.fotos_evaluacion.values() if v is not None)
 
 # ==================== FUNCIONES DEL SISTEMA DE ACCESO POR CÓDIGO ====================
 def generate_access_code():
@@ -2556,6 +2659,145 @@ if datos_personales_completos and st.session_state.datos_completos:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # ==================== SECCIÓN: FOTOGRAFÍAS DE PROGRESO - COMPOSICIÓN CORPORAL ====================
+    with st.expander("📸 **Fotografías de progreso – Composición corporal** (Opcional)", expanded=True):
+        st.markdown('<div class="content-card">', unsafe_allow_html=True)
+        
+        # Inicializar estado de sesión para fotos
+        initialize_photos_session_state()
+        
+        # Información general
+        st.markdown("### 📷 Sube tus fotografías de evaluación")
+        st.info("""
+        📌 **Importante:** Puedes subir hasta **6 fotografías** en formato PNG o JPG/JPEG para documentar tu progreso.
+        
+        **Categorías sugeridas:**
+        - Vista frontal (pose natural)
+        - Vista posterior (espalda)
+        - Vista lateral izquierda
+        - Vista lateral derecha
+        - Dos ángulos libres adicionales
+        
+        💡 **Consejos para mejores fotos:**
+        - Usa ropa ajustada o deportiva
+        - Iluminación uniforme
+        - Fondo neutro
+        - Postura relajada y natural
+        """)
+        
+        # Contador de fotos
+        current_photo_count = get_photo_count()
+        max_photos = 6
+        
+        col_counter1, col_counter2 = st.columns([3, 1])
+        with col_counter1:
+            st.markdown(f"**Fotos subidas: {current_photo_count} / {max_photos}**")
+        with col_counter2:
+            if current_photo_count >= max_photos:
+                st.warning("⚠️ Límite alcanzado")
+        
+        st.markdown("---")
+        
+        # Definir las categorías de fotos
+        photo_categories = {
+            "frontal": {"label": "📸 Vista Frontal", "icon": "🧍"},
+            "posterior": {"label": "📸 Vista Posterior", "icon": "🚶"},
+            "lateral_izquierda": {"label": "📸 Lateral Izquierda", "icon": "🧍"},
+            "lateral_derecha": {"label": "📸 Lateral Derecha", "icon": "🧍"},
+            "libre_1": {"label": "📸 Ángulo Libre 1", "icon": "📷"},
+            "libre_2": {"label": "📸 Ángulo Libre 2", "icon": "📷"}
+        }
+        
+        # Crear dos columnas para organizar mejor los uploads
+        col_upload1, col_upload2 = st.columns(2)
+        
+        # Iterar sobre las categorías y crear file_uploader para cada una
+        for idx, (key, info) in enumerate(photo_categories.items()):
+            # Alternar entre columnas
+            current_col = col_upload1 if idx % 2 == 0 else col_upload2
+            
+            with current_col:
+                st.markdown(f"#### {info['icon']} {info['label']}")
+                
+                # Verificar si ya existe una foto para esta categoría
+                has_photo = st.session_state.fotos_evaluacion[key] is not None
+                
+                if has_photo:
+                    # Mostrar preview y opción de eliminar
+                    try:
+                        # Decodificar la imagen desde base64
+                        img_data = base64.b64decode(st.session_state.fotos_evaluacion[key])
+                        img = Image.open(BytesIO(img_data))
+                        
+                        # Mostrar preview reducido
+                        st.image(img, caption=f"✅ {st.session_state.fotos_metadata[key]['nombre']}", use_container_width=True)
+                        
+                        # Botón para eliminar
+                        if st.button(f"🗑️ Eliminar", key=f"delete_{key}"):
+                            st.session_state.fotos_evaluacion[key] = None
+                            st.session_state.fotos_metadata[key] = {"nombre": "", "fecha": ""}
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al mostrar la imagen: {str(e)}")
+                else:
+                    # File uploader solo si no hay foto y no se ha alcanzado el límite
+                    if current_photo_count < max_photos:
+                        uploaded_file = st.file_uploader(
+                            f"Seleccionar imagen",
+                            type=["png", "jpg", "jpeg"],
+                            key=f"upload_{key}",
+                            help="Solo archivos PNG o JPG/JPEG"
+                        )
+                        
+                        if uploaded_file is not None:
+                            # Validar formato
+                            is_valid, error_msg = validate_photo_format(uploaded_file)
+                            
+                            if is_valid:
+                                # Procesar la imagen
+                                success, img_data, img_name = process_uploaded_photo(uploaded_file)
+                                
+                                if success:
+                                    # Guardar en session_state
+                                    st.session_state.fotos_evaluacion[key] = img_data
+                                    st.session_state.fotos_metadata[key] = {
+                                        "nombre": uploaded_file.name,
+                                        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                    }
+                                    st.success(f"✅ Foto cargada correctamente: {uploaded_file.name}")
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ {img_name}")
+                            else:
+                                st.error(f"❌ {error_msg}")
+                    else:
+                        st.warning("⚠️ Has alcanzado el límite de 6 fotos. Elimina una foto existente para subir otra.")
+                
+                st.markdown("---")
+        
+        # Botón para limpiar todas las fotos
+        if current_photo_count > 0:
+            st.markdown("---")
+            col_clear1, col_clear2, col_clear3 = st.columns([2, 1, 2])
+            with col_clear2:
+                if st.button("🗑️ Limpiar todas las fotos", use_container_width=True):
+                    # Confirmar antes de limpiar
+                    st.session_state.fotos_evaluacion = {k: None for k in st.session_state.fotos_evaluacion.keys()}
+                    st.session_state.fotos_metadata = {
+                        k: {"nombre": "", "fecha": ""} for k in st.session_state.fotos_metadata.keys()
+                    }
+                    st.success("✅ Todas las fotos han sido eliminadas")
+                    st.rerun()
+        
+        # Información sobre almacenamiento
+        st.markdown("---")
+        st.caption("""
+        🔒 **Privacidad:** Las fotografías se almacenan temporalmente durante tu sesión y están vinculadas a tu evaluación.
+        📅 **Identificación:** Cada foto está vinculada a la fecha y ID de tu evaluación.
+        """)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
 
     # Cálculos antropométricos
@@ -4702,8 +4944,53 @@ RECOMENDACIÓN: Utiliza estas proyecciones como guía inicial y ajusta
 según tu progreso real. Se recomienda evaluación periódica cada 2-3 
 semanas para optimizar resultados.
 
+=====================================
+FOTOGRAFÍAS DE PROGRESO - COMPOSICIÓN CORPORAL
+=====================================
+📸 REGISTRO FOTOGRÁFICO:
 """
 
+# Agregar información de fotos si existen
+if 'fotos_evaluacion' in st.session_state and st.session_state.fotos_evaluacion:
+    fotos_conteo = get_photo_count()
+    tabla_resumen += f"- Total de fotografías subidas: {fotos_conteo}/6\n"
+    
+    # Listar fotos por categoría
+    categorias_nombres = {
+        "frontal": "Vista Frontal",
+        "posterior": "Vista Posterior",
+        "lateral_izquierda": "Lateral Izquierda",
+        "lateral_derecha": "Lateral Derecha",
+        "libre_1": "Ángulo Libre 1",
+        "libre_2": "Ángulo Libre 2"
+    }
+    
+    for key, nombre_categoria in categorias_nombres.items():
+        if st.session_state.fotos_evaluacion.get(key) is not None:
+            metadata = st.session_state.fotos_metadata.get(key, {})
+            nombre_archivo = metadata.get("nombre", "foto.jpg")
+            fecha_subida = metadata.get("fecha", "")
+            tabla_resumen += f"- {nombre_categoria}: ✅ {nombre_archivo}"
+            if fecha_subida:
+                tabla_resumen += f" (subida: {fecha_subida})"
+            tabla_resumen += "\n"
+        else:
+            tabla_resumen += f"- {nombre_categoria}: ⚪ No subida\n"
+    
+    tabla_resumen += f"""
+📅 VINCULACIÓN:
+- ID de evaluación: {st.session_state.get('nombre', 'N/A')} - {fecha_llenado}
+- Las fotografías están vinculadas a esta evaluación y se almacenan durante la sesión
+
+💡 NOTA: Las fotografías documentan tu punto de partida y permitirán comparar tu progreso visual en futuras evaluaciones.
+"""
+else:
+    tabla_resumen += """- No se subieron fotografías en esta evaluación
+- Se recomienda documentar fotográficamente cada evaluación para seguimiento visual del progreso
+
+"""
+
+tabla_resumen += """
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
 if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
