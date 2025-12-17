@@ -40,8 +40,10 @@ def test_function_definitions():
     print("\n🧪 Testing Function Definitions")
     print("=" * 50)
     
-    # Read the streamlit_app.py file
-    with open('/home/runner/work/mupai555/mupai555/streamlit_app.py', 'r') as f:
+    # Read the streamlit_app.py file using relative path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    streamlit_app_path = os.path.join(script_dir, 'streamlit_app.py')
+    with open(streamlit_app_path, 'r') as f:
         content = f.read()
     
     required_functions = [
@@ -67,7 +69,9 @@ def test_photo_section_in_ui():
     print("\n🧪 Testing UI Photo Section")
     print("=" * 50)
     
-    with open('/home/runner/work/mupai555/mupai555/streamlit_app.py', 'r') as f:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    streamlit_app_path = os.path.join(script_dir, 'streamlit_app.py')
+    with open(streamlit_app_path, 'r') as f:
         content = f.read()
     
     ui_elements = [
@@ -97,7 +101,9 @@ def test_email_integration():
     print("\n🧪 Testing Email Integration")
     print("=" * 50)
     
-    with open('/home/runner/work/mupai555/mupai555/streamlit_app.py', 'r') as f:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    streamlit_app_path = os.path.join(script_dir, 'streamlit_app.py')
+    with open(streamlit_app_path, 'r') as f:
         content = f.read()
     
     email_elements = [
@@ -121,7 +127,9 @@ def test_session_state_structure():
     print("\n🧪 Testing Session State Structure")
     print("=" * 50)
     
-    with open('/home/runner/work/mupai555/mupai555/streamlit_app.py', 'r') as f:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    streamlit_app_path = os.path.join(script_dir, 'streamlit_app.py')
+    with open(streamlit_app_path, 'r') as f:
         content = f.read()
     
     # Check for proper photo categories
@@ -149,11 +157,13 @@ def test_validation_logic():
     print("\n🧪 Testing Validation Logic")
     print("=" * 50)
     
-    with open('/home/runner/work/mupai555/mupai555/streamlit_app.py', 'r') as f:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    streamlit_app_path = os.path.join(script_dir, 'streamlit_app.py')
+    with open(streamlit_app_path, 'r') as f:
         content = f.read()
     
     validation_checks = [
-        'max_photos = 6',
+        'MAX_PHOTOS = 6',
         'valid_extensions = [\'png\', \'jpg\', \'jpeg\']',
         'image/png',
         'image/jpeg',

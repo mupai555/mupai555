@@ -91,6 +91,9 @@ OMRON_HBF516_TO_4C = {
     60: 51.5,
 }
 
+# Maximum number of photos allowed per evaluation
+MAX_PHOTOS = 6
+
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -173,7 +176,7 @@ def validate_photo_format(uploaded_file):
     
     return True, ""
 
-def validate_photo_count(photos_dict, max_photos=6):
+def validate_photo_count(photos_dict, max_photos=MAX_PHOTOS):
     """
     Valida que no se excedan el máximo de fotos permitidas.
     Retorna (es_válido, mensaje_error, cantidad_actual)
@@ -2668,8 +2671,8 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         # Información general
         st.markdown("### 📷 Sube tus fotografías de evaluación")
-        st.info("""
-        📌 **Importante:** Puedes subir hasta **6 fotografías** en formato PNG o JPG/JPEG para documentar tu progreso.
+        st.info(f"""
+        📌 **Importante:** Puedes subir hasta **{MAX_PHOTOS} fotografías** en formato PNG o JPG/JPEG para documentar tu progreso.
         
         **Categorías sugeridas:**
         - Vista frontal (pose natural)
@@ -2687,7 +2690,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         
         # Contador de fotos
         current_photo_count = get_photo_count()
-        max_photos = 6
+        max_photos = MAX_PHOTOS
         
         col_counter1, col_counter2 = st.columns([3, 1])
         with col_counter1:
@@ -2771,7 +2774,7 @@ if datos_personales_completos and st.session_state.datos_completos:
                             else:
                                 st.error(f"❌ {error_msg}")
                     else:
-                        st.warning("⚠️ Has alcanzado el límite de 6 fotos. Elimina una foto existente para subir otra.")
+                        st.warning(f"⚠️ Has alcanzado el límite de {MAX_PHOTOS} fotos. Elimina una foto existente para subir otra.")
                 
                 st.markdown("---")
         
@@ -4953,7 +4956,7 @@ FOTOGRAFÍAS DE PROGRESO - COMPOSICIÓN CORPORAL
 # Agregar información de fotos si existen
 if 'fotos_evaluacion' in st.session_state and st.session_state.fotos_evaluacion:
     fotos_conteo = get_photo_count()
-    tabla_resumen += f"- Total de fotografías subidas: {fotos_conteo}/6\n"
+    tabla_resumen += f"- Total de fotografías subidas: {fotos_conteo}/{MAX_PHOTOS}\n"
     
     # Listar fotos por categoría
     categorias_nombres = {
