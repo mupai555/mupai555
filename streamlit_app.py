@@ -3172,7 +3172,7 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
                 st.session_state.niveles_ejercicios[ejercicio] = nivel_ej
 
                 # Display results to user (controlled by USER_VIEW flag)
-                if USER_VIEW and cols is not None:
+                if USER_VIEW:
                     with cols[idx % 5]:  # Changed from 4 to 5
                         # Mostrar con badge de color
                         color_badge = {
@@ -3281,6 +3281,9 @@ elif puntaje_total < 0.7:
     nivel_entrenamiento = "avanzado"
 else:
     nivel_entrenamiento = "élite"
+
+# Store in session_state for consistent access
+st.session_state.nivel_entrenamiento = nivel_entrenamiento
 
 # Validar si todos los ejercicios funcionales y experiencia están completos
 ejercicios_funcionales_completos = len(ejercicios_data) >= 5  # Debe tener los 5 ejercicios
@@ -4098,12 +4101,25 @@ else:
     
     # Calculate macros for traditional plan
     ingesta_calorica = ingesta_calorica_tradicional
-    proteina_g = calcular_proteina(mlg, nivel_entrenamiento if 'nivel_entrenamiento' in locals() else 'intermedio', fase)
+    nivel_ent = st.session_state.get('nivel_entrenamiento', 'intermedio')
+    proteina_g = calcular_proteina(mlg, nivel_ent, fase)
     proteina_kcal = proteina_g * 4
-    grasa_g = calcular_grasas(peso, fase)
+    
+    # Calculate fat using same logic as main UI
+    grasa_min_kcal = ingesta_calorica * 0.20
+    porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo)
+    grasa_ideal_kcal = tmb * porcentaje_grasa_tmb
+    grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
+    grasa_min_g = round(grasa_min_kcal / 9, 1)
+    grasa_max_kcal = ingesta_calorica * 0.40
+    grasa_g = max(grasa_min_g, grasa_ideal_g)
+    if grasa_g * 9 > grasa_max_kcal:
+        grasa_g = round(grasa_max_kcal / 9, 1)
     grasa_kcal = grasa_g * 9
+    
+    # Calculate carbs
     carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
-    carbo_g = max(0, int(carbo_kcal / 4))
+    carbo_g = max(0, round(carbo_kcal / 4, 1))
 
 # --- FORZAR actualización de variables clave desde session_state ---
 peso = st.session_state.get("peso", 0)

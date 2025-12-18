@@ -77,7 +77,7 @@ def test_else_block_for_calculations():
     assert 'fbeo = 1 + porcentaje / 100' in else_section, "fbeo calculation not in else block"
     assert 'ingesta_calorica =' in else_section, "ingesta_calorica calculation not in else block"
     assert 'proteina_g = calcular_proteina' in else_section, "proteina_g calculation not in else block"
-    assert 'grasa_g = calcular_grasas' in else_section, "grasa_g calculation not in else block"
+    assert 'grasa_g = ' in else_section, "grasa_g calculation not in else block"
     assert 'carbo_g =' in else_section, "carbo_g calculation not in else block"
     
     print("✓ All essential nutritional variables calculated in else block")
