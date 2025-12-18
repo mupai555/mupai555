@@ -2648,226 +2648,226 @@ if datos_personales_completos and st.session_state.datos_completos:
     if USER_VIEW:
         # FFMI con visualización mejorada y explicación detallada
         st.markdown("### 💪 Índice de Masa Libre de Grasa (FFMI) y Adiposidad (FMI)")
-    
-    # Technical details: FFMI mode interpretation (controlled by SHOW_TECH_DETAILS flag)
-    if SHOW_TECH_DETAILS:
-        # Mostrar modo de interpretación con badge
-        modo_colors = {
-            "GREEN": ("success", "🟢", "Interpretación válida como muscularidad"),
-            "AMBER": ("warning", "🟡", "Interpretación limitada por adiposidad"),
-            "RED": ("danger", "🔴", "No aplicable clasificación atlética")
-        }
-        modo_color, modo_emoji, modo_desc = modo_colors.get(modo_ffmi, ("info", "⚪", ""))
         
-        # Border colors for mode badges
-        border_colors = {
-            "GREEN": "#4CAF50",
-            "AMBER": "#FF9800",
-            "RED": "#F44336"
-        }
-        border_color = border_colors.get(modo_ffmi, "#4CAF50")
-        
-        st.markdown(f"""
-        <div style="background-color: #f0f8ff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid {border_color};">
-        <p style="margin: 0; font-size: 13px; color: #333;">
-        <b>Modo de interpretación FFMI:</b> {modo_emoji} <span class="badge badge-{modo_color}">{modo_ffmi}</span> - {modo_desc}
-        </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Explicación del FFMI antes de mostrar el valor
-        st.markdown("""
-        <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;">
-        <p style="margin: 0; font-size: 14px; color: #333;">
-        <b>¿Qué es el FFMI?</b><br>
-        El Fat-Free Mass Index (FFMI) es un indicador científico que mide tu masa muscular 
-        ajustada por altura. Similar al IMC, pero usando solo masa libre de grasa (músculos, 
-        huesos, órganos) sin contar la grasa corporal. Este índice permite comparar el 
-        desarrollo muscular entre personas de diferentes estaturas de forma justa.
-        </p>
-        <p style="margin: 10px 0 0 0; font-size: 13px; color: #555;">
-        <b>Cálculo:</b> FFMI = (Masa Libre de Grasa / Altura²) + normalización a 1.80m<br>
-        <b>Tu MLG:</b> {mlg:.1f} kg | <b>Tu Altura:</b> {estatura} cm → <b>Tu FFMI:</b> {ffmi:.2f}
-        </p>
-        </div>
-        """.format(mlg=mlg, estatura=estatura, ffmi=ffmi), unsafe_allow_html=True)
-    
-    # Mostrar FFMI y FMI en columnas
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### FFMI (Masa Libre de Grasa / Altura²)")
-        
-        # Always show basic classification, hide technical details
-        if not SHOW_TECH_DETAILS:
-            # Client-facing: Show only high-level classification
-            st.markdown(f"""
-            <h2 style="margin: 0;">Nivel: {nivel_ffmi}</h2>
-            """, unsafe_allow_html=True)
-        elif SHOW_TECH_DETAILS and modo_ffmi == "GREEN":
-            # MODO GREEN: Mostrar clasificación completa
-            color_nivel = {
-                "Bajo": "danger",
-                "Promedio": "warning",
-                "Bueno": "success",
-                "Avanzado": "info",
-                "Élite": "success"
-            }.get(nivel_ffmi, "info")
-            st.markdown(f"""
-            <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
-            <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
-            """, unsafe_allow_html=True)
-            
-            if sexo == "Hombre":
-                ffmi_max = 25
-                rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
-            else:
-                ffmi_max = 21
-                rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
-            
-            progreso_ffmi = min(ffmi / ffmi_max, 1.0)
-            st.progress(progreso_ffmi)
-            st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
-            
-            # Interpretación específica del nivel actual
-            interpretaciones = {
-                "Hombre": {
-                    "Bajo": "Indica desarrollo muscular insuficiente. Prioriza entrenamiento de fuerza y nutrición adecuada.",
-                    "Promedio": "Desarrollo normal en población general. Con entrenamiento consistente puedes mejorar significativamente.",
-                    "Bueno": "Buen desarrollo muscular alcanzable con 2-4 años de entrenamiento disciplinado. ¡Sigue así!",
-                    "Avanzado": "Desarrollo muy avanzado. Estás cerca del límite natural. Optimiza detalles para máximo progreso.",
-                    "Élite": "Desarrollo excepcional. Has alcanzado un nivel muy difícil de lograr naturalmente. ¡Excelente trabajo!"
-                },
-                "Mujer": {
-                    "Bajo": "Indica desarrollo muscular insuficiente. El entrenamiento de fuerza te ayudará significativamente.",
-                    "Promedio": "Desarrollo normal en población femenina. Hay mucho margen para mejorar con entrenamiento.",
-                    "Bueno": "Buen desarrollo muscular. Refleja dedicación al entrenamiento de fuerza. ¡Continúa!",
-                    "Avanzado": "Desarrollo muy avanzado para mujeres. Cercano al límite natural. Excelente dedicación.",
-                    "Élite": "Desarrollo excepcional. Nivel muy difícil de alcanzar naturalmente. ¡Impresionante logro!"
-                }
+        # Technical details: FFMI mode interpretation (controlled by SHOW_TECH_DETAILS flag)
+        if SHOW_TECH_DETAILS:
+            # Mostrar modo de interpretación con badge
+            modo_colors = {
+                "GREEN": ("success", "🟢", "Interpretación válida como muscularidad"),
+                "AMBER": ("warning", "🟡", "Interpretación limitada por adiposidad"),
+                "RED": ("danger", "🔴", "No aplicable clasificación atlética")
             }
-            st.info(f"📋 **Interpretación:** {interpretaciones[sexo][nivel_ffmi]}")
-            
-            # Mostrar rangos de referencia
-            st.info(f"""
-            **Referencia FFMI ({sexo}):**
-            - Bajo: <{rangos_ffmi['Bajo']}
-            - Promedio: {rangos_ffmi['Bajo']}-{rangos_ffmi['Promedio']}
-            - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
-            - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
-            - Élite: >{rangos_ffmi['Avanzado']}
-            """)
-            
-        elif SHOW_TECH_DETAILS and modo_ffmi == "AMBER":
-            # MODO AMBER: Mostrar valor pero con interpretación limitada
-            st.markdown(f"""
-            <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
-            <p style="color: #FF9800; font-weight: bold;">Interpretación limitada por adiposidad</p>
-            """, unsafe_allow_html=True)
-            
-            st.warning("""
-            ⚠️ **FFMI calculado; interpretación limitada**
-            
-            Tu porcentaje de grasa corporal está en una zona donde el FFMI comienza a 
-            inflarse por componentes no musculares de la masa libre de grasa (agua corporal 
-            adicional, masa estructural). Se reporta el valor numérico pero la clasificación 
-            atlética puede no reflejar tu desarrollo muscular real.
-            
-            **Recomendación:** Enfócate en reducir grasa corporal para que el FFMI sea 
-            un indicador más preciso de tu muscularidad.
-            """)
-            
-        elif SHOW_TECH_DETAILS:  # RED mode
-            # MODO RED: Mostrar valor con explicación clara de no aplicabilidad
-            st.markdown(f"""
-            <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
-            <p style="color: #F44336; font-weight: bold;">Clasificación FFMI: No aplica</p>
-            """, unsafe_allow_html=True)
-            
-            st.error("""
-            🔴 **Clasificación atlética no aplicable**
-            
-            Con adiposidad muy alta, el FFMI puede elevarse significativamente por masa 
-            libre de grasa no muscular (incluyendo agua corporal expandida, órganos y 
-            tejido estructural) y deja de ser un proxy válido de muscularidad atlética.
-            
-            **Se reporta el valor numérico pero no se clasifica como indicador de desarrollo muscular.**
-            
-            Una vez que reduzcas tu porcentaje de grasa a niveles más saludables, el FFMI 
-            será interpretable y útil para evaluar tu progreso muscular.
-            """)
-    
-    with col2:
-        st.markdown("#### FMI/BFMI (Masa Grasa / Altura²)")
+            modo_color, modo_emoji, modo_desc = modo_colors.get(modo_ffmi, ("info", "⚪", ""))
         
-        # Technical details: FMI classification (controlled by SHOW_TECH_DETAILS flag)
-        if not SHOW_TECH_DETAILS:
-            # Client-facing: Hide FMI technical details entirely
-            pass
-        elif SHOW_TECH_DETAILS:
+            # Border colors for mode badges
+            border_colors = {
+                "GREEN": "#4CAF50",
+                "AMBER": "#FF9800",
+                "RED": "#F44336"
+            }
+            border_color = border_colors.get(modo_ffmi, "#4CAF50")
+        
             st.markdown(f"""
-            <h2 style="margin: 0;">FMI: {fmi:.2f}</h2>
+            <div style="background-color: #f0f8ff; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid {border_color};">
+            <p style="margin: 0; font-size: 13px; color: #333;">
+            <b>Modo de interpretación FFMI:</b> {modo_emoji} <span class="badge badge-{modo_color}">{modo_ffmi}</span> - {modo_desc}
+            </p>
+            </div>
             """, unsafe_allow_html=True)
-            # Clasificar FMI según sexo
-            if sexo == "Hombre":
-                if fmi < 3:
-                    fmi_cat = "Bajo"
-                    fmi_color = "info"
-                elif fmi < 6:
-                    fmi_cat = "Normal"
-                    fmi_color = "success"
-                elif fmi < 9:
-                    fmi_cat = "Elevado"
-                    fmi_color = "warning"
-                else:
-                    fmi_cat = "Muy elevado"
-                    fmi_color = "danger"
-            else:  # Mujer
-                if fmi < 5:
-                    fmi_cat = "Bajo"
-                    fmi_color = "info"
-                elif fmi < 9:
-                    fmi_cat = "Normal"
-                    fmi_color = "success"
-                elif fmi < 13:
-                    fmi_cat = "Elevado"
-                    fmi_color = "warning"
-                else:
-                    fmi_cat = "Muy elevado"
-                    fmi_color = "danger"
-            
-            st.markdown(f"""
-            <span class="badge badge-{fmi_color}">{fmi_cat}</span>
-            """, unsafe_allow_html=True)
-            
-            st.info(f"""
-            **Referencia FMI ({sexo}):**
-            {"- Bajo: <3" if sexo == "Hombre" else "- Bajo: <5"}
-            {"- Normal: 3-6" if sexo == "Hombre" else "- Normal: 5-9"}
-            {"- Elevado: 6-9" if sexo == "Hombre" else "- Elevado: 9-13"}
-            {"- Muy elevado: >9" if sexo == "Hombre" else "- Muy elevado: >13"}
-            """)
-            
-            st.info("""
-            **¿Qué es el FMI?**
-            
-            El FMI (Fat Mass Index) complementa al FFMI al medir la adiposidad 
-            ajustada por altura. Siempre se reporta para contextualizar la 
-            composición corporal completa.
-            """)
+        
+            # Explicación del FFMI antes de mostrar el valor
+            st.markdown("""
+            <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4CAF50;">
+            <p style="margin: 0; font-size: 14px; color: #333;">
+            <b>¿Qué es el FFMI?</b><br>
+            El Fat-Free Mass Index (FFMI) es un indicador científico que mide tu masa muscular 
+            ajustada por altura. Similar al IMC, pero usando solo masa libre de grasa (músculos, 
+            huesos, órganos) sin contar la grasa corporal. Este índice permite comparar el 
+            desarrollo muscular entre personas de diferentes estaturas de forma justa.
+            </p>
+            <p style="margin: 10px 0 0 0; font-size: 13px; color: #555;">
+            <b>Cálculo:</b> FFMI = (Masa Libre de Grasa / Altura²) + normalización a 1.80m<br>
+            <b>Tu MLG:</b> {mlg:.1f} kg | <b>Tu Altura:</b> {estatura} cm → <b>Tu FFMI:</b> {ffmi:.2f}
+            </p>
+            </div>
+            """.format(mlg=mlg, estatura=estatura, ffmi=ffmi), unsafe_allow_html=True)
     
-        # Technical details: Additional FFMI mode explanation (controlled by SHOW_TECH_DETAILS flag)
-        if SHOW_TECH_DETAILS and modo_ffmi != "GREEN":
-            st.info(f"""
-            💡 **Nota sobre interpretación FFMI:**
+        # Mostrar FFMI y FMI en columnas
+        col1, col2 = st.columns(2)
+    
+        with col1:
+            st.markdown("#### FFMI (Masa Libre de Grasa / Altura²)")
+        
+            # Always show basic classification, hide technical details
+            if not SHOW_TECH_DETAILS:
+                # Client-facing: Show only high-level classification
+                st.markdown(f"""
+                <h2 style="margin: 0;">Nivel: {nivel_ffmi}</h2>
+                """, unsafe_allow_html=True)
+            elif SHOW_TECH_DETAILS and modo_ffmi == "GREEN":
+                # MODO GREEN: Mostrar clasificación completa
+                color_nivel = {
+                    "Bajo": "danger",
+                    "Promedio": "warning",
+                    "Bueno": "success",
+                    "Avanzado": "info",
+                    "Élite": "success"
+                }.get(nivel_ffmi, "info")
+                st.markdown(f"""
+                <h2 style="margin: 0;">FFMI: {ffmi:.2f} 
+                <span class="badge badge-{color_nivel}">{nivel_ffmi}</span></h2>
+                """, unsafe_allow_html=True)
             
-            Los umbrales para mujeres son ~3 puntos más bajos que para hombres debido a diferencias biológicas:
-            - Menos testosterona natural
-            - Mayor % grasa esencial (necesaria para funciones reproductivas)
-            - Diferente distribución muscular natural
+                if sexo == "Hombre":
+                    ffmi_max = 25
+                    rangos_ffmi = {"Bajo": 18, "Promedio": 20, "Bueno": 22, "Avanzado": 25}
+                else:
+                    ffmi_max = 21
+                    rangos_ffmi = {"Bajo": 15, "Promedio": 17, "Bueno": 19, "Avanzado": 21}
             
-            Tu clasificación está en modo **{modo_ffmi}** basado en tu porcentaje de grasa corporal actual ({grasa_corregida:.1f}%).
-            """)
+                progreso_ffmi = min(ffmi / ffmi_max, 1.0)
+                st.progress(progreso_ffmi)
+                st.caption(f"Desarrollo muscular: {progreso_ffmi*100:.0f}% del potencial natural máximo")
+            
+                # Interpretación específica del nivel actual
+                interpretaciones = {
+                    "Hombre": {
+                        "Bajo": "Indica desarrollo muscular insuficiente. Prioriza entrenamiento de fuerza y nutrición adecuada.",
+                        "Promedio": "Desarrollo normal en población general. Con entrenamiento consistente puedes mejorar significativamente.",
+                        "Bueno": "Buen desarrollo muscular alcanzable con 2-4 años de entrenamiento disciplinado. ¡Sigue así!",
+                        "Avanzado": "Desarrollo muy avanzado. Estás cerca del límite natural. Optimiza detalles para máximo progreso.",
+                        "Élite": "Desarrollo excepcional. Has alcanzado un nivel muy difícil de lograr naturalmente. ¡Excelente trabajo!"
+                    },
+                    "Mujer": {
+                        "Bajo": "Indica desarrollo muscular insuficiente. El entrenamiento de fuerza te ayudará significativamente.",
+                        "Promedio": "Desarrollo normal en población femenina. Hay mucho margen para mejorar con entrenamiento.",
+                        "Bueno": "Buen desarrollo muscular. Refleja dedicación al entrenamiento de fuerza. ¡Continúa!",
+                        "Avanzado": "Desarrollo muy avanzado para mujeres. Cercano al límite natural. Excelente dedicación.",
+                        "Élite": "Desarrollo excepcional. Nivel muy difícil de alcanzar naturalmente. ¡Impresionante logro!"
+                    }
+                }
+                st.info(f"📋 **Interpretación:** {interpretaciones[sexo][nivel_ffmi]}")
+            
+                # Mostrar rangos de referencia
+                st.info(f"""
+                **Referencia FFMI ({sexo}):**
+                - Bajo: <{rangos_ffmi['Bajo']}
+                - Promedio: {rangos_ffmi['Bajo']}-{rangos_ffmi['Promedio']}
+                - Bueno: {rangos_ffmi['Promedio']}-{rangos_ffmi['Bueno']}
+                - Avanzado: {rangos_ffmi['Bueno']}-{rangos_ffmi['Avanzado']}
+                - Élite: >{rangos_ffmi['Avanzado']}
+                """)
+            
+            elif SHOW_TECH_DETAILS and modo_ffmi == "AMBER":
+                # MODO AMBER: Mostrar valor pero con interpretación limitada
+                st.markdown(f"""
+                <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
+                <p style="color: #FF9800; font-weight: bold;">Interpretación limitada por adiposidad</p>
+                """, unsafe_allow_html=True)
+            
+                st.warning("""
+                ⚠️ **FFMI calculado; interpretación limitada**
+            
+                Tu porcentaje de grasa corporal está en una zona donde el FFMI comienza a 
+                inflarse por componentes no musculares de la masa libre de grasa (agua corporal 
+                adicional, masa estructural). Se reporta el valor numérico pero la clasificación 
+                atlética puede no reflejar tu desarrollo muscular real.
+            
+                **Recomendación:** Enfócate en reducir grasa corporal para que el FFMI sea 
+                un indicador más preciso de tu muscularidad.
+                """)
+            
+            elif SHOW_TECH_DETAILS:  # RED mode
+                # MODO RED: Mostrar valor con explicación clara de no aplicabilidad
+                st.markdown(f"""
+                <h2 style="margin: 0;">FFMI: {ffmi:.2f}</h2>
+                <p style="color: #F44336; font-weight: bold;">Clasificación FFMI: No aplica</p>
+                """, unsafe_allow_html=True)
+            
+                st.error("""
+                🔴 **Clasificación atlética no aplicable**
+            
+                Con adiposidad muy alta, el FFMI puede elevarse significativamente por masa 
+                libre de grasa no muscular (incluyendo agua corporal expandida, órganos y 
+                tejido estructural) y deja de ser un proxy válido de muscularidad atlética.
+            
+                **Se reporta el valor numérico pero no se clasifica como indicador de desarrollo muscular.**
+            
+                Una vez que reduzcas tu porcentaje de grasa a niveles más saludables, el FFMI 
+                será interpretable y útil para evaluar tu progreso muscular.
+                """)
+    
+        with col2:
+            st.markdown("#### FMI/BFMI (Masa Grasa / Altura²)")
+        
+            # Technical details: FMI classification (controlled by SHOW_TECH_DETAILS flag)
+            if not SHOW_TECH_DETAILS:
+                # Client-facing: Hide FMI technical details entirely
+                pass
+            elif SHOW_TECH_DETAILS:
+                st.markdown(f"""
+                <h2 style="margin: 0;">FMI: {fmi:.2f}</h2>
+                """, unsafe_allow_html=True)
+                # Clasificar FMI según sexo
+                if sexo == "Hombre":
+                    if fmi < 3:
+                        fmi_cat = "Bajo"
+                        fmi_color = "info"
+                    elif fmi < 6:
+                        fmi_cat = "Normal"
+                        fmi_color = "success"
+                    elif fmi < 9:
+                        fmi_cat = "Elevado"
+                        fmi_color = "warning"
+                    else:
+                        fmi_cat = "Muy elevado"
+                        fmi_color = "danger"
+                else:  # Mujer
+                    if fmi < 5:
+                        fmi_cat = "Bajo"
+                        fmi_color = "info"
+                    elif fmi < 9:
+                        fmi_cat = "Normal"
+                        fmi_color = "success"
+                    elif fmi < 13:
+                        fmi_cat = "Elevado"
+                        fmi_color = "warning"
+                    else:
+                        fmi_cat = "Muy elevado"
+                        fmi_color = "danger"
+            
+                st.markdown(f"""
+                <span class="badge badge-{fmi_color}">{fmi_cat}</span>
+                """, unsafe_allow_html=True)
+            
+                st.info(f"""
+                **Referencia FMI ({sexo}):**
+                {"- Bajo: <3" if sexo == "Hombre" else "- Bajo: <5"}
+                {"- Normal: 3-6" if sexo == "Hombre" else "- Normal: 5-9"}
+                {"- Elevado: 6-9" if sexo == "Hombre" else "- Elevado: 9-13"}
+                {"- Muy elevado: >9" if sexo == "Hombre" else "- Muy elevado: >13"}
+                """)
+            
+                st.info("""
+                **¿Qué es el FMI?**
+            
+                El FMI (Fat Mass Index) complementa al FFMI al medir la adiposidad 
+                ajustada por altura. Siempre se reporta para contextualizar la 
+                composición corporal completa.
+                """)
+    
+            # Technical details: Additional FFMI mode explanation (controlled by SHOW_TECH_DETAILS flag)
+            if SHOW_TECH_DETAILS and modo_ffmi != "GREEN":
+                st.info(f"""
+                💡 **Nota sobre interpretación FFMI:**
+            
+                Los umbrales para mujeres son ~3 puntos más bajos que para hombres debido a diferencias biológicas:
+                - Menos testosterona natural
+                - Mayor % grasa esencial (necesaria para funciones reproductivas)
+                - Diferente distribución muscular natural
+            
+                Tu clasificación está en modo **{modo_ffmi}** basado en tu porcentaje de grasa corporal actual ({grasa_corregida:.1f}%).
+                """)
 
 else:
     st.info("Por favor completa los datos personales para comenzar la evaluación.")
@@ -4101,8 +4101,12 @@ else:
     
     # Calculate macros for traditional plan
     ingesta_calorica = ingesta_calorica_tradicional
-    nivel_ent = st.session_state.get('nivel_entrenamiento', 'intermedio')
-    proteina_g = calcular_proteina(mlg, nivel_ent, fase)
+    
+    # Calculate protein using same logic as main UI
+    usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
+    base_proteina_kg = mlg if usar_mlg_para_proteina else peso
+    factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
+    proteina_g = round(base_proteina_kg * factor_proteina, 1)
     proteina_kcal = proteina_g * 4
     
     # Calculate fat using same logic as main UI
