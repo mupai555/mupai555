@@ -2241,6 +2241,509 @@ muscleupgym.fitness
     except Exception as e:
         st.error(f"Error al enviar email Parte 2: {str(e)}")
         return False
+
+# ==================== CUESTIONARIO SUEÑO + ESTRÉS ====================
+
+def formulario_suenyo_estres():
+    """
+    Cuestionario independiente para evaluar el Estado de Recuperación (Sueño + Estrés).
+    
+    Calcula:
+    - SleepScore: Puntuación de calidad del sueño (0-100)
+    - StressScore: Puntuación de nivel de estrés (0-100)
+    - IR-SE: Índice de Recuperación Sueño-Estrés
+    - Clasificación: ALTA, MEDIA, BAJA recuperación
+    - Banderas de alerta: Detección de problemas graves
+    
+    Returns:
+        dict: Diccionario con resultados o None si no se completó
+    """
+    st.markdown("---")
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    st.markdown("### 😴 Estado de Recuperación (Sueño + Estrés)")
+    st.markdown("""
+    Este cuestionario evalúa tu calidad de sueño y nivel de estrés, 
+    dos factores críticos para la recuperación y el rendimiento físico.
+    """)
+    
+    # Initialize session state for sleep/stress data
+    if 'suenyo_estres_completado' not in st.session_state:
+        st.session_state.suenyo_estres_completado = False
+    if 'suenyo_estres_data' not in st.session_state:
+        st.session_state.suenyo_estres_data = {}
+    
+    # ========== PREGUNTAS DE SUEÑO ==========
+    st.markdown("#### 🌙 Sección 1: Calidad del Sueño")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Pregunta 1: Horas de sueño
+        horas_sueno = st.selectbox(
+            "¿Cuántas horas duermes en promedio por noche?",
+            options=[
+                "≥8 horas",
+                "7-7.9 horas",
+                "6-6.9 horas",
+                "5-5.9 horas",
+                "<5 horas"
+            ],
+            help="Selecciona el rango que mejor describe tu promedio de sueño"
+        )
+        
+        # Pregunta 2: Tiempo para conciliar el sueño
+        tiempo_conciliar = st.selectbox(
+            "¿Cuánto tiempo tardas en quedarte dormido?",
+            options=[
+                "Menos de 15 minutos",
+                "15-30 minutos",
+                "30-60 minutos",
+                "Más de 60 minutos"
+            ],
+            help="Tiempo promedio desde que te acuestas hasta que te duermes"
+        )
+    
+    with col2:
+        # Pregunta 3: Despertares nocturnos
+        veces_despierta = st.selectbox(
+            "¿Cuántas veces te despiertas durante la noche?",
+            options=[
+                "Ninguna",
+                "1 vez",
+                "2 veces",
+                "3 o más veces"
+            ],
+            help="Número promedio de despertares por noche"
+        )
+        
+        # Pregunta 4: Calidad del sueño
+        calidad_sueno = st.selectbox(
+            "¿Cómo calificarías la calidad general de tu sueño?",
+            options=[
+                "Excelente",
+                "Buena",
+                "Regular",
+                "Mala",
+                "Muy mala"
+            ],
+            help="Calificación subjetiva de qué tan reparador es tu sueño"
+        )
+    
+    # ========== PREGUNTAS DE ESTRÉS ==========
+    st.markdown("#### 🧠 Sección 2: Nivel de Estrés")
+    
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        # Pregunta 5: Sensación de sobrecarga
+        sobrecarga = st.selectbox(
+            "¿Con qué frecuencia te sientes sobrecargado o abrumado?",
+            options=[
+                "Nunca",
+                "Casi nunca",
+                "A veces",
+                "Frecuentemente",
+                "Muy frecuentemente"
+            ],
+            help="Evalúa tu sensación de estar desbordado por responsabilidades"
+        )
+        
+        # Pregunta 6: Falta de control
+        falta_control = st.selectbox(
+            "¿Con qué frecuencia sientes que no puedes controlar las cosas importantes de tu vida?",
+            options=[
+                "Nunca",
+                "Casi nunca",
+                "A veces",
+                "Frecuentemente",
+                "Muy frecuentemente"
+            ],
+            help="Sensación de control sobre tu vida y circunstancias"
+        )
+    
+    with col4:
+        # Pregunta 7: Dificultad para manejar
+        dificultad_manejar = st.selectbox(
+            "¿Con qué frecuencia sientes que las dificultades se acumulan tanto que no puedes manejarlas?",
+            options=[
+                "Nunca",
+                "Casi nunca",
+                "A veces",
+                "Frecuentemente",
+                "Muy frecuentemente"
+            ],
+            help="Capacidad para enfrentar problemas y desafíos"
+        )
+        
+        # Pregunta 8: Irritabilidad
+        irritabilidad = st.selectbox(
+            "¿Con qué frecuencia te sientes irritable o molesto sin razón aparente?",
+            options=[
+                "Nunca",
+                "Casi nunca",
+                "A veces",
+                "Frecuentemente",
+                "Muy frecuentemente"
+            ],
+            help="Nivel de irritabilidad en tu día a día"
+        )
+    
+    # ========== CÁLCULO DE PUNTUACIONES ==========
+    if st.button("📊 Calcular Estado de Recuperación", key="calcular_suenyo_estres"):
+        # Puntuaciones de sueño
+        puntos_horas = {
+            "≥8 horas": 0,
+            "7-7.9 horas": 1,
+            "6-6.9 horas": 2,
+            "5-5.9 horas": 3,
+            "<5 horas": 4
+        }
+        
+        puntos_conciliar = {
+            "Menos de 15 minutos": 0,
+            "15-30 minutos": 1,
+            "30-60 minutos": 2,
+            "Más de 60 minutos": 3
+        }
+        
+        puntos_despertares = {
+            "Ninguna": 0,
+            "1 vez": 1,
+            "2 veces": 2,
+            "3 o más veces": 3
+        }
+        
+        puntos_calidad = {
+            "Excelente": 0,
+            "Buena": 1,
+            "Regular": 2,
+            "Mala": 3,
+            "Muy mala": 4
+        }
+        
+        # Puntuaciones de estrés
+        puntos_estres = {
+            "Nunca": 0,
+            "Casi nunca": 1,
+            "A veces": 2,
+            "Frecuentemente": 3,
+            "Muy frecuentemente": 4
+        }
+        
+        # Calcular puntuación total de sueño (0-14 puntos)
+        sleep_raw = (
+            puntos_horas[horas_sueno] +
+            puntos_conciliar[tiempo_conciliar] +
+            puntos_despertares[veces_despierta] +
+            puntos_calidad[calidad_sueno]
+        )
+        
+        # Calcular puntuación total de estrés (0-16 puntos)
+        stress_raw = (
+            puntos_estres[sobrecarga] +
+            puntos_estres[falta_control] +
+            puntos_estres[dificultad_manejar] +
+            puntos_estres[irritabilidad]
+        )
+        
+        # Normalizar a 0-100 (invertido: menor puntuación = mejor)
+        # Para sueño: 0 puntos = 100 score, 14 puntos = 0 score
+        sleep_score = max(0, 100 - (sleep_raw / 14 * 100))
+        
+        # Para estrés: 0 puntos = 100 score, 16 puntos = 0 score
+        stress_score = max(0, 100 - (stress_raw / 16 * 100))
+        
+        # Calcular IR-SE (Índice de Recuperación Sueño-Estrés)
+        # Ponderación: 60% sueño, 40% estrés (el sueño es más crítico para recuperación)
+        ir_se = (sleep_score * 0.6) + (stress_score * 0.4)
+        
+        # Clasificar recuperación
+        if ir_se >= 70:
+            nivel_recuperacion = "ALTA"
+            color_nivel = "#27AE60"
+            emoji_nivel = "✅"
+            mensaje_nivel = "Excelente estado de recuperación. Tu cuerpo está bien preparado para el entrenamiento."
+        elif ir_se >= 50:
+            nivel_recuperacion = "MEDIA"
+            color_nivel = "#F39C12"
+            emoji_nivel = "⚠️"
+            mensaje_nivel = "Estado de recuperación moderado. Considera mejorar la calidad del sueño o reducir el estrés."
+        else:
+            nivel_recuperacion = "BAJA"
+            color_nivel = "#E74C3C"
+            emoji_nivel = "🚨"
+            mensaje_nivel = "Estado de recuperación comprometido. Es importante abordar problemas de sueño y/o estrés."
+        
+        # Detectar banderas rojas y amarillas
+        banderas = []
+        
+        # Banderas rojas (problemas graves)
+        if sleep_raw >= 10:  # Sueño muy problemático
+            banderas.append(("🔴 BANDERA ROJA", "Problemas graves de sueño detectados", 
+                           "Tu calidad y cantidad de sueño están significativamente comprometidas. "
+                           "Considera consultar con un especialista en medicina del sueño."))
+        
+        if stress_raw >= 12:  # Estrés muy alto
+            banderas.append(("🔴 BANDERA ROJA", "Nivel de estrés crítico", 
+                           "Tu nivel de estrés está en rango muy alto. "
+                           "Se recomienda buscar apoyo profesional (psicólogo o terapeuta)."))
+        
+        # Banderas amarillas (problemas moderados)
+        if 7 <= sleep_raw < 10:
+            banderas.append(("🟡 BANDERA AMARILLA", "Calidad de sueño subóptima", 
+                           "Tu sueño necesita atención. Implementa higiene del sueño: "
+                           "horarios regulares, ambiente oscuro, evitar pantallas antes de dormir."))
+        
+        if 8 <= stress_raw < 12:
+            banderas.append(("🟡 BANDERA AMARILLA", "Nivel de estrés elevado", 
+                           "Tu nivel de estrés está por encima del ideal. "
+                           "Considera técnicas de manejo: meditación, ejercicio, tiempo libre."))
+        
+        if puntos_horas[horas_sueno] >= 3:  # Menos de 6 horas
+            banderas.append(("🟡 BANDERA AMARILLA", "Duración de sueño insuficiente", 
+                           f"Duermes {horas_sueno}. Se recomiendan al menos 7-8 horas para recuperación óptima."))
+        
+        # Guardar en session state
+        st.session_state.suenyo_estres_data = {
+            'horas_sueno': horas_sueno,
+            'tiempo_conciliar': tiempo_conciliar,
+            'veces_despierta': veces_despierta,
+            'calidad_sueno': calidad_sueno,
+            'sobrecarga': sobrecarga,
+            'falta_control': falta_control,
+            'dificultad_manejar': dificultad_manejar,
+            'irritabilidad': irritabilidad,
+            'sleep_raw': sleep_raw,
+            'stress_raw': stress_raw,
+            'sleep_score': sleep_score,
+            'stress_score': stress_score,
+            'ir_se': ir_se,
+            'nivel_recuperacion': nivel_recuperacion,
+            'color_nivel': color_nivel,
+            'emoji_nivel': emoji_nivel,
+            'mensaje_nivel': mensaje_nivel,
+            'banderas': banderas
+        }
+        st.session_state.suenyo_estres_completado = True
+        
+        # ========== MOSTRAR RESULTADOS ==========
+        st.markdown("---")
+        st.markdown("### 📊 Resultados de la Evaluación")
+        
+        # Métricas principales
+        col_res1, col_res2, col_res3 = st.columns(3)
+        
+        with col_res1:
+            st.metric(
+                label="😴 Sleep Score",
+                value=f"{sleep_score:.0f}/100",
+                help="Puntuación de calidad del sueño (0-100, mayor es mejor)"
+            )
+        
+        with col_res2:
+            st.metric(
+                label="🧠 Stress Score",
+                value=f"{stress_score:.0f}/100",
+                help="Puntuación de manejo del estrés (0-100, mayor es mejor)"
+            )
+        
+        with col_res3:
+            st.metric(
+                label="🎯 Índice IR-SE",
+                value=f"{ir_se:.0f}/100",
+                help="Índice de Recuperación Sueño-Estrés combinado"
+            )
+        
+        # Clasificación de recuperación
+        st.markdown(f"""
+        <div class="content-card" style="background: {color_nivel}20; border-left: 4px solid {color_nivel};">
+            <h3 style="color: {color_nivel}; margin-bottom: 1rem;">
+                {emoji_nivel} Estado de Recuperación: {nivel_recuperacion}
+            </h3>
+            <p style="color: #CCCCCC; font-size: 1.1rem; margin-bottom: 0;">
+                {mensaje_nivel}
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Mostrar banderas de alerta si existen
+        if banderas:
+            st.markdown("### ⚠️ Alertas y Recomendaciones")
+            for tipo, titulo, descripcion in banderas:
+                if "ROJA" in tipo:
+                    st.error(f"**{tipo}: {titulo}**\n\n{descripcion}")
+                else:
+                    st.warning(f"**{tipo}: {titulo}**\n\n{descripcion}")
+        else:
+            st.success("✅ No se detectaron banderas de alerta. Tu estado de recuperación es adecuado.")
+        
+        # Detalles técnicos
+        with st.expander("📋 Ver Detalles Técnicos", expanded=False):
+            st.markdown("#### Puntuaciones Detalladas")
+            st.markdown(f"""
+            **SUEÑO:**
+            - Horas de sueño: {horas_sueno} → {puntos_horas[horas_sueno]} puntos
+            - Tiempo para conciliar: {tiempo_conciliar} → {puntos_conciliar[tiempo_conciliar]} puntos
+            - Despertares nocturnos: {veces_despierta} → {puntos_despertares[veces_despierta]} puntos
+            - Calidad percibida: {calidad_sueno} → {puntos_calidad[calidad_sueno]} puntos
+            - **Total sueño:** {sleep_raw}/14 puntos → **Sleep Score: {sleep_score:.1f}/100**
+            
+            **ESTRÉS:**
+            - Sobrecarga: {sobrecarga} → {puntos_estres[sobrecarga]} puntos
+            - Falta de control: {falta_control} → {puntos_estres[falta_control]} puntos
+            - Dificultad para manejar: {dificultad_manejar} → {puntos_estres[dificultad_manejar]} puntos
+            - Irritabilidad: {irritabilidad} → {puntos_estres[irritabilidad]} puntos
+            - **Total estrés:** {stress_raw}/16 puntos → **Stress Score: {stress_score:.1f}/100**
+            
+            **ÍNDICE IR-SE:**
+            - Fórmula: (Sleep Score × 0.6) + (Stress Score × 0.4)
+            - Cálculo: ({sleep_score:.1f} × 0.6) + ({stress_score:.1f} × 0.4) = **{ir_se:.1f}**
+            - Clasificación: **{nivel_recuperacion}** ({emoji_nivel})
+            """)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    return st.session_state.suenyo_estres_data if st.session_state.suenyo_estres_completado else None
+
+def enviar_email_suenyo_estres(nombre_cliente, email_cliente, fecha, data_suenyo_estres):
+    """
+    Envía por correo el informe del cuestionario de Sueño + Estrés.
+    
+    Args:
+        nombre_cliente: Nombre del cliente
+        email_cliente: Email del cliente
+        fecha: Fecha de evaluación
+        data_suenyo_estres: Diccionario con los resultados del cuestionario
+    
+    Returns:
+        bool: True si se envió exitosamente, False en caso contrario
+    """
+    try:
+        email_origen = "administracion@muscleupgym.fitness"
+        email_destino = "administracion@muscleupgym.fitness"
+        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+        
+        # Construir el contenido del email
+        contenido = f"""
+=====================================
+EVALUACIÓN SUEÑO + ESTRÉS - MUPAI
+=====================================
+Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence
+Generado: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+=====================================
+INFORMACIÓN DEL CLIENTE
+=====================================
+Nombre: {nombre_cliente}
+Email: {email_cliente}
+Fecha de evaluación: {fecha}
+
+=====================================
+RESPUESTAS DEL CUESTIONARIO
+=====================================
+
+🌙 SECCIÓN SUEÑO:
+   • Horas de sueño: {data_suenyo_estres['horas_sueno']}
+   • Tiempo para conciliar: {data_suenyo_estres['tiempo_conciliar']}
+   • Despertares nocturnos: {data_suenyo_estres['veces_despierta']}
+   • Calidad del sueño: {data_suenyo_estres['calidad_sueno']}
+
+🧠 SECCIÓN ESTRÉS:
+   • Sensación de sobrecarga: {data_suenyo_estres['sobrecarga']}
+   • Falta de control: {data_suenyo_estres['falta_control']}
+   • Dificultad para manejar: {data_suenyo_estres['dificultad_manejar']}
+   • Irritabilidad: {data_suenyo_estres['irritabilidad']}
+
+=====================================
+RESULTADOS CALCULADOS
+=====================================
+
+📊 PUNTUACIONES:
+   • Sleep Score: {data_suenyo_estres['sleep_score']:.1f}/100
+   • Stress Score: {data_suenyo_estres['stress_score']:.1f}/100
+   • Índice IR-SE: {data_suenyo_estres['ir_se']:.1f}/100
+
+📊 PUNTUACIONES DETALLADAS:
+   • Puntuación cruda sueño: {data_suenyo_estres['sleep_raw']}/14 puntos
+   • Puntuación cruda estrés: {data_suenyo_estres['stress_raw']}/16 puntos
+
+🎯 CLASIFICACIÓN:
+   • Nivel de recuperación: {data_suenyo_estres['nivel_recuperacion']}
+   • Mensaje: {data_suenyo_estres['mensaje_nivel']}
+
+=====================================
+ALERTAS Y BANDERAS
+=====================================
+"""
+        
+        if data_suenyo_estres['banderas']:
+            for tipo, titulo, descripcion in data_suenyo_estres['banderas']:
+                contenido += f"""
+{tipo}: {titulo}
+{descripcion}
+
+"""
+        else:
+            contenido += "\n✅ No se detectaron banderas de alerta.\n"
+        
+        contenido += f"""
+=====================================
+INTERPRETACIÓN Y RECOMENDACIONES
+=====================================
+
+INTERPRETACIÓN GENERAL:
+El Índice de Recuperación Sueño-Estrés (IR-SE) de {data_suenyo_estres['ir_se']:.1f} indica
+un estado de recuperación {data_suenyo_estres['nivel_recuperacion'].lower()}.
+
+RANGOS DE CLASIFICACIÓN:
+• ALTA (70-100): Excelente recuperación, óptimo para entrenamiento
+• MEDIA (50-69): Recuperación moderada, atención a mejoras
+• BAJA (0-49): Recuperación comprometida, intervención necesaria
+
+FÓRMULA IR-SE:
+IR-SE = (Sleep Score × 0.6) + (Stress Score × 0.4)
+
+El sueño tiene mayor peso (60%) porque es el factor más crítico
+para la recuperación física y mental.
+
+RECOMENDACIONES GENERALES:
+• Mantener horarios regulares de sueño (7-9 horas)
+• Crear un ambiente óptimo: oscuro, fresco, silencioso
+• Evitar pantallas 1-2 horas antes de dormir
+• Practicar técnicas de manejo del estrés: meditación, ejercicio, hobbies
+• Considerar ayuda profesional si las puntuaciones son muy bajas
+
+=====================================
+© 2025 MUPAI - Muscle Up GYM
+Digital Training Science
+muscleupgym.fitness
+=====================================
+"""
+        
+        # Crear y enviar mensaje
+        msg = MIMEMultipart()
+        msg['From'] = email_origen
+        msg['To'] = email_destino
+        msg['Subject'] = f"Evaluación Sueño + Estrés - {nombre_cliente} - {fecha}"
+        
+        msg.attach(MIMEText(contenido, 'plain'))
+        
+        # Comprobar si estamos en modo desarrollo
+        development_mode = password == "TU_PASSWORD_AQUI"
+        
+        if not development_mode:
+            server = smtplib.SMTP('smtp.zoho.com', 587)
+            server.starttls()
+            server.login(email_origen, password)
+            server.send_message(msg)
+            server.quit()
+        
+        return True
+        
+    except Exception as e:
+        st.error(f"Error al enviar email de Sueño + Estrés: {str(e)}")
+        return False
+
         # ==================== VISUALES INICIALES ====================
 
 # Misión, Visión y Compromiso con diseño mejorado
@@ -2470,6 +2973,26 @@ if not st.session_state.datos_completos:
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos and st.session_state.get("acepto_descargo", False)
 
 if datos_personales_completos and st.session_state.datos_completos:
+    # ========== CUESTIONARIO SUEÑO + ESTRÉS (INDEPENDIENTE) ==========
+    # Llamar al formulario de sueño y estrés ANTES de cualquier cálculo complejo
+    # Este cuestionario es completamente independiente y no afecta la lógica existente
+    resultado_suenyo_estres = formulario_suenyo_estres()
+    
+    # Botón para enviar el informe de Sueño + Estrés por email
+    if st.session_state.get('suenyo_estres_completado', False):
+        if st.button("📧 Enviar Informe de Sueño + Estrés por Email", key="enviar_email_suenyo_estres"):
+            with st.spinner("📧 Enviando informe de Sueño + Estrés..."):
+                ok_suenyo = enviar_email_suenyo_estres(
+                    nombre, 
+                    email_cliente, 
+                    fecha_llenado,
+                    st.session_state.suenyo_estres_data
+                )
+                if ok_suenyo:
+                    st.success("✅ Informe de Sueño + Estrés enviado exitosamente a administración")
+                else:
+                    st.error("❌ Error al enviar el informe de Sueño + Estrés")
+    
     # Progress bar general
     progress = st.progress(0)
     progress_text = st.empty()
