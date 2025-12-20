@@ -38,11 +38,11 @@ else:
     print("✗ Integration call not found")
     sys.exit(1)
 
-# Check for email button
-if "Enviar Informe de Sueño + Estrés por Email" in content:
-    print("✓ Email send button found")
+# Check for integration into main email (separate button was removed per requirements)
+if "ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)" in content:
+    print("✓ Sleep/stress section integrated into main email")
 else:
-    print("✗ Email send button not found")
+    print("✗ Sleep/stress section not found in main email integration")
     sys.exit(1)
 
 # Check for all required questions

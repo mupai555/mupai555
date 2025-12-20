@@ -2246,9 +2246,13 @@ muscleupgym.fitness
 
 def formulario_suenyo_estres():
     """
-    Cuestionario independiente para evaluar el Estado de Recuperación (Sueño + Estrés).
+    Cuestionario modular para evaluar el Estado de Recuperación (Sueño + Estrés).
     
-    Calcula:
+    Captura datos sin mostrar puntuaciones al usuario. Los cálculos se realizan
+    silenciosamente en segundo plano y se incluyen en el reporte final enviado
+    a administración.
+    
+    Calcula (silenciosamente):
     - SleepScore: Puntuación de calidad del sueño (0-100)
     - StressScore: Puntuación de nivel de estrés (0-100)
     - IR-SE: Índice de Recuperación Sueño-Estrés
@@ -2256,14 +2260,14 @@ def formulario_suenyo_estres():
     - Banderas de alerta: Detección de problemas graves
     
     Returns:
-        dict: Diccionario con resultados o None si no se completó
+        dict: Diccionario con resultados calculados para incluir en email
     """
     st.markdown("---")
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 😴 Estado de Recuperación (Sueño + Estrés)")
     st.markdown("""
-    Este cuestionario evalúa tu calidad de sueño y nivel de estrés, 
-    dos factores críticos para la recuperación y el rendimiento físico.
+    Por favor responde las siguientes preguntas sobre tu calidad de sueño y nivel de estrés. 
+    Esta información será incluida en tu reporte de evaluación para un análisis integral.
     """)
     
     # Initialize session state for sleep/stress data
@@ -2388,221 +2392,152 @@ def formulario_suenyo_estres():
             help="Nivel de irritabilidad en tu día a día"
         )
     
-    # ========== CÁLCULO DE PUNTUACIONES ==========
-    if st.button("📊 Calcular Estado de Recuperación", key="calcular_suenyo_estres"):
-        # Puntuaciones de sueño
-        puntos_horas = {
-            "≥8 horas": 0,
-            "7-7.9 horas": 1,
-            "6-6.9 horas": 2,
-            "5-5.9 horas": 3,
-            "<5 horas": 4
-        }
-        
-        puntos_conciliar = {
-            "Menos de 15 minutos": 0,
-            "15-30 minutos": 1,
-            "30-60 minutos": 2,
-            "Más de 60 minutos": 3
-        }
-        
-        puntos_despertares = {
-            "Ninguna": 0,
-            "1 vez": 1,
-            "2 veces": 2,
-            "3 o más veces": 3
-        }
-        
-        puntos_calidad = {
-            "Excelente": 0,
-            "Buena": 1,
-            "Regular": 2,
-            "Mala": 3,
-            "Muy mala": 4
-        }
-        
-        # Puntuaciones de estrés
-        puntos_estres = {
-            "Nunca": 0,
-            "Casi nunca": 1,
-            "A veces": 2,
-            "Frecuentemente": 3,
-            "Muy frecuentemente": 4
-        }
-        
-        # Calcular puntuación total de sueño (0-14 puntos)
-        sleep_raw = (
-            puntos_horas[horas_sueno] +
-            puntos_conciliar[tiempo_conciliar] +
-            puntos_despertares[veces_despierta] +
-            puntos_calidad[calidad_sueno]
-        )
-        
-        # Calcular puntuación total de estrés (0-16 puntos)
-        stress_raw = (
-            puntos_estres[sobrecarga] +
-            puntos_estres[falta_control] +
-            puntos_estres[dificultad_manejar] +
-            puntos_estres[irritabilidad]
-        )
-        
-        # Normalizar a 0-100 (invertido: menor puntuación = mejor)
-        # Para sueño: 0 puntos = 100 score, 14 puntos = 0 score
-        sleep_score = max(0, 100 - (sleep_raw / 14 * 100))
-        
-        # Para estrés: 0 puntos = 100 score, 16 puntos = 0 score
-        stress_score = max(0, 100 - (stress_raw / 16 * 100))
-        
-        # Calcular IR-SE (Índice de Recuperación Sueño-Estrés)
-        # Ponderación: 60% sueño, 40% estrés (el sueño es más crítico para recuperación)
-        ir_se = (sleep_score * 0.6) + (stress_score * 0.4)
-        
-        # Clasificar recuperación
-        if ir_se >= 70:
-            nivel_recuperacion = "ALTA"
-            color_nivel = "#27AE60"
-            emoji_nivel = "✅"
-            mensaje_nivel = "Excelente estado de recuperación. Tu cuerpo está bien preparado para el entrenamiento."
-        elif ir_se >= 50:
-            nivel_recuperacion = "MEDIA"
-            color_nivel = "#F39C12"
-            emoji_nivel = "⚠️"
-            mensaje_nivel = "Estado de recuperación moderado. Considera mejorar la calidad del sueño o reducir el estrés."
-        else:
-            nivel_recuperacion = "BAJA"
-            color_nivel = "#E74C3C"
-            emoji_nivel = "🚨"
-            mensaje_nivel = "Estado de recuperación comprometido. Es importante abordar problemas de sueño y/o estrés."
-        
-        # Detectar banderas rojas y amarillas
-        banderas = []
-        
-        # Banderas rojas (problemas graves)
-        if sleep_raw >= 10:  # Sueño muy problemático
-            banderas.append(("🔴 BANDERA ROJA", "Problemas graves de sueño detectados", 
-                           "Tu calidad y cantidad de sueño están significativamente comprometidas. "
-                           "Considera consultar con un especialista en medicina del sueño."))
-        
-        if stress_raw >= 12:  # Estrés muy alto
-            banderas.append(("🔴 BANDERA ROJA", "Nivel de estrés crítico", 
-                           "Tu nivel de estrés está en rango muy alto. "
-                           "Se recomienda buscar apoyo profesional (psicólogo o terapeuta)."))
-        
-        # Banderas amarillas (problemas moderados)
-        if 7 <= sleep_raw < 10:
-            banderas.append(("🟡 BANDERA AMARILLA", "Calidad de sueño subóptima", 
-                           "Tu sueño necesita atención. Implementa higiene del sueño: "
-                           "horarios regulares, ambiente oscuro, evitar pantallas antes de dormir."))
-        
-        if 8 <= stress_raw < 12:
-            banderas.append(("🟡 BANDERA AMARILLA", "Nivel de estrés elevado", 
-                           "Tu nivel de estrés está por encima del ideal. "
-                           "Considera técnicas de manejo: meditación, ejercicio, tiempo libre."))
-        
-        if puntos_horas[horas_sueno] >= 3:  # Menos de 6 horas
-            banderas.append(("🟡 BANDERA AMARILLA", "Duración de sueño insuficiente", 
-                           f"Duermes {horas_sueno}. Se recomiendan al menos 7-8 horas para recuperación óptima."))
-        
-        # Guardar en session state
-        st.session_state.suenyo_estres_data = {
-            'horas_sueno': horas_sueno,
-            'tiempo_conciliar': tiempo_conciliar,
-            'veces_despierta': veces_despierta,
-            'calidad_sueno': calidad_sueno,
-            'sobrecarga': sobrecarga,
-            'falta_control': falta_control,
-            'dificultad_manejar': dificultad_manejar,
-            'irritabilidad': irritabilidad,
-            'sleep_raw': sleep_raw,
-            'stress_raw': stress_raw,
-            'sleep_score': sleep_score,
-            'stress_score': stress_score,
-            'ir_se': ir_se,
-            'nivel_recuperacion': nivel_recuperacion,
-            'color_nivel': color_nivel,
-            'emoji_nivel': emoji_nivel,
-            'mensaje_nivel': mensaje_nivel,
-            'banderas': banderas
-        }
-        st.session_state.suenyo_estres_completado = True
-        
-        # ========== MOSTRAR RESULTADOS ==========
-        st.markdown("---")
-        st.markdown("### 📊 Resultados de la Evaluación")
-        
-        # Métricas principales
-        col_res1, col_res2, col_res3 = st.columns(3)
-        
-        with col_res1:
-            st.metric(
-                label="😴 Sleep Score",
-                value=f"{sleep_score:.0f}/100",
-                help="Puntuación de calidad del sueño (0-100, mayor es mejor)"
-            )
-        
-        with col_res2:
-            st.metric(
-                label="🧠 Stress Score",
-                value=f"{stress_score:.0f}/100",
-                help="Puntuación de manejo del estrés (0-100, mayor es mejor)"
-            )
-        
-        with col_res3:
-            st.metric(
-                label="🎯 Índice IR-SE",
-                value=f"{ir_se:.0f}/100",
-                help="Índice de Recuperación Sueño-Estrés combinado"
-            )
-        
-        # Clasificación de recuperación
-        st.markdown(f"""
-        <div class="content-card" style="background: {color_nivel}20; border-left: 4px solid {color_nivel};">
-            <h3 style="color: {color_nivel}; margin-bottom: 1rem;">
-                {emoji_nivel} Estado de Recuperación: {nivel_recuperacion}
-            </h3>
-            <p style="color: #CCCCCC; font-size: 1.1rem; margin-bottom: 0;">
-                {mensaje_nivel}
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Mostrar banderas de alerta si existen
-        if banderas:
-            st.markdown("### ⚠️ Alertas y Recomendaciones")
-            for tipo, titulo, descripcion in banderas:
-                if "ROJA" in tipo:
-                    st.error(f"**{tipo}: {titulo}**\n\n{descripcion}")
-                else:
-                    st.warning(f"**{tipo}: {titulo}**\n\n{descripcion}")
-        else:
-            st.success("✅ No se detectaron banderas de alerta. Tu estado de recuperación es adecuado.")
-        
-        # Detalles técnicos
-        with st.expander("📋 Ver Detalles Técnicos", expanded=False):
-            st.markdown("#### Puntuaciones Detalladas")
-            st.markdown(f"""
-            **SUEÑO:**
-            - Horas de sueño: {horas_sueno} → {puntos_horas[horas_sueno]} puntos
-            - Tiempo para conciliar: {tiempo_conciliar} → {puntos_conciliar[tiempo_conciliar]} puntos
-            - Despertares nocturnos: {veces_despierta} → {puntos_despertares[veces_despierta]} puntos
-            - Calidad percibida: {calidad_sueno} → {puntos_calidad[calidad_sueno]} puntos
-            - **Total sueño:** {sleep_raw}/14 puntos → **Sleep Score: {sleep_score:.1f}/100**
-            
-            **ESTRÉS:**
-            - Sobrecarga: {sobrecarga} → {puntos_estres[sobrecarga]} puntos
-            - Falta de control: {falta_control} → {puntos_estres[falta_control]} puntos
-            - Dificultad para manejar: {dificultad_manejar} → {puntos_estres[dificultad_manejar]} puntos
-            - Irritabilidad: {irritabilidad} → {puntos_estres[irritabilidad]} puntos
-            - **Total estrés:** {stress_raw}/16 puntos → **Stress Score: {stress_score:.1f}/100**
-            
-            **ÍNDICE IR-SE:**
-            - Fórmula: (Sleep Score × 0.6) + (Stress Score × 0.4)
-            - Cálculo: ({sleep_score:.1f} × 0.6) + ({stress_score:.1f} × 0.4) = **{ir_se:.1f}**
-            - Clasificación: **{nivel_recuperacion}** ({emoji_nivel})
-            """)
+    # ========== CÁLCULO SILENCIOSO DE PUNTUACIONES ==========
+    # Los cálculos se realizan cada vez que se ejecuta el formulario
+    # No se muestran resultados al usuario, solo se capturan para el reporte
+    
+    # Puntuaciones de sueño
+    puntos_horas = {
+        "≥8 horas": 0,
+        "7-7.9 horas": 1,
+        "6-6.9 horas": 2,
+        "5-5.9 horas": 3,
+        "<5 horas": 4
+    }
+    
+    puntos_conciliar = {
+        "Menos de 15 minutos": 0,
+        "15-30 minutos": 1,
+        "30-60 minutos": 2,
+        "Más de 60 minutos": 3
+    }
+    
+    puntos_despertares = {
+        "Ninguna": 0,
+        "1 vez": 1,
+        "2 veces": 2,
+        "3 o más veces": 3
+    }
+    
+    puntos_calidad = {
+        "Excelente": 0,
+        "Buena": 1,
+        "Regular": 2,
+        "Mala": 3,
+        "Muy mala": 4
+    }
+    
+    # Puntuaciones de estrés
+    puntos_estres = {
+        "Nunca": 0,
+        "Casi nunca": 1,
+        "A veces": 2,
+        "Frecuentemente": 3,
+        "Muy frecuentemente": 4
+    }
+    
+    # Calcular puntuación total de sueño (0-14 puntos)
+    sleep_raw = (
+        puntos_horas[horas_sueno] +
+        puntos_conciliar[tiempo_conciliar] +
+        puntos_despertares[veces_despierta] +
+        puntos_calidad[calidad_sueno]
+    )
+    
+    # Calcular puntuación total de estrés (0-16 puntos)
+    stress_raw = (
+        puntos_estres[sobrecarga] +
+        puntos_estres[falta_control] +
+        puntos_estres[dificultad_manejar] +
+        puntos_estres[irritabilidad]
+    )
+    
+    # Normalizar a 0-100 (invertido: menor puntuación = mejor)
+    # Para sueño: 0 puntos = 100 score, 14 puntos = 0 score
+    sleep_score = max(0, 100 - (sleep_raw / 14 * 100))
+    
+    # Para estrés: 0 puntos = 100 score, 16 puntos = 0 score
+    stress_score = max(0, 100 - (stress_raw / 16 * 100))
+    
+    # Calcular IR-SE (Índice de Recuperación Sueño-Estrés)
+    # Ponderación: 60% sueño, 40% estrés (el sueño es más crítico para recuperación)
+    ir_se = (sleep_score * 0.6) + (stress_score * 0.4)
+    
+    # Clasificar recuperación
+    if ir_se >= 70:
+        nivel_recuperacion = "ALTA"
+        color_nivel = "#27AE60"
+        emoji_nivel = "✅"
+        mensaje_nivel = "Excelente estado de recuperación. Tu cuerpo está bien preparado para el entrenamiento."
+    elif ir_se >= 50:
+        nivel_recuperacion = "MEDIA"
+        color_nivel = "#F39C12"
+        emoji_nivel = "⚠️"
+        mensaje_nivel = "Estado de recuperación moderado. Considera mejorar la calidad del sueño o reducir el estrés."
+    else:
+        nivel_recuperacion = "BAJA"
+        color_nivel = "#E74C3C"
+        emoji_nivel = "🚨"
+        mensaje_nivel = "Estado de recuperación comprometido. Es importante abordar problemas de sueño y/o estrés."
+    
+    # Detectar banderas rojas y amarillas
+    banderas = []
+    
+    # Banderas rojas (problemas graves)
+    if sleep_raw >= 10:  # Sueño muy problemático
+        banderas.append(("🔴 BANDERA ROJA", "Problemas graves de sueño detectados", 
+                       "Tu calidad y cantidad de sueño están significativamente comprometidas. "
+                       "Considera consultar con un especialista en medicina del sueño."))
+    
+    if stress_raw >= 12:  # Estrés muy alto
+        banderas.append(("🔴 BANDERA ROJA", "Nivel de estrés crítico", 
+                       "Tu nivel de estrés está en rango muy alto. "
+                       "Se recomienda buscar apoyo profesional (psicólogo o terapeuta)."))
+    
+    # Banderas amarillas (problemas moderados)
+    if 7 <= sleep_raw < 10:
+        banderas.append(("🟡 BANDERA AMARILLA", "Calidad de sueño subóptima", 
+                       "Tu sueño necesita atención. Implementa higiene del sueño: "
+                       "horarios regulares, ambiente oscuro, evitar pantallas antes de dormir."))
+    
+    if 8 <= stress_raw < 12:
+        banderas.append(("🟡 BANDERA AMARILLA", "Nivel de estrés elevado", 
+                       "Tu nivel de estrés está por encima del ideal. "
+                       "Considera técnicas de manejo: meditación, ejercicio, tiempo libre."))
+    
+    if puntos_horas[horas_sueno] >= 3:  # Menos de 6 horas
+        banderas.append(("🟡 BANDERA AMARILLA", "Duración de sueño insuficiente", 
+                       f"Duermes {horas_sueno}. Se recomiendan al menos 7-8 horas para recuperación óptima."))
+    
+    # Guardar en session state (silenciosamente - no mostrar al usuario)
+    st.session_state.suenyo_estres_data = {
+        'horas_sueno': horas_sueno,
+        'tiempo_conciliar': tiempo_conciliar,
+        'veces_despierta': veces_despierta,
+        'calidad_sueno': calidad_sueno,
+        'sobrecarga': sobrecarga,
+        'falta_control': falta_control,
+        'dificultad_manejar': dificultad_manejar,
+        'irritabilidad': irritabilidad,
+        'sleep_raw': sleep_raw,
+        'stress_raw': stress_raw,
+        'sleep_score': sleep_score,
+        'stress_score': stress_score,
+        'ir_se': ir_se,
+        'nivel_recuperacion': nivel_recuperacion,
+        'color_nivel': color_nivel,
+        'emoji_nivel': emoji_nivel,
+        'mensaje_nivel': mensaje_nivel,
+        'banderas': banderas
+    }
+    st.session_state.suenyo_estres_completado = True
+    
+    # Mensaje de confirmación (sin mostrar puntuaciones)
+    st.success("✅ Respuestas guardadas. Estos datos serán incluidos en tu reporte de evaluación.")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
+    # Return data for integration into main email
     return st.session_state.suenyo_estres_data if st.session_state.suenyo_estres_completado else None
 
 def enviar_email_suenyo_estres(nombre_cliente, email_cliente, fecha, data_suenyo_estres):
@@ -2973,25 +2908,10 @@ if not st.session_state.datos_completos:
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos and st.session_state.get("acepto_descargo", False)
 
 if datos_personales_completos and st.session_state.datos_completos:
-    # ========== CUESTIONARIO SUEÑO + ESTRÉS (INDEPENDIENTE) ==========
+    # ========== CUESTIONARIO SUEÑO + ESTRÉS (INTEGRADO) ==========
     # Llamar al formulario de sueño y estrés ANTES de cualquier cálculo complejo
-    # Este cuestionario es completamente independiente y no afecta la lógica existente
+    # Los datos se capturan y se incluirán automáticamente en el email final
     resultado_suenyo_estres = formulario_suenyo_estres()
-    
-    # Botón para enviar el informe de Sueño + Estrés por email
-    if st.session_state.get('suenyo_estres_completado', False):
-        if st.button("📧 Enviar Informe de Sueño + Estrés por Email", key="enviar_email_suenyo_estres"):
-            with st.spinner("📧 Enviando informe de Sueño + Estrés..."):
-                ok_suenyo = enviar_email_suenyo_estres(
-                    nombre, 
-                    email_cliente, 
-                    fecha_llenado,
-                    st.session_state.suenyo_estres_data
-                )
-                if ok_suenyo:
-                    st.success("✅ Informe de Sueño + Estrés enviado exitosamente a administración")
-                else:
-                    st.error("❌ Error al enviar el informe de Sueño + Estrés")
     
     # Progress bar general
     progress = st.progress(0)
@@ -5313,6 +5233,102 @@ según tu progreso real. Se recomienda evaluación periódica cada 2-3
 semanas para optimizar resultados.
 
 """
+
+# ==================== AGREGAR SECCIÓN DE SUEÑO + ESTRÉS AL EMAIL ====================
+# Integrar datos del cuestionario de sueño y estrés si están disponibles
+if st.session_state.get('suenyo_estres_completado', False) and st.session_state.get('suenyo_estres_data'):
+    data_se = st.session_state.suenyo_estres_data
+    
+    # Validar que los datos esenciales estén presentes
+    if all(key in data_se for key in ['sleep_score', 'stress_score', 'ir_se', 'nivel_recuperacion']):
+        tabla_resumen += f"""
+=====================================
+ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)
+=====================================
+
+Esta sección evalúa factores críticos para la recuperación y rendimiento:
+la calidad del sueño y el nivel de estrés percibido.
+
+🌙 RESPUESTAS - CALIDAD DEL SUEÑO:
+   • Horas de sueño por noche: {data_se.get('horas_sueno', 'No reportado')}
+   • Tiempo para conciliar el sueño: {data_se.get('tiempo_conciliar', 'No reportado')}
+   • Despertares nocturnos: {data_se.get('veces_despierta', 'No reportado')}
+   • Calidad percibida del sueño: {data_se.get('calidad_sueno', 'No reportado')}
+
+🧠 RESPUESTAS - NIVEL DE ESTRÉS:
+   • Sensación de sobrecarga: {data_se.get('sobrecarga', 'No reportado')}
+   • Falta de control: {data_se.get('falta_control', 'No reportado')}
+   • Dificultad para manejar situaciones: {data_se.get('dificultad_manejar', 'No reportado')}
+   • Irritabilidad frecuente: {data_se.get('irritabilidad', 'No reportado')}
+
+📊 PUNTUACIONES CALCULADAS:
+   • Sleep Score: {data_se.get('sleep_score', 0):.1f}/100
+     - Puntuación cruda de sueño: {data_se.get('sleep_raw', 0)}/14 puntos
+     - Interpretación: {'Excelente' if data_se.get('sleep_score', 0) >= 85 else 'Buena' if data_se.get('sleep_score', 0) >= 70 else 'Regular' if data_se.get('sleep_score', 0) >= 50 else 'Necesita atención'}
+   
+   • Stress Score: {data_se.get('stress_score', 0):.1f}/100
+     - Puntuación cruda de estrés: {data_se.get('stress_raw', 0)}/16 puntos
+     - Interpretación: {'Excelente manejo' if data_se.get('stress_score', 0) >= 85 else 'Buen manejo' if data_se.get('stress_score', 0) >= 70 else 'Manejo moderado' if data_se.get('stress_score', 0) >= 50 else 'Necesita atención'}
+   
+   • Índice IR-SE (Recuperación Sueño-Estrés): {data_se.get('ir_se', 0):.1f}/100
+     - Fórmula: (Sleep Score × 60%) + (Stress Score × 40%)
+     - Cálculo: ({data_se.get('sleep_score', 0):.1f} × 0.6) + ({data_se.get('stress_score', 0):.1f} × 0.4) = {data_se.get('ir_se', 0):.1f}
+
+🎯 CLASIFICACIÓN DE RECUPERACIÓN:
+   • Nivel: {data_se.get('nivel_recuperacion', 'No determinado')} {data_se.get('emoji_nivel', '')}
+   • Evaluación: {data_se.get('mensaje_nivel', 'Sin mensaje disponible')}
+
+RANGOS DE REFERENCIA:
+   • ALTA (70-100): Excelente estado de recuperación, óptimo para entrenamiento intenso
+   • MEDIA (50-69): Recuperación moderada, considerar mejoras en sueño o manejo de estrés
+   • BAJA (<50): Recuperación comprometida, intervención necesaria
+
+⚠️ BANDERAS DE ALERTA:
+"""
+    
+    if data_se.get('banderas'):
+        for tipo, titulo, descripcion in data_se['banderas']:
+            tabla_resumen += f"""
+{tipo}: {titulo}
+{descripcion}
+
+"""
+    else:
+        tabla_resumen += """
+✅ No se detectaron banderas de alerta. El estado de sueño y estrés está dentro
+   de rangos saludables.
+
+"""
+    
+    tabla_resumen += f"""
+💡 RECOMENDACIONES GENERALES SUEÑO + ESTRÉS:
+
+HIGIENE DEL SUEÑO:
+• Mantener horarios regulares de sueño (acostarse y levantarse a la misma hora)
+• Ambiente oscuro, silencioso y fresco (16-19°C ideal)
+• Evitar pantallas 1-2 horas antes de dormir (luz azul inhibe melatonina)
+• Limitar cafeína después de las 14:00h
+• Rutina de relajación pre-sueño (lectura, meditación, estiramientos suaves)
+
+MANEJO DEL ESTRÉS:
+• Practicar técnicas de respiración profunda o meditación (10-15 min/día)
+• Ejercicio regular (libera endorfinas, reduce cortisol)
+• Establecer límites claros entre trabajo y tiempo personal
+• Priorizar tareas y delegar cuando sea posible
+• Mantener conexiones sociales de apoyo
+
+IMPACTO EN ENTRENAMIENTO:
+• Un sueño insuficiente (<7h) reduce la síntesis proteica hasta un 18%
+• El estrés crónico eleva el cortisol, promoviendo catabolismo muscular
+• La recuperación óptima requiere tanto sueño de calidad como bajo estrés
+• Considera ajustar volumen/intensidad de entrenamiento si IR-SE < 50
+
+NOTA IMPORTANTE:
+Los datos de sueño y estrés son autorreportados y reflejan la percepción
+subjetiva del cliente. Para casos con banderas rojas, considerar derivación
+a especialistas (médico del sueño, psicólogo clínico).
+
+        """
 
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
