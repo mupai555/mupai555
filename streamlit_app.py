@@ -38,6 +38,10 @@ USER_VIEW = False  # Controls whether users see detailed evaluation results
 # Email attachment size limit (in MB)
 EMAIL_ATTACHMENT_SIZE_LIMIT_MB = 15
 
+# Progress photos configuration
+REQUIRED_PROGRESS_PHOTOS = ["front_relaxed", "side_relaxed_right", "back_relaxed"]
+OPTIONAL_PROGRESS_PHOTOS = ["pose_libre"]
+
 # Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
 # Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
 OMRON_HBF516_TO_4C = {
@@ -2159,6 +2163,27 @@ def clasificar_masa_muscular(porcentaje, edad, sexo):
             else:
                 return "Alto"
 
+def format_photo_status(progress_photos):
+    """
+    Format the photo status message for email body.
+    
+    Args:
+        progress_photos: Dictionary with photo files or None
+    
+    Returns:
+        str: Formatted status message
+    """
+    if not progress_photos:
+        return "✗ Sin fotografías adjuntas"
+    
+    # Check if optional photo is present
+    has_optional = progress_photos.get("pose_libre") is not None
+    
+    if has_optional:
+        return "✓ 4 fotografías adjuntas (frontal, lateral, posterior, pose libre)"
+    else:
+        return "✓ 3 fotografías adjuntas (frontal, lateral, posterior)"
+
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
                         masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None):
     """
@@ -2220,7 +2245,7 @@ COMPOSICIÓN CORPORAL — LÍNEA BASE
    • TMB (Cunningham): {tmb:.0f} kcal/día
 
 📷 FOTOGRAFÍAS DE PROGRESO:
-   {"✓ 3-4 fotografías adjuntas (frontal, lateral, posterior" + (", pose libre)" if progress_photos and progress_photos.get("pose_libre") else ")") if progress_photos else "✗ Sin fotografías adjuntas"}
+   {format_photo_status(progress_photos)}
 
 =====================================
 NOTAS IMPORTANTES
@@ -2823,9 +2848,8 @@ def attach_progress_photos_to_email(msg, progress_photos):
             "pose_libre": "PHOTO4_pose_libre"
         }
         
-        # Check required photos (first 3)
-        required_keys = ["front_relaxed", "side_relaxed_right", "back_relaxed"]
-        for key in required_keys:
+        # Check required photos
+        for key in REQUIRED_PROGRESS_PHOTOS:
             photo = progress_photos.get(key)
             if photo is None:
                 return False, 0, f"Falta foto requerida: {key}"
@@ -2834,8 +2858,8 @@ def attach_progress_photos_to_email(msg, progress_photos):
         for key, filename_prefix in photo_mapping.items():
             photo = progress_photos.get(key)
             if photo is None:
-                # Skip optional photo if not provided
-                if key == "pose_libre":
+                # Skip optional photos if not provided
+                if key in OPTIONAL_PROGRESS_PHOTOS:
                     continue
                 # Should not reach here for required photos due to check above
                 return False, 0, f"Falta foto: {key}"
@@ -3057,8 +3081,8 @@ def render_progress_photos_section():
     # Display upload status
     st.markdown("---")
     
-    # Count required photos (first 3) and optional photo
-    required_photos_uploaded = sum(1 for key in ["front_relaxed", "side_relaxed_right", "back_relaxed"] 
+    # Count required photos and optional photo
+    required_photos_uploaded = sum(1 for key in REQUIRED_PROGRESS_PHOTOS 
                                    if st.session_state.progress_photos.get(key) is not None)
     optional_photo_uploaded = st.session_state.progress_photos.get("pose_libre") is not None
     
@@ -5141,12 +5165,14 @@ def datos_completos_para_email():
     
     # Validar fotografías de progreso (obligatorias)
     progress_photos = st.session_state.get("progress_photos", {})
-    if not progress_photos.get("front_relaxed"):
-        faltantes.append("Foto 1 - Frontal relajado")
-    if not progress_photos.get("side_relaxed_right"):
-        faltantes.append("Foto 2 - Perfil lateral relajado (derecho)")
-    if not progress_photos.get("back_relaxed"):
-        faltantes.append("Foto 3 - Posterior relajado")
+    photo_labels = {
+        "front_relaxed": "Foto 1 - Frontal relajado",
+        "side_relaxed_right": "Foto 2 - Perfil lateral relajado (derecho)",
+        "back_relaxed": "Foto 3 - Posterior relajado"
+    }
+    for key in REQUIRED_PROGRESS_PHOTOS:
+        if not progress_photos.get(key):
+            faltantes.append(photo_labels.get(key, f"Foto requerida: {key}"))
     
     # Validar metas personales (obligatorio)
     metas_personales = st.session_state.get("metas_personales", "")

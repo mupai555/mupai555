@@ -69,9 +69,9 @@ if attach_func_start != -1:
         print("✗ attach_progress_photos_to_email does NOT include pose_libre mapping")
         all_checks_passed = False
     
-    # Check that pose_libre is handled as optional
-    if 'if key == "pose_libre":' in attach_func and 'continue' in attach_func:
-        print("  ✓ pose_libre is correctly handled as optional (skipped if not present)")
+    # Check that pose_libre is handled as optional (using constant)
+    if 'OPTIONAL_PROGRESS_PHOTOS' in attach_func or 'if key in OPTIONAL_PROGRESS_PHOTOS:' in content:
+        print("  ✓ pose_libre is correctly handled as optional (using constant)")
     else:
         print("  ✗ pose_libre is NOT handled as optional")
         all_checks_passed = False
@@ -79,11 +79,11 @@ else:
     print("✗ attach_progress_photos_to_email function NOT found")
     all_checks_passed = False
 
-# Check 8: Verify required photos check is separate from optional
-if 'required_keys = ["front_relaxed", "side_relaxed_right", "back_relaxed"]' in content:
-    print("✓ Required photos are explicitly defined (excluding pose_libre)")
+# Check 8: Verify required photos are defined as constant
+if 'REQUIRED_PROGRESS_PHOTOS' in content:
+    print("✓ Required photos defined as constant (REQUIRED_PROGRESS_PHOTOS)")
 else:
-    print("✗ Required photos check NOT found")
+    print("✗ Required photos constant NOT found")
     all_checks_passed = False
 
 # Check 9: Verify status display distinguishes required vs optional
@@ -107,9 +107,9 @@ else:
     print("✗ render_progress_photos_section function NOT found")
     all_checks_passed = False
 
-# Check 10: Verify email mentions 3-4 photos dynamically
-if '3-4 fotografías' in content or '"3-4 fotografías adjuntas' in content:
-    print("✓ Email body mentions '3-4 fotografías' dynamically")
+# Check 10: Verify email mentions photos with helper function
+if 'def format_photo_status' in content or '3-4 fotografías' in content or 'format_photo_status(progress_photos)' in content:
+    print("✓ Email body uses helper function or dynamic message for photos")
 else:
     print("  ℹ Email body might mention photos dynamically (soft check)")
 
