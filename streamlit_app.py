@@ -2662,10 +2662,7 @@ def formulario_metas_personales():
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Return data for integration into main email
-    return {
-        'metas_texto': st.session_state.metas_personales,
-        'completado': st.session_state.metas_personales_completado
-    } if st.session_state.metas_personales_completado else None
+    return st.session_state.metas_personales if st.session_state.metas_personales_completado else None
 
 def enviar_email_suenyo_estres(nombre_cliente, email_cliente, fecha, data_suenyo_estres):
     """
@@ -5685,7 +5682,7 @@ a especialistas (médico del sueño, psicólogo clínico).
 
 # ==================== AGREGAR SECCIÓN DE METAS PERSONALES AL EMAIL ====================
 # Integrar datos del cuestionario de metas personales si están disponibles
-if st.session_state.get('metas_personales_completado', False) and st.session_state.get('metas_personales'):
+if st.session_state.get('metas_personales_completado', False):
     metas_texto = st.session_state.metas_personales
     
     tabla_resumen += f"""
