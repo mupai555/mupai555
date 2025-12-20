@@ -2393,7 +2393,7 @@ def formulario_suenyo_estres():
         )
     
     # ========== CÁLCULO SILENCIOSO DE PUNTUACIONES ==========
-    # Los cálculos se realizan automáticamente al cargar el formulario
+    # Los cálculos se realizan cada vez que se ejecuta el formulario
     # No se muestran resultados al usuario, solo se capturan para el reporte
     
     # Puntuaciones de sueño
@@ -5239,7 +5239,9 @@ semanas para optimizar resultados.
 if st.session_state.get('suenyo_estres_completado', False) and st.session_state.get('suenyo_estres_data'):
     data_se = st.session_state.suenyo_estres_data
     
-    tabla_resumen += f"""
+    # Validar que los datos esenciales estén presentes
+    if all(key in data_se for key in ['sleep_score', 'stress_score', 'ir_se', 'nivel_recuperacion']):
+        tabla_resumen += f"""
 =====================================
 ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)
 =====================================
@@ -5326,7 +5328,7 @@ Los datos de sueño y estrés son autorreportados y reflejan la percepción
 subjetiva del cliente. Para casos con banderas rojas, considerar derivación
 a especialistas (médico del sueño, psicólogo clínico).
 
-"""
+        """
 
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
