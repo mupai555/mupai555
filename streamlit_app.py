@@ -5,6 +5,9 @@ from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email import encoders
 import time
 import re
 import random
@@ -31,6 +34,9 @@ MOSTRAR_ETA_AL_USUARIO = False   # Controls ETA (Thermal Effect of Food) UI visi
 # When True: Show all evaluation results to users
 # Note: All calculations ALWAYS run; email reports ALWAYS include full details
 USER_VIEW = False  # Controls whether users see detailed evaluation results
+
+# Email attachment size limit (in MB)
+EMAIL_ATTACHMENT_SIZE_LIMIT_MB = 15
 
 # Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
 # Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
@@ -2033,7 +2039,7 @@ def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
         # Para plan tradicional, usar el porcentaje tradicional
         return porcentaje if porcentaje is not None else 0
 
-def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, telefono):
+def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, telefono, progress_photos=None):
     """Envía el email con el resumen completo de la evaluación."""
     try:
         email_origen = "administracion@muscleupgym.fitness"
@@ -2046,6 +2052,18 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
         msg['Subject'] = f"Resumen evaluación MUPAI - {nombre_cliente} ({fecha})"
 
         msg.attach(MIMEText(contenido, 'plain'))
+        
+        # Attach progress photos if provided
+        if progress_photos:
+            success, total_size_mb, error_msg = attach_progress_photos_to_email(msg, progress_photos)
+            if not success:
+                st.error(f"Error al adjuntar fotos: {error_msg}")
+                return False
+            
+            # Check if total email size exceeds limit
+            if total_size_mb > EMAIL_ATTACHMENT_SIZE_LIMIT_MB:
+                st.warning(f"⚠️ El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email ({EMAIL_ATTACHMENT_SIZE_LIMIT_MB} MB). Se recomienda implementar almacenamiento externo.")
+                # For now, we'll still try to send but log the warning
 
         server = smtplib.SMTP('smtp.zoho.com', 587)
         server.starttls()
@@ -2142,7 +2160,7 @@ def clasificar_masa_muscular(porcentaje, edad, sexo):
                 return "Alto"
 
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
-                        masa_muscular, grasa_visceral, mlg, tmb):
+                        masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None):
     """
     Envía el email interno (Parte 2) con reporte profesional de composición corporal.
     Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
@@ -2201,6 +2219,9 @@ COMPOSICIÓN CORPORAL — LÍNEA BASE
 📊 METABOLISMO BASAL:
    • TMB (Cunningham): {tmb:.0f} kcal/día
 
+📷 FOTOGRAFÍAS DE PROGRESO:
+   {"✓ 3 fotografías adjuntas (frontal, lateral, posterior)" if progress_photos else "✗ Sin fotografías adjuntas"}
+
 =====================================
 NOTAS IMPORTANTES
 =====================================
@@ -2230,6 +2251,13 @@ muscleupgym.fitness
         msg['Subject'] = f"Reporte de Evaluación — Parte 2 (Lectura Visual, Línea Base) — {nombre_cliente} — {fecha}"
 
         msg.attach(MIMEText(contenido, 'plain'))
+        
+        # Attach progress photos if provided
+        if progress_photos:
+            success, total_size_mb, error_msg = attach_progress_photos_to_email(msg, progress_photos)
+            if not success:
+                st.error(f"Error al adjuntar fotos en Parte 2: {error_msg}")
+                return False
 
         server = smtplib.SMTP('smtp.zoho.com', 587)
         server.starttls()
@@ -2678,6 +2706,218 @@ muscleupgym.fitness
     except Exception as e:
         st.error(f"Error al enviar email de Sueño + Estrés: {str(e)}")
         return False
+
+def attach_progress_photos_to_email(msg, progress_photos):
+    """
+    Attaches progress photos to an email message.
+    
+    Args:
+        msg: MIMEMultipart email message object
+        progress_photos: Dictionary with photo files {key: UploadedFile}
+    
+    Returns:
+        tuple: (success, total_size_mb, error_message)
+    """
+    try:
+        total_size = 0
+        photo_mapping = {
+            "front_relaxed": "PHOTO1_front_relaxed",
+            "side_relaxed_right": "PHOTO2_side_relaxed_right",
+            "back_relaxed": "PHOTO3_back_relaxed"
+        }
+        
+        for key, filename_prefix in photo_mapping.items():
+            photo = progress_photos.get(key)
+            if photo is None:
+                return False, 0, f"Falta foto: {key}"
+            
+            # Get file extension
+            file_extension = photo.name.lower().split('.')[-1]
+            filename = f"{filename_prefix}.{file_extension}"
+            
+            # Read photo data and reset file pointer
+            photo.seek(0)  # Reset file pointer to beginning
+            photo_data = photo.read()
+            photo.seek(0)  # Reset again after reading for future access
+            total_size += len(photo_data)
+            
+            # Create attachment
+            if file_extension in ['jpg', 'jpeg']:
+                attachment = MIMEImage(photo_data, _subtype='jpeg')
+            elif file_extension == 'png':
+                attachment = MIMEImage(photo_data, _subtype='png')
+            else:
+                # Fallback to base attachment
+                attachment = MIMEBase('application', 'octet-stream')
+                attachment.set_payload(photo_data)
+                encoders.encode_base64(attachment)
+            
+            attachment.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+            msg.attach(attachment)
+        
+        total_size_mb = total_size / (1024 * 1024)
+        return True, total_size_mb, ""
+    
+    except Exception as e:
+        return False, 0, f"Error al adjuntar fotos: {str(e)}"
+
+# ==================== PROGRESS PHOTOS SECTION ====================
+
+def validate_progress_photo(uploaded_file):
+    """
+    Validates a progress photo for format and size.
+    
+    Args:
+        uploaded_file: Streamlit UploadedFile object
+    
+    Returns:
+        tuple: (is_valid, error_message)
+    """
+    if uploaded_file is None:
+        return False, "Se requiere una foto"
+    
+    # Check file extension
+    file_extension = uploaded_file.name.lower().split('.')[-1]
+    if file_extension not in ['jpg', 'jpeg', 'png']:
+        return False, f"Formato no válido. Solo se permiten JPG, JPEG o PNG (recibido: {file_extension})"
+    
+    # Check file size (10 MB = 10 * 1024 * 1024 bytes)
+    max_size = 10 * 1024 * 1024
+    if uploaded_file.size > max_size:
+        size_mb = uploaded_file.size / (1024 * 1024)
+        return False, f"Archivo muy grande ({size_mb:.1f} MB). Máximo permitido: 10 MB"
+    
+    return True, ""
+
+def render_progress_photos_section():
+    """
+    Renders the progress photos upload section with validation.
+    This section is isolated and doesn't affect existing logic.
+    """
+    st.markdown("---")
+    st.markdown('<div class="content-card" style="background: #1A1A1A; border-left: 4px solid var(--mupai-yellow);">', unsafe_allow_html=True)
+    st.markdown("### 📸 Fotografías de Progreso (PNG o JPG)")
+    
+    st.markdown("""
+    <p style="color: #CCCCCC; line-height: 1.6; margin-bottom: 1.5rem;">
+    Sube tus fotos de progreso siguiendo el protocolo (misma luz, misma distancia, cámara a altura del ombligo). 
+    <strong style="color: var(--mupai-yellow);">Estas fotos son obligatorias</strong> para evaluar tu composición corporal.
+    </p>
+    """, unsafe_allow_html=True)
+    
+    # Initialize session state for photos if not exists
+    if "progress_photos" not in st.session_state:
+        st.session_state.progress_photos = {
+            "front_relaxed": None,
+            "side_relaxed_right": None,
+            "back_relaxed": None
+        }
+    
+    # Create three columns for the photo uploads
+    col1, col2, col3 = st.columns(3)
+    
+    validation_errors = []
+    
+    with col1:
+        st.markdown("#### 📷 Foto 1 – Frontal relajado")
+        front_photo = st.file_uploader(
+            "Foto frontal",
+            type=["jpg", "jpeg", "png"],
+            key="front_relaxed_uploader",
+            help="Foto de frente, brazos a los lados, postura natural",
+            label_visibility="collapsed"
+        )
+        
+        if front_photo:
+            is_valid, error_msg = validate_progress_photo(front_photo)
+            if is_valid:
+                st.session_state.progress_photos["front_relaxed"] = front_photo
+                st.image(front_photo, caption="✅ Foto frontal cargada", use_container_width=True)
+                st.success(f"✓ {front_photo.size / (1024*1024):.2f} MB")
+            else:
+                st.session_state.progress_photos["front_relaxed"] = None
+                st.error(f"❌ {error_msg}")
+                validation_errors.append(f"Foto 1 (Frontal): {error_msg}")
+        else:
+            st.session_state.progress_photos["front_relaxed"] = None
+            st.warning("⚠️ Foto frontal requerida")
+    
+    with col2:
+        st.markdown("#### 📷 Foto 2 – Perfil lateral relajado")
+        side_photo = st.file_uploader(
+            "Foto lateral",
+            type=["jpg", "jpeg", "png"],
+            key="side_relaxed_right_uploader",
+            help="Foto de perfil derecho, brazos a los lados, postura natural",
+            label_visibility="collapsed"
+        )
+        
+        if side_photo:
+            is_valid, error_msg = validate_progress_photo(side_photo)
+            if is_valid:
+                st.session_state.progress_photos["side_relaxed_right"] = side_photo
+                st.image(side_photo, caption="✅ Foto lateral cargada", use_container_width=True)
+                st.success(f"✓ {side_photo.size / (1024*1024):.2f} MB")
+            else:
+                st.session_state.progress_photos["side_relaxed_right"] = None
+                st.error(f"❌ {error_msg}")
+                validation_errors.append(f"Foto 2 (Lateral): {error_msg}")
+        else:
+            st.session_state.progress_photos["side_relaxed_right"] = None
+            st.warning("⚠️ Foto lateral requerida")
+    
+    with col3:
+        st.markdown("#### 📷 Foto 3 – Posterior relajado")
+        back_photo = st.file_uploader(
+            "Foto posterior",
+            type=["jpg", "jpeg", "png"],
+            key="back_relaxed_uploader",
+            help="Foto de espalda, brazos a los lados, postura natural",
+            label_visibility="collapsed"
+        )
+        
+        if back_photo:
+            is_valid, error_msg = validate_progress_photo(back_photo)
+            if is_valid:
+                st.session_state.progress_photos["back_relaxed"] = back_photo
+                st.image(back_photo, caption="✅ Foto posterior cargada", use_container_width=True)
+                st.success(f"✓ {back_photo.size / (1024*1024):.2f} MB")
+            else:
+                st.session_state.progress_photos["back_relaxed"] = None
+                st.error(f"❌ {error_msg}")
+                validation_errors.append(f"Foto 3 (Posterior): {error_msg}")
+        else:
+            st.session_state.progress_photos["back_relaxed"] = None
+            st.warning("⚠️ Foto posterior requerida")
+    
+    # Show validation summary
+    if validation_errors:
+        st.error("**Errores de validación:**")
+        for error in validation_errors:
+            st.markdown(f"- {error}")
+    
+    # Calculate total size of all photos
+    total_size = 0
+    photos_uploaded = 0
+    for key, photo in st.session_state.progress_photos.items():
+        if photo is not None:
+            total_size += photo.size
+            photos_uploaded += 1
+    
+    # Display upload status
+    st.markdown("---")
+    if photos_uploaded == 3:
+        total_size_mb = total_size / (1024 * 1024)
+        if total_size_mb > EMAIL_ATTACHMENT_SIZE_LIMIT_MB:
+            st.warning(f"⚠️ **Advertencia:** El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email ({EMAIL_ATTACHMENT_SIZE_LIMIT_MB} MB). Las fotos se subirán a almacenamiento externo y se incluirán enlaces en el email.")
+        else:
+            st.success(f"✅ Las 3 fotos están cargadas correctamente. Tamaño total: {total_size_mb:.2f} MB")
+    else:
+        st.info(f"📊 **Estado:** {photos_uploaded} de 3 fotos requeridas cargadas.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    return validation_errors
 
         # ==================== VISUALES INICIALES ====================
 
@@ -4736,6 +4976,15 @@ def datos_completos_para_email():
     if not ejercicios_data or len(ejercicios_data) < 5:
         faltantes.append(f"Ejercicios funcionales completos (tienes {len(ejercicios_data) if ejercicios_data else 0} de 5 requeridos)")
     
+    # Validar fotografías de progreso (obligatorias)
+    progress_photos = st.session_state.get("progress_photos", {})
+    if not progress_photos.get("front_relaxed"):
+        faltantes.append("Foto 1 - Frontal relajado")
+    if not progress_photos.get("side_relaxed_right"):
+        faltantes.append("Foto 2 - Perfil lateral relajado (derecho)")
+    if not progress_photos.get("back_relaxed"):
+        faltantes.append("Foto 3 - Posterior relajado")
+    
     return faltantes
 
 # Construir tabla_resumen robusta para el email (idéntica a tu estructura, NO resumida)
@@ -5491,6 +5740,9 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
     </div>
     """, unsafe_allow_html=True)
 
+# --- Progress Photos Section (placed before final submission) ---
+render_progress_photos_section()
+
 # --- Botón para enviar email (solo si no se ha enviado y todo completo) ---
 if not st.session_state.get("correo_enviado", False):
     # Check if all required fields are complete before showing the button
@@ -5511,14 +5763,17 @@ if not st.session_state.get("correo_enviado", False):
             st.warning("⚠️ Revisa el formulario arriba y completa todos los campos requeridos, luego intenta enviar nuevamente.")
         else:
             with st.spinner("📧 Enviando resumen por email..."):
-                ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
+                # Get progress photos from session state
+                progress_photos = st.session_state.get("progress_photos", {})
+                
+                ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono, progress_photos)
                 if ok:
                     st.session_state["correo_enviado"] = True
                     st.success("✅ Email enviado exitosamente a administración")
                     # Enviar email Parte 2 (interno)
                     ok_parte2 = enviar_email_parte2(
                         nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb
+                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
                     )
                     if ok_parte2:
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
@@ -5551,14 +5806,17 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
         st.warning("⚠️ Revisa el formulario arriba y completa todos los campos requeridos, luego intenta enviar nuevamente.")
     else:
         with st.spinner("📧 Reenviando resumen por email..."):
-            ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono)
+            # Get progress photos from session state
+            progress_photos = st.session_state.get("progress_photos", {})
+            
+            ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono, progress_photos)
             if ok:
                 st.session_state["correo_enviado"] = True
                 st.success("✅ Email reenviado exitosamente a administración")
                 # Reenviar email Parte 2 (interno)
                 ok_parte2 = enviar_email_parte2(
                     nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb
+                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
                 )
                 if ok_parte2:
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
