@@ -2568,6 +2568,105 @@ def formulario_suenyo_estres():
     # Return data for integration into main email
     return st.session_state.suenyo_estres_data if st.session_state.suenyo_estres_completado else None
 
+def formulario_metas_personales():
+    """
+    Cuestionario modular para capturar objetivos personales a mediano y largo plazo.
+    
+    Permite al usuario detallar sus metas relacionadas con composición corporal,
+    rendimiento físico, y otros objetivos personales para 6-12 meses y más de 12 meses.
+    
+    Este campo es obligatorio y debe estar completo antes de poder enviar el cuestionario.
+    
+    Returns:
+        dict: Diccionario con la información de metas personales para incluir en email
+    """
+    st.markdown("---")
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    st.markdown("### 🎯 Metas Personales — Objetivos a Mediano y Largo Plazo")
+    st.markdown("""
+    **Este apartado es obligatorio.** Describe tus objetivos personales relacionados con la composición corporal 
+    y rendimiento físico. Esta información nos ayudará a personalizar mejor tu plan de entrenamiento y nutrición.
+    """)
+    
+    # Initialize session state for personal goals
+    if 'metas_personales_completado' not in st.session_state:
+        st.session_state.metas_personales_completado = False
+    if 'metas_personales' not in st.session_state:
+        st.session_state.metas_personales = ""
+    
+    # Instructions and examples
+    st.markdown("""
+    <div style="background: #252525; padding: 1rem; border-radius: 8px; border-left: 4px solid #FFD700; margin-bottom: 1rem;">
+        <h4 style="color: #FFD700; margin-top: 0;">💡 Instrucciones y Ejemplos</h4>
+        <p style="color: #CCCCCC; margin-bottom: 0.5rem;">
+            Por favor describe tus objetivos específicos considerando los siguientes aspectos:
+        </p>
+        <ul style="color: #CCCCCC; line-height: 1.8;">
+            <li><strong>Composición corporal:</strong> Reducir grasa corporal del X% al Y%, aumentar masa muscular en Z kg</li>
+            <li><strong>Rendimiento físico:</strong> Mejorar fuerza en ejercicios específicos, aumentar resistencia cardiovascular</li>
+            <li><strong>Objetivos estéticos:</strong> Definición muscular, mejora de zonas específicas del cuerpo</li>
+            <li><strong>Salud y bienestar:</strong> Reducir factores de riesgo metabólico, mejorar calidad de sueño, reducir estrés</li>
+            <li><strong>Plazos:</strong> Distingue entre metas a mediano plazo (6-12 meses) y largo plazo (más de 12 meses)</li>
+        </ul>
+        <p style="color: #CCCCCC; margin-bottom: 0; font-style: italic;">
+            <strong>Ejemplo:</strong> "A mediano plazo (6-12 meses): Reducir grasa corporal del 25% al 18%, aumentar 
+            masa muscular en 3-4 kg, mejorar mi rendimiento en press de banca de 60kg a 80kg. A largo plazo (más de 12 meses): 
+            Mantener un porcentaje de grasa corporal entre 12-15%, competir en mi primera carrera de medio maratón, 
+            desarrollar un físico atlético y funcional para deportes recreativos."
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Text area for personal goals with initial value from session state
+    metas_texto = st.text_area(
+        "✍️ Describe tus metas personales (mínimo 50 caracteres)*",
+        value=st.session_state.metas_personales,
+        height=250,
+        placeholder="Escribe aquí tus objetivos a mediano plazo (6-12 meses) y largo plazo (más de 12 meses)...",
+        help="Campo obligatorio. Describe tus metas específicas de composición corporal, rendimiento físico y bienestar general.",
+        key="metas_personales_input"
+    )
+    
+    # Real-time validation and feedback
+    metas_texto_clean = metas_texto.strip() if metas_texto else ""
+    char_count = len(metas_texto_clean)
+    
+    # Character counter with color coding
+    if char_count == 0:
+        st.markdown(f"""
+        <div style="color: #E74C3C; font-weight: bold; margin-top: -10px;">
+            ⚠️ Campo vacío. Por favor describe tus metas personales (mínimo 50 caracteres).
+        </div>
+        """, unsafe_allow_html=True)
+    elif char_count < 50:
+        st.markdown(f"""
+        <div style="color: #F39C12; font-weight: bold; margin-top: -10px;">
+            ⚠️ Caracteres: {char_count}/50 (mínimo). Por favor proporciona más detalles sobre tus objetivos.
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="color: #27AE60; font-weight: bold; margin-top: -10px;">
+            ✅ Caracteres: {char_count} - ¡Perfecto! Tus metas han sido capturadas correctamente.
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Update session state
+    st.session_state.metas_personales = metas_texto_clean
+    st.session_state.metas_personales_completado = char_count >= 50
+    
+    # Show confirmation message if complete
+    if st.session_state.metas_personales_completado:
+        st.success("✅ Metas personales completadas. Esta información será incluida en tu reporte de evaluación.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Return data for integration into main email
+    return {
+        'metas_texto': st.session_state.metas_personales,
+        'completado': st.session_state.metas_personales_completado
+    } if st.session_state.metas_personales_completado else None
+
 def enviar_email_suenyo_estres(nombre_cliente, email_cliente, fecha, data_suenyo_estres):
     """
     Envía por correo el informe del cuestionario de Sueño + Estrés.
@@ -4985,6 +5084,11 @@ def datos_completos_para_email():
     if not progress_photos.get("back_relaxed"):
         faltantes.append("Foto 3 - Posterior relajado")
     
+    # Validar metas personales (obligatorio)
+    metas_personales = st.session_state.get("metas_personales", "")
+    if not metas_personales or len(metas_personales.strip()) < 50:
+        faltantes.append("Metas Personales - Objetivos a mediano y largo plazo (mínimo 50 caracteres)")
+    
     return faltantes
 
 # Construir tabla_resumen robusta para el email (idéntica a tu estructura, NO resumida)
@@ -5579,6 +5683,37 @@ a especialistas (médico del sueño, psicólogo clínico).
 
         """
 
+# ==================== AGREGAR SECCIÓN DE METAS PERSONALES AL EMAIL ====================
+# Integrar datos del cuestionario de metas personales si están disponibles
+if st.session_state.get('metas_personales_completado', False) and st.session_state.get('metas_personales'):
+    metas_texto = st.session_state.metas_personales
+    
+    tabla_resumen += f"""
+=====================================
+METAS PERSONALES: OBJETIVOS A MEDIANO Y LARGO PLAZO
+=====================================
+
+El cliente ha definido los siguientes objetivos personales relacionados con 
+su composición corporal, rendimiento físico y bienestar general:
+
+{metas_texto}
+
+ANÁLISIS Y CONSIDERACIONES:
+• Estos objetivos personales deben ser considerados al diseñar el plan de 
+  entrenamiento y nutrición individualizado.
+• Se recomienda establecer hitos intermedios medibles para evaluar el progreso.
+• Los plazos definidos (mediano: 6-12 meses / largo: >12 meses) deben ajustarse
+  según la respuesta individual del cliente y factores contextuales.
+• La adherencia y consistencia serán factores clave para alcanzar estas metas.
+
+PRÓXIMOS PASOS SUGERIDOS:
+1. Diseñar plan nutricional alineado con los objetivos específicos del cliente
+2. Estructurar programa de entrenamiento progresivo acorde a metas
+3. Establecer sistema de seguimiento y evaluación periódica (cada 2-4 semanas)
+4. Ajustar estrategias según progreso real y retroalimentación del cliente
+
+    """
+
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
 if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
@@ -5739,6 +5874,9 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+# --- Personal Goals Section (placed before progress photos) ---
+resultado_metas_personales = formulario_metas_personales()
 
 # --- Progress Photos Section (placed before final submission) ---
 render_progress_photos_section()
