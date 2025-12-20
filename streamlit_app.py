@@ -38,6 +38,10 @@ USER_VIEW = False  # Controls whether users see detailed evaluation results
 # Email attachment size limit (in MB)
 EMAIL_ATTACHMENT_SIZE_LIMIT_MB = 15
 
+# Progress photos configuration
+REQUIRED_PROGRESS_PHOTOS = ["front_relaxed", "side_relaxed_right", "back_relaxed"]
+OPTIONAL_PROGRESS_PHOTOS = ["pose_libre"]
+
 # Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
 # Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
 OMRON_HBF516_TO_4C = {
@@ -2159,6 +2163,27 @@ def clasificar_masa_muscular(porcentaje, edad, sexo):
             else:
                 return "Alto"
 
+def format_photo_status(progress_photos):
+    """
+    Format the photo status message for email body.
+    
+    Args:
+        progress_photos: Dictionary with photo files or None
+    
+    Returns:
+        str: Formatted status message
+    """
+    if not progress_photos:
+        return "✗ Sin fotografías adjuntas"
+    
+    # Check if optional photo is present
+    has_optional = progress_photos.get("pose_libre") is not None
+    
+    if has_optional:
+        return "✓ 4 fotografías adjuntas (frontal, lateral, posterior, pose libre)"
+    else:
+        return "✓ 3 fotografías adjuntas (frontal, lateral, posterior)"
+
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
                         masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None):
     """
@@ -2220,7 +2245,7 @@ COMPOSICIÓN CORPORAL — LÍNEA BASE
    • TMB (Cunningham): {tmb:.0f} kcal/día
 
 📷 FOTOGRAFÍAS DE PROGRESO:
-   {"✓ 3 fotografías adjuntas (frontal, lateral, posterior)" if progress_photos else "✗ Sin fotografías adjuntas"}
+   {format_photo_status(progress_photos)}
 
 =====================================
 NOTAS IMPORTANTES
@@ -2819,12 +2844,24 @@ def attach_progress_photos_to_email(msg, progress_photos):
         photo_mapping = {
             "front_relaxed": "PHOTO1_front_relaxed",
             "side_relaxed_right": "PHOTO2_side_relaxed_right",
-            "back_relaxed": "PHOTO3_back_relaxed"
+            "back_relaxed": "PHOTO3_back_relaxed",
+            "pose_libre": "PHOTO4_pose_libre"
         }
         
+        # Check required photos
+        for key in REQUIRED_PROGRESS_PHOTOS:
+            photo = progress_photos.get(key)
+            if photo is None:
+                return False, 0, f"Falta foto requerida: {key}"
+        
+        # Attach all available photos (required + optional)
         for key, filename_prefix in photo_mapping.items():
             photo = progress_photos.get(key)
             if photo is None:
+                # Skip optional photos if not provided
+                if key in OPTIONAL_PROGRESS_PHOTOS:
+                    continue
+                # Should not reach here for required photos due to check above
                 return False, 0, f"Falta foto: {key}"
             
             # Get file extension
@@ -2906,10 +2943,11 @@ def render_progress_photos_section():
         st.session_state.progress_photos = {
             "front_relaxed": None,
             "side_relaxed_right": None,
-            "back_relaxed": None
+            "back_relaxed": None,
+            "pose_libre": None
         }
     
-    # Create three columns for the photo uploads
+    # Create three columns for the first row of photo uploads
     col1, col2, col3 = st.columns(3)
     
     validation_errors = []
@@ -2986,6 +3024,46 @@ def render_progress_photos_section():
             st.session_state.progress_photos["back_relaxed"] = None
             st.warning("⚠️ Foto posterior requerida")
     
+    # Add spacing between rows
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # New section for the free pose photo
+    st.markdown("""
+    <div style="margin-top: 1.5rem; padding: 1rem; background: #252525; border-radius: 10px; border-left: 3px solid #F39C12;">
+        <h4 style="color: #F39C12; margin-bottom: 0.5rem;">📸 Foto Adicional - Pose Libre</h4>
+        <p style="color: #CCCCCC; font-size: 0.95rem; margin-bottom: 0;">
+            Opcional: Carga una fotografía adicional en la pose que prefieras para complementar tu evaluación.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Create centered column for the free pose photo
+    col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
+    
+    with col_libre:
+        st.markdown("#### 📷 Foto 4 – Pose Libre")
+        libre_photo = st.file_uploader(
+            "Foto pose libre",
+            type=["jpg", "jpeg", "png"],
+            key="pose_libre_uploader",
+            help="Foto en la pose que prefieras - Opcional",
+            label_visibility="collapsed"
+        )
+        
+        if libre_photo:
+            is_valid, error_msg = validate_progress_photo(libre_photo)
+            if is_valid:
+                st.session_state.progress_photos["pose_libre"] = libre_photo
+                st.image(libre_photo, caption="✅ Foto pose libre cargada", use_container_width=True)
+                st.success(f"✓ {libre_photo.size / (1024*1024):.2f} MB")
+            else:
+                st.session_state.progress_photos["pose_libre"] = None
+                st.error(f"❌ {error_msg}")
+                validation_errors.append(f"Foto 4 (Pose Libre): {error_msg}")
+        else:
+            st.session_state.progress_photos["pose_libre"] = None
+            st.info("💡 Foto opcional - No requerida")
+    
     # Show validation summary
     if validation_errors:
         st.error("**Errores de validación:**")
@@ -3002,14 +3080,27 @@ def render_progress_photos_section():
     
     # Display upload status
     st.markdown("---")
-    if photos_uploaded == 3:
+    
+    # Count required photos and optional photo
+    required_photos_uploaded = sum(1 for key in REQUIRED_PROGRESS_PHOTOS 
+                                   if st.session_state.progress_photos.get(key) is not None)
+    optional_photo_uploaded = st.session_state.progress_photos.get("pose_libre") is not None
+    
+    if required_photos_uploaded == 3:
         total_size_mb = total_size / (1024 * 1024)
         if total_size_mb > EMAIL_ATTACHMENT_SIZE_LIMIT_MB:
             st.warning(f"⚠️ **Advertencia:** El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email ({EMAIL_ATTACHMENT_SIZE_LIMIT_MB} MB). Las fotos se subirán a almacenamiento externo y se incluirán enlaces en el email.")
         else:
-            st.success(f"✅ Las 3 fotos están cargadas correctamente. Tamaño total: {total_size_mb:.2f} MB")
+            status_msg = f"✅ Las 3 fotos requeridas están cargadas correctamente"
+            if optional_photo_uploaded:
+                status_msg += " + 1 foto opcional"
+            status_msg += f". Tamaño total: {total_size_mb:.2f} MB"
+            st.success(status_msg)
     else:
-        st.info(f"📊 **Estado:** {photos_uploaded} de 3 fotos requeridas cargadas.")
+        status_msg = f"📊 **Estado:** {required_photos_uploaded} de 3 fotos requeridas cargadas"
+        if optional_photo_uploaded:
+            status_msg += " (+ 1 foto opcional cargada)"
+        st.info(status_msg)
     
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -5074,12 +5165,14 @@ def datos_completos_para_email():
     
     # Validar fotografías de progreso (obligatorias)
     progress_photos = st.session_state.get("progress_photos", {})
-    if not progress_photos.get("front_relaxed"):
-        faltantes.append("Foto 1 - Frontal relajado")
-    if not progress_photos.get("side_relaxed_right"):
-        faltantes.append("Foto 2 - Perfil lateral relajado (derecho)")
-    if not progress_photos.get("back_relaxed"):
-        faltantes.append("Foto 3 - Posterior relajado")
+    photo_labels = {
+        "front_relaxed": "Foto 1 - Frontal relajado",
+        "side_relaxed_right": "Foto 2 - Perfil lateral relajado (derecho)",
+        "back_relaxed": "Foto 3 - Posterior relajado"
+    }
+    for key in REQUIRED_PROGRESS_PHOTOS:
+        if not progress_photos.get(key):
+            faltantes.append(photo_labels.get(key, f"Foto requerida: {key}"))
     
     # Validar metas personales (obligatorio)
     metas_personales = st.session_state.get("metas_personales", "")
