@@ -35,6 +35,9 @@ MOSTRAR_ETA_AL_USUARIO = False   # Controls ETA (Thermal Effect of Food) UI visi
 # Note: All calculations ALWAYS run; email reports ALWAYS include full details
 USER_VIEW = False  # Controls whether users see detailed evaluation results
 
+# Email attachment size limit (in MB)
+EMAIL_ATTACHMENT_SIZE_LIMIT_MB = 15
+
 # Tabla de conversión Omron HBF-516 a modelo 4C (Siedler & Tinsley 2022)
 # Formula: gc_4c = 1.226167 + 0.838294 * gc_omron
 OMRON_HBF516_TO_4C = {
@@ -2058,8 +2061,8 @@ def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, 
                 return False
             
             # Check if total email size exceeds limit
-            if total_size_mb > 15:
-                st.warning(f"⚠️ El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email. Se recomienda implementar almacenamiento externo.")
+            if total_size_mb > EMAIL_ATTACHMENT_SIZE_LIMIT_MB:
+                st.warning(f"⚠️ El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email ({EMAIL_ATTACHMENT_SIZE_LIMIT_MB} MB). Se recomienda implementar almacenamiento externo.")
                 # For now, we'll still try to send but log the warning
 
         server = smtplib.SMTP('smtp.zoho.com', 587)
@@ -2732,9 +2735,10 @@ def attach_progress_photos_to_email(msg, progress_photos):
             file_extension = photo.name.lower().split('.')[-1]
             filename = f"{filename_prefix}.{file_extension}"
             
-            # Read photo data
+            # Read photo data and reset file pointer
             photo.seek(0)  # Reset file pointer to beginning
             photo_data = photo.read()
+            photo.seek(0)  # Reset again after reading for future access
             total_size += len(photo_data)
             
             # Create attachment
@@ -2904,8 +2908,8 @@ def render_progress_photos_section():
     st.markdown("---")
     if photos_uploaded == 3:
         total_size_mb = total_size / (1024 * 1024)
-        if total_size_mb > 15:
-            st.warning(f"⚠️ **Advertencia:** El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email (15 MB). Las fotos se subirán a almacenamiento externo y se incluirán enlaces en el email.")
+        if total_size_mb > EMAIL_ATTACHMENT_SIZE_LIMIT_MB:
+            st.warning(f"⚠️ **Advertencia:** El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email ({EMAIL_ATTACHMENT_SIZE_LIMIT_MB} MB). Las fotos se subirán a almacenamiento externo y se incluirán enlaces en el email.")
         else:
             st.success(f"✅ Las 3 fotos están cargadas correctamente. Tamaño total: {total_size_mb:.2f} MB")
     else:
@@ -5798,7 +5802,7 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
         # Show detailed error message with all missing fields
         st.error("❌ **No se puede reenviar el resumen. Por favor completa los siguientes campos obligatorios:**")
         for campo_faltante in faltantes:
-             st.markdown(f"- ❌ **{campo_faltante}**")
+            st.markdown(f"- ❌ **{campo_faltante}**")
         st.warning("⚠️ Revisa el formulario arriba y completa todos los campos requeridos, luego intenta enviar nuevamente.")
     else:
         with st.spinner("📧 Reenviando resumen por email..."):
