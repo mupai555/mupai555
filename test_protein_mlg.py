@@ -33,14 +33,14 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
     except (TypeError, ValueError):
         grasa = 20.0  # Valor por defecto
     
-    if grasa < 10:
-        return 2.2
-    elif grasa < 15:
-        return 2.0
-    elif grasa < 25:
-        return 1.8
-    else:  # grasa >= 25
+    if grasa >= 35:
         return 1.6
+    elif grasa >= 25:
+        return 1.8
+    elif grasa >= 15:
+        return 2.0
+    else:  # grasa < 15 (includes 4-14.9%)
+        return 2.2
 
 
 def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
@@ -67,7 +67,7 @@ def test_karina_case():
     - Sexo: Mujer
     - Peso: 140.0 kg
     - % grasa corregido: 49%
-    - Factor for high fat (>=25%): 1.6
+    - Factor for high fat (>=35%): 1.6
     - Expected Result: Proteína = 1.6 × 71.4 (MLG) = 114.24 g/día ≈ 114 g
     """
     print("=" * 60)
@@ -155,7 +155,7 @@ def test_man_high_adiposity():
     
     # Get protein factor
     factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
-    print(f"Factor proteína: {factor_proteina} g/kg (>=25% grasa)")
+    print(f"Factor proteína: {factor_proteina} g/kg (>=35% grasa)")
     
     # Calculate protein
     proteina_g = round(base_proteina_kg * factor_proteina, 1)
@@ -207,7 +207,7 @@ def test_woman_moderate_adiposity():
     
     # Get protein factor
     factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
-    print(f"Factor proteína: {factor_proteina} g/kg (>=25% grasa)")
+    print(f"Factor proteína: {factor_proteina} g/kg (>=35% grasa)")
     
     # Calculate protein
     proteina_g = round(base_proteina_kg * factor_proteina, 1)
@@ -253,11 +253,11 @@ def test_man_low_adiposity():
     
     print(f"Base para proteína: {base_proteina_nombre} = {base_proteina_kg:.2f} kg")
     
-    # Get protein factor (should be 1.8 g/kg for 15% fat, as 15-25% range)
+    # Get protein factor (should be 2.0 g/kg for 15% fat, as 15-24.9% range)
     factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
-    print(f"Factor proteína: {factor_proteina} g/kg (15-25% grasa)")
+    print(f"Factor proteína: {factor_proteina} g/kg (15-24.9% grasa)")
     
-    assert factor_proteina == 1.8, "Factor should be 1.8 for 15% body fat"
+    assert factor_proteina == 2.0, "Factor should be 2.0 for 15% body fat"
     
     # Calculate protein
     proteina_g = round(base_proteina_kg * factor_proteina, 1)
