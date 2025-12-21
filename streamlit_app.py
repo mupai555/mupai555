@@ -1852,12 +1852,11 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
     Determina el factor de proteína en g/kg según el porcentaje de grasa corporal corregido
     para el plan tradicional.
     
-    NOTA: La lógica de proteína NO ha cambiado (según requerimientos)
     Escala de distribución:
-    - Si grasa_corregida < 10%: 2.2g/kg proteína
-    - Si grasa_corregida < 15%: 2.0g/kg proteína  
-    - Si grasa_corregida < 25%: 1.8g/kg proteína
-    - Si grasa_corregida >= 25%: 1.6g/kg proteína
+    - Si grasa_corregida >= 35%: 1.6g/kg proteína
+    - Si grasa_corregida entre 25% y 34.9%: 1.8g/kg proteína
+    - Si grasa_corregida entre 15% y 24.9%: 2.0g/kg proteína
+    - Si grasa_corregida entre 4% y 14.9%: 2.2g/kg proteína
     
     GRASA: Ahora SIEMPRE 40% TMB (independiente del % grasa corporal)
     
@@ -1872,14 +1871,14 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
     except (TypeError, ValueError):
         grasa = 20.0  # Valor por defecto
     
-    if grasa < 10:
-        return 2.2
-    elif grasa < 15:
-        return 2.0
-    elif grasa < 25:
-        return 1.8
-    else:  # grasa >= 25
+    if grasa >= 35:
         return 1.6
+    elif grasa >= 25:
+        return 1.8
+    elif grasa >= 15:
+        return 2.0
+    else:  # grasa < 15 (includes 4-14.9%)
+        return 2.2
 
 def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
     """
@@ -5164,10 +5163,10 @@ if USER_VIEW:
             # PROTEÍNA: Variable según % grasa corporal corregido (sin cambios)
             # GRASA: NUEVA LÓGICA - SIEMPRE 40% TMB independiente del % grasa corporal
             # Escala de distribución actualizada para plan tradicional:
-            # - Si grasa_corregida < 10%: 2.2g/kg proteína
-            # - Si grasa_corregida < 15%: 2.0g/kg proteína  
-            # - Si grasa_corregida < 25%: 1.8g/kg proteína
-            # - Si grasa_corregida >= 25%: 1.6g/kg proteína
+            # - Si grasa_corregida >= 35%: 1.6g/kg proteína
+            # - Si grasa_corregida entre 25% y 34.9%: 1.8g/kg proteína
+            # - Si grasa_corregida entre 15% y 24.9%: 2.0g/kg proteína
+            # - Si grasa_corregida entre 4% y 14.9%: 2.2g/kg proteína
             # - GRASA: SIEMPRE 40% TMB (mínimo 20% TEI, máximo 40% TEI)
         
             # Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
