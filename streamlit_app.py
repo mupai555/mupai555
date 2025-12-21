@@ -2828,6 +2828,301 @@ muscleupgym.fitness
         st.error(f"Error al enviar email de Sueño + Estrés: {str(e)}")
         return False
 
+# ==================== MUPAI VOLUME ENGINE ====================
+
+def generate_volume_plan(level, phase_energy, ir_se, rir, training_days, ffmi_margin):
+    """
+    MUPAI Volume Engine: Calculate muscle-targeted training volume recommendations.
+    
+    Args:
+        level (str): Training level ('principiante', 'intermedio', 'avanzado', 'élite')
+        phase_energy (str): Training phase ('deficit', 'mantenimiento', 'superavit')
+        ir_se (float): Recovery index (Sleep-Stress) from 0-100
+        rir (float): Reps in Reserve (0-4)
+        training_days (int): Training days per week (0-7)
+        ffmi_margin (float): FFMI margin from genetic potential (-5 to +5)
+    
+    Returns:
+        dict: Volume plan with MEV/MAV/MRV per muscle, viability, and recommendations
+    """
+    
+    # Validate inputs
+    try:
+        ir_se = float(ir_se) if ir_se else 50.0
+        rir = float(rir) if rir else 2.0
+        training_days = int(training_days) if training_days else 3
+        ffmi_margin = float(ffmi_margin) if ffmi_margin else 0.0
+    except (ValueError, TypeError):
+        # Return default safe values on error
+        return {
+            'error': 'Invalid input values',
+            'viability': 'NOT_VIABLE',
+            'muscles': {}
+        }
+    
+    # Clamp values to safe ranges
+    ir_se = max(0, min(100, ir_se))
+    rir = max(0, min(4, rir))
+    training_days = max(0, min(7, training_days))
+    ffmi_margin = max(-5, min(5, ffmi_margin))
+    
+    # Normalize level to lowercase
+    level = level.lower() if level else 'intermedio'
+    if level not in ['principiante', 'intermedio', 'avanzado', 'élite']:
+        level = 'intermedio'
+    
+    # Normalize phase_energy
+    phase_energy = phase_energy.lower() if phase_energy else 'mantenimiento'
+    if phase_energy not in ['deficit', 'mantenimiento', 'superavit']:
+        phase_energy = 'mantenimiento'
+    
+    # Define MEV, MAV, MRV by muscle group and level
+    # Format: {muscle: {level: {'MEV': X, 'MAV': Y, 'MRV': Z}}}
+    volume_ranges = {
+        'Pecho': {
+            'principiante': {'MEV': 6, 'MAV': 12, 'MRV': 18},
+            'intermedio': {'MEV': 8, 'MAV': 14, 'MRV': 22},
+            'avanzado': {'MEV': 10, 'MAV': 16, 'MRV': 25},
+            'élite': {'MEV': 12, 'MAV': 18, 'MRV': 28}
+        },
+        'Espalda': {
+            'principiante': {'MEV': 8, 'MAV': 14, 'MRV': 22},
+            'intermedio': {'MEV': 10, 'MAV': 16, 'MRV': 25},
+            'avanzado': {'MEV': 12, 'MAV': 18, 'MRV': 28},
+            'élite': {'MEV': 14, 'MAV': 20, 'MRV': 30}
+        },
+        'Hombros': {
+            'principiante': {'MEV': 6, 'MAV': 10, 'MRV': 16},
+            'intermedio': {'MEV': 8, 'MAV': 12, 'MRV': 18},
+            'avanzado': {'MEV': 10, 'MAV': 14, 'MRV': 20},
+            'élite': {'MEV': 12, 'MAV': 16, 'MRV': 22}
+        },
+        'Bíceps': {
+            'principiante': {'MEV': 4, 'MAV': 8, 'MRV': 14},
+            'intermedio': {'MEV': 6, 'MAV': 10, 'MRV': 16},
+            'avanzado': {'MEV': 8, 'MAV': 12, 'MRV': 18},
+            'élite': {'MEV': 10, 'MAV': 14, 'MRV': 20}
+        },
+        'Tríceps': {
+            'principiante': {'MEV': 4, 'MAV': 8, 'MRV': 14},
+            'intermedio': {'MEV': 6, 'MAV': 10, 'MRV': 16},
+            'avanzado': {'MEV': 8, 'MAV': 12, 'MRV': 18},
+            'élite': {'MEV': 10, 'MAV': 14, 'MRV': 20}
+        },
+        'Cuádriceps': {
+            'principiante': {'MEV': 6, 'MAV': 12, 'MRV': 18},
+            'intermedio': {'MEV': 8, 'MAV': 14, 'MRV': 22},
+            'avanzado': {'MEV': 10, 'MAV': 16, 'MRV': 25},
+            'élite': {'MEV': 12, 'MAV': 18, 'MRV': 28}
+        },
+        'Femorales': {
+            'principiante': {'MEV': 4, 'MAV': 8, 'MRV': 14},
+            'intermedio': {'MEV': 6, 'MAV': 10, 'MRV': 16},
+            'avanzado': {'MEV': 8, 'MAV': 12, 'MRV': 18},
+            'élite': {'MEV': 10, 'MAV': 14, 'MRV': 20}
+        },
+        'Glúteos': {
+            'principiante': {'MEV': 4, 'MAV': 8, 'MRV': 14},
+            'intermedio': {'MEV': 6, 'MAV': 10, 'MRV': 16},
+            'avanzado': {'MEV': 8, 'MAV': 12, 'MRV': 18},
+            'élite': {'MEV': 10, 'MAV': 14, 'MRV': 20}
+        },
+        'Pantorrillas': {
+            'principiante': {'MEV': 6, 'MAV': 10, 'MRV': 16},
+            'intermedio': {'MEV': 8, 'MAV': 12, 'MRV': 18},
+            'avanzado': {'MEV': 10, 'MAV': 14, 'MRV': 20},
+            'élite': {'MEV': 12, 'MAV': 16, 'MRV': 22}
+        },
+        'Abdominales': {
+            'principiante': {'MEV': 0, 'MAV': 6, 'MRV': 12},
+            'intermedio': {'MEV': 0, 'MAV': 8, 'MRV': 16},
+            'avanzado': {'MEV': 0, 'MAV': 10, 'MRV': 18},
+            'élite': {'MEV': 0, 'MAV': 12, 'MRV': 20}
+        }
+    }
+    
+    # Calculate adjustment factors
+    # 1. IR-SE adjustment (recovery capacity)
+    if ir_se >= 70:
+        ir_se_factor = 1.0  # Full capacity
+    elif ir_se >= 50:
+        ir_se_factor = 0.85  # Reduced capacity
+    else:
+        ir_se_factor = 0.70  # Significantly reduced capacity
+    
+    # 2. Phase energy adjustment
+    phase_factors = {
+        'deficit': 0.85,      # Reduced capacity in deficit
+        'mantenimiento': 1.0,  # Baseline
+        'superavit': 1.10      # Enhanced capacity in surplus
+    }
+    phase_factor = phase_factors[phase_energy]
+    
+    # 3. RIR adjustment (intensity proxy)
+    # Lower RIR = higher intensity = less volume tolerance
+    if rir <= 1:
+        rir_factor = 0.90
+    elif rir <= 2:
+        rir_factor = 1.0
+    else:
+        rir_factor = 1.05  # Conservative training allows more volume
+    
+    # 4. FFMI margin adjustment (growth potential)
+    # Closer to genetic limit = less volume needed/tolerated
+    if ffmi_margin <= -3:  # Far from limit
+        ffmi_factor = 1.10
+    elif ffmi_margin <= 0:  # Moderate distance
+        ffmi_factor = 1.0
+    elif ffmi_margin <= 2:  # Close to limit
+        ffmi_factor = 0.90
+    else:  # At or beyond limit
+        ffmi_factor = 0.80
+    
+    # Combined adjustment factor
+    combined_factor = ir_se_factor * phase_factor * rir_factor * ffmi_factor
+    
+    # Calculate adjusted volumes for each muscle
+    muscle_plan = {}
+    total_weekly_sets = 0
+    
+    for muscle, levels_data in volume_ranges.items():
+        ranges = levels_data[level]
+        mev = ranges['MEV']
+        mav = ranges['MAV']
+        mrv = ranges['MRV']
+        
+        # Adjust MAV by combined factor
+        adjusted_mav = mav * combined_factor
+        
+        # Clamp between MEV and MRV
+        recommended_sets = max(mev, min(mrv, round(adjusted_mav)))
+        
+        # Calculate per-session if training days provided
+        if training_days > 0:
+            # Typical frequency: 2x per week for most muscles
+            typical_frequency = 2 if muscle != 'Abdominales' else 3
+            sessions_per_week = min(typical_frequency, training_days)
+            sets_per_session = round(recommended_sets / sessions_per_week, 1)
+        else:
+            sessions_per_week = 2
+            sets_per_session = 0
+        
+        muscle_plan[muscle] = {
+            'MEV': mev,
+            'MAV': mav,
+            'MRV': mrv,
+            'recommended_sets_week': recommended_sets,
+            'sessions_per_week': sessions_per_week,
+            'sets_per_session': sets_per_session,
+            'adjustment_factor': round(combined_factor, 2)
+        }
+        
+        total_weekly_sets += recommended_sets
+    
+    # Calculate weekly and per-session caps
+    weekly_cap = total_weekly_sets
+    
+    if training_days > 0:
+        avg_sets_per_day = round(total_weekly_sets / training_days, 1)
+    else:
+        avg_sets_per_day = 0
+    
+    # Assess viability
+    viability_status = 'OK'
+    viability_message = 'Plan viable y balanceado'
+    warnings = []
+    
+    # Check if recovery is critically compromised first (highest priority)
+    if ir_se < 30:
+        viability_status = 'NOT_VIABLE'
+        warnings.append('IR-SE crítico (<30). Reducir volumen significativamente o tomar descanso.')
+    elif ir_se < 50:
+        viability_status = 'WARNING'
+        warnings.append('IR-SE bajo (<50). Priorizar recuperación sobre volumen.')
+    
+    # Check if total volume is too high
+    if total_weekly_sets > 150:
+        if viability_status == 'OK':
+            viability_status = 'WARNING'
+        warnings.append('Volumen total semanal muy alto (>150 sets). Riesgo de sobreentrenamiento.')
+    elif total_weekly_sets > 120:
+        if viability_status == 'OK':
+            viability_status = 'WARNING'
+        warnings.append('Volumen total semanal alto. Monitorear recuperación.')
+    
+    # Check if daily volume is too high
+    if avg_sets_per_day > 30:
+        if viability_status == 'OK':
+            viability_status = 'WARNING'
+        warnings.append(f'Volumen por sesión muy alto ({avg_sets_per_day} sets/día). Considerar dividir.')
+    elif avg_sets_per_day > 25:
+        if viability_status == 'OK':
+            viability_status = 'WARNING'
+        warnings.append(f'Volumen por sesión alto ({avg_sets_per_day} sets/día). Considerar dividir.')
+    
+    # Check training days
+    if training_days < 3 and total_weekly_sets > 60:
+        if viability_status == 'OK':
+            viability_status = 'WARNING'
+        warnings.append('Pocos días de entrenamiento para el volumen recomendado. Considerar aumentar frecuencia.')
+    
+    if viability_status == 'OK':
+        viability_message = 'Plan óptimo y viable'
+    elif viability_status == 'WARNING':
+        viability_message = 'Plan viable con ajustes recomendados'
+    else:  # NOT_VIABLE
+        viability_message = 'Plan no viable - requiere modificaciones importantes'
+    
+    # Generate distribution suggestions
+    distribution_suggestions = []
+    
+    # Suggest 2x frequency distribution
+    suggestion_2x = "DISTRIBUCIÓN 2 ESTÍMULOS/SEMANA:\n"
+    for muscle, data in muscle_plan.items():
+        if data['sessions_per_week'] >= 2:
+            # Use actual sessions_per_week for accurate distribution
+            sets_session = round(data['recommended_sets_week'] / data['sessions_per_week'], 1)
+            suggestion_2x += f"  • {muscle}: {sets_session} sets × {data['sessions_per_week']} sesiones\n"
+    distribution_suggestions.append(suggestion_2x)
+    
+    # Muscles that typically benefit from higher frequency
+    HIGH_FREQUENCY_MUSCLES = ['Pecho', 'Espalda', 'Cuádriceps']
+    
+    # Suggest 3x frequency distribution for advanced
+    if level in ['avanzado', 'élite']:
+        suggestion_3x = "DISTRIBUCIÓN 3 ESTÍMULOS/SEMANA (alternativa avanzada):\n"
+        for muscle, data in muscle_plan.items():
+            if muscle in HIGH_FREQUENCY_MUSCLES:
+                sets_session = round(data['recommended_sets_week'] / 3, 1)
+                suggestion_3x += f"  • {muscle}: {sets_session} sets × 3 sesiones\n"
+        distribution_suggestions.append(suggestion_3x)
+    
+    # Compile results
+    result = {
+        'level': level,
+        'phase_energy': phase_energy,
+        'ir_se': ir_se,
+        'rir': rir,
+        'training_days': training_days,
+        'ffmi_margin': ffmi_margin,
+        'adjustment_factors': {
+            'ir_se_factor': round(ir_se_factor, 2),
+            'phase_factor': round(phase_factor, 2),
+            'rir_factor': round(rir_factor, 2),
+            'ffmi_factor': round(ffmi_factor, 2),
+            'combined_factor': round(combined_factor, 2)
+        },
+        'muscles': muscle_plan,
+        'weekly_cap': weekly_cap,
+        'avg_sets_per_day': avg_sets_per_day,
+        'viability': viability_status,
+        'viability_message': viability_message,
+        'warnings': warnings,
+        'distribution_suggestions': distribution_suggestions
+    }
+    
+    return result
+
 def attach_progress_photos_to_email(msg, progress_photos):
     """
     Attaches progress photos to an email message.
@@ -4533,6 +4828,55 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     st.session_state.kcal_sesion = kcal_sesion
     st.session_state.gee_semanal = gee_semanal
     st.session_state.gee_prom_dia = gee_prom_dia
+    
+    # Volume Engine inputs (for admin email only - not shown to user)
+    st.markdown("---")
+    st.markdown("### 📊 Parámetros de volumen de entrenamiento (interno)")
+    st.markdown("*Estos datos se usarán para calcular recomendaciones de volumen en el reporte administrativo*")
+    
+    col_ve1, col_ve2 = st.columns(2)
+    with col_ve1:
+        rir_input = st.slider(
+            "RIR (Reps in Reserve)",
+            min_value=0.0, max_value=4.0, value=2.0, step=0.5,
+            help="Repeticiones que te quedan en reserva al finalizar cada serie (0 = fallo muscular, 4 = muy conservador)"
+        )
+        st.session_state.rir_input = rir_input
+        
+        phase_energy_input = st.selectbox(
+            "Fase energética",
+            ["deficit", "mantenimiento", "superavit"],
+            index=1,
+            help="Fase nutricional actual o planeada"
+        )
+        st.session_state.phase_energy_input = phase_energy_input
+    
+    with col_ve2:
+        # Calculate FFMI margin if we have the necessary data
+        try:
+            if ffmi > 0 and ffmi_genetico_max > 0:
+                ffmi_margin_calc = ffmi_genetico_max - ffmi
+            else:
+                ffmi_margin_calc = 0.0
+        except (NameError, TypeError):
+            ffmi_margin_calc = 0.0
+        
+        ffmi_margin_input = st.number_input(
+            "Margen FFMI (distancia al máximo genético)",
+            min_value=-5.0, max_value=5.0, value=float(ffmi_margin_calc), step=0.1,
+            help="Puntos FFMI que te separan de tu máximo genético (negativo = lejos del límite, positivo = en/sobre el límite)"
+        )
+        st.session_state.ffmi_margin_input = ffmi_margin_input
+        
+        # Show calculated or default IR-SE
+        if st.session_state.get('suenyo_estres_completado', False):
+            ir_se_value = st.session_state.suenyo_estres_data.get('ir_se', 50.0)
+            st.metric("IR-SE calculado", f"{ir_se_value:.1f}/100", 
+                     help="Índice de Recuperación Sueño-Estrés del cuestionario completado")
+        else:
+            ir_se_value = 50.0
+            st.info("⚠️ IR-SE no disponible. Completa el cuestionario de Sueño + Estrés para obtener un valor preciso. Usando valor por defecto: 50.0")
+        st.session_state.ir_se_value = ir_se_value
 
     # Display metrics conditionally based on SHOW_TECH_DETAILS flag
     if SHOW_TECH_DETAILS:
@@ -5772,6 +6116,136 @@ subjetiva del cliente. Para casos con banderas rojas, considerar derivación
 a especialistas (médico del sueño, psicólogo clínico).
 
         """
+
+# ==================== AGREGAR SECCIÓN MUPAI VOLUME ENGINE AL EMAIL ====================
+# Generate volume plan using MUPAI Volume Engine for admin-only reporting
+try:
+    # Get inputs from session state with safe fallbacks
+    try:
+        level_for_volume = nivel_entrenamiento
+    except NameError:
+        level_for_volume = 'intermedio'
+    
+    phase_energy_for_volume = st.session_state.get('phase_energy_input', 'mantenimiento')
+    ir_se_for_volume = st.session_state.get('ir_se_value', 50.0)
+    rir_for_volume = st.session_state.get('rir_input', 2.0)
+    
+    try:
+        training_days_for_volume = dias_fuerza
+    except NameError:
+        training_days_for_volume = 3
+    
+    ffmi_margin_for_volume = st.session_state.get('ffmi_margin_input', 0.0)
+    
+    # Generate volume plan
+    volume_plan = generate_volume_plan(
+        level=level_for_volume,
+        phase_energy=phase_energy_for_volume,
+        ir_se=ir_se_for_volume,
+        rir=rir_for_volume,
+        training_days=training_days_for_volume,
+        ffmi_margin=ffmi_margin_for_volume
+    )
+    
+    # Add Volume Engine section to email
+    if 'error' not in volume_plan:
+        tabla_resumen += f"""
+=====================================
+MUPAI VOLUME ENGINE — ADMIN ONLY
+=====================================
+
+Este análisis científico calcula el volumen de entrenamiento óptimo por grupo muscular
+basado en el nivel del atleta, fase energética, capacidad de recuperación y proximidad
+al límite genético. Los valores se ajustan dinámicamente según múltiples factores.
+
+PARÁMETROS DE ENTRADA:
+- Nivel de entrenamiento: {volume_plan['level'].capitalize()}
+- Fase energética: {volume_plan['phase_energy'].capitalize()}
+- IR-SE (Recuperación): {volume_plan['ir_se']:.1f}/100
+- RIR (Reps in Reserve): {volume_plan['rir']:.1f}
+- Días de entrenamiento: {volume_plan['training_days']} días/semana
+- Margen FFMI: {volume_plan['ffmi_margin']:+.1f} puntos
+
+FACTORES DE AJUSTE APLICADOS:
+- Factor IR-SE (recuperación): {volume_plan['adjustment_factors']['ir_se_factor']} ({"óptima" if volume_plan['adjustment_factors']['ir_se_factor'] >= 0.95 else "reducida" if volume_plan['adjustment_factors']['ir_se_factor'] >= 0.80 else "comprometida"})
+- Factor fase energética: {volume_plan['adjustment_factors']['phase_factor']} ({volume_plan['phase_energy']})
+- Factor RIR (intensidad): {volume_plan['adjustment_factors']['rir_factor']} ({"alta intensidad" if volume_plan['rir'] <= 1 else "moderada" if volume_plan['rir'] <= 2 else "conservadora"})
+- Factor FFMI (potencial): {volume_plan['adjustment_factors']['ffmi_factor']} ({"lejos del límite" if volume_plan['ffmi_margin'] <= -3 else "distancia moderada" if volume_plan['ffmi_margin'] <= 0 else "cerca/en límite"})
+- Factor combinado: {volume_plan['adjustment_factors']['combined_factor']}
+
+VOLUMEN RECOMENDADO POR GRUPO MUSCULAR:
+┌────────────────┬─────┬─────┬─────┬──────────┬──────────┬──────────┬────────┐
+│ Músculo        │ MEV │ MAV │ MRV │ Sets/sem │ Frec/sem │ Sets/ses │ Factor │
+├────────────────┼─────┼─────┼─────┼──────────┼──────────┼──────────┼────────┤"""
+
+        for muscle, data in volume_plan['muscles'].items():
+            tabla_resumen += f"""
+│ {muscle:<14} │ {data['MEV']:>3} │ {data['MAV']:>3} │ {data['MRV']:>3} │ {data['recommended_sets_week']:>8} │ {data['sessions_per_week']:>8} │ {data['sets_per_session']:>8.1f} │ {data['adjustment_factor']:>6.2f} │"""
+
+        tabla_resumen += f"""
+└────────────────┴─────┴─────┴─────┴──────────┴──────────┴──────────┴────────┘
+
+MÉTRICAS GLOBALES:
+- Volumen semanal total: {volume_plan['weekly_cap']} sets/semana
+- Promedio por día de entrenamiento: {volume_plan['avg_sets_per_day']:.1f} sets/día
+- Viabilidad del plan: {volume_plan['viability']} - {volume_plan['viability_message']}
+
+"""
+
+        # Add warnings if any
+        if volume_plan['warnings']:
+            tabla_resumen += "⚠️ ALERTAS Y RECOMENDACIONES:\n"
+            for i, warning in enumerate(volume_plan['warnings'], 1):
+                tabla_resumen += f"{i}. {warning}\n"
+            tabla_resumen += "\n"
+
+        # Add distribution suggestions
+        if volume_plan['distribution_suggestions']:
+            tabla_resumen += "📊 SUGERENCIAS DE DISTRIBUCIÓN:\n\n"
+            for suggestion in volume_plan['distribution_suggestions']:
+                tabla_resumen += f"{suggestion}\n"
+
+        tabla_resumen += """
+NOTAS TÉCNICAS:
+• MEV (Minimum Effective Volume): Volumen mínimo para mantener adaptaciones
+• MAV (Maximum Adaptive Volume): Volumen óptimo para máximas ganancias
+• MRV (Maximum Recoverable Volume): Volumen máximo antes de sobreentrenamiento
+• Factor de ajuste: Multiplica MAV base para obtener recomendación personalizada
+• Los valores se ajustan dinámicamente según recuperación, fase y proximidad al límite
+
+INTERPRETACIÓN:
+- OK: Plan balanceado y sostenible a largo plazo
+- WARNING: Plan viable pero requiere monitoreo cercano de recuperación
+- NOT_VIABLE: Plan necesita ajustes significativos antes de implementar
+
+REFERENCIAS CIENTÍFICAS:
+- Renaissance Periodization (Mike Israetel et al., 2015-2024)
+- Volume Landmarks for Hypertrophy (Schoenfeld, 2017)
+- Training Volume and Hypertrophy (Meta-analysis, Schoenfeld et al., 2019)
+
+"""
+    else:
+        # Error in volume calculation - log but don't stop email
+        tabla_resumen += f"""
+=====================================
+MUPAI VOLUME ENGINE — ADMIN ONLY
+=====================================
+
+⚠️ Error al calcular plan de volumen: {volume_plan.get('error', 'Error desconocido')}
+Los parámetros ingresados pueden ser inválidos o incompletos.
+
+"""
+except Exception as e:
+    # Catch any errors in volume engine to not break email
+    tabla_resumen += f"""
+=====================================
+MUPAI VOLUME ENGINE — ADMIN ONLY
+=====================================
+
+⚠️ Error al generar plan de volumen: {str(e)}
+Por favor revisa los parámetros de entrada en el sistema.
+
+"""
 
 # ==================== AGREGAR SECCIÓN DE METAS PERSONALES AL EMAIL ====================
 # Integrar datos del cuestionario de metas personales si están disponibles
