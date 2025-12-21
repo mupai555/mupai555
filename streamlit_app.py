@@ -3080,15 +3080,19 @@ def generate_volume_plan(level, phase_energy, ir_se, rir, training_days, ffmi_ma
     suggestion_2x = "DISTRIBUCIÓN 2 ESTÍMULOS/SEMANA:\n"
     for muscle, data in muscle_plan.items():
         if data['sessions_per_week'] >= 2:
-            sets_session = round(data['recommended_sets_week'] / 2, 1)
-            suggestion_2x += f"  • {muscle}: {sets_session} sets × 2 sesiones\n"
+            # Use actual sessions_per_week for accurate distribution
+            sets_session = round(data['recommended_sets_week'] / data['sessions_per_week'], 1)
+            suggestion_2x += f"  • {muscle}: {sets_session} sets × {data['sessions_per_week']} sesiones\n"
     distribution_suggestions.append(suggestion_2x)
+    
+    # Muscles that typically benefit from higher frequency
+    HIGH_FREQUENCY_MUSCLES = ['Pecho', 'Espalda', 'Cuádriceps']
     
     # Suggest 3x frequency distribution for advanced
     if level in ['avanzado', 'élite']:
         suggestion_3x = "DISTRIBUCIÓN 3 ESTÍMULOS/SEMANA (alternativa avanzada):\n"
         for muscle, data in muscle_plan.items():
-            if muscle in ['Pecho', 'Espalda', 'Cuádriceps']:
+            if muscle in HIGH_FREQUENCY_MUSCLES:
                 sets_session = round(data['recommended_sets_week'] / 3, 1)
                 suggestion_3x += f"  • {muscle}: {sets_session} sets × 3 sesiones\n"
         distribution_suggestions.append(suggestion_3x)
@@ -4849,9 +4853,12 @@ with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", ex
     
     with col_ve2:
         # Calculate FFMI margin if we have the necessary data
-        if 'ffmi' in locals() and 'ffmi_genetico_max' in locals() and ffmi > 0:
-            ffmi_margin_calc = ffmi_genetico_max - ffmi
-        else:
+        try:
+            if ffmi > 0 and ffmi_genetico_max > 0:
+                ffmi_margin_calc = ffmi_genetico_max - ffmi
+            else:
+                ffmi_margin_calc = 0.0
+        except (NameError, TypeError):
             ffmi_margin_calc = 0.0
         
         ffmi_margin_input = st.number_input(
@@ -6113,12 +6120,21 @@ a especialistas (médico del sueño, psicólogo clínico).
 # ==================== AGREGAR SECCIÓN MUPAI VOLUME ENGINE AL EMAIL ====================
 # Generate volume plan using MUPAI Volume Engine for admin-only reporting
 try:
-    # Get inputs from session state
-    level_for_volume = nivel_entrenamiento if 'nivel_entrenamiento' in locals() else 'intermedio'
+    # Get inputs from session state with safe fallbacks
+    try:
+        level_for_volume = nivel_entrenamiento
+    except NameError:
+        level_for_volume = 'intermedio'
+    
     phase_energy_for_volume = st.session_state.get('phase_energy_input', 'mantenimiento')
     ir_se_for_volume = st.session_state.get('ir_se_value', 50.0)
     rir_for_volume = st.session_state.get('rir_input', 2.0)
-    training_days_for_volume = dias_fuerza if 'dias_fuerza' in locals() else 3
+    
+    try:
+        training_days_for_volume = dias_fuerza
+    except NameError:
+        training_days_for_volume = 3
+    
     ffmi_margin_for_volume = st.session_state.get('ffmi_margin_input', 0.0)
     
     # Generate volume plan
