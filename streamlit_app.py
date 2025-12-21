@@ -1883,10 +1883,10 @@ def obtener_factor_proteina_tradicional(grasa_corregida):
 def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
     """
     Determina si se debe usar MLG como base para el cálculo de proteína
-    según las reglas 30/42 para alta adiposidad.
+    según las reglas 35/42 para alta adiposidad.
     
     Reglas:
-    - Hombres: usar MLG si grasa_corregida >= 30%
+    - Hombres: usar MLG si grasa_corregida >= 35%
     - Mujeres: usar MLG si grasa_corregida >= 42%
     - De lo contrario: usar peso total
     
@@ -1904,7 +1904,7 @@ def debe_usar_mlg_para_proteina(sexo, grasa_corregida):
     except (TypeError, ValueError):
         return False
     
-    if sexo == "Hombre" and grasa >= 30:
+    if sexo == "Hombre" and grasa >= 35:
         return True
     elif sexo == "Mujer" and grasa >= 42:
         return True
@@ -5169,8 +5169,8 @@ if USER_VIEW:
             # - Si grasa_corregida entre 4% y 14.9%: 2.2g/kg proteína
             # - GRASA: SIEMPRE 40% TMB (mínimo 20% TEI, máximo 40% TEI)
         
-            # Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
-            # - Hombres: usar MLG si grasa_corregida >= 30%
+            # Reglas 35/42: En alta adiposidad, usar MLG como base para proteína
+            # - Hombres: usar MLG si grasa_corregida >= 35%
             # - Mujeres: usar MLG si grasa_corregida >= 42%
             # Razón: En obesidad alta, usar peso total infla inapropiadamente la proteína
             usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
@@ -5874,7 +5874,7 @@ COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
 ====================================="""
 
 # Calcular macros del plan tradicional para el resumen del email
-# Reglas 30/42: En alta adiposidad, usar MLG como base para proteína
+# Reglas 35/42: En alta adiposidad, usar MLG como base para proteína
 usar_mlg_para_proteina_email = debe_usar_mlg_para_proteina(sexo, grasa_corregida) if 'sexo' in locals() and 'grasa_corregida' in locals() else False
 
 base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
