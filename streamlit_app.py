@@ -2020,6 +2020,126 @@ def calcular_proyeccion_cientifica(sexo, grasa_corregida, nivel_entrenamiento, p
         "explicacion_textual": explicacion
     }
 
+def calcular_macros_tradicional(ingesta_calorica_tradicional, tmb, sexo, grasa_corregida, peso, mlg):
+    """
+    Función centralizada para calcular macronutrientes del plan tradicional.
+    Garantiza consistencia en todos los cálculos (UI, email, reportes).
+    
+    Lógica de cálculo:
+    1. PROTEÍNA: Usar MLG si aplica regla 35/42, sino usar peso total
+       - Factor varía según % grasa: 1.6-2.2 g/kg
+    2. GRASA: SIEMPRE 40% del TMB (con restricciones 20-40% TEI)
+    3. CARBOHIDRATOS: Calorías restantes
+    
+    Args:
+        ingesta_calorica_tradicional: Calorías totales del plan tradicional
+        tmb: Tasa metabólica basal
+        sexo: "Hombre" o "Mujer"
+        grasa_corregida: % grasa corporal corregido
+        peso: Peso corporal en kg
+        mlg: Masa libre de grasa en kg
+    
+    Returns:
+        dict: {
+            'proteina_g': gramos de proteína,
+            'proteina_kcal': calorías de proteína,
+            'grasa_g': gramos de grasa,
+            'grasa_kcal': calorías de grasa,
+            'carbo_g': gramos de carbohidratos,
+            'carbo_kcal': calorías de carbohidratos,
+            'base_proteina': 'MLG' o 'Peso total',
+            'factor_proteina': factor usado para proteína
+        }
+    """
+    # 1. PROTEÍNA: Determinar base y calcular
+    usar_mlg = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
+    base_proteina_kg = mlg if usar_mlg else peso
+    base_proteina_nombre = "MLG" if usar_mlg else "Peso total"
+    factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
+    
+    proteina_g = round(base_proteina_kg * factor_proteina, 1)
+    proteina_kcal = proteina_g * 4
+    
+    # 2. GRASA: SIEMPRE 40% TMB con restricciones 20-40% TEI
+    grasa_min_kcal = ingesta_calorica_tradicional * 0.20  # Mínimo 20% TEI
+    grasa_max_kcal = ingesta_calorica_tradicional * 0.40  # Máximo 40% TEI
+    porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo)
+    grasa_ideal_kcal = tmb * porcentaje_grasa_tmb  # 40% TMB
+    
+    # Aplicar restricciones
+    grasa_kcal = max(grasa_min_kcal, min(grasa_ideal_kcal, grasa_max_kcal))
+    grasa_g = round(grasa_kcal / 9, 1)
+    
+    # 3. CARBOHIDRATOS: Calorías restantes
+    carbo_kcal = ingesta_calorica_tradicional - proteina_kcal - grasa_kcal
+    carbo_g = round(max(0, carbo_kcal / 4), 1)
+    
+    return {
+        'proteina_g': proteina_g,
+        'proteina_kcal': proteina_kcal,
+        'grasa_g': grasa_g,
+        'grasa_kcal': grasa_kcal,
+        'carbo_g': carbo_g,
+        'carbo_kcal': carbo_kcal,
+        'base_proteina': base_proteina_nombre,
+        'factor_proteina': factor_proteina
+    }
+
+def calcular_macros_psmf(psmf_recs):
+    """
+    Función centralizada para calcular macronutrientes del plan PSMF.
+    Garantiza consistencia en todos los cálculos (UI, email, reportes).
+    
+    Los cálculos PSMF ya están centralizados en calculate_psmf(),
+    esta función simplemente extrae y formatea los resultados de forma consistente.
+    
+    Args:
+        psmf_recs: Diccionario retornado por calculate_psmf()
+    
+    Returns:
+        dict: {
+            'proteina_g': gramos de proteína,
+            'proteina_kcal': calorías de proteína,
+            'grasa_g': gramos de grasa,
+            'grasa_kcal': calorías de grasa,
+            'carbo_g': gramos de carbohidratos,
+            'carbo_kcal': calorías de carbohidratos,
+            'calorias_dia': calorías totales,
+            'aplicable': bool indicando si PSMF es aplicable
+        }
+    """
+    if not psmf_recs.get('psmf_aplicable', False):
+        return {
+            'proteina_g': 0,
+            'proteina_kcal': 0,
+            'grasa_g': 0,
+            'grasa_kcal': 0,
+            'carbo_g': 0,
+            'carbo_kcal': 0,
+            'calorias_dia': 0,
+            'aplicable': False
+        }
+    
+    proteina_g = psmf_recs.get('proteina_g_dia', 0)
+    grasa_g = psmf_recs.get('grasa_g_dia', 0)
+    carbo_g = psmf_recs.get('carbs_g_dia', 0)
+    
+    # Calcular calorías de cada macro
+    proteina_kcal = proteina_g * 4
+    grasa_kcal = grasa_g * 9
+    carbo_kcal = carbo_g * 4
+    
+    return {
+        'proteina_g': proteina_g,
+        'proteina_kcal': proteina_kcal,
+        'grasa_g': grasa_g,
+        'grasa_kcal': grasa_kcal,
+        'carbo_g': carbo_g,
+        'carbo_kcal': carbo_kcal,
+        'calorias_dia': psmf_recs.get('calorias_dia', 0),
+        'aplicable': True
+    }
+
 def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
     """
     Función centralizada para calcular el porcentaje correcto a usar en proyecciones,
@@ -4816,44 +4936,20 @@ if USER_VIEW:
             # ----------- TRADICIONAL -----------
             ingesta_calorica = ingesta_calorica_tradicional
 
-            # PROTEÍNA: Variable según % grasa corporal corregido (sin cambios)
-            # GRASA: NUEVA LÓGICA - SIEMPRE 40% TMB independiente del % grasa corporal
-            # Escala de distribución actualizada para plan tradicional:
-            # - Si grasa_corregida >= 35%: 1.6g/kg proteína
-            # - Si grasa_corregida entre 25% y 34.9%: 1.8g/kg proteína
-            # - Si grasa_corregida entre 15% y 24.9%: 2.0g/kg proteína
-            # - Si grasa_corregida entre 4% y 14.9%: 2.2g/kg proteína
-            # - GRASA: SIEMPRE 40% TMB (mínimo 20% TEI, máximo 40% TEI)
-        
-            # Reglas 35/42: En alta adiposidad, usar MLG como base para proteína
-            # - Hombres: usar MLG si grasa_corregida >= 35%
-            # - Mujeres: usar MLG si grasa_corregida >= 42%
-            # Razón: En obesidad alta, usar peso total infla inapropiadamente la proteína
-            usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
-        
-            base_proteina_kg = mlg if usar_mlg_para_proteina else peso
-            base_proteina_nombre = "MLG" if usar_mlg_para_proteina else "Peso total"
-        
-            factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
-            proteina_g = round(base_proteina_kg * factor_proteina, 1)
-            proteina_kcal = proteina_g * 4
-
-            # GRASA: Porcentaje variable del TMB según % grasa, nunca menos del 20% ni más del 40% de calorías totales
-            grasa_min_kcal = ingesta_calorica * 0.20
-            porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo)
-            grasa_ideal_kcal = tmb * porcentaje_grasa_tmb
-            grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
-            grasa_min_g = round(grasa_min_kcal / 9, 1)
-            grasa_max_kcal = ingesta_calorica * 0.40  # La grasa nunca debe superar el 40% del TMB
-            grasa_g = max(grasa_min_g, grasa_ideal_g)
-            if grasa_g * 9 > grasa_max_kcal:
-                grasa_g = round(grasa_max_kcal / 9, 1)
-            grasa_kcal = grasa_g * 9
-
-            # CARBOHIDRATOS: el resto de las calorías según especificación
-            # Fórmula: (ingesta_calorica - (proteina_g * 4 + grasa_g * 9)) / 4
-            carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
-            carbo_g = round(carbo_kcal / 4, 1)
+            # Usar función centralizada para calcular macros tradicionales
+            macros_tradicional = calcular_macros_tradicional(
+                ingesta_calorica_tradicional, tmb, sexo, grasa_corregida, peso, mlg
+            )
+            
+            # Extraer valores calculados
+            proteina_g = macros_tradicional['proteina_g']
+            proteina_kcal = macros_tradicional['proteina_kcal']
+            grasa_g = macros_tradicional['grasa_g']
+            grasa_kcal = macros_tradicional['grasa_kcal']
+            carbo_g = macros_tradicional['carbo_g']
+            carbo_kcal = macros_tradicional['carbo_kcal']
+            base_proteina_nombre = macros_tradicional['base_proteina']
+            factor_proteina = macros_tradicional['factor_proteina']
             if carbo_g < 50:
                 st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
 
@@ -4968,31 +5064,19 @@ else:
     plan_elegido = "Tradicional"
     grasa_psmf_seleccionada = 40.0
     
-    # Calculate macros for traditional plan
+    # Calculate macros for traditional plan using centralized function
     ingesta_calorica = ingesta_calorica_tradicional
+    macros_tradicional = calcular_macros_tradicional(
+        ingesta_calorica_tradicional, tmb, sexo, grasa_corregida, peso, mlg
+    )
     
-    # Calculate protein using same logic as main UI
-    usar_mlg_para_proteina = debe_usar_mlg_para_proteina(sexo, grasa_corregida)
-    base_proteina_kg = mlg if usar_mlg_para_proteina else peso
-    factor_proteina = obtener_factor_proteina_tradicional(grasa_corregida)
-    proteina_g = round(base_proteina_kg * factor_proteina, 1)
-    proteina_kcal = proteina_g * 4
-    
-    # Calculate fat using same logic as main UI
-    grasa_min_kcal = ingesta_calorica * 0.20
-    porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo)
-    grasa_ideal_kcal = tmb * porcentaje_grasa_tmb
-    grasa_ideal_g = round(grasa_ideal_kcal / 9, 1)
-    grasa_min_g = round(grasa_min_kcal / 9, 1)
-    grasa_max_kcal = ingesta_calorica * 0.40
-    grasa_g = max(grasa_min_g, grasa_ideal_g)
-    if grasa_g * 9 > grasa_max_kcal:
-        grasa_g = round(grasa_max_kcal / 9, 1)
-    grasa_kcal = grasa_g * 9
-    
-    # Calculate carbs
-    carbo_kcal = ingesta_calorica - proteina_kcal - grasa_kcal
-    carbo_g = max(0, round(carbo_kcal / 4, 1))
+    # Extract calculated values
+    proteina_g = macros_tradicional['proteina_g']
+    proteina_kcal = macros_tradicional['proteina_kcal']
+    grasa_g = macros_tradicional['grasa_g']
+    grasa_kcal = macros_tradicional['grasa_kcal']
+    carbo_g = macros_tradicional['carbo_g']
+    carbo_kcal = macros_tradicional['carbo_kcal']
 
 # --- FORZAR actualización de variables clave desde session_state ---
 peso = st.session_state.get("peso", 0)
@@ -5529,37 +5613,24 @@ ENTRENAMIENTO DE FUERZA - DETALLE
 COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
 ====================================="""
 
-# Calcular macros del plan tradicional para el resumen del email
-# Reglas 35/42: En alta adiposidad, usar MLG como base para proteína
-usar_mlg_para_proteina_email = debe_usar_mlg_para_proteina(sexo, grasa_corregida) if 'sexo' in locals() and 'grasa_corregida' in locals() else False
+# Calcular macros del plan tradicional para el resumen del email usando función centralizada
+macros_tradicional_email = calcular_macros_tradicional(
+    plan_tradicional_calorias, tmb, sexo, grasa_corregida, peso, mlg
+)
 
+# Extraer valores
+proteina_g_tradicional = macros_tradicional_email['proteina_g']
+proteina_kcal_tradicional = macros_tradicional_email['proteina_kcal']
+grasa_g_tradicional = macros_tradicional_email['grasa_g']
+grasa_kcal_tradicional = macros_tradicional_email['grasa_kcal']
+carbo_g_tradicional = macros_tradicional_email['carbo_g']
+carbo_kcal_tradicional = macros_tradicional_email['carbo_kcal']
+base_proteina_nombre_email = macros_tradicional_email['base_proteina']
+factor_proteina_tradicional_email = macros_tradicional_email['factor_proteina']
+
+# Calcular base proteína kg para la nota
+usar_mlg_para_proteina_email = (base_proteina_nombre_email == "MLG")
 base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
-base_proteina_nombre_email = "MLG" if usar_mlg_para_proteina_email else "Peso total"
-
-# Calcular factor de proteína una sola vez
-factor_proteina_tradicional_email = obtener_factor_proteina_tradicional(grasa_corregida) if 'grasa_corregida' in locals() else 1.6
-
-proteina_g_tradicional = base_proteina_kg_email * factor_proteina_tradicional_email if 'base_proteina_kg_email' in locals() and base_proteina_kg_email > 0 else 0
-proteina_kcal_tradicional = proteina_g_tradicional * 4
-
-# Calcular grasas tradicional - NUEVA LÓGICA CIENTÍFICA
-# Fat intake = 40% del BMR/TMB (independiente del % grasa corporal)
-# Basado en evidencia científica (Hämäläinen et al. 1984, Volek et al. 1997, etc.)
-# Restricciones: mínimo 20% TEI, máximo 40% TEI
-grasa_min_kcal_tradicional = plan_tradicional_calorias * 0.20  # Mínimo obligatorio: 20% TEI
-porcentaje_grasa_tmb = obtener_porcentaje_grasa_tmb_tradicional(grasa_corregida, sexo) if 'grasa_corregida' in locals() and 'sexo' in locals() else 0.40
-grasa_ideal_kcal_tradicional = tmb * porcentaje_grasa_tmb if 'tmb' in locals() else 0  # 40% TMB/BMR
-grasa_ideal_g_tradicional = grasa_ideal_kcal_tradicional / 9
-grasa_min_g_tradicional = grasa_min_kcal_tradicional / 9
-grasa_max_kcal_tradicional = plan_tradicional_calorias * 0.40  # Máximo: 40% TEI
-grasa_g_tradicional = max(grasa_min_g_tradicional, grasa_ideal_g_tradicional)  # Aplicar mínimo del 20% TEI
-if grasa_g_tradicional * 9 > grasa_max_kcal_tradicional:
-    grasa_g_tradicional = grasa_max_kcal_tradicional / 9
-grasa_kcal_tradicional = grasa_g_tradicional * 9
-
-# Calcular carbohidratos tradicional
-carbo_kcal_tradicional = plan_tradicional_calorias - proteina_kcal_tradicional - grasa_kcal_tradicional
-carbo_g_tradicional = carbo_kcal_tradicional / 4
 
 nota_mlg_email = f"\n  (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
 if usar_mlg_para_proteina_email:
@@ -5579,20 +5650,26 @@ tabla_resumen += f"""
 ⚡ PROTOCOLO PSMF ACTUALIZADO {'(APLICABLE)' if plan_psmf_disponible else '(NO APLICABLE)'}:"""
 
 if plan_psmf_disponible:
-    # Calcular carbohidratos PSMF usando la fórmula especificada
-    carbo_g_psmf = round((psmf_recs['calorias_dia'] - psmf_recs['proteina_g_dia'] * 4 - psmf_recs['grasa_g_dia'] * 9) / 4, 1) if psmf_recs.get('calorias_dia', 0) > 0 else 0
-    carbo_kcal_psmf = carbo_g_psmf * 4
-    proteina_kcal_psmf = psmf_recs['proteina_g_dia'] * 4
-    grasa_kcal_psmf = psmf_recs['grasa_g_dia'] * 9
+    # Usar función centralizada para calcular macros PSMF
+    macros_psmf_email = calcular_macros_psmf(psmf_recs)
+    
+    # Extraer valores
+    proteina_g_psmf = macros_psmf_email['proteina_g']
+    proteina_kcal_psmf = macros_psmf_email['proteina_kcal']
+    grasa_g_psmf = macros_psmf_email['grasa_g']
+    grasa_kcal_psmf = macros_psmf_email['grasa_kcal']
+    carbo_g_psmf = macros_psmf_email['carbo_g']
+    carbo_kcal_psmf = macros_psmf_email['carbo_kcal']
+    calorias_dia_psmf = macros_psmf_email['calorias_dia']
     
     tabla_resumen += f"""
-- Calorías: {psmf_recs['calorias_dia']:.0f} kcal/día
+- Calorías: {calorias_dia_psmf:.0f} kcal/día
 - Criterio de aplicabilidad: {psmf_recs.get('criterio', 'No especificado')}
-- Proteína: {psmf_recs['proteina_g_dia']:.1f}g ({proteina_kcal_psmf:.0f} kcal) = {proteina_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}%
-- Grasas: {psmf_recs['grasa_g_dia']:.1f}g ({grasa_kcal_psmf:.0f} kcal) = {grasa_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}%
-- Carbohidratos: {carbo_g_psmf:.1f}g ({carbo_kcal_psmf:.0f} kcal) = {carbo_kcal_psmf/psmf_recs['calorias_dia']*100 if psmf_recs.get('calorias_dia', 0) > 0 else 0:.1f}% (solo vegetales fibrosos)
+- Proteína: {proteina_g_psmf:.1f}g ({proteina_kcal_psmf:.0f} kcal) = {proteina_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}%
+- Grasas: {grasa_g_psmf:.1f}g ({grasa_kcal_psmf:.0f} kcal) = {grasa_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}%
+- Carbohidratos: {carbo_g_psmf:.1f}g ({carbo_kcal_psmf:.0f} kcal) = {carbo_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}% (solo vegetales fibrosos)
 - Multiplicador calórico: {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
-- Déficit estimado: ~{int((1 - psmf_recs['calorias_dia']/(GE if 'GE' in locals() else 2000)) * 100) if psmf_recs.get('calorias_dia', 0) > 0 else 0}%
+- Déficit estimado: ~{int((1 - calorias_dia_psmf/(GE if 'GE' in locals() else 2000)) * 100) if calorias_dia_psmf > 0 else 0}%
 - Pérdida esperada: {psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[0]}-{psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[1]} kg/semana
 - Sostenibilidad: BAJA - Máximo 6-8 semanas
 - Duración recomendada: 6-8 semanas con supervisión médica obligatoria
