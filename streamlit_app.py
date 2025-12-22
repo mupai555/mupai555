@@ -5636,6 +5636,13 @@ nota_mlg_email = f"\n  (Base: {base_proteina_nombre_email} = {base_proteina_kg_e
 if usar_mlg_para_proteina_email:
     nota_mlg_email += "\n  ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
 
+# ==================== EMAIL: COMPARATIVA DE PLANES ====================
+# IMPORTANTE: El email SIEMPRE muestra AMBOS planes (Tradicional y PSMF)
+# independientemente de la configuración de MOSTRAR_PSMF_AL_USUARIO.
+# - MOSTRAR_PSMF_AL_USUARIO solo controla la UI visible al usuario final
+# - Los emails internos SIEMPRE incluyen análisis completo de todas las opciones
+# - Esto permite al equipo tener información completa para asesorar al cliente
+
 tabla_resumen += f"""
 📊 PLAN TRADICIONAL (DÉFICIT/SUPERÁVIT MODERADO):
 - Calorías: {plan_tradicional_calorias:.0f} kcal/día
