@@ -7,12 +7,14 @@
 maxUploadSize = 100
 
 # Maximum message size in MB (should be >= maxUploadSize for proper handling)
+# Set to 200 MB to allow overhead for message metadata and concurrent uploads
 maxMessageSize = 200
 
 # Enable XSRF protection for security
 enableXsrfProtection = true
 
-# Enable CORS for cross-origin requests if needed
+# Enable CORS for cross-origin requests
+# Set to true if app needs to be accessed from different domains
 enableCORS = false
 
 [client]
@@ -22,9 +24,3 @@ toolbarMode = "minimal"
 [browser]
 # Gather usage stats (set to false for privacy)
 gatherUsageStats = false
-
-# Server address (leave empty for default behavior)
-serverAddress = ""
-
-# Server port (leave empty for default behavior)
-serverPort = 8501
