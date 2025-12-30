@@ -40,3 +40,4 @@ test_github_removal.py
 # Playwright screenshots
 /tmp/playwright-logs/
 playwright-logs/
+test_waist_changes.py
