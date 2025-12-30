@@ -1695,19 +1695,123 @@ def obtener_modo_interpretacion_ffmi(grasa_corregida, sexo):
 
 def calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura_cm=None):
     """
-    Calcula los parámetros para PSMF (Very Low Calorie Diet) actualizada
-    según el nuevo protocolo basado en tiers de adiposidad.
+    Calcula los parámetros para PSMF (Protein Sparing Modified Fast).
     
-    Requisitos actualizados con sistema de tiers:
-    - Tier 1 (baja adiposidad): Base = peso total
-    - Tier 2 (adiposidad moderada): Base = MLG
-    - Tier 3 (alta adiposidad): Base = peso ideal (IMC 25)
-    - Proteína según % grasa: 1.8g/kg (<25% grasa) o 1.6g/kg (≥25% grasa)
-    - Grasas según % grasa: 30g/día (<25% grasa) o 50g/día (≥25% grasa)
-    - Calorías objetivo = proteína (g) × multiplicador según % grasa
-    - Multiplicadores: 8.3 (alto % grasa), 9.0 (moderado), 9.5-9.7 (magro)
-    - Carb cap por tier: Tier 1=50g, Tier 2=40g, Tier 3=30g
-    - Carbohidratos: Calculados desde calorías restantes, limitados por carb cap
+    BACKEND CALCULATION - PSMF Special Protocol
+    ============================================
+    PSMF es un protocolo de dieta muy baja en calorías (VLCD) diseñado para
+    maximizar la pérdida de grasa mientras se minimiza la pérdida de masa muscular
+    mediante alta ingesta proteica.
+    
+    CRITERIOS DE ELEGIBILIDAD:
+    - Hombres: % grasa corporal >18%
+    - Mujeres: % grasa corporal >23%
+    - Razón: Personas más magras tienen menor reserva energética y mayor riesgo
+      de pérdida muscular con déficits agresivos
+    
+    SISTEMA DE TIERS (3 niveles según adiposidad):
+    
+    TIER 1 - Baja adiposidad:
+    - Hombres: <25% grasa
+    - Mujeres: <35% grasa
+    - Base proteína: Peso TOTAL
+    - Carb cap: 50g/día
+    - Perfil: Visible abs en hombres, definición muscular clara
+    
+    TIER 2 - Adiposidad moderada:
+    - Hombres: 25-34.9% grasa
+    - Mujeres: 35-44.9% grasa
+    - Base proteína: MLG (Masa Libre de Grasa)
+    - Carb cap: 40g/día
+    - Perfil: Sobrepeso leve-moderado
+    
+    TIER 3 - Alta adiposidad:
+    - Hombres: ≥35% grasa O IMC ≥40
+    - Mujeres: ≥45% grasa O IMC ≥40
+    - Base proteína: Peso IDEAL (IMC 25)
+    - Carb cap: 30g/día
+    - Perfil: Obesidad severa
+    
+    RAZÓN DEL SISTEMA DE TIERS:
+    Usar peso total en obesidad severa inflaría inapropiadamente la proteína
+    (ej: 150kg × 1.6 = 240g proteína es excesivo e insostenible).
+    Usar peso ideal o MLG da targets más realistas y saludables.
+    
+    FACTORES DE MACRONUTRIENTES:
+    
+    PROTEÍNA (preserva músculo en déficit extremo):
+    - <25% grasa: 1.8 g/kg × base
+    - ≥25% grasa: 1.6 g/kg × base
+    - Razón: Personas más magras necesitan MÁS proteína relativa para preservar músculo
+    
+    GRASAS (esenciales para función hormonal):
+    - <25% grasa: 30g/día (mínimo para hormonas)
+    - ≥25% grasa: 50g/día (mayor reserva adiposa)
+    - Razón: Grasas esenciales para testosterona, estrógeno, cortisol
+    
+    CARBOHIDRATOS (mínimos, solo vegetales fibrosos):
+    - Tier 1: Max 50g/día
+    - Tier 2: Max 40g/día
+    - Tier 3: Max 30g/día
+    - Fuente: Vegetales bajos en almidón (lechuga, brócoli, espinaca)
+    - Razón: Maximizar cetosis y oxidación de grasa
+    
+    MULTIPLICADOR CALÓRICO (para target calórico):
+    Target = Proteína (g) × Multiplicador
+    
+    - Alto % grasa (>35%): 8.3 (PSMF tradicional muy agresivo)
+    - Moderado % grasa (25-35% H / 30-45% M): 9.0 (menos agresivo)
+    - Bajo % grasa (<25% H / <30% M): 9.6 (conservador, más sostenible)
+    
+    PÉRDIDA ESPERADA (estimación conservadora):
+    - Hombres: 0.8-1.2 kg/semana
+    - Mujeres: 0.6-1.0 kg/semana
+    - Variables: Adherencia, NEAT, agua, glucógeno
+    
+    DURACIÓN MÁXIMA RECOMENDADA:
+    - 6-8 semanas MÁXIMO
+    - Requiere supervisión médica
+    - Análisis de sangre regulares (función hepática, renal, electrolitos)
+    - Suplementación obligatoria: Multivitamínico, omega-3, electrolitos, magnesio
+    
+    CONTRAINDICACIONES:
+    - Embarazo o lactancia
+    - Trastornos alimenticios
+    - Diabetes tipo 1 o tipo 2 insulino-dependiente sin supervisión
+    - Enfermedades renales o hepáticas
+    - Menores de 18 años
+    - Atletas en temporada competitiva
+    
+    Args:
+        sexo (str): "Hombre" o "Mujer"
+        peso (float): Peso corporal total en kg
+        grasa_corregida (float): % grasa corporal corregido DEXA-equivalente
+        mlg (float): Masa Libre de Grasa en kg
+        estatura_cm (float, optional): Estatura en cm (para calcular peso ideal IMC 25)
+    
+    Returns:
+        dict: {
+            'psmf_aplicable': bool,
+            'proteina_g_dia': float,
+            'grasa_g_dia': float,
+            'carbs_g_dia': float,
+            'calorias_dia': float,
+            'multiplicador': float,
+            'perdida_semanal_kg': tuple (min, max),
+            'tier_psmf': int (1, 2, 3),
+            'base_proteina_usada': str,
+            'carb_cap_aplicado_g': float,
+            'factor_proteina_psmf': float,
+            ...
+        }
+    
+    Referencias:
+        - Blackburn, G. L., et al. (1973). The effect of the protein-sparing fast on body 
+          composition. The American Journal of Clinical Nutrition.
+        - McDonald, L. (2005). The Rapid Fat Loss Handbook: A Scientific Approach to Crash 
+          Dieting.
+        - Sours, H. E., et al. (1981). Sudden death associated with very low calorie weight 
+          reduction regimens. The American Journal of Clinical Nutrition.
     """
     try:
         peso = float(peso)
@@ -2067,7 +2171,67 @@ def calcular_edad_metabolica(edad_cronologica, porcentaje_grasa, sexo):
     return max(18, min(80, round(edad_metabolica)))
 
 def obtener_geaf(nivel):
-    """Devuelve el factor de actividad física (GEAF) según el nivel."""
+    """
+    Devuelve el factor de actividad física (GEAF) según el nivel de actividad diaria.
+    
+    BACKEND CALCULATION - TDEE Component #2
+    ========================================
+    El GEAF (Gasto Energético por Actividad Física) representa el multiplicador
+    que se aplica al TMB para reflejar el nivel de actividad física diaria,
+    EXCLUYENDO el ejercicio estructurado (que se cuenta aparte como GEE).
+    
+    CATEGORÍAS Y VALORES:
+    
+    1. SEDENTARIO (GEAF = 1.00):
+       - Trabajo de oficina sentado la mayor parte del día
+       - Poca o ninguna actividad física aparte del ejercicio planificado
+       - <5,000 pasos diarios
+       - Ejemplo: Programador, oficinista, conductor
+    
+    2. MODERADAMENTE ACTIVO (GEAF = 1.11):
+       - Trabajo que requiere estar de pie o caminar moderadamente
+       - Actividad física ligera durante el día
+       - 5,000-10,000 pasos diarios
+       - Ejemplo: Maestro, vendedor, enfermera, técnico
+    
+    3. ACTIVO (GEAF = 1.25):
+       - Trabajo físico que requiere movimiento constante
+       - Alta actividad diaria fuera del ejercicio estructurado
+       - 10,000-15,000 pasos diarios
+       - Ejemplo: Mesero, construcción ligera, cartero, limpieza
+    
+    4. MUY ACTIVO (GEAF = 1.45):
+       - Trabajo físico pesado la mayor parte del día
+       - Actividad física intensa y constante
+       - >15,000 pasos diarios
+       - Ejemplo: Construcción pesada, agricultura, atleta profesional
+    
+    IMPORTANTE:
+    - Este factor NO incluye el ejercicio estructurado (entrenamiento)
+    - El ejercicio se cuenta separadamente como GEE (Gasto Energético por Ejercicio)
+    - Por eso incluso alguien "Sedentario" que entrena puede tener TDEE alto
+    
+    CÁLCULO EN CONTEXTO:
+    TDEE base = TMB × GEAF × ETA
+    TDEE total = (TMB × GEAF × ETA) + GEE
+    
+    Ejemplo:
+    - TMB = 1800 kcal
+    - GEAF = 1.11 (moderadamente activo)
+    - ETA = 1.12
+    - GEE = 300 kcal (3 días de entrenamiento)
+    - TDEE total = (1800 × 1.11 × 1.12) + 300 = 2240 + 300 = 2540 kcal
+    
+    Args:
+        nivel (str): Nivel de actividad física diaria
+    
+    Returns:
+        float: Factor GEAF (1.00 - 1.45)
+    
+    Referencias:
+        - Institute of Medicine (2005). Dietary Reference Intakes for Energy.
+        - FAO/WHO/UNU (2001). Human energy requirements.
+    """
     valores = {
         "Sedentario": 1.00,
         "Moderadamente-activo": 1.11,
@@ -4782,6 +4946,59 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
 # ETA (Thermal Effect of Food) Logic:
 # - Leaner individuals have higher ETA due to more metabolically active muscle tissue
 # - Higher ETA means more calories burned through food digestion and processing
+# ==================== ETA (EFECTO TÉRMICO DE LOS ALIMENTOS) ====================
+# BACKEND CALCULATION - TDEE Component #3
+# ========================================
+# El ETA (Thermic Effect of Food) representa el gasto energético adicional por
+# la digestión, absorción y almacenamiento de nutrientes. Es el tercer componente
+# del TDEE y varía según la composición corporal.
+# 
+# FUNDAMENTO CIENTÍFICO:
+# Las personas más magras tienen:
+# 1. Mayor sensibilidad a la insulina → metabolismo más eficiente
+# 2. Mayor proporción de tejido muscular → más mitocondrias activas
+# 3. Mayor termogénesis por actividad espontánea (NEAT)
+# 4. Mejor particionamiento de nutrientes
+# 
+# Por tanto, su gasto energético real es ~8-15% mayor que el predicho solo por TMB×GEAF.
+# 
+# RANGOS IMPLEMENTADOS:
+# 
+# HOMBRES:
+# - ≤10% grasa: ETA = 1.15 (15% adicional) - Muy magro, metabolismo elevado
+# - 11-20% grasa: ETA = 1.12 (12% adicional) - Magro, metabolismo eficiente
+# - >20% grasa: ETA = 1.10 (10% adicional) - Normal/sobrepeso, metabolismo estándar
+# 
+# MUJERES (rangos ajustados por mayor % grasa esencial):
+# - ≤20% grasa: ETA = 1.15 (15% adicional) - Muy magra, metabolismo elevado
+# - 21-30% grasa: ETA = 1.12 (12% adicional) - Normal, metabolismo eficiente
+# - >30% grasa: ETA = 1.10 (10% adicional) - Sobrepeso, metabolismo estándar
+# 
+# INTEGRACIÓN CON TDEE:
+# TDEE base = TMB × GEAF × ETA
+# 
+# Ejemplo comparativo:
+# - Hombre 80kg, 25% grasa, TMB=1800, GEAF=1.11
+#   * TDEE sin ETA = 1800 × 1.11 = 1998 kcal
+#   * TDEE con ETA (1.10) = 1998 × 1.10 = 2198 kcal
+#   * Diferencia = +200 kcal por efecto térmico
+# 
+# - Hombre 80kg, 10% grasa, TMB=1900, GEAF=1.11
+#   * TDEE sin ETA = 1900 × 1.11 = 2109 kcal
+#   * TDEE con ETA (1.15) = 2109 × 1.15 = 2425 kcal
+#   * Diferencia = +316 kcal por efecto térmico (58% más que el anterior)
+# 
+# NOTA IMPORTANTE:
+# Este factor es CONTROVERSIAL en la literatura científica. Algunos autores lo
+# consideran redundante o ya incluido en otras mediciones. MUPAI lo incluye como
+# ajuste conservador basado en observaciones empíricas de que individuos más magros
+# requieren más calorías de lo predicho por ecuaciones estándar.
+# 
+# Referencias:
+# - Leibel, R. L., et al. (1995). Changes in energy expenditure from altered body weight.
+# - Rosenbaum, M., & Leibel, R. L. (2010). Adaptive thermogenesis in humans.
+# - Johnstone, A. M., et al. (2005). Factors influencing variation in basal metabolic rate.
+# ================================================================================
 # 
 # ETA Ranges:
 # Men:   ≤10% BF → 1.15 (High),  11-20% BF → 1.12 (Medium),  >20% BF → 1.10 (Standard)
