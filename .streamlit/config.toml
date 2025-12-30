@@ -1,0 +1,33 @@
+# Streamlit Configuration
+# This file configures server settings for the MUPAI application
+
+[server]
+# Maximum file upload size in MB (default is 200)
+# Increased to 100 MB to accommodate high-resolution smartphone photos
+maxUploadSize = 100
+
+# Maximum WebSocket message size in MB (default is 200)
+# Set to 200 MB to handle larger file uploads and data transfers
+maxMessageSize = 200
+
+# Session timeout settings
+# enableStaticServing = true allows session to persist
+enableStaticServing = true
+
+# Browser session connection timeout (seconds)
+# User's browser connection can remain idle for this duration
+# Default is 10 minutes (600 seconds), increased to 30 minutes for longer sessions
+sessionTimeout = 1800
+
+# Maximum session lifetime (seconds)
+# Total time a session can exist before forced refresh
+# Default is typically unlimited, setting to 2 hours (7200 seconds) for stability
+maxSessionLifetime = 7200
+
+[browser]
+# Disable automatic page refresh on file changes in production
+gatherUsageStats = false
+
+[client]
+# Show detailed error messages
+showErrorDetails = true
