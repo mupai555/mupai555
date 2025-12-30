@@ -2218,6 +2218,25 @@ def clasificar_grasa_visceral(nivel):
     else:
         return "Alto riesgo"
 
+def clasificar_wthr(wthr):
+    """
+    Clasifica el Waist-to-Height Ratio (Ratio cintura-altura) según rangos saludables.
+    
+    Args:
+        wthr: Waist-to-Height Ratio (circunferencia_cintura / estatura)
+        
+    Returns:
+        str: Clasificación (Saludable, Riesgo aumentado, Alto riesgo, o N/D)
+    """
+    if wthr <= 0:
+        return "N/D"
+    elif wthr < 0.5:
+        return "Saludable (<0.5)"
+    elif wthr < 0.6:
+        return "Riesgo aumentado (0.5-0.6)"
+    else:
+        return "Alto riesgo (≥0.6)"
+
 def clasificar_masa_muscular(porcentaje, edad, sexo):
     """
     Clasifica el porcentaje de masa muscular según edad y sexo.
@@ -2304,7 +2323,7 @@ def format_photo_status(progress_photos):
         return "✓ 3 fotografías adjuntas (frontal, lateral, posterior)"
 
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
-                        masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None):
+                        masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura=0.0, progress_photos=None):
     """
     Envía el email interno (Parte 2) con reporte profesional de composición corporal.
     Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
@@ -2317,10 +2336,17 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
         # Formatear valores con safe conversions
         masa_muscular_val = safe_float(masa_muscular, 0.0)
         grasa_visceral_val = safe_int(grasa_visceral, 0)
+        circunferencia_cintura_val = safe_float(circunferencia_cintura, 0.0)
+        
+        # Calcular WtHR si hay datos disponibles
+        wthr = 0.0
+        if circunferencia_cintura_val > 0 and estatura > 0:
+            wthr = circunferencia_cintura_val / estatura
         
         # Clasificaciones automáticas SOLO cuando N/D
         clasificacion_grasa_visceral = clasificar_grasa_visceral(grasa_visceral_val)
         clasificacion_masa_muscular = clasificar_masa_muscular(masa_muscular_val, edad, sexo)
+        clasificacion_wthr = clasificar_wthr(wthr)
         
         # Construir el cuerpo del email profesional
         contenido = f"""
@@ -2345,8 +2371,11 @@ COMPOSICIÓN CORPORAL — LÍNEA BASE
 
 📊 ANTROPOMETRÍA BÁSICA:
    • Peso corporal: {peso:.1f} kg
-   • Estatura: {estatura:.0f} cm ({estatura/100:.2f} m)
+   • Estatura: {estatura:.1f} cm ({estatura/100:.2f} m)
    • IMC: {imc:.1f} kg/m²
+   • Circunferencia de cintura: {f"{circunferencia_cintura_val:.1f} cm" if circunferencia_cintura_val > 0 else "[____]"}
+   • Ratio Cintura-Altura (WtHR): {f"{wthr:.3f}" if wthr > 0 else "[____]"}
+     {f"→ Clasificación: {clasificacion_wthr}" if wthr > 0 else ""}
 
 📊 COMPOSICIÓN CORPORAL (MÉTODO DEXA-EQUIVALENTE):
    • % Grasa corporal (corregido DEXA): {grasa_corregida:.1f}%
@@ -3487,17 +3516,18 @@ if datos_personales_completos and st.session_state.datos_completos:
             )
         with col2:
             # Ensure estatura has a valid default
-            estatura_default = 170
+            estatura_default = 170.0
             estatura_value = st.session_state.get("estatura", estatura_default)
             if estatura_value == '' or estatura_value is None or estatura_value == 0:
                 estatura_value = estatura_default
             estatura = st.number_input(
                 "📏 Estatura (cm)",
-                min_value=120,
-                max_value=220,
-                value=safe_int(estatura_value, estatura_default),
+                min_value=120.0,
+                max_value=220.0,
+                value=safe_float(estatura_value, estatura_default),
+                step=0.1,
                 key="estatura",
-                help="Medida sin zapatos"
+                help="Medida sin zapatos (puede incluir decimales, ej: 165.5)"
             )
         with col3:
             st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
@@ -3547,6 +3577,19 @@ if datos_personales_completos and st.session_state.datos_completos:
             step=1,
             key="grasa_visceral",
             help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
+        )
+
+        # Campo opcional - Circunferencia de cintura (no afecta cálculos)
+        circunferencia_cintura_default = st.session_state.get("circunferencia_cintura", 0.0)
+        circunferencia_cintura_safe = safe_float(circunferencia_cintura_default, 0.0)
+        circunferencia_cintura = st.number_input(
+            "📏 Circunferencia de cintura (cm, opcional)",
+            min_value=0.0,
+            max_value=200.0,
+            value=circunferencia_cintura_safe if circunferencia_cintura_safe > 0 else 0.0,
+            step=0.1,
+            key="circunferencia_cintura",
+            help="Medida de la circunferencia de la cintura a la altura del ombligo. Este dato se incluye en el reporte junto con el ratio cintura-altura (WtHR). Valores saludables WtHR: <0.5 (hombres y mujeres)."
         )
 
         st.markdown('</div>', unsafe_allow_html=True)
@@ -5131,8 +5174,9 @@ if USER_VIEW:
     
         st.markdown(f"""
         ### 💪 Composición Corporal
-        - **Peso:** {peso} kg | **Altura:** {estatura} cm
+        - **Peso:** {peso} kg | **Altura:** {estatura:.1f} cm
         - **% Grasa:** {grasa_corregida:.1f}% | **MLG:** {mlg:.1f} kg
+        - **Cintura:** {f"{circunferencia_cintura:.1f} cm" if circunferencia_cintura > 0 else "No medido"} | **WtHR:** {f"{circunferencia_cintura/estatura:.3f}" if circunferencia_cintura > 0 and estatura > 0 else "N/D"}
         - **FFMI:** {ffmi:.2f} {"(" + nivel_ffmi + ")" if modo_ffmi == "GREEN" else "(Modo " + modo_ffmi + ")"}
           - *{ffmi_interpretacion}*
           {ffmi_texto_potencial if modo_ffmi != "RED" else ""}
@@ -5369,6 +5413,19 @@ categoria_fmi = clasificar_fmi_email(fmi, sexo)
 grasa_visceral_report = safe_int(grasa_visceral, 0)
 grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
 
+# Format circunferencia_cintura and calculate WtHR for report
+circunferencia_cintura_report = safe_float(circunferencia_cintura, 0.0)
+circunferencia_cintura_str = f"{circunferencia_cintura_report:.1f} cm" if circunferencia_cintura_report > 0 else 'No medido'
+
+# Calculate WtHR (Waist-to-Height Ratio)
+wthr_report = 0.0
+wthr_str = 'No medido'
+wthr_clasificacion_str = ''
+if circunferencia_cintura_report > 0 and estatura > 0:
+    wthr_report = circunferencia_cintura_report / estatura
+    wthr_str = f"{wthr_report:.3f}"
+    wthr_clasificacion_str = f" → {clasificar_wthr(wthr_report)}"
+
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -5390,8 +5447,10 @@ DATOS DEL CLIENTE:
 ANTROPOMETRÍA Y COMPOSICIÓN:
 =====================================
 - Peso: {peso} kg
-- Estatura: {estatura} cm
+- Estatura: {estatura:.1f} cm
 - IMC: {imc:.1f} kg/m²
+- Circunferencia de cintura: {circunferencia_cintura_str}
+- Ratio Cintura-Altura (WtHR): {wthr_str}{wthr_clasificacion_str}
 - Método medición grasa: {metodo_grasa}
 - % Grasa medido: {grasa_corporal}%
 - % Grasa corregido (DEXA): {grasa_corregida:.1f}%
@@ -6084,7 +6143,7 @@ if not st.session_state.get("correo_enviado", False):
                     # Enviar email Parte 2 (interno)
                     ok_parte2 = enviar_email_parte2(
                         nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
+                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos
                     )
                     if ok_parte2:
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
@@ -6127,7 +6186,7 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                 # Reenviar email Parte 2 (interno)
                 ok_parte2 = enviar_email_parte2(
                     nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
+                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos
                 )
                 if ok_parte2:
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
