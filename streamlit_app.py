@@ -936,6 +936,7 @@ defaults = {
     "access_stage": "request",  # request, code_sent, verify, authenticated
     "masa_muscular": "",
     "grasa_visceral": "",
+    "circunferencia_cintura": "",  # Waist circumference in cm
     # Flow state for conditional rendering of technical outputs
     "flow_phase": "intake"  # Can be: 'intake', 'review', 'final'
 }
@@ -2282,6 +2283,50 @@ def clasificar_masa_muscular(porcentaje, edad, sexo):
             else:
                 return "Alto"
 
+def calcular_whtr(circunferencia_cintura, estatura):
+    """
+    Calcula el Waist-to-Height Ratio (WHtR) o Ratio Cintura-Estatura.
+    
+    Args:
+        circunferencia_cintura: Circunferencia de cintura en cm
+        estatura: Estatura en cm
+        
+    Returns:
+        float: WHtR (ratio entre 0 y 1), o 0 si los datos son inválidos
+    """
+    if circunferencia_cintura <= 0 or estatura <= 0:
+        return 0.0
+    return circunferencia_cintura / estatura
+
+def clasificar_whtr(whtr, sexo, edad):
+    """
+    Clasifica el Waist-to-Height Ratio según criterios de salud.
+    
+    WHtR es un indicador de salud metabólica y riesgo cardiovascular.
+    Regla general: WHtR < 0.5 indica bajo riesgo (cintura < mitad de la estatura)
+    
+    Args:
+        whtr: Waist-to-Height Ratio (0-1)
+        sexo: "Hombre" o "Mujer"
+        edad: Edad en años
+        
+    Returns:
+        str: Clasificación del riesgo
+    """
+    if whtr <= 0:
+        return "N/D"
+    
+    # Umbrales basados en evidencia científica
+    # Ashwell & Gibson (2016), Browning et al. (2010)
+    if whtr < 0.4:
+        return "Extremadamente bajo (verificar medición)"
+    elif whtr < 0.5:
+        return "Saludable (bajo riesgo)"
+    elif whtr < 0.6:
+        return "Riesgo incrementado"
+    else:
+        return "Riesgo alto"
+
 def format_photo_status(progress_photos):
     """
     Format the photo status message for email body.
@@ -2304,7 +2349,7 @@ def format_photo_status(progress_photos):
         return "✓ 3 fotografías adjuntas (frontal, lateral, posterior)"
 
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
-                        masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None):
+                        masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None, circunferencia_cintura=0.0):
     """
     Envía el email interno (Parte 2) con reporte profesional de composición corporal.
     Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
@@ -2317,6 +2362,11 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
         # Formatear valores con safe conversions
         masa_muscular_val = safe_float(masa_muscular, 0.0)
         grasa_visceral_val = safe_int(grasa_visceral, 0)
+        circunferencia_cintura_val = safe_float(circunferencia_cintura, 0.0)
+        
+        # Calcular WHtR si hay datos de cintura
+        whtr = calcular_whtr(circunferencia_cintura_val, estatura)
+        clasificacion_whtr = clasificar_whtr(whtr, sexo, edad) if whtr > 0 else "N/D"
         
         # Clasificaciones automáticas SOLO cuando N/D
         clasificacion_grasa_visceral = clasificar_grasa_visceral(grasa_visceral_val)
@@ -2345,7 +2395,7 @@ COMPOSICIÓN CORPORAL — LÍNEA BASE
 
 📊 ANTROPOMETRÍA BÁSICA:
    • Peso corporal: {peso:.1f} kg
-   • Estatura: {estatura:.0f} cm ({estatura/100:.2f} m)
+   • Estatura: {estatura:.1f} cm ({estatura/100:.2f} m)
    • IMC: {imc:.1f} kg/m²
 
 📊 COMPOSICIÓN CORPORAL (MÉTODO DEXA-EQUIVALENTE):
@@ -2359,6 +2409,11 @@ COMPOSICIÓN CORPORAL — LÍNEA BASE
      
    • Grasa visceral (nivel): {grasa_visceral_val if grasa_visceral_val >= 1 else "[____]"}
      {f"→ Clasificación: {clasificacion_grasa_visceral}" if grasa_visceral_val >= 1 else ""}
+     
+   • Circunferencia de cintura: {f"{circunferencia_cintura_val:.1f} cm" if circunferencia_cintura_val > 0 else "[____]"}
+     {f"→ Ratio Cintura-Estatura (WHtR): {whtr:.3f}" if whtr > 0 else ""}
+     {f"→ Clasificación WHtR: {clasificacion_whtr}" if whtr > 0 else ""}
+     {f"→ Interpretación: WHtR < 0.5 indica bajo riesgo metabólico" if whtr > 0 else ""}
 
 📊 METABOLISMO BASAL:
    • TMB (Cunningham): {tmb:.0f} kcal/día
@@ -3487,17 +3542,18 @@ if datos_personales_completos and st.session_state.datos_completos:
             )
         with col2:
             # Ensure estatura has a valid default
-            estatura_default = 170
+            estatura_default = 170.0
             estatura_value = st.session_state.get("estatura", estatura_default)
             if estatura_value == '' or estatura_value is None or estatura_value == 0:
                 estatura_value = estatura_default
             estatura = st.number_input(
                 "📏 Estatura (cm)",
-                min_value=120,
-                max_value=220,
-                value=safe_int(estatura_value, estatura_default),
+                min_value=120.0,
+                max_value=220.0,
+                value=safe_float(estatura_value, estatura_default),
+                step=0.1,
                 key="estatura",
-                help="Medida sin zapatos"
+                help="Medida sin zapatos (permite decimales, ej: 165.5)"
             )
         with col3:
             st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
@@ -3549,6 +3605,18 @@ if datos_personales_completos and st.session_state.datos_completos:
             help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
         )
 
+        # Campo opcional - Circunferencia de cintura (no afecta cálculos)
+        circunferencia_cintura_default = st.session_state.get("circunferencia_cintura", 0.0)
+        circunferencia_cintura = st.number_input(
+            "📏 Circunferencia de cintura (cm, opcional)",
+            min_value=0.0,
+            max_value=200.0,
+            value=safe_float(circunferencia_cintura_default, 0.0),
+            step=0.1,
+            key="circunferencia_cintura",
+            help="Medida de la circunferencia de cintura a la altura del ombligo. Este dato se usa para calcular el Ratio Cintura-Estatura (WHtR), un indicador de salud metabólica. Se guarda y se incluye en el reporte, pero no afecta los cálculos de calorías/macros."
+        )
+
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
@@ -3561,6 +3629,7 @@ if datos_personales_completos and st.session_state.datos_completos:
     estatura = st.session_state.estatura
     grasa_corporal = st.session_state.grasa_corporal
     masa_muscular = st.session_state.get("masa_muscular", 0.0)
+    circunferencia_cintura = st.session_state.get("circunferencia_cintura", 0.0)
     grasa_visceral = st.session_state.get("grasa_visceral", 0)
 
     grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
@@ -3604,13 +3673,18 @@ if datos_personales_completos and st.session_state.datos_completos:
                 diferencia_edad = 0
             st.metric("Edad Metabólica", f"{edad_metabolica} años", f"{'+' if diferencia_edad > 0 else ''}{diferencia_edad} años")
         
-        # Mostrar masa muscular y grasa visceral si están disponibles
+        # Mostrar masa muscular, grasa visceral, y circunferencia cintura si están disponibles
         try:
             masa_muscular_val = safe_float(masa_muscular, 0.0)
             grasa_visceral_val = safe_int(grasa_visceral, 0)
+            circunferencia_cintura_val = safe_float(circunferencia_cintura, 0.0)
+            
+            # Calcular WHtR si hay datos de cintura
+            whtr = calcular_whtr(circunferencia_cintura_val, estatura)
+            clasificacion_whtr = clasificar_whtr(whtr, sexo, edad) if whtr > 0 else "N/D"
             
             # Mostrar solo si hay al menos uno con valor
-            if masa_muscular_val > 0 or grasa_visceral_val >= 1:
+            if masa_muscular_val > 0 or grasa_visceral_val >= 1 or circunferencia_cintura_val > 0:
                 col1, col2, col3, col4 = st.columns(4)
                 if masa_muscular_val > 0:
                     with col1:
@@ -3625,11 +3699,22 @@ if datos_personales_completos and st.session_state.datos_completos:
                         else:
                             estado = "Alto riesgo"
                         st.metric("Grasa visceral (nivel)", f"{grasa_visceral_val}", estado)
+                if circunferencia_cintura_val > 0:
+                    with col3:
+                        st.metric("Circunferencia cintura", f"{circunferencia_cintura_val:.1f} cm")
+                    with col4:
+                        st.metric("Ratio Cintura-Estatura (WHtR)", f"{whtr:.3f}", clasificacion_whtr)
         except (ValueError, TypeError):
             pass  # No se muestra si hay error en el valor
 
     # Calcular FMI/BFMI (siempre - calculations run regardless of USER_VIEW)
     fmi = calcular_fmi(peso, grasa_corregida, estatura)
+    
+    # Calcular WHtR independientemente de USER_VIEW (para email) - se reutiliza si ya se calculó en UI
+    if not 'whtr' in locals() or not 'clasificacion_whtr' in locals():
+        circunferencia_cintura_val = safe_float(circunferencia_cintura, 0.0)
+        whtr = calcular_whtr(circunferencia_cintura_val, estatura)
+        clasificacion_whtr = clasificar_whtr(whtr, sexo, edad) if whtr > 0 else "N/D"
     
     # Determinar modo de interpretación FFMI (siempre - calculations run regardless of USER_VIEW)
     modo_ffmi = obtener_modo_interpretacion_ffmi(grasa_corregida, sexo)
@@ -5390,13 +5475,15 @@ DATOS DEL CLIENTE:
 ANTROPOMETRÍA Y COMPOSICIÓN:
 =====================================
 - Peso: {peso} kg
-- Estatura: {estatura} cm
+- Estatura: {estatura:.1f} cm
 - IMC: {imc:.1f} kg/m²
 - Método medición grasa: {metodo_grasa}
 - % Grasa medido: {grasa_corporal}%
 - % Grasa corregido (DEXA): {grasa_corregida:.1f}%
 - % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
 - Grasa visceral (nivel): {grasa_visceral_str}
+- Circunferencia de cintura: {f"{circunferencia_cintura_val:.1f} cm" if circunferencia_cintura_val > 0 else "No medido"}
+- Ratio Cintura-Estatura (WHtR): {f"{whtr:.3f} ({clasificacion_whtr})" if whtr > 0 else "No calculado"}
 - Masa Libre de Grasa: {mlg:.1f} kg
 - Masa Grasa: {peso - mlg:.1f} kg
 
@@ -5416,7 +5503,7 @@ MODO DE INTERPRETACIÓN FFMI: {modo_ffmi}
 
 CÁLCULO DE TU FFMI:
 - Masa Libre de Grasa (MLG): {mlg:.1f} kg
-- Estatura: {estatura} cm ({estatura/100:.2f} m)
+- Estatura: {estatura:.1f} cm ({estatura/100:.2f} m)
 - FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f}
 - FFMI Normalizado (a 1.80m): {ffmi:.2f}
   (Formula: FFMI_base + 6.3 * (1.8 - altura_m))
@@ -6084,7 +6171,7 @@ if not st.session_state.get("correo_enviado", False):
                     # Enviar email Parte 2 (interno)
                     ok_parte2 = enviar_email_parte2(
                         nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
+                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos, circunferencia_cintura
                     )
                     if ok_parte2:
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
@@ -6127,7 +6214,7 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                 # Reenviar email Parte 2 (interno)
                 ok_parte2 = enviar_email_parte2(
                     nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
+                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos, circunferencia_cintura
                 )
                 if ok_parte2:
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
