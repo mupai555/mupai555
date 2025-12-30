@@ -936,7 +936,6 @@ defaults = {
     "access_stage": "request",  # request, code_sent, verify, authenticated
     "masa_muscular": "",
     "grasa_visceral": "",
-    "perimetro_cintura": 0.0,
     # Flow state for conditional rendering of technical outputs
     "flow_phase": "intake"  # Can be: 'intake', 'review', 'final'
 }
@@ -1462,63 +1461,6 @@ def calcular_fmi(peso, grasa_corregida, estatura_cm):
     fmi = masa_grasa / (estatura_m ** 2)
     
     return fmi
-
-def calcular_relacion_cintura_estatura(perimetro_cintura, estatura):
-    """
-    Calcula la relación cintura-estatura (waist-to-height ratio).
-    
-    La relación cintura-estatura es un indicador simple y efectivo de riesgo
-    cardiometabólico y distribución de grasa corporal. Se considera más útil
-    que el IMC para predecir riesgo de enfermedades relacionadas con obesidad.
-    
-    PARÁMETROS:
-    -----------
-    perimetro_cintura : float
-        Perímetro de cintura en centímetros (medido a nivel del ombligo).
-    
-    estatura : float
-        Estatura del individuo en centímetros.
-    
-    CÁLCULO:
-    --------
-    Relación = Perímetro Cintura (cm) / Estatura (cm)
-    
-    INTERPRETACIÓN:
-    ---------------
-    - <0.40: Muy bajo (puede indicar bajo peso)
-    - 0.40-0.49: Saludable
-    - 0.50-0.59: Riesgo aumentado
-    - ≥0.60: Riesgo sustancialmente aumentado
-    
-    RETORNA:
-    --------
-    float
-        Relación cintura-estatura. Retorna 0.0 si hay error en los datos.
-    
-    REFERENCIAS:
-    -----------
-    - Ashwell M, et al. (2012). "Waist-to-height ratio is a better screening tool
-      than waist circumference and BMI for adult cardiometabolic risk factors."
-      Nutrition Research Reviews.
-    """
-    try:
-        perimetro_cintura = float(perimetro_cintura)
-        estatura = float(estatura)
-    except (TypeError, ValueError):
-        return 0.0
-    
-    # Validar que la estatura sea positiva para evitar división por cero
-    if estatura <= 0:
-        return 0.0
-    
-    # Validar que el perímetro de cintura sea positivo
-    if perimetro_cintura <= 0:
-        return 0.0
-    
-    # Calcular relación cintura-estatura
-    relacion = perimetro_cintura / estatura
-    
-    return relacion
 
 def obtener_modo_interpretacion_ffmi(grasa_corregida, sexo):
     """
@@ -3607,18 +3549,6 @@ if datos_personales_completos and st.session_state.datos_completos:
             help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
         )
 
-        # Campo opcional - Perímetro de cintura (no afecta cálculos)
-        perimetro_cintura_default = st.session_state.get("perimetro_cintura", 0.0)
-        perimetro_cintura = st.number_input(
-            "📏 Perímetro de cintura (cm, opcional)",
-            min_value=40.0,
-            max_value=200.0,
-            value=safe_float(perimetro_cintura_default, 0.0) if perimetro_cintura_default > 0 else 0.0,
-            step=0.1,
-            key="perimetro_cintura",
-            help="Medida del contorno de la cintura a nivel del ombligo. Es un indicador importante de riesgo cardiometabólico y distribución de grasa abdominal. Este dato se guarda y se incluye en el reporte con su relación cintura-estatura."
-        )
-
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
@@ -3632,7 +3562,6 @@ if datos_personales_completos and st.session_state.datos_completos:
     grasa_corporal = st.session_state.grasa_corporal
     masa_muscular = st.session_state.get("masa_muscular", 0.0)
     grasa_visceral = st.session_state.get("grasa_visceral", 0)
-    perimetro_cintura = st.session_state.get("perimetro_cintura", 0.0)
 
     grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
     mlg = calcular_mlg(peso, grasa_corregida)
@@ -3647,9 +3576,6 @@ if datos_personales_completos and st.session_state.datos_completos:
 
     nivel_ffmi = clasificar_ffmi(ffmi, sexo)
     edad_metabolica = calcular_edad_metabolica(edad, grasa_corregida, sexo)
-    
-    # Calcular relación cintura-estatura si se proporcionó el perímetro de cintura
-    waist_to_height_ratio = calcular_relacion_cintura_estatura(perimetro_cintura, estatura) if perimetro_cintura > 0 else 0.0
 
     # Display results to user (controlled by USER_VIEW flag)
     if USER_VIEW:
@@ -5443,25 +5369,6 @@ categoria_fmi = clasificar_fmi_email(fmi, sexo)
 grasa_visceral_report = safe_int(grasa_visceral, 0)
 grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
 
-# Format perimetro_cintura and waist-to-height ratio for report
-perimetro_cintura_report = safe_float(perimetro_cintura, 0.0)
-if perimetro_cintura_report > 0:
-    perimetro_cintura_str = f"{perimetro_cintura_report:.1f} cm"
-    waist_to_height_str = f"{waist_to_height_ratio:.3f}"
-    # Interpretar la relación cintura-estatura
-    if waist_to_height_ratio < 0.40:
-        whr_interpretacion = "Muy bajo (puede indicar bajo peso)"
-    elif waist_to_height_ratio < 0.50:
-        whr_interpretacion = "Saludable"
-    elif waist_to_height_ratio < 0.60:
-        whr_interpretacion = "Riesgo aumentado"
-    else:
-        whr_interpretacion = "Riesgo sustancialmente aumentado"
-else:
-    perimetro_cintura_str = "No medido"
-    waist_to_height_str = "No calculado"
-    whr_interpretacion = "No disponible"
-
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -5490,8 +5397,6 @@ ANTROPOMETRÍA Y COMPOSICIÓN:
 - % Grasa corregido (DEXA): {grasa_corregida:.1f}%
 - % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
 - Grasa visceral (nivel): {grasa_visceral_str}
-- Perímetro de cintura: {perimetro_cintura_str}
-- Relación cintura-estatura: {waist_to_height_str} ({whr_interpretacion})
 - Masa Libre de Grasa: {mlg:.1f} kg
 - Masa Grasa: {peso - mlg:.1f} kg
 
@@ -5531,33 +5436,6 @@ TU CLASIFICACIÓN FMI:
 NOTA: Los umbrales femeninos difieren de masculinos debido a diferencias
 hormonales (menos testosterona), mayor % grasa esencial, y diferente
 distribución de masa muscular.
-
----
-RELACIÓN CINTURA-ESTATURA (WAIST-TO-HEIGHT RATIO):
----
-{'La relación cintura-estatura es un indicador simple y efectivo de riesgo' if perimetro_cintura_report > 0 else 'NO MEDIDO - No se proporcionó el perímetro de cintura.'}
-{f"""cardiometabólico y distribución de grasa abdominal.
-
-TU RELACIÓN CINTURA-ESTATURA:
-- Perímetro de cintura: {perimetro_cintura_report:.1f} cm
-- Estatura: {estatura} cm
-- Relación: {waist_to_height_ratio:.3f}
-- Interpretación: {whr_interpretacion}
-
-VALORES DE REFERENCIA:
-- <0.40: Muy bajo (puede indicar bajo peso)
-- 0.40-0.49: Saludable
-- 0.50-0.59: Riesgo aumentado
-- ≥0.60: Riesgo sustancialmente aumentado
-
-IMPORTANCIA CLÍNICA:
-La relación cintura-estatura es considerada más útil que el IMC para predecir
-riesgo de enfermedades relacionadas con obesidad (diabetes tipo 2, enfermedad
-cardiovascular, síndrome metabólico). Un valor ≥0.50 indica la necesidad de
-reducir la grasa abdominal para mejorar la salud metabólica.
-
-NOTA: Este indicador complementa el % de grasa corporal y la grasa visceral
-para proporcionar una evaluación integral del riesgo cardiometabólico.""" if perimetro_cintura_report > 0 else ''}
 
 =====================================
 FACTORES DE ACTIVIDAD:
