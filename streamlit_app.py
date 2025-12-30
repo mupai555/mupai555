@@ -104,89 +104,6 @@ OMRON_HBF516_TO_4C = {
     60: 51.5,
 }
 
-# ==================== CONSTANTES DEL MARCO UNIFICADO MUPAI ====================
-# Framework principles for unified traditional and PSMF nutritional approaches
-# All energy balance expressed as % of TDEE (TDEE_mantenimiento)
-# Weight changes expressed as % of total body weight weekly
-
-# PROTEIN MULTIPLIERS - Factor applied to base weight/MLG for protein calculation
-# Base selection depends on adiposity level (see PSMF tier logic)
-PROTEIN_FACTOR_RANGES = {
-    # Traditional approach: protein based on body fat % and training level
-    "tradicional_bajo_grasa": 2.0,      # <15% BF male, <23% BF female
-    "tradicional_moderado": 1.8,         # 15-25% BF male, 23-32% BF female  
-    "tradicional_alto_grasa": 1.6,       # >25% BF male, >32% BF female (use MLG as base)
-    # PSMF approach: protein based on adiposity tier
-    "psmf_magro": 1.8,                   # <25% BF (Tier 1)
-    "psmf_alto": 1.6,                    # ≥25% BF (Tier 2-3)
-}
-
-# FAT ALLOCATION - Grams per day based on approach and body fat %
-FAT_ALLOCATION_RULES = {
-    # Traditional approach: fat as % of calories after protein
-    "tradicional_min_percent": 20,       # Minimum fat as % of calories
-    "tradicional_max_percent": 35,       # Maximum fat as % of calories
-    # PSMF approach: fixed grams per day based on body fat %
-    "psmf_magro_g": 30.0,                # <25% BF: 30g/day
-    "psmf_alto_g": 50.0,                 # ≥25% BF: 50g/day
-}
-
-# CARB ALLOCATION - Rules for carbohydrate distribution
-CARB_ALLOCATION_RULES = {
-    # Traditional approach: remainder after protein and fat
-    "tradicional_fill_remainder": True,
-    # PSMF approach: capped by tier
-    "psmf_tier1_cap_g": 50,              # Tier 1 (lower adiposity)
-    "psmf_tier2_cap_g": 40,              # Tier 2 (moderate adiposity)
-    "psmf_tier3_cap_g": 30,              # Tier 3 (high adiposity)
-}
-
-# OBESITY THRESHOLDS - Auto-recommend PSMF or 50% deficit
-# Based on problem statement requirements
-OBESITY_THRESHOLDS = {
-    "male_obese_bf": 26.0,               # Male ≥26% BF → PSMF/50% deficit recommended
-    "female_obese_bf": 39.0,             # Female ≥39% BF → PSMF/50% deficit recommended
-}
-
-# DEFICIT/SURPLUS CATEGORIES - % of TDEE for each body fat range
-# Linear interpolation applied between category boundaries
-# Format: (bf_min, bf_max, deficit_percent)
-DEFICIT_RANGES_MALE = [
-    # Very low BF - surplus recommended
-    (0, 6, -12.5),      # Superávit 10-15% (midpoint: 12.5%)
-    (6, 10, -7.5),      # Superávit 5-10% (midpoint: 7.5%)
-    (10, 15, -2.5),     # Mantenimiento o ligero superávit 0-5% (midpoint: 2.5%)
-    (15, 18, 0),        # Mantenimiento
-    # Déficit ranges - gradual progression
-    (18, 21, 10),       # Déficit leve 10%
-    (21, 23, 20),       # Déficit moderado 20%
-    (23, 26, 30),       # Déficit alto 30%
-    # Obese category - PSMF or high deficit
-    (26, 100, 50),      # PSMF recomendado o déficit 50%
-]
-
-DEFICIT_RANGES_FEMALE = [
-    # Very low BF - surplus recommended
-    (0, 12, -12.5),     # Superávit 10-15% (midpoint: 12.5%)
-    (12, 16, -7.5),     # Superávit 5-10% (midpoint: 7.5%)
-    (16, 20, -2.5),     # Mantenimiento o ligero superávit 0-5% (midpoint: 2.5%)
-    (20, 23, 0),        # Mantenimiento
-    # Déficit ranges - gradual progression
-    (23, 27, 10),       # Déficit leve 10%
-    (27, 32, 20),       # Déficit moderado 20%
-    (32, 39, 30),       # Déficit alto 30%
-    # Obese category - PSMF or high deficit
-    (39, 100, 50),      # PSMF recomendado o déficit 50%
-]
-
-# PSMF MULTIPLIERS - Caloric multiplier for PSMF calculations
-# Calories objective = protein_g × multiplier
-PSMF_CALORIC_MULTIPLIERS = {
-    "alto_bf": 8.3,          # >35% BF: Traditional PSMF
-    "moderado_bf": 9.0,      # 25-35% BF: Moderate PSMF
-    "magro_bf": 9.6,         # <25% BF: Leaner PSMF (midpoint of 9.5-9.7)
-}
-
 # ==================== FUNCIONES DE VALIDACIÓN ESTRICTA ====================
 def validate_name(name):
     """
@@ -1798,81 +1715,87 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura_cm=None):
         return {"psmf_aplicable": False}
 
 def sugerir_deficit(porcentaje_grasa, sexo):
-    """
-    Sugiere el déficit/superávit calórico como % de TDEE basado en % de grasa y sexo.
-    Usa interpolación lineal dentro de cada categoría para transiciones suaves.
-    
-    Returns:
-        float: Déficit % (positivo) o superávit % (negativo) respecto a TDEE
-               Ejemplo: 25 = déficit 25%, -10 = superávit 10%
-    """
+    """Sugiere el déficit calórico recomendado por % de grasa y sexo."""
     try:
         porcentaje_grasa = float(porcentaje_grasa)
     except (TypeError, ValueError):
         porcentaje_grasa = 0.0
-    
-    # Seleccionar rangos según sexo usando constantes unificadas
-    rangos = DEFICIT_RANGES_MALE if sexo == "Hombre" else DEFICIT_RANGES_FEMALE
-    
-    # Buscar el rango apropiado y aplicar interpolación lineal
-    for i, (bf_min, bf_max, deficit_mid) in enumerate(rangos):
-        if bf_min <= porcentaje_grasa <= bf_max:
-            # Si hay un rango siguiente, interpolar entre este y el siguiente
-            if i + 1 < len(rangos):
-                next_deficit = rangos[i + 1][2]
-                # Interpolación lineal dentro del rango
-                progress = (porcentaje_grasa - bf_min) / (bf_max - bf_min) if bf_max > bf_min else 0
-                deficit_interpolado = deficit_mid + (next_deficit - deficit_mid) * progress
-                return round(deficit_interpolado, 1)
-            else:
-                # Último rango, sin interpolación
-                return deficit_mid
-    
-    # Fallback: Si no se encuentra en ningún rango (no debería pasar)
-    return 20  # Déficit por defecto moderado
+    rangos_hombre = [
+        (0, 8, 3), (8.1, 10.5, 5), (10.6, 13, 10), (13.1, 15.5, 15),
+        (15.6, 18, 20), (18.1, 20.5, 25), (20.6, 23, 27), (23.1, 25.5, 29),
+        (25.6, 30, 30), (30.1, 32.5, 35), (32.6, 40, 35), (40.1, 45, 40),
+        (45.1, 100, 50)
+    ]
+    rangos_mujer = [
+        (0, 14, 3), (14.1, 16.5, 5), (16.6, 19, 10), (19.1, 21.5, 15),
+        (21.6, 24, 20), (24.1, 26.5, 25), (26.6, 29, 27), (29.1, 31.5, 29),
+        (31.6, 35, 30), (35.1, 40, 30), (40.1, 45, 35), (45.1, 50, 40),
+        (50.1, 100, 50)
+    ]
+    tabla = rangos_hombre if sexo == "Hombre" else rangos_mujer
+    tope = 30
+    limite_extra = 30 if sexo == "Hombre" else 35
+    for minimo, maximo, deficit in tabla:
+        if minimo <= porcentaje_grasa <= maximo:
+            return min(deficit, tope) if porcentaje_grasa <= limite_extra else deficit
+    return 20  # Déficit por defecto
 
 def determinar_fase_nutricional_refinada(grasa_corregida, sexo):
     """
     Determina la fase nutricional refinada basada en % de grasa corporal y sexo.
-    Usa el marco unificado MUPAI con todas las decisiones expresadas como % de TDEE.
-    
-    Returns:
-        tuple: (fase_descripcion, porcentaje_tdee)
-               - fase_descripcion: Texto descriptivo de la fase
-               - porcentaje_tdee: % respecto a TDEE (positivo=déficit, negativo=superávit, 0=mantenimiento)
+    Usa la tabla completa de rangos para decisiones más precisas.
     """
     try:
         grasa_corregida = float(grasa_corregida)
     except (TypeError, ValueError):
         grasa_corregida = 0.0
     
-    # Obtener el déficit/superávit sugerido usando la función actualizada
-    deficit_sugerido = sugerir_deficit(grasa_corregida, sexo)
-    
-    # Verificar si está en categoría de obesidad (auto-recomendación PSMF/50% déficit)
-    umbral_obesidad = OBESITY_THRESHOLDS["male_obese_bf"] if sexo == "Hombre" else OBESITY_THRESHOLDS["female_obese_bf"]
-    
-    # Generar descripción de fase basada en el déficit/superávit
-    if deficit_sugerido < -5:
-        # Superávit significativo
-        fase = f"Superávit recomendado: {abs(deficit_sugerido):.1f}% de TDEE"
-        porcentaje = deficit_sugerido  # Negativo para superávit
-    elif -5 <= deficit_sugerido < 0:
-        # Superávit ligero o mantenimiento
-        fase = f"Mantenimiento o ligero superávit: {abs(deficit_sugerido):.1f}% de TDEE"
-        porcentaje = deficit_sugerido
-    elif deficit_sugerido == 0:
-        # Mantenimiento exacto
-        fase = "Mantenimiento (0% de TDEE)"
-        porcentaje = 0
-    elif grasa_corregida >= umbral_obesidad:
-        # Obesidad - PSMF o déficit alto recomendado
-        fase = f"Déficit alto recomendado (PSMF o {deficit_sugerido:.0f}% de TDEE)"
-        porcentaje = deficit_sugerido  # Típicamente 50%
-    else:
-        # Déficit normal/moderado
-        fase = f"Déficit recomendado: {deficit_sugerido:.1f}% de TDEE"
-        porcentaje = deficit_sugerido
+    if sexo == "Hombre":
+        # Rangos refinados para hombres
+        if grasa_corregida < 6:
+            # Muy bajo - competición
+            fase = "Superávit recomendado: 10-15%"
+            porcentaje = 12.5
+        elif grasa_corregida <= 10:
+            # Bajo - atlético
+            fase = "Superávit recomendado: 5-10%"
+            porcentaje = 7.5
+        elif grasa_corregida <= 15:
+            # Fitness/atlético - puede mantener o ligero superávit
+            fase = "Mantenimiento o ligero superávit: 0-5%"
+            porcentaje = 2.5
+        elif grasa_corregida <= 18:
+            # Buena condición - mantenimiento
+            fase = "Mantenimiento"
+            porcentaje = 0
+        else:
+            # Sobrepeso - déficit según tabla
+            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
+            porcentaje = -deficit_valor
+            fase = f"Déficit recomendado: {deficit_valor}%"
+    else:  # Mujer
+        # Rangos refinados para mujeres
+        if grasa_corregida < 12:
+            # Muy bajo - competición
+            fase = "Superávit recomendado: 10-15%"
+            porcentaje = 12.5
+        elif grasa_corregida <= 16:
+            # Bajo - atlético
+            fase = "Superávit recomendado: 5-10%"
+            porcentaje = 7.5
+        elif grasa_corregida <= 20:
+            # Fitness/atlético - puede mantener o ligero superávit
+            fase = "Mantenimiento o ligero superávit: 0-5%"
+            porcentaje = 2.5
+        elif grasa_corregida <= 23:
+            # Buena condición - mantenimiento
+            fase = "Mantenimiento"
+            porcentaje = 0
+        else:
+            # Sobrepeso - déficit según tabla
+            deficit_valor = sugerir_deficit(grasa_corregida, sexo)
+            porcentaje = -deficit_valor
+            fase = f"Déficit recomendado: {deficit_valor}%"
     
     return fase, porcentaje
 
@@ -2489,209 +2412,6 @@ muscleupgym.fitness
         return True
     except Exception as e:
         st.error(f"Error al enviar email Parte 2: {str(e)}")
-        return False
-
-def enviar_email_auditoria_logica(nombre_cliente, fecha, sexo, edad, peso, estatura, grasa_corregida,
-                                   mlg, tmb, geaf, eta, gee_prom_dia, GE, fase, porcentaje, fbeo,
-                                   ingesta_calorica, ffmi, fmi, nivel_ffmi, modo_ffmi,
-                                   proteina_g, grasa_g, carbo_g, plan_elegido):
-    """
-    Envía el email de auditoría de lógica de fases, energía y macros.
-    Título: "MUPAI — Lógica auditada de Fases, Energía y Macros (Resumen Maestro)"
-    Destinatario: administracion@muscleupgym.fitness
-    
-    Incluye todos los cálculos intermedios y derivados para auditoría completa.
-    """
-    try:
-        email_origen = "administracion@muscleupgym.fitness"
-        email_destino = "administracion@muscleupgym.fitness"
-        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
-        
-        # Construir el cuerpo del email de auditoría
-        contenido = f"""
-=====================================
-MUPAI — Lógica auditada de Fases, Energía y Macros
-(Resumen Maestro)
-=====================================
-Sistema: MUPAI v2.0 - Marco Unificado
-Generado: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-
-=====================================
-CLIENTE Y CONTEXTO
-=====================================
-Nombre: {nombre_cliente}
-Fecha evaluación: {fecha}
-Edad: {edad} años
-Sexo: {sexo}
-
-=====================================
-INPUTS DEL MODELO
-=====================================
-📏 ANTROPOMETRÍA:
-   • Peso: {peso:.1f} kg
-   • Estatura: {estatura:.0f} cm ({estatura/100:.2f} m)
-   • IMC: {peso/((estatura/100)**2):.1f} kg/m²
-
-📊 COMPOSICIÓN CORPORAL:
-   • % Grasa Corporal (corregido DEXA): {grasa_corregida:.1f}%
-   • Masa Libre de Grasa (MLG): {mlg:.1f} kg
-   • Masa Grasa: {peso - mlg:.1f} kg
-
-🔬 ÍNDICES METABÓLICOS:
-   • FFMI (Fat-Free Mass Index): {ffmi:.2f}
-     - Clasificación: {nivel_ffmi}
-     - Modo interpretación: {modo_ffmi}
-   • FMI (Fat Mass Index): {fmi:.2f}
-
-⚡ METABOLISMO BASAL:
-   • TMB (Cunningham): {tmb:.0f} kcal/día
-     - Ecuación: 500 + 22 × MLG (kg)
-     - Cálculo: 500 + 22 × {mlg:.1f} = {tmb:.0f} kcal
-
-=====================================
-FACTORES DE ACTIVIDAD Y AJUSTES
-=====================================
-🚶 GEAF (Gasto Energético por Actividad Física):
-   • Factor GEAF: {geaf:.2f}
-   • Contribución al GE: TMB × GEAF = {tmb:.0f} × {geaf:.2f} = {tmb * geaf:.0f} kcal
-
-🔥 ETA (Efecto Térmico de los Alimentos):
-   • Factor ETA: {eta:.2f}
-   • Contribución al GE: TMB × GEAF × ETA = {tmb * geaf * eta:.0f} kcal
-
-🏋️ GEE (Gasto Energético por Ejercicio):
-   • GEE promedio diario: {gee_prom_dia:.0f} kcal/día
-
-=====================================
-GASTO ENERGÉTICO TOTAL (TDEE)
-=====================================
-💪 TDEE_mantenimiento (GE):
-   • Fórmula: (TMB × GEAF × ETA) + GEE
-   • Cálculo: ({tmb:.0f} × {geaf:.2f} × {eta:.2f}) + {gee_prom_dia:.0f}
-   • RESULTADO: {GE:.0f} kcal/día
-
-Este valor representa el gasto energético total de mantenimiento.
-Es la línea base para todas las decisiones de balance energético.
-
-=====================================
-DETERMINACIÓN DE FASE NUTRICIONAL
-=====================================
-🎯 MARCO UNIFICADO MUPAI - LÓGICA DE DECISIÓN:
-
-1. INPUT: % Grasa Corporal = {grasa_corregida:.1f}%
-2. Sexo: {sexo}
-3. Umbrales aplicados:
-   {"   - Umbral obesidad (Male): ≥26.0% BF → PSMF/Déficit 50%" if sexo == "Hombre" else "   - Umbral obesidad (Female): ≥39.0% BF → PSMF/Déficit 50%"}
-   - Rangos de déficit aplicados con interpolación lineal
-
-4. FASE DETERMINADA: {fase}
-5. PORCENTAJE DE TDEE: {porcentaje:+.1f}%
-   {"   (Positivo = Déficit, Negativo = Superávit, 0 = Mantenimiento)" if True else ""}
-
-📊 INTERPRETACIÓN:
-{f"   • Déficit del {abs(porcentaje):.1f}% de TDEE" if porcentaje > 0 else f"   • Superávit del {abs(porcentaje):.1f}% de TDEE" if porcentaje < 0 else "   • Mantenimiento (0% de TDEE)"}
-{f"   • Categoría: OBESIDAD - PSMF o déficit alto recomendado" if (sexo == "Hombre" and grasa_corregida >= OBESITY_THRESHOLDS["male_obese_bf"]) or (sexo == "Mujer" and grasa_corregida >= OBESITY_THRESHOLDS["female_obese_bf"]) else ""}
-
-=====================================
-FACTOR DE BALANCE ENERGÉTICO (FBEO)
-=====================================
-🧮 CÁLCULO DE FBEO:
-   • Fórmula: FBEO = 1 - (porcentaje / 100)
-   • Cálculo: 1 - ({porcentaje:.1f} / 100)
-   • RESULTADO: {fbeo:.4f}
-
-📊 INTERPRETACIÓN FBEO:
-   • FBEO < 1.0 → Déficit calórico (pérdida peso)
-   • FBEO = 1.0 → Mantenimiento (peso estable)
-   • FBEO > 1.0 → Superávit calórico (ganancia peso)
-
-=====================================
-INGESTA CALÓRICA OBJETIVO
-=====================================
-🍽️ CALORÍAS DIARIAS:
-   • Fórmula: Ingesta = TDEE × FBEO
-   • Cálculo: {GE:.0f} × {fbeo:.4f}
-   • RESULTADO: {ingesta_calorica:.0f} kcal/día
-
-📊 BALANCE ENERGÉTICO:
-   • TDEE (mantenimiento): {GE:.0f} kcal/día
-   • Ingesta objetivo: {ingesta_calorica:.0f} kcal/día
-   • Diferencia: {ingesta_calorica - GE:+.0f} kcal/día ({((ingesta_calorica - GE) / GE * 100):+.1f}%)
-
-=====================================
-DISTRIBUCIÓN DE MACRONUTRIENTES
-=====================================
-🥩 PROTEÍNA:
-   • Cantidad: {proteina_g:.1f} g/día
-   • Ratio: {proteina_g/peso:.2f} g/kg peso corporal
-   • Calorías: {proteina_g * 4:.0f} kcal ({(proteina_g * 4 / ingesta_calorica * 100):.1f}%)
-
-🥑 GRASAS:
-   • Cantidad: {grasa_g:.1f} g/día
-   • Calorías: {grasa_g * 9:.0f} kcal ({(grasa_g * 9 / ingesta_calorica * 100):.1f}%)
-
-🍞 CARBOHIDRATOS:
-   • Cantidad: {carbo_g:.1f} g/día
-   • Calorías: {carbo_g * 4:.0f} kcal ({(carbo_g * 4 / ingesta_calorica * 100):.1f}%)
-
-📊 VERIFICACIÓN TOTAL:
-   • Suma macros: {proteina_g * 4 + grasa_g * 9 + carbo_g * 4:.0f} kcal
-   • Objetivo: {ingesta_calorica:.0f} kcal
-   • Diferencia: {abs(proteina_g * 4 + grasa_g * 9 + carbo_g * 4 - ingesta_calorica):.0f} kcal
-
-=====================================
-PLAN SELECCIONADO
-=====================================
-📋 Estrategia: {plan_elegido}
-
-=====================================
-CONSTANTES Y REGLAS UTILIZADAS
-=====================================
-📚 PROTEIN FACTORS:
-{chr(10).join([f"   • {k}: {v:.1f} g/kg" for k, v in PROTEIN_FACTOR_RANGES.items()])}
-
-📚 FAT ALLOCATION:
-{chr(10).join([f"   • {k}: {v}" for k, v in FAT_ALLOCATION_RULES.items()])}
-
-📚 CARB ALLOCATION:
-{chr(10).join([f"   • {k}: {v}" for k, v in CARB_ALLOCATION_RULES.items()])}
-
-📚 OBESITY THRESHOLDS:
-   • Male obese BF: {OBESITY_THRESHOLDS["male_obese_bf"]:.1f}%
-   • Female obese BF: {OBESITY_THRESHOLDS["female_obese_bf"]:.1f}%
-
-=====================================
-NOTES Y AUDITORÍA
-=====================================
-✓ Todos los cálculos expresados como % de TDEE_mantenimiento
-✓ Balance energético determinado por interpolación lineal
-✓ Obesidad auto-detectada según umbrales del marco MUPAI
-✓ Cambios de peso proyectados como % de peso corporal/semana
-✓ Constantes abstraídas para mantenibilidad
-
-=====================================
-© 2025 MUPAI - Muscle Up GYM
-Marco Unificado para Evaluación Nutricional
-muscleupgym.fitness
-=====================================
-"""
-        
-        msg = MIMEMultipart()
-        msg['From'] = email_origen
-        msg['To'] = email_destino
-        msg['Subject'] = f"MUPAI — Lógica auditada de Fases, Energía y Macros (Resumen Maestro) — {nombre_cliente}"
-        
-        msg.attach(MIMEText(contenido, 'plain'))
-        
-        server = smtplib.SMTP('smtp.zoho.com', 587)
-        server.starttls()
-        server.login(email_origen, password)
-        server.send_message(msg)
-        server.quit()
-        
-        return True
-    except Exception as e:
-        st.error(f"Error al enviar email de auditoría: {str(e)}")
         return False
 
 # ==================== CUESTIONARIO SUEÑO + ESTRÉS ====================
@@ -5045,12 +4765,7 @@ if USER_VIEW:
             # Usar lógica automática para usuarios fuera del rango óptimo
             fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
 
-        # FBEO (Factor de Balance Energético Objetivo) calculation
-        # Unified framework: porcentaje is % of TDEE
-        # Positive porcentaje = deficit → FBEO < 1
-        # Negative porcentaje = surplus → FBEO > 1
-        # Zero porcentaje = maintenance → FBEO = 1
-        fbeo = 1 - (porcentaje / 100)
+        fbeo = 1 + porcentaje / 100  # Cambio de signo para reflejar nueva convención
 
         # Perfil del usuario
         st.markdown("### 📋 Tu perfil nutricional")
@@ -5339,8 +5054,7 @@ else:
     
     # Use automatic phase determination (no user selection when USER_VIEW=False)
     fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
-    # FBEO calculation aligned with unified framework
-    fbeo = 1 - (porcentaje / 100)
+    fbeo = 1 + porcentaje / 100
     
     # Calculate energy expenditure
     GE = tmb * geaf * eta + gee_prom_dia
@@ -6376,18 +6090,6 @@ if not st.session_state.get("correo_enviado", False):
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
                     else:
                         st.warning("⚠️ Email principal enviado, pero hubo un error con el reporte interno")
-                    
-                    # Enviar email de auditoría de lógica
-                    ok_auditoria = enviar_email_auditoria_logica(
-                        nombre, fecha_llenado, sexo, edad, peso, estatura, grasa_corregida,
-                        mlg, tmb, geaf, eta, gee_prom_dia, GE, fase, porcentaje, fbeo,
-                        ingesta_calorica, ffmi, fmi, nivel_ffmi, modo_ffmi,
-                        proteina_g, grasa_g, carbo_g, plan_elegido
-                    )
-                    if ok_auditoria:
-                        st.success("✅ Email de auditoría de lógica enviado exitosamente")
-                    else:
-                        st.warning("⚠️ Email principal enviado, pero hubo un error con el email de auditoría")
                 else:
                     st.error("❌ Error al enviar email. Contacta a soporte técnico.")
     
@@ -6431,18 +6133,6 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
                 else:
                     st.warning("⚠️ Email principal reenviado, pero hubo un error con el reporte interno")
-                
-                # Reenviar email de auditoría de lógica
-                ok_auditoria = enviar_email_auditoria_logica(
-                    nombre, fecha_llenado, sexo, edad, peso, estatura, grasa_corregida,
-                    mlg, tmb, geaf, eta, gee_prom_dia, GE, fase, porcentaje, fbeo,
-                    ingesta_calorica, ffmi, fmi, nivel_ffmi, modo_ffmi,
-                    proteina_g, grasa_g, carbo_g, plan_elegido
-                )
-                if ok_auditoria:
-                    st.success("✅ Email de auditoría de lógica reenviado exitosamente")
-                else:
-                    st.warning("⚠️ Email principal reenviado, pero hubo un error con el email de auditoría")
             else:
                 st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
 
