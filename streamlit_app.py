@@ -3710,10 +3710,11 @@ if datos_personales_completos and st.session_state.datos_completos:
     # Calcular FMI/BFMI (siempre - calculations run regardless of USER_VIEW)
     fmi = calcular_fmi(peso, grasa_corregida, estatura)
     
-    # Calcular WHtR independientemente de USER_VIEW (para email)
-    circunferencia_cintura_val = safe_float(circunferencia_cintura, 0.0)
-    whtr = calcular_whtr(circunferencia_cintura_val, estatura)
-    clasificacion_whtr = clasificar_whtr(whtr, sexo, edad) if whtr > 0 else "N/D"
+    # Calcular WHtR independientemente de USER_VIEW (para email) - se reutiliza si ya se calculó en UI
+    if not 'whtr' in locals() or not 'clasificacion_whtr' in locals():
+        circunferencia_cintura_val = safe_float(circunferencia_cintura, 0.0)
+        whtr = calcular_whtr(circunferencia_cintura_val, estatura)
+        clasificacion_whtr = clasificar_whtr(whtr, sexo, edad) if whtr > 0 else "N/D"
     
     # Determinar modo de interpretación FFMI (siempre - calculations run regardless of USER_VIEW)
     modo_ffmi = obtener_modo_interpretacion_ffmi(grasa_corregida, sexo)
