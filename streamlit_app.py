@@ -5307,10 +5307,10 @@ else:
         mlg=mlg,
         tmb=tmb,
         sexo=sexo,
-        nivel_entrenamiento=nivel_entrenamiento if 'nivel_entrenamiento' in locals() else 'intermedio',
-        geaf=geaf if 'geaf' in locals() else 1.0,
-        eta=eta if 'eta' in locals() else 1.1,
-        gee_prom_dia=gee_prom_dia if 'gee_prom_dia' in locals() else 0
+        nivel_entrenamiento=st.session_state.get('nivel_entrenamiento', 'intermedio'),
+        geaf=st.session_state.get('geaf', 1.0),
+        eta=st.session_state.get('eta', 1.1),
+        gee_prom_dia=st.session_state.get('gee_prom_dia', 0)
     )
     
     # Guardar en session_state para uso posterior (email/admin)
