@@ -5462,33 +5462,6 @@ else:
     waist_to_height_str = "No calculado"
     whr_interpretacion = "No disponible"
 
-# Create waist-to-height ratio section for report
-if perimetro_cintura_report > 0:
-    waist_section = f"""La relación cintura-estatura es un indicador simple y efectivo de riesgo cardiometabólico y distribución de grasa abdominal.
-
-TU RELACIÓN CINTURA-ESTATURA:
-- Perímetro de cintura: {perimetro_cintura_report:.1f} cm
-- Estatura: {estatura} cm
-- Relación: {waist_to_height_ratio:.3f}
-- Interpretación: {whr_interpretacion}
-
-VALORES DE REFERENCIA:
-- <0.40: Muy bajo (puede indicar bajo peso)
-- 0.40-0.49: Saludable
-- 0.50-0.59: Riesgo aumentado
-- ≥0.60: Riesgo sustancialmente aumentado
-
-IMPORTANCIA CLÍNICA:
-La relación cintura-estatura es considerada más útil que el IMC para predecir
-riesgo de enfermedades relacionadas con obesidad (diabetes tipo 2, enfermedad
-cardiovascular, síndrome metabólico). Un valor ≥0.50 indica la necesidad de
-reducir la grasa abdominal para mejorar la salud metabólica.
-
-NOTA: Este indicador complementa el % de grasa corporal y la grasa visceral
-para proporcionar una evaluación integral del riesgo cardiometabólico."""
-else:
-    waist_section = "NO MEDIDO - No se proporcionó el perímetro de cintura."
-
 tabla_resumen = f"""
 =====================================
 EVALUACIÓN MUPAI - INFORME COMPLETO
@@ -5562,7 +5535,29 @@ distribución de masa muscular.
 ---
 RELACIÓN CINTURA-ESTATURA (WAIST-TO-HEIGHT RATIO):
 ---
-{waist_section}
+{'La relación cintura-estatura es un indicador simple y efectivo de riesgo' if perimetro_cintura_report > 0 else 'NO MEDIDO - No se proporcionó el perímetro de cintura.'}
+{f"""cardiometabólico y distribución de grasa abdominal.
+
+TU RELACIÓN CINTURA-ESTATURA:
+- Perímetro de cintura: {perimetro_cintura_report:.1f} cm
+- Estatura: {estatura} cm
+- Relación: {waist_to_height_ratio:.3f}
+- Interpretación: {whr_interpretacion}
+
+VALORES DE REFERENCIA:
+- <0.40: Muy bajo (puede indicar bajo peso)
+- 0.40-0.49: Saludable
+- 0.50-0.59: Riesgo aumentado
+- ≥0.60: Riesgo sustancialmente aumentado
+
+IMPORTANCIA CLÍNICA:
+La relación cintura-estatura es considerada más útil que el IMC para predecir
+riesgo de enfermedades relacionadas con obesidad (diabetes tipo 2, enfermedad
+cardiovascular, síndrome metabólico). Un valor ≥0.50 indica la necesidad de
+reducir la grasa abdominal para mejorar la salud metabólica.
+
+NOTA: Este indicador complementa el % de grasa corporal y la grasa visceral
+para proporcionar una evaluación integral del riesgo cardiometabólico.""" if perimetro_cintura_report > 0 else ''}
 
 =====================================
 FACTORES DE ACTIVIDAD:
