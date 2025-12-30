@@ -1,0 +1,26 @@
+# Streamlit Configuration File
+# This file contains server and client configuration for the MUPAI fitness evaluation app
+
+[server]
+# Maximum file upload size in MB
+# Set to 100 MB to accommodate high-resolution photos from smartphones
+maxUploadSize = 100
+
+# Maximum message size in MB (should be >= maxUploadSize for proper handling)
+# Set to 200 MB to allow overhead for message metadata and concurrent uploads
+maxMessageSize = 200
+
+# Enable XSRF protection for security
+enableXsrfProtection = true
+
+# Enable CORS for cross-origin requests
+# Set to true if app needs to be accessed from different domains
+enableCORS = false
+
+[client]
+# Show less prominent toolbar to reduce distractions
+toolbarMode = "minimal"
+
+[browser]
+# Gather usage stats (set to false for privacy)
+gatherUsageStats = false

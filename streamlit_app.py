@@ -3062,11 +3062,11 @@ def validate_progress_photo(uploaded_file):
     if file_extension not in ['jpg', 'jpeg', 'png']:
         return False, f"Formato no válido. Solo se permiten JPG, JPEG o PNG (recibido: {file_extension})"
     
-    # Check file size (10 MB = 10 * 1024 * 1024 bytes)
-    max_size = 10 * 1024 * 1024
+    # Check file size (100 MB = 100 * 1024 * 1024 bytes)
+    max_size = 100 * 1024 * 1024
     if uploaded_file.size > max_size:
         size_mb = uploaded_file.size / (1024 * 1024)
-        return False, f"Archivo muy grande ({size_mb:.1f} MB). Máximo permitido: 10 MB"
+        return False, f"Archivo muy grande ({size_mb:.1f} MB). Máximo permitido: 100 MB"
     
     return True, ""
 
