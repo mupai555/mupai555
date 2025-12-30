@@ -1,3 +1,88 @@
+"""
+MUPAI - Muscle Up Performance Assessment Intelligence
+======================================================
+
+COMPREHENSIVE BACKEND CALCULATION FRAMEWORK
+-------------------------------------------
+
+This application implements a complete, science-based fitness assessment system with 
+sophisticated backend calculations that run invisibly to provide accurate evaluations
+and personalized nutrition plans.
+
+CORE CALCULATION MODULES:
+=========================
+
+1. TDEE CALCULATION (Total Daily Energy Expenditure)
+   - TMB (Basal Metabolic Rate): Cunningham equation using fat-free mass
+   - GEAF (Physical Activity Factor): 1.00-1.45 based on daily activity level
+   - ETA (Thermic Effect of Food): 1.08-1.12 based on body composition
+   - GEE (Exercise Energy Expenditure): Based on training frequency and intensity
+   - Formula: TDEE = (TMB × GEAF × ETA) + GEE
+
+2. BODY COMPOSITION ANALYSIS
+   - Body Fat Correction: DEXA-equivalent conversion from various measurement methods
+   - FFM (Fat-Free Mass): Weight × (1 - body_fat%)
+   - FFMI (Fat-Free Mass Index): Normalized muscle development index
+   - FMI (Fat Mass Index): Normalized adiposity index
+   - Metabolic Age: Age adjusted by body fat deviation from ideal
+
+3. PHASE DETERMINATION (Deficit/Surplus/Maintenance)
+   - Automatic phase suggestion based on body fat percentage and sex
+   - Deficit percentages: 3-50% based on adiposity levels (sex-specific ranges)
+   - Surplus recommendations: 2.5-15% for lean individuals
+   - Maintenance: 0% for optimal body composition ranges
+
+4. MACRO ALLOCATION (Protein, Fat, Carbohydrates)
+   
+   TRADITIONAL PLAN:
+   - Protein: 1.6-2.2 g/kg (varies by body fat %)
+     * Uses MLG as base if male ≥35% or female ≥42% body fat
+     * Uses total weight otherwise
+   - Fat: 40% of TMB (restricted to 20-40% of total calories)
+   - Carbohydrates: Remaining calories after protein and fat
+   
+   PSMF PLAN (Protein Sparing Modified Fast):
+   - Only applicable when: Male >18% BF or Female >23% BF
+   - Tier-based system for protein base calculation
+   - Protein: 1.6-1.8 g/kg depending on body fat
+   - Fat: 30-50g/day depending on body fat
+   - Carbs: Capped at 30-50g/day depending on tier
+   - Calories: Protein (g) × multiplier (8.3-9.6 based on body fat)
+
+5. WEEKLY PROJECTIONS (Scientific Weight Change Estimates)
+   - Sex-specific ranges: Men (0.3-1.0%), Women (0.2-0.8%) weekly
+   - Adjusted for training level: Beginners vs. Advanced
+   - Adjusted for body fat: Higher fat = faster initial loss potential
+   - 6-week projections with realistic ranges
+
+6. EMAIL REPORTING
+   - Comprehensive report with all calculations
+   - TDEE breakdown with all factors explained
+   - Phase recommendations with scientific rationale
+   - Both Traditional and PSMF plans detailed (when applicable)
+   - Weekly projections with ranges
+   - Complete macro allocations with percentages
+   - Progress photos attached
+   - Functional assessment results
+
+IMPORTANT NOTES:
+================
+- All calculations run in the BACKEND regardless of UI visibility flags
+- USER_VIEW flag controls only what users SEE, not what gets CALCULATED
+- Email reports ALWAYS contain complete technical details
+- SHOW_TECH_DETAILS and MOSTRAR_PSMF_AL_USUARIO control UI display only
+- Calculations are based on peer-reviewed scientific literature and validated equations
+
+CALCULATION FLOW:
+=================
+User Input → Validation → Body Composition Analysis → TDEE Calculation →
+Phase Determination → Macro Calculation (Traditional + PSMF) → 
+Projections → Email Report Generation
+
+All calculations are centralized in dedicated functions for consistency across
+UI display, email reports, and internal processing.
+"""
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -1186,7 +1271,36 @@ def safe_int(value, default=0):
         return int(default)
 
 def calcular_tmb_cunningham(mlg):
-    """Calcula el TMB usando la fórmula de Cunningham."""
+    """
+    Calcula el TMB (Tasa Metabólica Basal) usando la fórmula de Cunningham.
+    
+    BACKEND CALCULATION - TDEE Component #1
+    ========================================
+    Esta es una de las ecuaciones más precisas para calcular el metabolismo basal,
+    especialmente útil en atletas y personas activas porque utiliza la masa libre
+    de grasa (MLG) en lugar del peso total.
+    
+    Fórmula de Cunningham (1980):
+    TMB = 370 + (21.6 × MLG en kg)
+    
+    Ventajas sobre otras ecuaciones (Harris-Benedict, Mifflin-St Jeor):
+    - Mayor precisión en individuos atléticos con alta masa muscular
+    - No requiere edad ni sexo (la MLG ya captura estas diferencias)
+    - Validada científicamente con calorimetría indirecta
+    
+    Este valor representa las calorías que el cuerpo necesita en reposo absoluto
+    para mantener funciones vitales (respiración, circulación, temperatura, etc.).
+    
+    Args:
+        mlg (float): Masa Libre de Grasa en kilogramos
+    
+    Returns:
+        float: TMB en kcal/día
+    
+    Referencias:
+        Cunningham, J. J. (1980). A reanalysis of the factors influencing basal 
+        metabolic rate in normal adults. The American Journal of Clinical Nutrition.
+    """
     try:
         mlg = float(mlg)
     except (TypeError, ValueError):
@@ -1194,7 +1308,34 @@ def calcular_tmb_cunningham(mlg):
     return 370 + (21.6 * mlg)
 
 def calcular_mlg(peso, porcentaje_grasa):
-    """Calcula la Masa Libre de Grasa."""
+    """
+    Calcula la Masa Libre de Grasa (MLG).
+    
+    BACKEND CALCULATION - Body Composition Component
+    =================================================
+    La MLG incluye músculos, huesos, órganos, agua corporal y todo tejido
+    que no sea grasa. Es fundamental para calcular el TMB con precisión.
+    
+    Fórmula:
+    MLG = Peso Total × (1 - % Grasa / 100)
+    
+    Ejemplo:
+    - Persona de 80 kg con 20% de grasa
+    - MLG = 80 × (1 - 0.20) = 80 × 0.80 = 64 kg
+    - Masa grasa = 80 - 64 = 16 kg
+    
+    Esta variable es crítica porque:
+    1. Se usa en el cálculo del TMB (Cunningham)
+    2. Se usa en el cálculo del FFMI (índice de masa muscular)
+    3. Determina la base para el cálculo de proteína en algunos casos
+    
+    Args:
+        peso (float): Peso corporal total en kilogramos
+        porcentaje_grasa (float): Porcentaje de grasa corporal (0-100)
+    
+    Returns:
+        float: Masa Libre de Grasa en kilogramos
+    """
     try:
         peso = float(peso)
         porcentaje_grasa = float(porcentaje_grasa)
@@ -1715,7 +1856,65 @@ def calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura_cm=None):
         return {"psmf_aplicable": False}
 
 def sugerir_deficit(porcentaje_grasa, sexo):
-    """Sugiere el déficit calórico recomendado por % de grasa y sexo."""
+    """
+    Sugiere el déficit calórico recomendado basado en % de grasa corporal y sexo.
+    
+    BACKEND CALCULATION - Phase Determination Component
+    ====================================================
+    Esta función implementa un sistema científico de déficit calórico escalonado
+    que ajusta la agresividad de la pérdida de grasa según el nivel de adiposidad.
+    
+    PRINCIPIO: Cuanto mayor sea el % de grasa corporal, mayor puede ser el déficit
+    sin comprometer la masa muscular, debido a mayores reservas energéticas.
+    
+    RANGOS PARA HOMBRES:
+    - 0-8%: 3% déficit (muy magro, déficit mínimo)
+    - 8-10.5%: 5% déficit (atlético bajo)
+    - 10.6-13%: 10% déficit (atlético)
+    - 13.1-15.5%: 15% déficit (fitness bajo)
+    - 15.6-18%: 20% déficit (fitness)
+    - 18.1-20.5%: 25% déficit (promedio bajo)
+    - 20.6-23%: 27% déficit (promedio)
+    - 23.1-25.5%: 29% déficit (promedio alto)
+    - 25.6-30%: 30% déficit (sobrepeso, tope conservador)
+    - 30.1-32.5%: 35% déficit (sobrepeso alto)
+    - 32.6-40%: 35% déficit (obesidad clase I)
+    - 40.1-45%: 40% déficit (obesidad clase II)
+    - >45.1%: 50% déficit (obesidad severa)
+    
+    RANGOS PARA MUJERES (ajustados por mayor % grasa esencial):
+    - 0-14%: 3% déficit (muy magra)
+    - 14.1-16.5%: 5% déficit (atlética baja)
+    - 16.6-19%: 10% déficit (atlética)
+    - 19.1-21.5%: 15% déficit (fitness baja)
+    - 21.6-24%: 20% déficit (fitness)
+    - 24.1-26.5%: 25% déficit (promedio baja)
+    - 26.6-29%: 27% déficit (promedio)
+    - 29.1-31.5%: 29% déficit (promedio alta)
+    - 31.6-35%: 30% déficit (sobrepeso, tope conservador)
+    - 35.1-40%: 30% déficit (sobrepeso alto)
+    - 40.1-45%: 35% déficit (obesidad clase I)
+    - 45.1-50%: 40% déficit (obesidad clase II)
+    - >50.1%: 50% déficit (obesidad severa)
+    
+    LÍMITE DE SEGURIDAD:
+    - Déficits >30% solo permitidos cuando % grasa supera umbrales específicos
+    - Hombres: >30% grasa corporal para déficits >30%
+    - Mujeres: >35% grasa corporal para déficits >30%
+    - Esto previene pérdida muscular excesiva en personas menos obesas
+    
+    Args:
+        porcentaje_grasa (float): Porcentaje de grasa corporal corregido
+        sexo (str): "Hombre" o "Mujer"
+    
+    Returns:
+        float: Porcentaje de déficit recomendado (3-50%)
+    
+    Referencias:
+        - Hall, K. D. (2008). What is the required energy deficit per unit weight loss?
+        - Helms, E. R. et al. (2014). Evidence-based recommendations for natural 
+          bodybuilding contest preparation: nutrition and supplementation.
+    """
     try:
         porcentaje_grasa = float(porcentaje_grasa)
     except (TypeError, ValueError):
@@ -1743,7 +1942,58 @@ def sugerir_deficit(porcentaje_grasa, sexo):
 def determinar_fase_nutricional_refinada(grasa_corregida, sexo):
     """
     Determina la fase nutricional refinada basada en % de grasa corporal y sexo.
-    Usa la tabla completa de rangos para decisiones más precisas.
+    
+    BACKEND CALCULATION - Nutritional Phase Component
+    ==================================================
+    Esta función automatiza la recomendación de fase nutricional (déficit, 
+    mantenimiento o superávit) según el estado actual de composición corporal.
+    
+    LÓGICA DE DECISIÓN:
+    
+    Para HOMBRES:
+    - <6% grasa: SUPERÁVIT 10-15% (muy bajo, competición, riesgo salud)
+    - 6-10% grasa: SUPERÁVIT 5-10% (atlético bajo, puede ganar músculo)
+    - 10-15% grasa: LIGERO SUPERÁVIT 0-5% (fitness/atlético, óptimo para ganar)
+    - 15-18% grasa: MANTENIMIENTO 0% (buena condición, recomposición)
+    - >18% grasa: DÉFICIT variable según sugerir_deficit() (reducir grasa)
+    
+    Para MUJERES:
+    - <12% grasa: SUPERÁVIT 10-15% (muy bajo, competición, riesgo salud)
+    - 12-16% grasa: SUPERÁVIT 5-10% (atlético bajo, puede ganar músculo)
+    - 16-20% grasa: LIGERO SUPERÁVIT 0-5% (fitness/atlético, óptimo para ganar)
+    - 20-23% grasa: MANTENIMIENTO 0% (buena condición, recomposición)
+    - >23% grasa: DÉFICIT variable según sugerir_deficit() (reducir grasa)
+    
+    FILOSOFÍA:
+    - Individuos muy magros necesitan GANAR masa (muscular y grasa)
+    - Individuos en rango fitness-atlético pueden mantener o ganar músculo
+    - Individuos con exceso de grasa deben REDUCIR déficit
+    - El sistema prioriza salud hormonal y rendimiento sobre estética extrema
+    
+    INTEGRACIÓN CON TDEE:
+    El porcentaje retornado se aplica al Gasto Energético Total (GE):
+    - Ingesta = GE × (1 + porcentaje/100)
+    - Ejemplo: GE=2500 kcal, déficit 20% → Ingesta = 2500 × 0.80 = 2000 kcal
+    
+    Args:
+        grasa_corregida (float): Porcentaje de grasa corporal corregido (DEXA-equivalente)
+        sexo (str): "Hombre" o "Mujer"
+    
+    Returns:
+        tuple: (fase_texto, porcentaje_ajuste)
+            - fase_texto: Descripción de la fase recomendada
+            - porcentaje_ajuste: Valor numérico del ajuste (-50 a +15)
+                * Negativo = déficit (pérdida)
+                * Cero = mantenimiento
+                * Positivo = superávit (ganancia)
+    
+    Ejemplo:
+        fase, pct = determinar_fase_nutricional_refinada(22, "Hombre")
+        # Retorna: ("Déficit recomendado: 25%", -25)
+    
+    Referencias:
+        - Aragon, A. A., & Schoenfeld, B. J. (2013). Nutrient timing revisited.
+        - Phillips, S. M., & Van Loon, L. J. (2011). Dietary protein for athletes.
     """
     try:
         grasa_corregida = float(grasa_corregida)
