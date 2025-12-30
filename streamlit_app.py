@@ -15,7 +15,7 @@ CORE CALCULATION MODULES:
 1. TDEE CALCULATION (Total Daily Energy Expenditure)
    - TMB (Basal Metabolic Rate): Cunningham equation using fat-free mass
    - GEAF (Physical Activity Factor): 1.00-1.45 based on daily activity level
-   - ETA (Thermic Effect of Food): 1.08-1.12 based on body composition
+   - ETA (Thermic Effect of Food): 1.10-1.15 based on body composition
    - GEE (Exercise Energy Expenditure): Based on training frequency and intensity
    - Formula: TDEE = (TMB × GEAF × ETA) + GEE
 
@@ -4994,10 +4994,18 @@ with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=
 # ajuste conservador basado en observaciones empíricas de que individuos más magros
 # requieren más calorías de lo predicho por ecuaciones estándar.
 # 
-# Referencias:
+# Referencias a favor:
 # - Leibel, R. L., et al. (1995). Changes in energy expenditure from altered body weight.
 # - Rosenbaum, M., & Leibel, R. L. (2010). Adaptive thermogenesis in humans.
 # - Johnstone, A. M., et al. (2005). Factors influencing variation in basal metabolic rate.
+#
+# Referencias que cuestionan el concepto:
+# - Buchholz, A. C., & Schoeller, D. A. (2004). Is a calorie a calorie?
+#   American Journal of Clinical Nutrition. Sugiere que las diferencias metabólicas
+#   pueden estar sobrestimadas en modelos simplificados.
+# - Hall, K. D., et al. (2012). Energy balance and its components: implications for
+#   body weight regulation. American Journal of Clinical Nutrition. Argumenta que
+#   factores como ETA pueden ser artefactos de medición en lugar de efectos reales.
 # ================================================================================
 # 
 # ETA Ranges:
@@ -5936,7 +5944,7 @@ COMPONENTES DEL TDEE:
 
 3. ETA (Efecto Térmico de los Alimentos):
    - Factor: {eta}
-   - Criterio: {eta_desc if 'eta_desc' in locals() else 'ETA estándar'}
+   - Criterio: {st.session_state.get('eta_desc', 'ETA estándar')}
    - Representa: Gasto adicional por digestión y metabolismo
    - Subtotal: (TMB × GEAF) × ETA = {tmb * geaf:.0f} × {eta} = {tmb * geaf * eta:.0f} kcal
 
