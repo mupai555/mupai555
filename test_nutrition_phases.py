@@ -336,7 +336,7 @@ def test_formateo_email():
     assert 'PROGRESIÓN SEMANAL' in email_text, "Missing weekly progression"
     
     print(f"  ✓ Texto generado: {len(email_text)} caracteres")
-    print(f"  ✓ Líneas: {len(email_text.split(chr(10)))}")
+    print(f"  ✓ Líneas: {len(email_text.split('\\n'))}")
     print(f"  ✓ Contiene todas las secciones requeridas")
     print()
 

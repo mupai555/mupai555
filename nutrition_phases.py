@@ -218,8 +218,8 @@ def calcular_calorias_objetivo(maintenance_calories, phase_info):
     target_calories = maintenance_calories * (1 + percentage / 100)
     
     result = {
-        'target_calories': round(target_calories, 0),
-        'maintenance_calories': round(maintenance_calories, 0),
+        'target_calories': int(round(target_calories)),
+        'maintenance_calories': int(round(maintenance_calories)),
         'percentage': percentage,
         'phase': phase
     }
@@ -227,10 +227,10 @@ def calcular_calorias_objetivo(maintenance_calories, phase_info):
     # Agregar información específica según fase
     if phase in ['cut', 'psmf']:
         result['deficit_percentage'] = abs(percentage)
-        result['deficit_kcal'] = round(maintenance_calories - target_calories, 0)
+        result['deficit_kcal'] = int(round(maintenance_calories - target_calories))
     elif phase == 'bulk':
         result['surplus_percentage'] = percentage
-        result['surplus_kcal'] = round(target_calories - maintenance_calories, 0)
+        result['surplus_kcal'] = int(round(target_calories - maintenance_calories))
     
     return result
 

@@ -5091,11 +5091,14 @@ else:
         else:
             objetivo_fase = 'recomp'
         
+        # Obtener nivel de entrenamiento (debe estar definido previamente)
+        training_level_value = nivel_entrenamiento if 'nivel_entrenamiento' in dir() else st.session_state.get('nivel_entrenamiento', 'intermedio')
+        
         # Generar análisis completo de fases nutricionales
         analisis_fases_nutricionales = nutrition_phases.generar_analisis_completo(
             sex=sexo,  # Se normalizará internamente
             bf_percent=grasa_corregida,
-            training_level=nivel_entrenamiento if 'nivel_entrenamiento' in locals() else 'intermedio',
+            training_level=training_level_value,
             goal=objetivo_fase,
             maintenance_calories=GE,
             current_weight=peso,
