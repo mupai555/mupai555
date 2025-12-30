@@ -2162,6 +2162,712 @@ def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
         # Para plan tradicional, usar el porcentaje tradicional
         return porcentaje if porcentaje is not None else 0
 
+# ==================== LÓGICA UNIFICADA AVANZADA MUPAI ====================
+# Cálculo completo: TMB (Katch) + GEAF + ETA + GEE + FBEO
+# Incluye: Fases nutricionales, rangos de déficit/superávit, proteína dinámica,
+# PSMF extendida, ciclado semanal 4-3, y micronutrición
+# Esta lógica está OCULTA en UI (respeta USER_VIEW flag) pero INCLUIDA en reportes administrativos
+
+def calcular_gasto_energetico_total(tmb, geaf):
+    """
+    Calcula el gasto energético total (GET) básico.
+    
+    GET = TMB × GEAF
+    
+    Args:
+        tmb: Tasa metabólica basal (kcal/día)
+        geaf: Factor de actividad física (1.00-1.45)
+    
+    Returns:
+        float: Gasto energético total (kcal/día)
+    """
+    return tmb * geaf
+
+def calcular_eta(ingesta_calorica):
+    """
+    Calcula el Efecto Térmico de los Alimentos (ETA).
+    
+    ETA típico: 10% de la ingesta calórica total
+    
+    Args:
+        ingesta_calorica: Ingesta calórica diaria (kcal/día)
+    
+    Returns:
+        float: ETA en kcal/día
+    """
+    return ingesta_calorica * 0.10
+
+def calcular_gee(nivel_entrenamiento, peso):
+    """
+    Calcula el Gasto Energético de Ejercicio (GEE).
+    
+    Estimaciones por nivel de entrenamiento:
+    - Sedentario: 0 kcal/día
+    - Moderadamente-activo: 150 kcal/día base
+    - Activo: 300 kcal/día base
+    - Muy-activo: 500 kcal/día base
+    
+    Ajustado por peso corporal (factor 1.0 para 70kg de referencia)
+    
+    Args:
+        nivel_entrenamiento: Nivel de actividad física
+        peso: Peso corporal en kg
+    
+    Returns:
+        float: GEE en kcal/día
+    """
+    gee_base = {
+        "Sedentario": 0,
+        "Moderadamente-activo": 150,
+        "Activo": 300,
+        "Muy-activo": 500
+    }
+    
+    base = gee_base.get(nivel_entrenamiento, 0)
+    # Ajuste por peso (70kg es referencia)
+    factor_peso = peso / 70.0
+    return base * factor_peso
+
+def calcular_fbeo(gee):
+    """
+    Calcula el consumo de oxígeno post-ejercicio (FBEO/EPOC).
+    
+    FBEO típico: 5-15% del GEE, promedio 10%
+    
+    Args:
+        gee: Gasto energético de ejercicio (kcal/día)
+    
+    Returns:
+        float: FBEO en kcal/día
+    """
+    return gee * 0.10
+
+def determinar_fase_nutricional_unificada(sexo, grasa_corregida, objetivo_usuario=None):
+    """
+    Determina la fase nutricional unificada con rangos específicos de déficit/superávit.
+    
+    Considera:
+    - Sexo biológico
+    - % de grasa corporal corregido
+    - Objetivo del usuario (opcional: "pérdida", "mantenimiento", "ganancia")
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        grasa_corregida: Porcentaje de grasa corporal corregido
+        objetivo_usuario: Objetivo declarado (opcional)
+    
+    Returns:
+        dict: {
+            'fase': Nombre de la fase,
+            'deficit_superavit_pct': Porcentaje (-déficit, +superávit, 0=mantenimiento),
+            'rango_min': Rango mínimo del porcentaje,
+            'rango_max': Rango máximo del porcentaje,
+            'descripcion': Descripción de la fase
+        }
+    """
+    try:
+        grasa_corregida = float(grasa_corregida)
+    except (TypeError, ValueError):
+        grasa_corregida = 20.0
+    
+    # Determinar fase basada en % grasa y sexo
+    if sexo == "Hombre":
+        if grasa_corregida > 35:
+            # PSMF o déficit muy agresivo
+            fase = "PSMF / Déficit Muy Alto"
+            deficit_pct = -40
+            rango = (-50, -40)
+            desc = "Protocolo de pérdida rápida para alta adiposidad"
+        elif grasa_corregida > 25:
+            # Déficit alto
+            fase = "Déficit Alto"
+            deficit_pct = -30
+            rango = (-35, -25)
+            desc = "Pérdida de grasa sostenida con preservación muscular"
+        elif grasa_corregida > 18:
+            # Déficit moderado
+            fase = "Déficit Moderado"
+            deficit_pct = -20
+            rango = (-25, -15)
+            desc = "Pérdida de grasa gradual con mínima pérdida muscular"
+        elif grasa_corregida > 15:
+            # Mantenimiento o ligero déficit
+            fase = "Mantenimiento / Ligero Déficit"
+            deficit_pct = -10
+            rango = (-15, 0)
+            desc = "Recomposición corporal o mantenimiento"
+        elif grasa_corregida > 10:
+            # Mantenimiento o ligero superávit
+            fase = "Mantenimiento / Ligero Superávit"
+            deficit_pct = 5
+            rango = (0, 10)
+            desc = "Ganancia muscular magra conservadora"
+        else:
+            # Superávit moderado-alto
+            fase = "Superávit Moderado"
+            deficit_pct = 15
+            rango = (10, 20)
+            desc = "Ganancia muscular y recuperación de peso saludable"
+    else:  # Mujer
+        if grasa_corregida > 45:
+            # PSMF o déficit muy agresivo
+            fase = "PSMF / Déficit Muy Alto"
+            deficit_pct = -40
+            rango = (-50, -40)
+            desc = "Protocolo de pérdida rápida para alta adiposidad"
+        elif grasa_corregida > 35:
+            # Déficit alto
+            fase = "Déficit Alto"
+            deficit_pct = -30
+            rango = (-35, -25)
+            desc = "Pérdida de grasa sostenida con preservación muscular"
+        elif grasa_corregida > 28:
+            # Déficit moderado
+            fase = "Déficit Moderado"
+            deficit_pct = -20
+            rango = (-25, -15)
+            desc = "Pérdida de grasa gradual con mínima pérdida muscular"
+        elif grasa_corregida > 23:
+            # Mantenimiento o ligero déficit
+            fase = "Mantenimiento / Ligero Déficit"
+            deficit_pct = -10
+            rango = (-15, 0)
+            desc = "Recomposición corporal o mantenimiento"
+        elif grasa_corregida > 18:
+            # Mantenimiento o ligero superávit
+            fase = "Mantenimiento / Ligero Superávit"
+            deficit_pct = 5
+            rango = (0, 10)
+            desc = "Ganancia muscular magra conservadora"
+        else:
+            # Superávit moderado-alto
+            fase = "Superávit Moderado"
+            deficit_pct = 15
+            rango = (10, 20)
+            desc = "Ganancia muscular y recuperación de peso saludable"
+    
+    return {
+        'fase': fase,
+        'deficit_superavit_pct': deficit_pct,
+        'rango_min': rango[0],
+        'rango_max': rango[1],
+        'descripcion': desc
+    }
+
+def calcular_rangos_deficit_superavit(sexo, grasa_corregida):
+    """
+    Calcula rangos concretos de déficit/superávit según BF%.
+    
+    Retorna rangos detallados por categoría de composición corporal.
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        grasa_corregida: Porcentaje de grasa corporal corregido
+    
+    Returns:
+        dict: Rangos detallados con recomendaciones
+    """
+    try:
+        grasa_corregida = float(grasa_corregida)
+    except (TypeError, ValueError):
+        grasa_corregida = 20.0
+    
+    if sexo == "Hombre":
+        if grasa_corregida > 35:
+            categoria = "Obesidad Alta"
+            deficit_recomendado = (-50, -40)
+            superavit_recomendado = None
+            notas = "Prioridad: pérdida de grasa. PSMF aplicable."
+        elif grasa_corregida > 25:
+            categoria = "Sobrepeso"
+            deficit_recomendado = (-35, -25)
+            superavit_recomendado = None
+            notas = "Enfoque en déficit sostenible con entrenamiento de fuerza."
+        elif grasa_corregida > 18:
+            categoria = "Fitness"
+            deficit_recomendado = (-25, -15)
+            superavit_recomendado = (0, 10)
+            notas = "Recomposición corporal factible. Flexibilidad en objetivos."
+        elif grasa_corregida > 15:
+            categoria = "Atlético"
+            deficit_recomendado = (-15, -5)
+            superavit_recomendado = (0, 15)
+            notas = "Excelente condición. Mantener o construir masa muscular."
+        elif grasa_corregida > 10:
+            categoria = "Muy Definido"
+            deficit_recomendado = (-10, 0)
+            superavit_recomendado = (5, 15)
+            notas = "Grasa baja. Priorizar construcción muscular."
+        else:
+            categoria = "Competición"
+            deficit_recomendado = None
+            superavit_recomendado = (10, 20)
+            notas = "Grasa muy baja. Requiere superávit para salud."
+    else:  # Mujer
+        if grasa_corregida > 45:
+            categoria = "Obesidad Alta"
+            deficit_recomendado = (-50, -40)
+            superavit_recomendado = None
+            notas = "Prioridad: pérdida de grasa. PSMF aplicable."
+        elif grasa_corregida > 35:
+            categoria = "Sobrepeso"
+            deficit_recomendado = (-35, -25)
+            superavit_recomendado = None
+            notas = "Enfoque en déficit sostenible con entrenamiento de fuerza."
+        elif grasa_corregida > 28:
+            categoria = "Fitness"
+            deficit_recomendado = (-25, -15)
+            superavit_recomendado = (0, 10)
+            notas = "Recomposición corporal factible. Flexibilidad en objetivos."
+        elif grasa_corregida > 23:
+            categoria = "Atlético"
+            deficit_recomendado = (-15, -5)
+            superavit_recomendado = (0, 15)
+            notas = "Buena condición. Mantener o construir masa muscular."
+        elif grasa_corregida > 18:
+            categoria = "Muy Definido"
+            deficit_recomendado = (-10, 0)
+            superavit_recomendado = (5, 15)
+            notas = "Grasa baja para mujer. Priorizar construcción muscular."
+        else:
+            categoria = "Competición"
+            deficit_recomendado = None
+            superavit_recomendado = (10, 20)
+            notas = "Grasa muy baja. Requiere superávit para salud hormonal."
+    
+    return {
+        'categoria': categoria,
+        'grasa_corporal': grasa_corregida,
+        'deficit_recomendado': deficit_recomendado,
+        'superavit_recomendado': superavit_recomendado,
+        'notas': notas
+    }
+
+def calcular_proteina_dinamica(sexo, grasa_corregida, peso, mlg, modo="auto"):
+    """
+    Calcula proteína ajustada dinámicamente.
+    
+    Soporta tres modos de cálculo:
+    - "peso_total": Usar peso corporal total
+    - "mlg": Usar masa libre de grasa
+    - "peso_ajustado": Usar peso ajustado (promedio ponderado)
+    - "auto": Selección automática según reglas 35/42
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        grasa_corregida: Porcentaje de grasa corporal corregido
+        peso: Peso corporal total en kg
+        mlg: Masa libre de grasa en kg
+        modo: Modo de cálculo ("peso_total", "mlg", "peso_ajustado", "auto")
+    
+    Returns:
+        dict: {
+            'base_utilizada': Base usada para el cálculo,
+            'valor_base_kg': Valor en kg de la base,
+            'factor_proteina': Factor g/kg aplicado,
+            'proteina_g_dia': Gramos de proteína por día,
+            'modo_aplicado': Modo que se aplicó
+        }
+    """
+    try:
+        grasa_corregida = float(grasa_corregida)
+        peso = float(peso)
+        mlg = float(mlg)
+    except (TypeError, ValueError):
+        return {
+            'base_utilizada': 'Error',
+            'valor_base_kg': 0,
+            'factor_proteina': 0,
+            'proteina_g_dia': 0,
+            'modo_aplicado': 'Error'
+        }
+    
+    # Determinar base de cálculo
+    if modo == "auto":
+        # Usar reglas automáticas 35/42
+        if (sexo == "Hombre" and grasa_corregida >= 35) or (sexo == "Mujer" and grasa_corregida >= 42):
+            base_kg = mlg
+            base_nombre = "MLG (Masa Libre de Grasa)"
+            modo_aplicado = "MLG (auto por alta adiposidad)"
+        else:
+            base_kg = peso
+            base_nombre = "Peso Total"
+            modo_aplicado = "Peso Total (auto)"
+    elif modo == "mlg":
+        base_kg = mlg
+        base_nombre = "MLG (Masa Libre de Grasa)"
+        modo_aplicado = "MLG (manual)"
+    elif modo == "peso_ajustado":
+        # Peso ajustado = MLG + (Masa Grasa × 0.25)
+        masa_grasa = peso - mlg
+        base_kg = mlg + (masa_grasa * 0.25)
+        base_nombre = "Peso Ajustado"
+        modo_aplicado = "Peso Ajustado (MLG + 25% MG)"
+    else:  # peso_total
+        base_kg = peso
+        base_nombre = "Peso Total"
+        modo_aplicado = "Peso Total (manual)"
+    
+    # Determinar factor de proteína según % grasa
+    if grasa_corregida >= 35:
+        factor = 1.6
+    elif grasa_corregida >= 25:
+        factor = 1.8
+    elif grasa_corregida >= 15:
+        factor = 2.0
+    else:
+        factor = 2.2
+    
+    proteina_g = base_kg * factor
+    
+    return {
+        'base_utilizada': base_nombre,
+        'valor_base_kg': round(base_kg, 2),
+        'factor_proteina': factor,
+        'proteina_g_dia': round(proteina_g, 1),
+        'modo_aplicado': modo_aplicado
+    }
+
+def calcular_psmf_extendida(sexo, peso, grasa_corregida, mlg, estatura_cm, objetivo_dias=None):
+    """
+    Calculadora PSMF extendida con tramos de asignación energética.
+    
+    Extiende la funcionalidad de calculate_psmf() con:
+    - Proyecciones temporales detalladas
+    - Tramos de asignación energética por semanas
+    - Estimaciones de pérdida por fases
+    - Recomendaciones de duración
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        peso: Peso corporal en kg
+        grasa_corregida: Porcentaje de grasa corporal corregido
+        mlg: Masa libre de grasa en kg
+        estatura_cm: Estatura en cm
+        objetivo_dias: Días objetivo para el protocolo (opcional)
+    
+    Returns:
+        dict: Calculadora extendida con tramos y proyecciones
+    """
+    # Obtener cálculo base de PSMF
+    psmf_base = calculate_psmf(sexo, peso, grasa_corregida, mlg, estatura_cm)
+    
+    if not psmf_base.get('psmf_aplicable', False):
+        return {
+            'psmf_aplicable': False,
+            'razon': 'No cumple criterios de adiposidad para PSMF'
+        }
+    
+    # Calcular tramos de asignación energética
+    tier = psmf_base.get('tier_psmf', 1)
+    calorias_dia = psmf_base.get('calorias_dia', 800)
+    
+    # Duración recomendada según tier
+    if tier == 3:
+        duracion_recomendada_semanas = 12  # Alta adiposidad - puede sostener más tiempo
+        duracion_min_dias = 42
+        duracion_max_dias = 90
+    elif tier == 2:
+        duracion_recomendada_semanas = 8
+        duracion_min_dias = 28
+        duracion_max_dias = 60
+    else:  # tier 1
+        duracion_recomendada_semanas = 4
+        duracion_min_dias = 14
+        duracion_max_dias = 35
+    
+    # Calcular pérdida proyectada
+    perdida_semanal = psmf_base.get('perdida_semanal_kg', (0.8, 1.2))
+    perdida_semanal_promedio = (perdida_semanal[0] + perdida_semanal[1]) / 2
+    
+    # Proyección total
+    perdida_total_kg = perdida_semanal_promedio * duracion_recomendada_semanas
+    peso_proyectado_final = peso - perdida_total_kg
+    
+    # Tramos por semanas (fases)
+    tramos = []
+    peso_actual_tramo = peso
+    
+    for semana in range(1, int(duracion_recomendada_semanas) + 1):
+        perdida_semana = perdida_semanal_promedio
+        peso_fin_semana = peso_actual_tramo - perdida_semana
+        
+        # Ajuste de calorías por fase (algunas semanas requieren ajustes)
+        if semana <= 2:
+            calorias_tramo = calorias_dia
+            fase = "Adaptación inicial"
+        elif semana <= duracion_recomendada_semanas * 0.6:
+            calorias_tramo = calorias_dia
+            fase = "Pérdida sostenida"
+        else:
+            # Últimas semanas: ligero aumento para preparar transición
+            calorias_tramo = int(calorias_dia * 1.1)
+            fase = "Transición preparatoria"
+        
+        tramos.append({
+            'semana': semana,
+            'fase': fase,
+            'calorias_dia': calorias_tramo,
+            'peso_inicio': round(peso_actual_tramo, 1),
+            'peso_fin': round(peso_fin_semana, 1),
+            'perdida_estimada_kg': round(perdida_semana, 2)
+        })
+        
+        peso_actual_tramo = peso_fin_semana
+    
+    # Construir resultado extendido
+    resultado = {
+        **psmf_base,  # Incluir todos los datos del cálculo base
+        'psmf_extendida': True,
+        'duracion_recomendada_semanas': duracion_recomendada_semanas,
+        'duracion_min_dias': duracion_min_dias,
+        'duracion_max_dias': duracion_max_dias,
+        'perdida_semanal_promedio_kg': round(perdida_semanal_promedio, 2),
+        'perdida_total_proyectada_kg': round(perdida_total_kg, 1),
+        'peso_inicial_kg': round(peso, 1),
+        'peso_proyectado_final_kg': round(peso_proyectado_final, 1),
+        'tramos_semanales': tramos,
+        'recomendaciones': [
+            f"Duración óptima: {duracion_recomendada_semanas} semanas",
+            f"Pérdida proyectada: {perdida_total_kg:.1f} kg total",
+            "Monitoreo semanal obligatorio de peso y bienestar",
+            "Suplementación de micronutrientes esencial",
+            "Transición gradual a mantenimiento post-PSMF"
+        ]
+    }
+    
+    return resultado
+
+def calcular_ciclado_semanal(tmb, geaf, deficit_superavit_pct, dias_bajos=4, dias_altos=3):
+    """
+    Calcula el ciclado semanal de calorías 4-3 (días bajos/altos en energía).
+    
+    Patrón típico:
+    - 4 días con déficit/ajuste base
+    - 3 días con incremento calórico (recarga)
+    
+    Args:
+        tmb: Tasa metabólica basal (kcal/día)
+        geaf: Factor de actividad física
+        deficit_superavit_pct: Porcentaje de déficit (-) o superávit (+)
+        dias_bajos: Número de días bajos en calorías (default: 4)
+        dias_altos: Número de días altos en calorías (default: 3)
+    
+    Returns:
+        dict: {
+            'get_base': Gasto energético total base,
+            'calorias_dia_bajo': Calorías en días bajos,
+            'calorias_dia_alto': Calorías en días altos,
+            'promedio_semanal': Promedio calórico semanal,
+            'distribucion_semanal': Lista con calorías por día,
+            'deficit_superavit_efectivo': Porcentaje efectivo aplicado
+        }
+    """
+    # GET base
+    get_base = tmb * geaf
+    
+    # Calorías objetivo promedio
+    factor_ajuste = 1 + (deficit_superavit_pct / 100)
+    calorias_objetivo_promedio = get_base * factor_ajuste
+    
+    # Cálculo de días bajos y altos
+    # Días bajos: Mantener el déficit/superávit base
+    calorias_dia_bajo = calorias_objetivo_promedio
+    
+    # Días altos: Incremento del 10-20% sobre días bajos (depende del objetivo)
+    if deficit_superavit_pct < 0:  # En déficit
+        # Incremento conservador en días altos (10%)
+        incremento_pct = 10
+    else:  # En superávit o mantenimiento
+        # Incremento mayor en días altos (15%)
+        incremento_pct = 15
+    
+    calorias_dia_alto = calorias_dia_bajo * (1 + incremento_pct / 100)
+    
+    # Calcular promedio semanal real
+    total_semanal = (calorias_dia_bajo * dias_bajos) + (calorias_dia_alto * dias_altos)
+    promedio_semanal = total_semanal / 7
+    
+    # Distribución sugerida (ejemplo: L-J bajos, V-D altos)
+    dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    distribucion = []
+    
+    for i, dia in enumerate(dias_semana):
+        if i < dias_bajos:
+            distribucion.append({
+                'dia': dia,
+                'tipo': 'Bajo',
+                'calorias': round(calorias_dia_bajo, 0),
+                'descripcion': 'Día de déficit/control base'
+            })
+        else:
+            distribucion.append({
+                'dia': dia,
+                'tipo': 'Alto',
+                'calorias': round(calorias_dia_alto, 0),
+                'descripcion': 'Día de recarga (entrenamiento intenso recomendado)'
+            })
+    
+    return {
+        'get_base': round(get_base, 0),
+        'calorias_dia_bajo': round(calorias_dia_bajo, 0),
+        'calorias_dia_alto': round(calorias_dia_alto, 0),
+        'promedio_semanal': round(promedio_semanal, 0),
+        'distribucion_semanal': distribucion,
+        'deficit_superavit_efectivo': deficit_superavit_pct,
+        'dias_bajos': dias_bajos,
+        'dias_altos': dias_altos
+    }
+
+def evaluar_micronutrientes_checklist():
+    """
+    Evalúa micronutrientes en MODO CHECKLIST (basado en dependencias actuales).
+    
+    Realiza una auditoría básica de micronutrientes esenciales.
+    Este modo usa checklists y validaciones cualitativas.
+    
+    Returns:
+        dict: Evaluación en formato checklist
+    """
+    return {
+        'modo': 'checklist',
+        'micronutrientes': [
+            {'nombre': 'Vitamina D', 'recomendado': '1000-4000 IU/día', 'fuentes': 'Sol, pescado graso, fortificados'},
+            {'nombre': 'Vitamina B12', 'recomendado': '2.4 μg/día', 'fuentes': 'Carnes, lácteos, huevos'},
+            {'nombre': 'Hierro', 'recomendado': '8-18 mg/día', 'fuentes': 'Carnes rojas, legumbres, vegetales verdes'},
+            {'nombre': 'Calcio', 'recomendado': '1000-1200 mg/día', 'fuentes': 'Lácteos, vegetales verdes, fortificados'},
+            {'nombre': 'Magnesio', 'recomendado': '310-420 mg/día', 'fuentes': 'Nueces, semillas, granos enteros'},
+            {'nombre': 'Zinc', 'recomendado': '8-11 mg/día', 'fuentes': 'Carnes, mariscos, legumbres'},
+            {'nombre': 'Omega-3', 'recomendado': '250-500 mg EPA+DHA/día', 'fuentes': 'Pescado graso, nueces, semillas'},
+        ],
+        'recomendaciones_generales': [
+            'Dieta variada con alimentos de todos los grupos',
+            'Considerar suplementación según análisis de sangre',
+            'Monitoreo periódico de niveles séricos',
+            'Ajustar según fase nutricional y objetivos'
+        ]
+    }
+
+def evaluar_micronutrientes_numerico(ingesta_calorica, macros):
+    """
+    Evalúa micronutrientes en MODO NUMÉRICO (implementación futura).
+    
+    Esta función está preparada para integrarse con bases de datos
+    nutricionales y realizar cálculos cuantitativos precisos.
+    
+    Args:
+        ingesta_calorica: Calorías totales diarias
+        macros: Diccionario con macronutrientes (proteína, grasa, carbos)
+    
+    Returns:
+        dict: Evaluación numérica detallada
+    """
+    return {
+        'modo': 'numerico',
+        'estado': 'no_implementado',
+        'mensaje': 'Función preparada para integración futura con base de datos nutricional',
+        'ingesta_calorica': ingesta_calorica,
+        'macros_analizados': macros
+    }
+
+def generar_reporte_unificado_mupai(sexo, edad, peso, estatura_cm, grasa_corregida, mlg, 
+                                     nivel_entrenamiento, objetivo_usuario=None):
+    """
+    Genera el reporte completo unificado MUPAI con todos los cálculos integrados.
+    
+    Integra:
+    - TMB (Cunningham)
+    - GEAF
+    - GET (TMB × GEAF)
+    - ETA
+    - GEE
+    - FBEO
+    - Fase nutricional
+    - Rangos de déficit/superávit
+    - Proteína dinámica
+    - PSMF extendida (si aplica)
+    - Ciclado semanal
+    - Micronutrición
+    
+    Args:
+        sexo: "Hombre" o "Mujer"
+        edad: Edad en años
+        peso: Peso corporal en kg
+        estatura_cm: Estatura en cm
+        grasa_corregida: Porcentaje de grasa corporal corregido
+        mlg: Masa libre de grasa en kg
+        nivel_entrenamiento: Nivel de actividad física
+        objetivo_usuario: Objetivo declarado (opcional)
+    
+    Returns:
+        dict: Reporte completo unificado
+    """
+    # 1. Cálculos energéticos base
+    tmb = calcular_tmb_cunningham(mlg)
+    geaf = obtener_geaf(nivel_entrenamiento)
+    get = calcular_gasto_energetico_total(tmb, geaf)
+    
+    # 2. Fase nutricional
+    fase_info = determinar_fase_nutricional_unificada(sexo, grasa_corregida, objetivo_usuario)
+    
+    # 3. Ingesta calórica según fase
+    ingesta_calorica = get * (1 + fase_info['deficit_superavit_pct'] / 100)
+    
+    # 4. Componentes energéticos adicionales
+    eta = calcular_eta(ingesta_calorica)
+    gee = calcular_gee(nivel_entrenamiento, peso)
+    fbeo = calcular_fbeo(gee)
+    
+    # 5. Rangos de déficit/superávit
+    rangos = calcular_rangos_deficit_superavit(sexo, grasa_corregida)
+    
+    # 6. Proteína dinámica
+    proteina_info = calcular_proteina_dinamica(sexo, grasa_corregida, peso, mlg, modo="auto")
+    
+    # 7. PSMF extendida (si aplica)
+    psmf_extendida = calcular_psmf_extendida(sexo, peso, grasa_corregida, mlg, estatura_cm)
+    
+    # 8. Ciclado semanal
+    ciclado = calcular_ciclado_semanal(tmb, geaf, fase_info['deficit_superavit_pct'])
+    
+    # 9. Micronutrientes
+    micronutrientes = evaluar_micronutrientes_checklist()
+    
+    # 10. Construcción del reporte
+    reporte = {
+        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'datos_entrada': {
+            'sexo': sexo,
+            'edad': edad,
+            'peso_kg': peso,
+            'estatura_cm': estatura_cm,
+            'grasa_corporal_pct': grasa_corregida,
+            'mlg_kg': mlg,
+            'nivel_entrenamiento': nivel_entrenamiento
+        },
+        'gastos_energeticos': {
+            'tmb_kcal_dia': round(tmb, 0),
+            'geaf_factor': geaf,
+            'get_kcal_dia': round(get, 0),
+            'eta_kcal_dia': round(eta, 0),
+            'gee_kcal_dia': round(gee, 0),
+            'fbeo_kcal_dia': round(fbeo, 0),
+            'gasto_total_ajustado': round(get + gee + fbeo, 0)
+        },
+        'fase_nutricional': fase_info,
+        'ingesta_recomendada': {
+            'calorias_dia': round(ingesta_calorica, 0),
+            'descripcion': fase_info['descripcion']
+        },
+        'rangos_composicion': rangos,
+        'proteina': proteina_info,
+        'psmf_extendida': psmf_extendida if psmf_extendida.get('psmf_aplicable') else None,
+        'ciclado_semanal': ciclado,
+        'micronutrientes': micronutrientes
+    }
+    
+    return reporte
+
 def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, telefono, progress_photos=None):
     """Envía el email con el resumen completo de la evaluación."""
     try:
@@ -2304,10 +3010,16 @@ def format_photo_status(progress_photos):
         return "✓ 3 fotografías adjuntas (frontal, lateral, posterior)"
 
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
-                        masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None):
+                        masa_muscular, grasa_visceral, mlg, tmb, progress_photos=None, 
+                        nivel_entrenamiento=None):
     """
     Envía el email interno (Parte 2) con reporte profesional de composición corporal.
     Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
+    
+    Incluye ahora:
+    - Reporte de línea base tradicional
+    - Sección MUPAI - Distribución unificada de calorías, macros y micros
+    - Calculadora PSMF extendida (si aplica)
     """
     try:
         email_origen = "administracion@muscleupgym.fitness"
@@ -2374,6 +3086,134 @@ NOTAS IMPORTANTES
 ✓ Las clasificaciones automáticas se aplican SOLO cuando los campos están vacíos o marcados como N/D
 ✓ Los datos existentes y sus clasificaciones originales se respetan sin sustitución
 
+"""
+        
+        # Generar reporte unificado MUPAI si se tiene nivel_entrenamiento
+        if nivel_entrenamiento:
+            try:
+                reporte_unificado = generar_reporte_unificado_mupai(
+                    sexo=sexo,
+                    edad=edad,
+                    peso=peso,
+                    estatura_cm=estatura,
+                    grasa_corregida=grasa_corregida,
+                    mlg=mlg,
+                    nivel_entrenamiento=nivel_entrenamiento
+                )
+                
+                # Agregar sección MUPAI al contenido
+                contenido += f"""
+=====================================
+MUPAI - DISTRIBUCIÓN DE CALORÍAS, MACROS Y MICROS
+=====================================
+
+🔬 GASTOS ENERGÉTICOS (Cálculo Unificado):
+   • TMB (Cunningham): {reporte_unificado['gastos_energeticos']['tmb_kcal_dia']:.0f} kcal/día
+   • GEAF (Factor actividad): {reporte_unificado['gastos_energeticos']['geaf_factor']:.2f}
+   • GET (Gasto Total): {reporte_unificado['gastos_energeticos']['get_kcal_dia']:.0f} kcal/día
+   • ETA (Efecto Térmico Alimentos): {reporte_unificado['gastos_energeticos']['eta_kcal_dia']:.0f} kcal/día
+   • GEE (Gasto Ejercicio): {reporte_unificado['gastos_energeticos']['gee_kcal_dia']:.0f} kcal/día
+   • FBEO (Post-ejercicio): {reporte_unificado['gastos_energeticos']['fbeo_kcal_dia']:.0f} kcal/día
+   • Gasto Total Ajustado: {reporte_unificado['gastos_energeticos']['gasto_total_ajustado']:.0f} kcal/día
+
+📋 FASE NUTRICIONAL RECOMENDADA:
+   • Fase: {reporte_unificado['fase_nutricional']['fase']}
+   • Ajuste: {reporte_unificado['fase_nutricional']['deficit_superavit_pct']:+.0f}%
+   • Rango: {reporte_unificado['fase_nutricional']['rango_min']:+.0f}% a {reporte_unificado['fase_nutricional']['rango_max']:+.0f}%
+   • Descripción: {reporte_unificado['fase_nutricional']['descripcion']}
+
+🍽️ INGESTA CALÓRICA RECOMENDADA:
+   • Calorías objetivo: {reporte_unificado['ingesta_recomendada']['calorias_dia']:.0f} kcal/día
+   • Categoría composición: {reporte_unificado['rangos_composicion']['categoria']}
+   • Notas: {reporte_unificado['rangos_composicion']['notas']}
+
+💪 PROTEÍNA (Ajuste Dinámico):
+   • Base de cálculo: {reporte_unificado['proteina']['base_utilizada']}
+   • Valor base: {reporte_unificado['proteina']['valor_base_kg']:.1f} kg
+   • Factor: {reporte_unificado['proteina']['factor_proteina']:.1f} g/kg
+   • Proteína diaria: {reporte_unificado['proteina']['proteina_g_dia']:.1f} g/día
+   • Modo aplicado: {reporte_unificado['proteina']['modo_aplicado']}
+
+📅 CICLADO SEMANAL 4-3 (Días Bajos/Altos):
+   • GET base: {reporte_unificado['ciclado_semanal']['get_base']:.0f} kcal/día
+   • Días bajos ({reporte_unificado['ciclado_semanal']['dias_bajos']} días): {reporte_unificado['ciclado_semanal']['calorias_dia_bajo']:.0f} kcal/día
+   • Días altos ({reporte_unificado['ciclado_semanal']['dias_altos']} días): {reporte_unificado['ciclado_semanal']['calorias_dia_alto']:.0f} kcal/día
+   • Promedio semanal: {reporte_unificado['ciclado_semanal']['promedio_semanal']:.0f} kcal/día
+   
+   Distribución sugerida:
+"""
+                for dia_info in reporte_unificado['ciclado_semanal']['distribucion_semanal']:
+                    contenido += f"   • {dia_info['dia']}: {dia_info['calorias']:.0f} kcal ({dia_info['tipo']}) - {dia_info['descripcion']}\n"
+                
+                # Micronutrientes
+                contenido += f"""
+🔬 MICRONUTRICIÓN (Modo Checklist):
+   Micronutrientes esenciales a monitorear:
+"""
+                for micro in reporte_unificado['micronutrientes']['micronutrientes']:
+                    contenido += f"   • {micro['nombre']}: {micro['recomendado']} - Fuentes: {micro['fuentes']}\n"
+                
+                contenido += "\n   Recomendaciones generales:\n"
+                for rec in reporte_unificado['micronutrientes']['recomendaciones_generales']:
+                    contenido += f"   • {rec}\n"
+                
+                # PSMF Extendida (si aplica)
+                if reporte_unificado.get('psmf_extendida'):
+                    psmf_ext = reporte_unificado['psmf_extendida']
+                    contenido += f"""
+=====================================
+CALCULADORA PSMF EXTENDIDA
+=====================================
+
+⚡ PROTOCOLO PSMF APLICABLE:
+   • Tier: {psmf_ext['tier_psmf']}
+   • Base proteína: {psmf_ext['base_proteina_usada']} ({psmf_ext['base_proteina_kg']:.1f} kg)
+   • Factor proteína: {psmf_ext['factor_proteina_psmf']:.1f} g/kg
+   • Multiplicador calórico: {psmf_ext['multiplicador']:.1f}
+   • Perfil grasa: {psmf_ext['perfil_grasa']}
+
+📊 MACROS DIARIOS PSMF:
+   • Proteína: {psmf_ext['proteina_g_dia']:.1f} g/día
+   • Grasa: {psmf_ext['grasa_g_dia']:.1f} g/día
+   • Carbohidratos: {psmf_ext['carbs_g_dia']:.1f} g/día (cap: {psmf_ext['carb_cap_aplicado_g']:.0f}g)
+   • Calorías totales: {psmf_ext['calorias_dia']:.0f} kcal/día
+   • Piso mínimo: {psmf_ext['calorias_piso_dia']:.0f} kcal/día
+
+⏱️ PROYECCIÓN TEMPORAL:
+   • Duración recomendada: {psmf_ext['duracion_recomendada_semanas']} semanas
+   • Rango: {psmf_ext['duracion_min_dias']}-{psmf_ext['duracion_max_dias']} días
+   • Pérdida semanal promedio: {psmf_ext['perdida_semanal_promedio_kg']:.2f} kg/semana
+   • Peso inicial: {psmf_ext['peso_inicial_kg']:.1f} kg
+   • Peso proyectado final: {psmf_ext['peso_proyectado_final_kg']:.1f} kg
+   • Pérdida total proyectada: {psmf_ext['perdida_total_proyectada_kg']:.1f} kg
+
+📅 TRAMOS SEMANALES:
+"""
+                    for tramo in psmf_ext['tramos_semanales']:
+                        contenido += f"   Semana {tramo['semana']} ({tramo['fase']}):\n"
+                        contenido += f"      • Calorías: {tramo['calorias_dia']:.0f} kcal/día\n"
+                        contenido += f"      • Peso inicio: {tramo['peso_inicio']:.1f} kg\n"
+                        contenido += f"      • Peso fin: {tramo['peso_fin']:.1f} kg\n"
+                        contenido += f"      • Pérdida estimada: {tramo['perdida_estimada_kg']:.2f} kg\n\n"
+                    
+                    contenido += "   ⚠️ RECOMENDACIONES PSMF:\n"
+                    for rec in psmf_ext['recomendaciones']:
+                        contenido += f"   • {rec}\n"
+                
+            except Exception as e:
+                # Si hay error en el reporte unificado, continuar sin él
+                contenido += f"""
+=====================================
+MUPAI - DISTRIBUCIÓN DE CALORÍAS, MACROS Y MICROS
+=====================================
+
+⚠️ No se pudo generar el reporte unificado completo.
+Razón: {str(e)}
+
+✓ Los cálculos tradicionales están disponibles en la evaluación principal.
+"""
+        
+        contenido += """
 =====================================
 RECORDATORIO PROFESIONAL
 =====================================
@@ -6084,7 +6924,8 @@ if not st.session_state.get("correo_enviado", False):
                     # Enviar email Parte 2 (interno)
                     ok_parte2 = enviar_email_parte2(
                         nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
+                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos,
+                        nivel_entrenamiento=nivel_actividad_text
                     )
                     if ok_parte2:
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
@@ -6127,7 +6968,8 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                 # Reenviar email Parte 2 (interno)
                 ok_parte2 = enviar_email_parte2(
                     nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos
+                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, progress_photos,
+                    nivel_entrenamiento=nivel_actividad_text
                 )
                 if ok_parte2:
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
