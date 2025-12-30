@@ -157,9 +157,10 @@ DEFICIT_RANGES_MALE = [
     (6, 10, -7.5),      # Superávit 5-10% (midpoint: 7.5%)
     (10, 15, -2.5),     # Mantenimiento o ligero superávit 0-5% (midpoint: 2.5%)
     (15, 18, 0),        # Mantenimiento
-    # Déficit ranges - linear progression
-    (18, 21, 25),       # Déficit interpolado linealmente desde 0% a 30%
-    (21, 26, 30),       # Déficit máximo normal (antes de PSMF)
+    # Déficit ranges - gradual progression
+    (18, 21, 10),       # Déficit leve 10%
+    (21, 23, 20),       # Déficit moderado 20%
+    (23, 26, 30),       # Déficit alto 30%
     # Obese category - PSMF or high deficit
     (26, 100, 50),      # PSMF recomendado o déficit 50%
 ]
@@ -170,9 +171,10 @@ DEFICIT_RANGES_FEMALE = [
     (12, 16, -7.5),     # Superávit 5-10% (midpoint: 7.5%)
     (16, 20, -2.5),     # Mantenimiento o ligero superávit 0-5% (midpoint: 2.5%)
     (20, 23, 0),        # Mantenimiento
-    # Déficit ranges - linear progression
-    (23, 32, 25),       # Déficit interpolado linealmente desde 0% a 30%
-    (32, 39, 30),       # Déficit máximo normal (antes de PSMF)
+    # Déficit ranges - gradual progression
+    (23, 27, 10),       # Déficit leve 10%
+    (27, 32, 20),       # Déficit moderado 20%
+    (32, 39, 30),       # Déficit alto 30%
     # Obese category - PSMF or high deficit
     (39, 100, 50),      # PSMF recomendado o déficit 50%
 ]
