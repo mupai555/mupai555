@@ -12,6 +12,7 @@ import time
 import re
 import random
 import string
+import nutrition_phases
 
 # ==================== CONSTANTES ====================
 
@@ -5078,6 +5079,37 @@ else:
     carbo_g = macros_tradicional['carbo_g']
     carbo_kcal = macros_tradicional['carbo_kcal']
 
+    # ==================== ANÁLISIS DE FASES NUTRICIONALES ====================
+    # Este análisis se genera para incluir en el reporte por correo, sin afectar la UI
+    try:
+        # Mapear variables existentes al formato del módulo de fases nutricionales
+        # Determinar el objetivo basado en el porcentaje calculado
+        if porcentaje < 0:
+            objetivo_fase = 'fat_loss'
+        elif porcentaje > 0:
+            objetivo_fase = 'muscle_gain'
+        else:
+            objetivo_fase = 'recomp'
+        
+        # Generar análisis completo de fases nutricionales
+        analisis_fases_nutricionales = nutrition_phases.generar_analisis_completo(
+            sex=sexo,  # Se normalizará internamente
+            bf_percent=grasa_corregida,
+            training_level=nivel_entrenamiento if 'nivel_entrenamiento' in locals() else 'intermedio',
+            goal=objetivo_fase,
+            maintenance_calories=GE,
+            current_weight=peso,
+            weeks=4
+        )
+        
+        # Formatear para incluir en email
+        texto_fases_nutricionales = nutrition_phases.formatear_para_email(analisis_fases_nutricionales)
+    except Exception as e:
+        # En caso de error, no afectar el flujo principal
+        analisis_fases_nutricionales = None
+        texto_fases_nutricionales = f"\n[Error al generar análisis de fases nutricionales: {str(e)}]\n"
+    # =========================================================================
+
 # --- FORZAR actualización de variables clave desde session_state ---
 peso = st.session_state.get("peso", 0)
 estatura = st.session_state.get("estatura", 0)
@@ -5886,6 +5918,11 @@ PRÓXIMOS PASOS SUGERIDOS:
 4. Ajustar estrategias según progreso real y retroalimentación del cliente
 
     """
+
+# ==================== AGREGAR ANÁLISIS DE FASES NUTRICIONALES AL EMAIL ====================
+# Agregar el análisis detallado de fases nutricionales al email (no visible en UI)
+if 'texto_fases_nutricionales' in locals() and texto_fases_nutricionales:
+    tabla_resumen += texto_fases_nutricionales
 
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
