@@ -127,11 +127,11 @@ else:
     print("✗ File format validation NOT correct")
     all_checks_passed = False
 
-# Check 13: Verify 10 MB size limit
-if '10 * 1024 * 1024' in content:
-    print("✓ 10 MB size limit validation present")
+# Check 13: Verify 100 MB size limit
+if '100 * 1024 * 1024' in content:
+    print("✓ 100 MB size limit validation present")
 else:
-    print("✗ 10 MB size limit validation NOT found")
+    print("✗ 100 MB size limit validation NOT found")
     all_checks_passed = False
 
 # Check 14: Verify independence - existing logic not broken
@@ -156,7 +156,7 @@ if all_checks_passed:
     print("Summary of integration:")
     print("  • Added 'pose_libre' key to session_state")
     print("  • Created PHOTO4_pose_libre filename mapping")
-    print("  • Implemented file uploader with same validation (JPG/JPEG/PNG, 10MB)")
+    print("  • Implemented file uploader with same validation (JPG/JPEG/PNG, 100MB)")
     print("  • Updated attach function to include optional PHOTO4")
     print("  • Distinguished required (3) from optional (1) photos")
     print("  • Updated email body to show 3-4 photos dynamically")

@@ -47,8 +47,8 @@ if 'def validate_progress_photo(uploaded_file):' in content:
         print("  ✗ File format validation NOT found")
         all_checks_passed = False
     
-    if '10 * 1024 * 1024' in content and 'max_size' in content:
-        print("  ✓ File size validation (10 MB)")
+    if '100 * 1024 * 1024' in content and 'max_size' in content:
+        print("  ✓ File size validation (100 MB)")
     else:
         print("  ✗ File size validation NOT found")
         all_checks_passed = False
