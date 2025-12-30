@@ -5916,6 +5916,46 @@ FACTORES DE ACTIVIDAD:
 - Gasto Energético Total: {GE:.0f} kcal
 
 =====================================
+TDEE (TOTAL DAILY ENERGY EXPENDITURE) - DESGLOSE COMPLETO
+=====================================
+El TDEE representa el gasto energético total diario, incluyendo todos los factores
+que afectan el metabolismo. Es la base fundamental para calcular la ingesta calórica.
+
+COMPONENTES DEL TDEE:
+
+1. TMB (Tasa Metabólica Basal) - Cunningham:
+   - Fórmula: 370 + (21.6 × MLG)
+   - Valor: {tmb:.0f} kcal/día
+   - Representa: Energía para funciones vitales en reposo absoluto
+
+2. GEAF (Gasto Energético por Actividad Física):
+   - Factor: {geaf}
+   - Nivel: {nivel_actividad.split('(')[0].strip()}
+   - Representa: Multiplicador por actividad diaria (sin contar ejercicio)
+   - Subtotal: TMB × GEAF = {tmb:.0f} × {geaf} = {tmb * geaf:.0f} kcal
+
+3. ETA (Efecto Térmico de los Alimentos):
+   - Factor: {eta}
+   - Criterio: {eta_desc if 'eta_desc' in locals() else 'ETA estándar'}
+   - Representa: Gasto adicional por digestión y metabolismo
+   - Subtotal: (TMB × GEAF) × ETA = {tmb * geaf:.0f} × {eta} = {tmb * geaf * eta:.0f} kcal
+
+4. GEE (Gasto Energético por Ejercicio):
+   - Días entrenamiento/semana: {dias_fuerza}
+   - Gasto por sesión: {kcal_sesion} kcal
+   - Promedio diario: {gee_prom_dia:.0f} kcal/día
+   - Representa: Calorías quemadas en entrenamiento estructurado
+
+FÓRMULA COMPLETA:
+TDEE = (TMB × GEAF × ETA) + GEE
+TDEE = ({tmb:.0f} × {geaf} × {eta}) + {gee_prom_dia:.0f}
+TDEE = {tmb * geaf * eta:.0f} + {gee_prom_dia:.0f}
+TDEE = {GE:.0f} kcal/día
+
+Este es tu gasto energético total diario. Para mantener tu peso actual, 
+necesitarías consumir aproximadamente {GE:.0f} kcal/día.
+
+=====================================
 PLAN NUTRICIONAL CALCULADO:
 =====================================
 - Fase: {fase}
