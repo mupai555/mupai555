@@ -2884,11 +2884,16 @@ def formulario_ciclo_menstrual(sexo):
         "Menopausia/Ausencia de ovulación (sin menstruación por retiro natural o condiciones específicas)"
     ]
     
+    # Calculate index for selectbox (restore previous selection if exists)
+    default_index = 0
+    if st.session_state.ciclo_menstrual and st.session_state.ciclo_menstrual in opciones_ciclo:
+        default_index = opciones_ciclo.index(st.session_state.ciclo_menstrual)
+    
     # Select box para la fase del ciclo
     ciclo_seleccionado = st.selectbox(
         "🌸 Fase actual del ciclo menstrual*",
         options=opciones_ciclo,
-        index=0 if not st.session_state.ciclo_menstrual else opciones_ciclo.index(st.session_state.ciclo_menstrual) if st.session_state.ciclo_menstrual in opciones_ciclo else 0,
+        index=default_index,
         help="Selecciona la fase que mejor describe tu estado actual"
     )
     
@@ -2900,7 +2905,9 @@ def formulario_ciclo_menstrual(sexo):
         # Guardar en session state
         st.session_state.ciclo_menstrual = ciclo_seleccionado
         st.session_state.ciclo_menstrual_completado = True
-        st.success(f"✅ Fase registrada: {ciclo_seleccionado.split('(')[0].strip()}")
+        # Extract short name safely (handle cases without parentheses)
+        short_name = ciclo_seleccionado.split('(')[0].strip() if '(' in ciclo_seleccionado else ciclo_seleccionado
+        st.success(f"✅ Fase registrada: {short_name}")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
