@@ -2323,10 +2323,13 @@ def format_photo_status(progress_photos):
         return "✓ 3 fotografías adjuntas (frontal, lateral, posterior)"
 
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
-                        masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura=0.0, progress_photos=None):
+                        masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura=0.0, progress_photos=None, ciclo_menstrual=None):
     """
     Envía el email interno (Parte 2) con reporte profesional de composición corporal.
     Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
+    
+    Args:
+        ciclo_menstrual: Fase del ciclo menstrual (solo para mujeres), opcional
     """
     try:
         email_origen = "administracion@muscleupgym.fitness"
@@ -2364,6 +2367,7 @@ Nombre completo: {nombre_cliente}
 Fecha de evaluación: {fecha}
 Edad: {edad} años
 Sexo: {sexo}
+{f"Fase del ciclo menstrual: {ciclo_menstrual}" if ciclo_menstrual else ""}
 
 =====================================
 COMPOSICIÓN CORPORAL — LÍNEA BASE
@@ -2836,6 +2840,79 @@ def formulario_metas_personales():
     
     # Return data for integration into main email
     return st.session_state.metas_personales if st.session_state.metas_personales_completado else None
+
+# ==================== CUESTIONARIO CICLO MENSTRUAL ====================
+
+def formulario_ciclo_menstrual(sexo):
+    """
+    Cuestionario para recoger información sobre la fase del ciclo menstrual.
+    Solo se muestra cuando sexo == "Mujer".
+    
+    La información es obligatoria y se incluye en el reporte sin afectar cálculos.
+    
+    Args:
+        sexo: Sexo biológico del usuario ("Hombre" o "Mujer")
+    
+    Returns:
+        str: Fase del ciclo menstrual seleccionada (None si no aplica)
+    """
+    # Solo mostrar si es mujer
+    if sexo != "Mujer":
+        return None
+    
+    # Initialize session state for menstrual cycle data
+    if 'ciclo_menstrual' not in st.session_state:
+        st.session_state.ciclo_menstrual = None
+    if 'ciclo_menstrual_completado' not in st.session_state:
+        st.session_state.ciclo_menstrual_completado = False
+    
+    st.markdown("---")
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    st.markdown("### 🌸 Información del Ciclo Menstrual")
+    st.markdown("""
+    Por favor selecciona la fase actual de tu ciclo menstrual. Esta información será incluida 
+    en tu reporte de evaluación y no afecta los cálculos nutricionales.
+    """)
+    
+    # Opciones del ciclo menstrual con descripciones detalladas
+    opciones_ciclo = [
+        "Selecciona una opción...",
+        "Menstruación (sangrado menstrual, típico al inicio del ciclo)",
+        "Fase folicular (después del sangrado, preparación del óvulo)",
+        "Ovulación (liberación del óvulo, fertilidad más alta)",
+        "Fase lútea (posterior a la ovulación, síntomas premenstruales típicos)",
+        "Menopausia/Ausencia de ovulación (sin menstruación por retiro natural o condiciones específicas)"
+    ]
+    
+    # Calculate index for selectbox (restore previous selection if exists)
+    default_index = 0
+    if st.session_state.ciclo_menstrual and st.session_state.ciclo_menstrual in opciones_ciclo:
+        default_index = opciones_ciclo.index(st.session_state.ciclo_menstrual)
+    
+    # Select box para la fase del ciclo
+    ciclo_seleccionado = st.selectbox(
+        "🌸 Fase actual del ciclo menstrual*",
+        options=opciones_ciclo,
+        index=default_index,
+        help="Selecciona la fase que mejor describe tu estado actual"
+    )
+    
+    # Validación: no se permite continuar sin seleccionar una opción válida
+    if ciclo_seleccionado == "Selecciona una opción...":
+        st.warning("⚠️ **Campo obligatorio:** Por favor selecciona la fase actual de tu ciclo menstrual para continuar.")
+        st.session_state.ciclo_menstrual_completado = False
+    else:
+        # Guardar en session state
+        st.session_state.ciclo_menstrual = ciclo_seleccionado
+        st.session_state.ciclo_menstrual_completado = True
+        # Extract short name safely (handle cases without parentheses)
+        short_name = ciclo_seleccionado.split('(')[0].strip() if '(' in ciclo_seleccionado else ciclo_seleccionado
+        st.success(f"✅ Fase registrada: {short_name}")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Return data for integration into report
+    return st.session_state.ciclo_menstrual if st.session_state.ciclo_menstrual_completado else None
 
 def enviar_email_suenyo_estres(nombre_cliente, email_cliente, fecha, data_suenyo_estres):
     """
@@ -3488,6 +3565,12 @@ if datos_personales_completos and st.session_state.datos_completos:
     # Llamar al formulario de sueño y estrés ANTES de cualquier cálculo complejo
     # Los datos se capturan y se incluirán automáticamente en el email final
     resultado_suenyo_estres = formulario_suenyo_estres()
+    
+    # ========== CUESTIONARIO CICLO MENSTRUAL (SOLO PARA MUJERES) ==========
+    # Llamar al formulario del ciclo menstrual después de datos personales
+    # y antes de la composición corporal. Solo se muestra si sexo == "Mujer"
+    # La información se captura y se incluirá en el reporte sin afectar cálculos
+    ciclo_menstrual = formulario_ciclo_menstrual(sexo)
     
     # Progress bar general
     progress = st.progress(0)
@@ -5272,6 +5355,12 @@ def datos_completos_para_email():
     if not edad or edad <= 0:
         faltantes.append("Edad")
     
+    # Validar ciclo menstrual (obligatorio solo para mujeres)
+    if sexo == "Mujer":
+        ciclo_menstrual = st.session_state.get('ciclo_menstrual')
+        if not ciclo_menstrual or ciclo_menstrual == "Selecciona una opción...":
+            faltantes.append("Fase del ciclo menstrual")
+    
     # Validar datos antropométricos
     if not peso or peso <= 0:
         faltantes.append("Peso corporal")
@@ -6144,7 +6233,8 @@ if not st.session_state.get("correo_enviado", False):
                     # Enviar email Parte 2 (interno)
                     ok_parte2 = enviar_email_parte2(
                         nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos
+                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos, 
+                        st.session_state.get('ciclo_menstrual')
                     )
                     if ok_parte2:
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
@@ -6187,7 +6277,8 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                 # Reenviar email Parte 2 (interno)
                 ok_parte2 = enviar_email_parte2(
                     nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos
+                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos, 
+                    st.session_state.get('ciclo_menstrual')
                 )
                 if ok_parte2:
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
