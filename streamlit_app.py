@@ -5529,6 +5529,7 @@ DATOS DEL CLIENTE:
 - Nombre completo: {nombre}
 - Edad: {edad} años
 - Sexo: {sexo}
+{f"- Fase del ciclo menstrual: {st.session_state.get('ciclo_menstrual', 'No especificado')}" if sexo == "Mujer" else ""}
 - Teléfono: {telefono}
 - Email: {email_cliente}
 - Fecha evaluación: {fecha_llenado}
