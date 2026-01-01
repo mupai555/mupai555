@@ -5516,120 +5516,214 @@ if circunferencia_cintura_report > 0 and estatura > 0:
     wthr_str = f"{wthr_report:.3f}"
     wthr_clasificacion_str = f" → {clasificar_wthr(wthr_report)}"
 
-tabla_resumen = f"""
-=====================================
-EVALUACIÓN MUPAI - INFORME COMPLETO
-=====================================
-Generado: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence
+# Agregar secciones adicionales del cuestionario - mover antes de tabla_resumen
+experiencia_text = experiencia if 'experiencia' in locals() and experiencia else "No especificado"
+nivel_actividad_text = nivel_actividad.split('(')[0].strip() if 'nivel_actividad' in locals() and nivel_actividad else "No especificado"
 
-=====================================
-DATOS DEL CLIENTE:
-=====================================
-- Nombre completo: {nombre}
-- Edad: {edad} años
-- Sexo: {sexo}
-{f"- Fase del ciclo menstrual: {st.session_state.get('ciclo_menstrual', 'No especificado')}" if sexo == "Mujer" and st.session_state.get('ciclo_menstrual') else ""}
-- Teléfono: {telefono}
-- Email: {email_cliente}
-- Fecha evaluación: {fecha_llenado}
+# Generar detalle de ejercicios funcionales
+ejercicios_detalle = ""
+if 'ejercicios_data' in locals() and ejercicios_data:
+    for ejercicio, valor in ejercicios_data.items():
+        nivel_ej = st.session_state.niveles_ejercicios.get(ejercicio, "No evaluado")
+        if ejercicio in ["Plancha", "L-sit"]:
+            ejercicios_detalle += f"   • {ejercicio}: {valor} segundos → Nivel: {nivel_ej}\n"
+        else:
+            ejercicios_detalle += f"   • {ejercicio}: {valor} repeticiones → Nivel: {nivel_ej}\n"
+else:
+    ejercicios_detalle = "   • No se completaron las evaluaciones funcionales\n"
 
-=====================================
-ANTROPOMETRÍA Y COMPOSICIÓN:
-=====================================
-- Peso: {peso} kg
-- Estatura: {estatura:.1f} cm
-- IMC: {imc:.1f} kg/m²
-- Circunferencia de cintura: {circunferencia_cintura_str}
-- Ratio Cintura-Altura (WtHR): {wthr_str}{wthr_clasificacion_str}
-- Método medición grasa: {metodo_grasa}
-- % Grasa medido: {grasa_corporal}%
-- % Grasa corregido (DEXA): {grasa_corregida:.1f}%
-- % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
-- Grasa visceral (nivel): {grasa_visceral_str}
-- Masa Libre de Grasa: {mlg:.1f} kg
-- Masa Grasa: {peso - mlg:.1f} kg
+# Calcular ambos planes nutricionales para comparación
+plan_tradicional_calorias = ingesta_calorica_tradicional if 'ingesta_calorica_tradicional' in locals() else 0
+plan_psmf_disponible = psmf_recs.get("psmf_aplicable", False) if 'psmf_recs' in locals() else False
 
-=====================================
-ÍNDICES METABÓLICOS:
-=====================================
-- TMB (Cunningham): {tmb:.0f} kcal
+# Información de entrenamiento de fuerza
+dias_fuerza_text = dias_fuerza if 'dias_fuerza' in locals() else 0
+kcal_sesion_text = kcal_sesion if 'kcal_sesion' in locals() else 0
 
----
-FFMI (FAT-FREE MASS INDEX) Y FMI (FAT MASS INDEX) - ANÁLISIS DETALLADO:
----
-El FFMI es un indicador científico del desarrollo muscular ajustado por altura.
-El FMI complementa midiendo la adiposidad ajustada por altura.
-
-MODO DE INTERPRETACIÓN FFMI: {modo_ffmi}
-{f"🟢 GREEN - Interpretación válida como muscularidad" if modo_ffmi == "GREEN" else "🟡 AMBER - Interpretación limitada por adiposidad" if modo_ffmi == "AMBER" else "🔴 RED - No aplicable clasificación atlética"}
-
-CÁLCULO DE TU FFMI:
-- Masa Libre de Grasa (MLG): {mlg:.1f} kg
-- Estatura: {estatura} cm ({estatura/100:.2f} m)
-- FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f}
-- FFMI Normalizado (a 1.80m): {ffmi:.2f}
-  (Formula: FFMI_base + 6.3 * (1.8 - altura_m))
-
-CÁLCULO DE TU FMI:
-- Masa Grasa: {peso - mlg:.1f} kg
-- FMI = Masa Grasa / Altura²: {fmi:.2f}
-
-TU CLASIFICACIÓN FFMI:
-- FFMI actual: {ffmi:.2f}
-{texto_clasificacion_ffmi}
-
-TU CLASIFICACIÓN FMI:
-- FMI actual: {fmi:.2f}
-- Categoría: {categoria_fmi}
-
-NOTA: Los umbrales femeninos difieren de masculinos debido a diferencias
-hormonales (menos testosterona), mayor % grasa esencial, y diferente
-distribución de masa muscular.
-
-=====================================
-FACTORES DE ACTIVIDAD:
-=====================================
-- Nivel actividad diaria: {nivel_actividad.split('(')[0].strip()}
-- Factor GEAF: {geaf}
-- Factor ETA: {eta}
-- Días entreno/semana: {dias_fuerza}
-- Gasto por sesión: {kcal_sesion} kcal
-- GEE promedio diario: {gee_prom_dia:.0f} kcal
-- Gasto Energético Total: {GE:.0f} kcal
-
-=====================================
-PLAN NUTRICIONAL CALCULADO:
-=====================================
-- Fase: {fase}
-- Factor FBEO: {fbeo:.2f}
-- Ingesta calórica: {ingesta_calorica:.0f} kcal/día
-- Ratio kcal/kg: {ratio_kcal_kg:.1f}
-
-DISTRIBUCIÓN DE MACRONUTRIENTES:
-- Proteína: {proteina_g}g ({proteina_kcal_safe:.0f} kcal) = {proteina_percent}%
-- Grasas: {grasa_g}g ({grasa_kcal_safe:.0f} kcal) = {grasa_percent}%
-- Carbohidratos: {carbo_g}g ({carbo_kcal_safe:.0f} kcal) = {carbo_percent}%
-
-=====================================
-RESUMEN PERSONALIZADO Y PROYECCIÓN
-=====================================
-📊 DIAGNÓSTICO PERSONALIZADO:
-- Categoría grasa corporal: {
+# Calcular categoría de grasa corporal (una sola vez)
+categoria_grasa_corporal = (
     "Muy bajo (Competición)" if (sexo == "Hombre" and grasa_corregida < 6) or (sexo == "Mujer" and grasa_corregida < 12)
     else "Atlético" if (sexo == "Hombre" and grasa_corregida < 12) or (sexo == "Mujer" and grasa_corregida < 17)
     else "Fitness" if (sexo == "Hombre" and grasa_corregida < 18) or (sexo == "Mujer" and grasa_corregida < 23)
     else "Promedio" if (sexo == "Hombre" and grasa_corregida < 25) or (sexo == "Mujer" and grasa_corregida < 30)
     else "Alto"
-} ({grasa_corregida:.1f}%)
-- Nivel de entrenamiento: {nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() else 'Intermedio'}
-- Objetivo recomendado: {fase}
+)
 
-📈 PROYECCIÓN CIENTÍFICA 6 SEMANAS:"""
+tabla_resumen = f"""
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║              EVALUACIÓN MUPAI - INFORME CIENTÍFICO COMPLETO                   ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  Sistema: MUPAI v2.0 - Muscle Up Performance Assessment Intelligence          ║
+║  Generado: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}                                              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 1: IDENTIFICACIÓN DEL CLIENTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 DATOS PERSONALES:
+   • Nombre completo: {nombre}
+   • Edad: {edad} años
+   • Sexo biológico: {sexo}
+{f"   • Fase del ciclo menstrual: {st.session_state.get('ciclo_menstrual', 'No especificado')}" if sexo == "Mujer" and st.session_state.get('ciclo_menstrual') else ""}
+   • Teléfono: {telefono}
+   • Email: {email_cliente}
+   • Fecha de evaluación: {fecha_llenado}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 2: COMPOSICIÓN CORPORAL COMPLETA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📐 2.1 ANTROPOMETRÍA BÁSICA:
+   • Peso corporal: {peso} kg
+   • Estatura: {estatura:.1f} cm ({estatura/100:.2f} m)
+   • IMC: {imc:.1f} kg/m²
+   • Circunferencia de cintura: {circunferencia_cintura_str}
+   • Ratio Cintura-Altura (WtHR): {wthr_str}{wthr_clasificacion_str}
+
+📊 2.2 ANÁLISIS DE TEJIDOS:
+   • Método de medición: {metodo_grasa}
+   • % Grasa corporal medido: {grasa_corporal}%
+   • % Grasa corregido (equivalente DEXA): {grasa_corregida:.1f}%
+   • Ajuste aplicado: {grasa_corregida - grasa_corporal:+.1f}%
+   • Categoría de adiposidad: {categoria_grasa_corporal}
+   
+   • Masa Libre de Grasa (MLG): {mlg:.1f} kg
+   • Masa Grasa: {peso - mlg:.1f} kg
+   • % Masa muscular: {safe_float(masa_muscular, 0.0):.1f}%
+   • Grasa visceral (nivel 1-59): {grasa_visceral_str}
+
+📈 2.3 ÍNDICES DE COMPOSICIÓN CORPORAL:
+
+   ┌─ FFMI (Fat-Free Mass Index) ─────────────────────────────────────┐
+   │ Indicador científico del desarrollo muscular ajustado por altura │
+   └──────────────────────────────────────────────────────────────────┘
+   
+   MODO DE INTERPRETACIÓN: {modo_ffmi}
+   {f"🟢 GREEN - Interpretación válida como muscularidad" if modo_ffmi == "GREEN" else "🟡 AMBER - Interpretación limitada por adiposidad" if modo_ffmi == "AMBER" else "🔴 RED - No aplicable clasificación atlética"}
+   
+   CÁLCULO:
+   • MLG: {mlg:.1f} kg
+   • FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f}
+   • FFMI Normalizado (a 1.80m): {ffmi:.2f}
+     Fórmula: FFMI_base + 6.3 × (1.8 - altura_m)
+   
+   CLASIFICACIÓN:
+{texto_clasificacion_ffmi}
+
+   ┌─ FMI (Fat Mass Index) ───────────────────────────────────────────┐
+   │ Indicador de adiposidad ajustado por altura                      │
+   └──────────────────────────────────────────────────────────────────┘
+   
+   • Masa Grasa: {peso - mlg:.1f} kg
+   • FMI = Masa Grasa / Altura²: {fmi:.2f}
+   • Categoría: {categoria_fmi}
+
+   NOTA: Los umbrales femeninos difieren de masculinos debido a diferencias
+   hormonales (menos testosterona), mayor % grasa esencial, y diferente
+   distribución de masa muscular.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 3: EVALUACIÓN FUNCIONAL Y NIVEL DE ENTRENAMIENTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 3.1 EXPERIENCIA AUTODECLARADA:
+{experiencia_text}
+
+💪 3.2 PRUEBAS FUNCIONALES:
+{ejercicios_detalle}
+
+🎯 3.3 NIVEL GLOBAL DE ENTRENAMIENTO:
+
+   El nivel se calcula mediante puntuación ponderada de tres componentes:
+
+   ┌──────────────────────────────────────────────────────────────────┐
+   │ COMPONENTE 1: DESARROLLO MUSCULAR (FFMI)                        │
+   │ • Puntuación: {puntos_ffmi if 'puntos_ffmi' in locals() else 0}/5 puntos                                        │
+   │ • Clasificación: {nivel_ffmi}                                           │
+   │ • Interpretación: Masa muscular ajustada por altura             │
+   ├──────────────────────────────────────────────────────────────────┤
+   │ COMPONENTE 2: RENDIMIENTO FUNCIONAL                             │
+   │ • Puntuación: {puntos_funcional if 'puntos_funcional' in locals() else 0:.1f}/4 puntos                                       │
+   │ • Base: Promedio de ejercicios evaluados                        │
+   │ • Interpretación: Capacidad física en movimientos fundamentales │
+   ├──────────────────────────────────────────────────────────────────┤
+   │ COMPONENTE 3: EXPERIENCIA DECLARADA                             │
+   │ • Puntuación: {puntos_exp if 'puntos_exp' in locals() else 0}/4 puntos                                         │
+   │ • Interpretación: Años de entrenamiento y conocimiento          │
+   └──────────────────────────────────────────────────────────────────┘
+
+   SISTEMA DE PONDERACIÓN:
+{'   ESTÁNDAR (grasa en rango saludable):' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '   AJUSTADA (grasa fuera de rango saludable):'}
+{'   • FFMI: 40% | Funcional: 40% | Experiencia: 20%' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '   • FFMI: 0% (excluido) | Funcional: 80% | Experiencia: 20%'}
+
+{'   NOTA: Con % grasa saludable, el FFMI es indicador confiable.' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'   NOTA: Con % grasa fuera de rango (>{25 if sexo == "Hombre" else 32}%), el FFMI no se pondera.'}
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  RESULTADO FINAL                                               ║
+   ║  • Nivel: {nivel_entrenamiento.upper() if 'nivel_entrenamiento' in locals() else 'INTERMEDIO'}                                            ║
+   ║  • Puntuación: {puntaje_total if 'puntaje_total' in locals() else 0:.2f}/1.0                                          ║
+   ║  • Estado grasa: {'En rango saludable' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else 'Fuera de rango saludable'}                               ║
+   ╚════════════════════════════════════════════════════════════════╝"""
+
+# ==================== SECCIÓN 4: SUEÑO + ESTRÉS (si disponible) ====================
+# Se integra ANTES del gasto energético porque afecta la recuperación
+if st.session_state.get('suenyo_estres_completado', False) and st.session_state.get('suenyo_estres_data'):
+    data_se = st.session_state.suenyo_estres_data
+    
+    if all(key in data_se for key in ['sleep_score', 'stress_score', 'ir_se', 'nivel_recuperacion']):
+        # Generar banderas de alerta
+        banderas_texto = ""
+        if data_se.get('banderas'):
+            for tipo, titulo, descripcion in data_se['banderas']:
+                banderas_texto += f"   {tipo}: {titulo}\n   {descripcion}\n\n"
+        else:
+            banderas_texto = "   ✅ No se detectaron banderas de alerta.\n"
+        
+        tabla_resumen += f"""
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 4: ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Factores críticos que impactan la recuperación, síntesis proteica y
+   adaptación al entrenamiento.
+
+🌙 4.1 CALIDAD DEL SUEÑO:
+   • Horas por noche: {data_se.get('horas_sueno', 'No reportado')}
+   • Tiempo para conciliar: {data_se.get('tiempo_conciliar', 'No reportado')}
+   • Despertares nocturnos: {data_se.get('veces_despierta', 'No reportado')}
+   • Calidad percibida: {data_se.get('calidad_sueno', 'No reportado')}
+
+🧠 4.2 NIVEL DE ESTRÉS:
+   • Sensación de sobrecarga: {data_se.get('sobrecarga', 'No reportado')}
+   • Falta de control: {data_se.get('falta_control', 'No reportado')}
+   • Dificultad para manejar: {data_se.get('dificultad_manejar', 'No reportado')}
+   • Irritabilidad: {data_se.get('irritabilidad', 'No reportado')}
+
+📊 4.3 PUNTUACIONES CALCULADAS:
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ Sleep Score:  {data_se.get('sleep_score', 0):.1f}/100  │  Stress Score:  {data_se.get('stress_score', 0):.1f}/100 │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ Índice IR-SE (Recuperación): {data_se.get('ir_se', 0):.1f}/100                       │
+   │ Fórmula: (Sleep × 60%) + (Stress × 40%)                        │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ CLASIFICACIÓN: {data_se.get('nivel_recuperacion', 'No determinado')} {data_se.get('emoji_nivel', '')}                                     │
+   │ {data_se.get('mensaje_nivel', '')}                             │
+   └─────────────────────────────────────────────────────────────────┘
+
+   RANGOS: ALTA (70-100) | MEDIA (50-69) | BAJA (<50)
+
+⚠️ BANDERAS DE ALERTA:
+{banderas_texto}
+💡 IMPACTO EN ENTRENAMIENTO:
+   • Sueño <7h reduce síntesis proteica hasta 18%
+   • Estrés crónico eleva cortisol (catabolismo muscular)
+   • Si IR-SE < 50, considerar reducir volumen/intensidad"""
 
 # Calcular proyección científica para el email
 try:
-    # Determinar el porcentaje correcto según el plan elegido usando función centralizada
     porcentaje_email = obtener_porcentaje_para_proyeccion(
         plan_elegido if 'plan_elegido' in locals() else "",
         psmf_recs if 'psmf_recs' in locals() else {},
@@ -5646,122 +5740,57 @@ try:
     )
     objetivo_texto = "(déficit)" if porcentaje_email < 0 else "(superávit)" if porcentaje_email > 0 else "(mantenimiento)"
     porcentaje_valor = porcentaje_email
-    
-    tabla_resumen += f"""
-- Objetivo recomendado: {porcentaje_valor:+.0f}% {objetivo_texto}
-- Rango semanal científico: {proyeccion_email['rango_semanal_pct'][0]:.1f}% a {proyeccion_email['rango_semanal_pct'][1]:.1f}% del peso corporal
-- Cambio semanal estimado: {proyeccion_email['rango_semanal_kg'][0]:+.2f} a {proyeccion_email['rango_semanal_kg'][1]:+.2f} kg/semana
-- Rango total 6 semanas: {proyeccion_email['rango_total_6sem_kg'][0]:+.2f} a {proyeccion_email['rango_total_6sem_kg'][1]:+.2f} kg
-- Peso actual → rango proyectado: {peso:.1f} kg → {peso + proyeccion_email['rango_total_6sem_kg'][0]:.1f} a {peso + proyeccion_email['rango_total_6sem_kg'][1]:.1f} kg
-- Explicación científica: {proyeccion_email['explicacion_textual']}
-"""
 except:
-    tabla_resumen += "\n- Error en cálculo de proyección. Usar valores por defecto.\n"
-
-# Agregar secciones adicionales del cuestionario
-experiencia_text = experiencia if 'experiencia' in locals() and experiencia else "No especificado"
-nivel_actividad_text = nivel_actividad.split('(')[0].strip() if 'nivel_actividad' in locals() and nivel_actividad else "No especificado"
-
-# Generar detalle de ejercicios funcionales
-ejercicios_detalle = ""
-if 'ejercicios_data' in locals() and ejercicios_data:
-    for ejercicio, valor in ejercicios_data.items():
-        nivel_ej = st.session_state.niveles_ejercicios.get(ejercicio, "No evaluado")
-        if ejercicio in ["Plancha", "L-sit"]:
-            ejercicios_detalle += f"- {ejercicio}: {valor} segundos → Nivel: {nivel_ej}\n"
-        else:
-            ejercicios_detalle += f"- {ejercicio}: {valor} repeticiones → Nivel: {nivel_ej}\n"
-else:
-    ejercicios_detalle = "- No se completaron las evaluaciones funcionales\n"
-
-# Calcular ambos planes nutricionales para comparación
-plan_tradicional_calorias = ingesta_calorica_tradicional if 'ingesta_calorica_tradicional' in locals() else 0
-plan_psmf_disponible = psmf_recs.get("psmf_aplicable", False) if 'psmf_recs' in locals() else False
-
-# Información de entrenamiento de fuerza
-dias_fuerza_text = dias_fuerza if 'dias_fuerza' in locals() else 0
-kcal_sesion_text = kcal_sesion if 'kcal_sesion' in locals() else 0
+    porcentaje_email = 0
+    objetivo_texto = "(mantenimiento)"
+    porcentaje_valor = 0
+    proyeccion_email = {
+        'rango_semanal_pct': (0, 0),
+        'rango_semanal_kg': (0, 0),
+        'rango_total_6sem_kg': (0, 0),
+        'explicacion_textual': 'Error en cálculo'
+    }
 
 tabla_resumen += f"""
 
-=====================================
-EXPERIENCIA Y RESPUESTAS FUNCIONALES
-=====================================
-📋 EXPERIENCIA DE ENTRENAMIENTO:
-{experiencia_text}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 5: GASTO ENERGÉTICO (MOTOR METABÓLICO)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-💪 EVALUACIÓN FUNCIONAL DETALLADA:
-{ejercicios_detalle}
+   Cálculo del gasto energético total mediante componentes aditivos.
 
-=====================================
-NIVEL GLOBAL DE ENTRENAMIENTO
-=====================================
-El nivel de entrenamiento se calcula mediante un sistema de puntuación ponderada
-que considera tres componentes clave: desarrollo muscular (FFMI), rendimiento
-funcional y experiencia autodeclarada.
+🔥 5.1 TASA METABÓLICA BASAL (TMB):
+   • Ecuación: Cunningham (basada en MLG)
+   • TMB = 500 + (22 × MLG)
+   • Resultado: {tmb:.0f} kcal/día
+   • Edad metabólica estimada: {edad_metabolica} años (vs cronológica: {edad} años)
 
-🎯 DESGLOSE DEL NIVEL GLOBAL:
+🚶 5.2 GASTO POR ACTIVIDAD DIARIA (GEAF):
+   • Nivel: {nivel_actividad_text}
+   • Factor multiplicador: {geaf if 'geaf' in locals() else 1.0}
+   • Descripción: {nivel_actividad if 'nivel_actividad' in locals() and nivel_actividad else 'No especificado'}
+   • Impacto: +{(geaf-1)*100 if 'geaf' in locals() else 0:.0f}% sobre TMB
 
-1. DESARROLLO MUSCULAR (FFMI):
-   - Puntuación: {puntos_ffmi if 'puntos_ffmi' in locals() else 0}/5 puntos
-   - Clasificación: {nivel_ffmi}
-   - Interpretación: El FFMI mide objetivamente tu masa muscular ajustada por
-     altura. Es un indicador confiable del desarrollo muscular alcanzado.
+🏋️ 5.3 GASTO POR ENTRENAMIENTO (GEE):
+   • Días/semana: {dias_fuerza_text}
+   • Gasto por sesión: {kcal_sesion_text} kcal
+   • Criterio: Basado en nivel ({nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() else 'Intermedio'})
+   • Gasto semanal: {gee_semanal if 'gee_semanal' in locals() else 0:.0f} kcal
+   • Promedio diario: {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f} kcal/día
 
-2. RENDIMIENTO FUNCIONAL:
-   - Puntuación: {puntos_funcional if 'puntos_funcional' in locals() else 0:.1f}/4 puntos
-   - Base: Promedio del rendimiento en ejercicios funcionales evaluados
-   - Interpretación: Mide tu capacidad física práctica en movimientos fundamentales.
+🔥 5.4 EFECTO TÉRMICO DE LOS ALIMENTOS (ETA):
+   • Factor: {eta if 'eta' in locals() else 1.1}
+   • Criterio: {eta_desc if 'eta_desc' in locals() else 'ETA estándar'}
+   • Justificación: % grasa ({grasa_corregida:.1f}%) y sexo ({sexo})
 
-3. EXPERIENCIA AUTODECLARADA:
-   - Puntuación: {puntos_exp if 'puntos_exp' in locals() else 0}/4 puntos
-   - Respuesta: {experiencia_text[:80]}...
-   - Interpretación: Años de entrenamiento y conocimiento autodeclarado.
-
-SISTEMA DE PONDERACIÓN:
-{'- PONDERACIÓN ESTÁNDAR (grasa en rango saludable):' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '- PONDERACIÓN AJUSTADA (grasa fuera de rango saludable):'}
-  {'* FFMI (desarrollo muscular): 40%' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '* FFMI (desarrollo muscular): 0% (no se pondera por exceso de grasa)'}
-  {'* Rendimiento funcional: 40%' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else '* Rendimiento funcional: 80% (peso aumentado por falta de ponderación FFMI)'}
-  * Experiencia declarada: 20%
-
-{'NOTA: Con % grasa en rango saludable, el FFMI es un indicador confiable del' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'NOTA IMPORTANTE: Tu % de grasa corporal ({grasa_corregida:.1f}%) está fuera del'}
-{'desarrollo muscular real y se pondera normalmente.' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'rango saludable (>{25 if sexo == "Hombre" else 32}%). Por ello, el FFMI NO se pondera ya que el'}
-{'' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else 'exceso de grasa puede distorsionar la medición de masa muscular real. El'}
-{'' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else 'rendimiento funcional se prioriza (80%) como mejor indicador actual.'}
-
-RESULTADO FINAL:
-- Nivel de entrenamiento: {nivel_entrenamiento.upper() if 'nivel_entrenamiento' in locals() else 'INTERMEDIO'}
-- Puntuación total: {puntaje_total if 'puntaje_total' in locals() else 0:.2f}/1.0
-- % Grasa corporal: {grasa_corregida:.1f}%
-- Estado: {'En rango saludable' if (en_rango_saludable if 'en_rango_saludable' in locals() else True) else f'Fuera de rango saludable (>{25 if sexo == "Hombre" else 32}%)'}
-
-=====================================
-ACTIVIDAD FÍSICA DIARIA Y FACTORES
-=====================================
-🚶 NIVEL DE ACTIVIDAD DIARIA:
-- Clasificación: {nivel_actividad_text}
-- Factor GEAF aplicado: {geaf if 'geaf' in locals() else 1.0}
-- Descripción: {nivel_actividad if 'nivel_actividad' in locals() and nivel_actividad else 'No especificado'}
-- Impacto metabólico: Multiplica el TMB en {(geaf-1)*100 if 'geaf' in locals() else 0:.0f}%
-
-🔥 EFECTO TÉRMICO DE LOS ALIMENTOS (ETA):
-- Factor ETA: {eta if 'eta' in locals() else 1.1}
-- Criterio aplicado: {eta_desc if 'eta_desc' in locals() else 'ETA estándar'}
-- Justificación: Basado en % grasa corporal ({grasa_corregida:.1f}%) y sexo ({sexo})
-
-=====================================
-ENTRENAMIENTO DE FUERZA - DETALLE
-=====================================
-🏋️ FRECUENCIA Y GASTO ENERGÉTICO:
-- Días de entrenamiento/semana: {dias_fuerza_text} días
-- Gasto por sesión: {kcal_sesion_text} kcal
-- Criterio del gasto: Basado en nivel global ({nivel_entrenamiento.capitalize() if 'nivel_entrenamiento' in locals() else 'Intermedio'})
-- Gasto semanal total: {gee_semanal if 'gee_semanal' in locals() else 0:.0f} kcal
-- Promedio diario (GEE): {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f} kcal/día
-
-=====================================
-COMPARATIVA COMPLETA DE PLANES NUTRICIONALES
-====================================="""
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  GASTO ENERGÉTICO TOTAL (GE)                                   ║
+   ║  GE = (TMB × GEAF) + GEE × ETA                                 ║
+   ║                                                                ║
+   ║  GE = ({tmb:.0f} × {geaf if 'geaf' in locals() else 1.0}) + {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f} × {eta if 'eta' in locals() else 1.1}                             ║
+   ║                                                                ║
+   ║  ══► GE TOTAL: {GE:.0f} kcal/día                               ║
+   ╚════════════════════════════════════════════════════════════════╝"""
 
 # Calcular macros del plan tradicional para el resumen del email usando función centralizada
 macros_tradicional_email = calcular_macros_tradicional(
@@ -5782,35 +5811,43 @@ factor_proteina_tradicional_email = macros_tradicional_email['factor_proteina']
 usar_mlg_para_proteina_email = (base_proteina_nombre_email == "MLG")
 base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
 
-nota_mlg_email = f"\n  (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
+nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
 if usar_mlg_para_proteina_email:
-    nota_mlg_email += "\n  ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
+    nota_mlg_email += "\n     ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
 
 # ==================== EMAIL: COMPARATIVA DE PLANES ====================
-# IMPORTANTE: El email SIEMPRE muestra AMBOS planes (Tradicional y PSMF)
-# independientemente de la configuración de MOSTRAR_PSMF_AL_USUARIO.
-# - MOSTRAR_PSMF_AL_USUARIO solo controla la UI visible al usuario final
-# - Los emails internos SIEMPRE incluyen análisis completo de todas las opciones
-# - Esto permite al equipo tener información completa para asesorar al cliente
-
 tabla_resumen += f"""
-📊 PLAN TRADICIONAL (DÉFICIT/SUPERÁVIT MODERADO):
-- Calorías: {plan_tradicional_calorias:.0f} kcal/día
-- Estrategia: {fase}
-- Proteína: {proteina_g_tradicional:.1f}g ({proteina_kcal_tradicional:.0f} kcal) = {proteina_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%{nota_mlg_email}
-- Grasas: {grasa_g_tradicional:.1f}g ({grasa_kcal_tradicional:.0f} kcal) = {grasa_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
-- Carbohidratos: {carbo_g_tradicional:.1f}g ({carbo_kcal_tradicional:.0f} kcal) = {carbo_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%
-- Sostenibilidad: ALTA - Recomendado para adherencia a largo plazo
-- Pérdida/ganancia esperada: 0.3-0.7% peso corporal/semana
-- Duración recomendada: Indefinida con ajustes periódicos
 
-⚡ PROTOCOLO PSMF ACTUALIZADO {'(APLICABLE)' if plan_psmf_disponible else '(NO APLICABLE)'}:"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 6: PLAN NUTRICIONAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Prescripción nutricional basada en gasto energético y objetivos.
+
+🎯 6.1 DIAGNÓSTICO Y FASE:
+   • Fase recomendada: {fase}
+   • Factor FBEO: {fbeo:.2f}
+   • Ingesta calórica objetivo: {ingesta_calorica:.0f} kcal/día
+   • Ratio kcal/kg: {ratio_kcal_kg:.1f}
+
+📊 6.2 PLAN TRADICIONAL (Déficit/Superávit Moderado):
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ CALORÍAS: {plan_tradicional_calorias:.0f} kcal/día                                   │
+   │ ESTRATEGIA: {fase}                                      │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ MACRONUTRIENTES:                                               │
+   │ • Proteína: {proteina_g_tradicional:.1f}g ({proteina_kcal_tradicional:.0f} kcal) = {proteina_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%{nota_mlg_email}                │
+   │ • Grasas: {grasa_g_tradicional:.1f}g ({grasa_kcal_tradicional:.0f} kcal) = {grasa_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%                        │
+   │ • Carbohidratos: {carbo_g_tradicional:.1f}g ({carbo_kcal_tradicional:.0f} kcal) = {carbo_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%                 │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ • Sostenibilidad: ALTA                                         │
+   │ • Cambio esperado: 0.3-0.7% peso corporal/semana               │
+   │ • Duración: Indefinida con ajustes periódicos                  │
+   └─────────────────────────────────────────────────────────────────┘"""
 
 if plan_psmf_disponible:
-    # Usar función centralizada para calcular macros PSMF
     macros_psmf_email = calcular_macros_psmf(psmf_recs)
-    
-    # Extraer valores
     proteina_g_psmf = macros_psmf_email['proteina_g']
     proteina_kcal_psmf = macros_psmf_email['proteina_kcal']
     grasa_g_psmf = macros_psmf_email['grasa_g']
@@ -5820,222 +5857,128 @@ if plan_psmf_disponible:
     calorias_dia_psmf = macros_psmf_email['calorias_dia']
     
     tabla_resumen += f"""
-- Calorías: {calorias_dia_psmf:.0f} kcal/día
-- Criterio de aplicabilidad: {psmf_recs.get('criterio', 'No especificado')}
-- Proteína: {proteina_g_psmf:.1f}g ({proteina_kcal_psmf:.0f} kcal) = {proteina_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}%
-- Grasas: {grasa_g_psmf:.1f}g ({grasa_kcal_psmf:.0f} kcal) = {grasa_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}%
-- Carbohidratos: {carbo_g_psmf:.1f}g ({carbo_kcal_psmf:.0f} kcal) = {carbo_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}% (solo vegetales fibrosos)
-- Multiplicador calórico: {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})
-- Déficit estimado: ~{int((1 - calorias_dia_psmf/(GE if 'GE' in locals() else 2000)) * 100) if calorias_dia_psmf > 0 else 0}%
-- Pérdida esperada: {psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[0]}-{psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[1]} kg/semana
-- Sostenibilidad: BAJA - Máximo 6-8 semanas
-- Duración recomendada: 6-8 semanas con supervisión médica obligatoria
-- Suplementación necesaria: Multivitamínico, omega-3, electrolitos, magnesio
-- Monitoreo requerido: Análisis de sangre regulares"""
+
+⚡ 6.3 PROTOCOLO PSMF (APLICABLE):
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ CALORÍAS: {calorias_dia_psmf:.0f} kcal/día                                     │
+   │ CRITERIO: {psmf_recs.get('criterio', 'No especificado')}                               │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ MACRONUTRIENTES:                                               │
+   │ • Proteína: {proteina_g_psmf:.1f}g ({proteina_kcal_psmf:.0f} kcal) = {proteina_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}%                       │
+   │ • Grasas: {grasa_g_psmf:.1f}g ({grasa_kcal_psmf:.0f} kcal) = {grasa_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}%                          │
+   │ • Carbohidratos: {carbo_g_psmf:.1f}g ({carbo_kcal_psmf:.0f} kcal) = {carbo_kcal_psmf/calorias_dia_psmf*100 if calorias_dia_psmf > 0 else 0:.1f}% (vegetales fibrosos)  │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ • Multiplicador: {psmf_recs.get('multiplicador', 8.3)} (perfil: {psmf_recs.get('perfil_grasa', 'alto % grasa')})               │
+   │ • Déficit: ~{int((1 - calorias_dia_psmf/(GE if 'GE' in locals() else 2000)) * 100) if calorias_dia_psmf > 0 else 0}%                                                │
+   │ • Pérdida esperada: {psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[0]}-{psmf_recs.get('perdida_semanal_kg', (0.6, 1.0))[1]} kg/semana                        │
+   │ • Sostenibilidad: BAJA (máx 6-8 semanas)                       │
+   │ • Suplementación: Multivitamínico, omega-3, electrolitos, Mg   │
+   │ • ⚠️ Requiere supervisión médica y análisis de sangre         │
+   └─────────────────────────────────────────────────────────────────┘"""
 else:
     tabla_resumen += f"""
-- RAZÓN DE NO APLICABILIDAD: % grasa no cumple criterios mínimos
-- Criterio hombres: >18% grasa corporal (actual: {grasa_corregida:.1f}%)
-- Criterio mujeres: >23% grasa corporal (actual: {grasa_corregida:.1f}%)
-- RECOMENDACIÓN: Usar plan tradicional hasta alcanzar % grasa objetivo"""
+
+⚡ 6.3 PROTOCOLO PSMF (NO APLICABLE):
+   • Razón: % grasa no cumple criterios mínimos
+   • Criterio H: >18% | M: >23% (actual: {grasa_corregida:.1f}%)
+   • Recomendación: Usar plan tradicional"""
 
 tabla_resumen += f"""
 
-📋 ANÁLISIS COMPARATIVO DE ESTRATEGIAS:
-- TRADICIONAL vs PSMF: {'Ambos aplicables - Usuario puede elegir' if plan_psmf_disponible else 'Solo tradicional aplicable'}
-- Velocidad de resultados: {'PSMF 2-3x más rápido' if plan_psmf_disponible else 'Tradicional = velocidad moderada sostenible'}
-- Riesgo de pérdida muscular: {'PSMF = mayor riesgo' if plan_psmf_disponible else 'Tradicional = riesgo mínimo'}
-- Facilidad de adherencia: {'Tradicional >> PSMF' if plan_psmf_disponible else 'Tradicional = alta adherencia'}
-- Impacto en rendimiento: {'PSMF = reducción significativa' if plan_psmf_disponible else 'Tradicional = impacto mínimo'}
+📋 6.4 COMPARATIVA DE ESTRATEGIAS:
+   • Disponibilidad: {'Ambos aplicables' if plan_psmf_disponible else 'Solo tradicional'}
+   • Velocidad: {'PSMF 2-3x más rápido' if plan_psmf_disponible else 'Tradicional = moderada'}
+   • Riesgo muscular: {'PSMF = mayor' if plan_psmf_disponible else 'Tradicional = mínimo'}
+   • Adherencia: {'Tradicional >> PSMF' if plan_psmf_disponible else 'Tradicional = alta'}
 
-=====================================
-PREFERENCIAS Y HÁBITOS ADICIONALES
-=====================================
-🍽️ INFORMACIÓN NUTRICIONAL ADICIONAL:
-- Método medición grasa: {metodo_grasa} → Ajuste DEXA: {grasa_corregida - grasa_corporal:+.1f}%
-- Edad metabólica calculada: {edad_metabolica} años (vs cronológica: {edad} años)
-- Categoría de grasa corporal: {
-    "Muy bajo (Competición)" if (sexo == "Hombre" and grasa_corregida < 6) or (sexo == "Mujer" and grasa_corregida < 12)
-    else "Atlético" if (sexo == "Hombre" and grasa_corregida < 12) or (sexo == "Mujer" and grasa_corregida < 17)
-    else "Fitness" if (sexo == "Hombre" and grasa_corregida < 18) or (sexo == "Mujer" and grasa_corregida < 23)
-    else "Promedio" if (sexo == "Hombre" and grasa_corregida < 25) or (sexo == "Mujer" and grasa_corregida < 30)
-    else "Alto"
-}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 7: PROYECCIÓN A 6 SEMANAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-💊 SUPLEMENTACIÓN RECOMENDADA:
-- Creatina monohidrato: 5g/día (mejora rendimiento y recuperación)
-- Vitamina D3: 2000-4000 UI/día (optimización hormonal)
-- Omega-3 (EPA+DHA): 2-3g/día (antiinflamatorio y salud cardiovascular)
-- Multivitamínico: 1/día (seguro nutricional)
-{'- ADICIONAL PARA PSMF: Electrolitos, magnesio, complejo B' if plan_psmf_disponible else ''}
+📈 PROYECCIÓN CIENTÍFICA:
 
-=====================================
-NOTAS, ADVERTENCIAS Y RECOMENDACIONES
-=====================================
-⚠️ ADVERTENCIAS IMPORTANTES:
-- Este análisis es una herramienta de apoyo, NO sustituye supervisión profesional
-- Los cálculos están basados en ecuaciones científicas validadas pero la respuesta individual varía
-- Se recomienda evaluación médica antes de iniciar cualquier plan nutricional restrictivo
-{'- CRÍTICO PARA PSMF: Supervisión médica OBLIGATORIA con análisis de sangre regulares' if plan_psmf_disponible else ''}
-- Hidratación mínima: {peso * 35 if 'peso' in locals() and peso > 0 else 2450:.0f}ml/día (35ml/kg peso)
+   • Objetivo: {porcentaje_valor:+.0f}% {objetivo_texto}
+   • Rango semanal: {proyeccion_email['rango_semanal_pct'][0]:.1f}% a {proyeccion_email['rango_semanal_pct'][1]:.1f}% del peso corporal
+   • Cambio semanal: {proyeccion_email['rango_semanal_kg'][0]:+.2f} a {proyeccion_email['rango_semanal_kg'][1]:+.2f} kg/semana
+   • Cambio total (6 sem): {proyeccion_email['rango_total_6sem_kg'][0]:+.2f} a {proyeccion_email['rango_total_6sem_kg'][1]:+.2f} kg
 
-🎯 RECOMENDACIONES ESPECÍFICAS:
-- Reevaluación recomendada: Cada 2-3 semanas para ajustes
-- Enfoque principal: {'Pérdida de grasa manteniendo músculo' if porcentaje < 0 else 'Ganancia muscular controlada' if porcentaje > 0 else 'Recomposición corporal'}
-- Timing de nutrientes: Proteína en cada comida, carbohidratos pre/post entreno
-- Descanso óptimo: 7-9 horas/noche para maximizar resultados
-- Gestión del estrés: Técnicas de relajación y mindfulness recomendadas
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  PESO ACTUAL: {peso:.1f} kg                                       ║
+   ║  PESO PROYECTADO: {peso + proyeccion_email['rango_total_6sem_kg'][0]:.1f} a {peso + proyeccion_email['rango_total_6sem_kg'][1]:.1f} kg                         ║
+   ╚════════════════════════════════════════════════════════════════╝
 
-📈 MÉTRICAS DE SEGUIMIENTO SUGERIDAS:
-- Peso corporal: Diario (misma hora, condiciones)
-- Medidas corporales: Semanal (cintura, cadera, brazos)
-- Fotos progreso: Bisemanal (misma iluminación y pose)
-- Rendimiento en ejercicios: Cada sesión (seguimiento de cargas/repeticiones)
-- Energía y bienestar: Diario (escala 1-10)
+   📝 Explicación: {proyeccion_email['explicacion_textual']}"""
 
-⚠️ IMPORTANTE - NATURALEZA DE LAS ESTIMACIONES:
-Estas son estimaciones basadas en modelos científicos. El cuerpo humano 
-es un sistema complejo, no lineal y dinámico. Los resultados reales 
-dependerán de múltiples factores como:
-
-- Adherencia estricta al plan nutricional y de entrenamiento
-- Calidad del sueño y gestión del estrés  
-- Respuesta individual y adaptaciones metabólicas
-- Factores hormonales y genéticos
-- Variaciones en la actividad diaria no planificada
-
-RECOMENDACIÓN: Utiliza estas proyecciones como guía inicial y ajusta 
-según tu progreso real. Se recomienda evaluación periódica cada 2-3 
-semanas para optimizar resultados.
-
-"""
-
-# ==================== AGREGAR SECCIÓN DE SUEÑO + ESTRÉS AL EMAIL ====================
-# Integrar datos del cuestionario de sueño y estrés si están disponibles
-if st.session_state.get('suenyo_estres_completado', False) and st.session_state.get('suenyo_estres_data'):
-    data_se = st.session_state.suenyo_estres_data
-    
-    # Validar que los datos esenciales estén presentes
-    if all(key in data_se for key in ['sleep_score', 'stress_score', 'ir_se', 'nivel_recuperacion']):
-        tabla_resumen += f"""
-=====================================
-ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)
-=====================================
-
-Esta sección evalúa factores críticos para la recuperación y rendimiento:
-la calidad del sueño y el nivel de estrés percibido.
-
-🌙 RESPUESTAS - CALIDAD DEL SUEÑO:
-   • Horas de sueño por noche: {data_se.get('horas_sueno', 'No reportado')}
-   • Tiempo para conciliar el sueño: {data_se.get('tiempo_conciliar', 'No reportado')}
-   • Despertares nocturnos: {data_se.get('veces_despierta', 'No reportado')}
-   • Calidad percibida del sueño: {data_se.get('calidad_sueno', 'No reportado')}
-
-🧠 RESPUESTAS - NIVEL DE ESTRÉS:
-   • Sensación de sobrecarga: {data_se.get('sobrecarga', 'No reportado')}
-   • Falta de control: {data_se.get('falta_control', 'No reportado')}
-   • Dificultad para manejar situaciones: {data_se.get('dificultad_manejar', 'No reportado')}
-   • Irritabilidad frecuente: {data_se.get('irritabilidad', 'No reportado')}
-
-📊 PUNTUACIONES CALCULADAS:
-   • Sleep Score: {data_se.get('sleep_score', 0):.1f}/100
-     - Puntuación cruda de sueño: {data_se.get('sleep_raw', 0)}/14 puntos
-     - Interpretación: {'Excelente' if data_se.get('sleep_score', 0) >= 85 else 'Buena' if data_se.get('sleep_score', 0) >= 70 else 'Regular' if data_se.get('sleep_score', 0) >= 50 else 'Necesita atención'}
-   
-   • Stress Score: {data_se.get('stress_score', 0):.1f}/100
-     - Puntuación cruda de estrés: {data_se.get('stress_raw', 0)}/16 puntos
-     - Interpretación: {'Excelente manejo' if data_se.get('stress_score', 0) >= 85 else 'Buen manejo' if data_se.get('stress_score', 0) >= 70 else 'Manejo moderado' if data_se.get('stress_score', 0) >= 50 else 'Necesita atención'}
-   
-   • Índice IR-SE (Recuperación Sueño-Estrés): {data_se.get('ir_se', 0):.1f}/100
-     - Fórmula: (Sleep Score × 60%) + (Stress Score × 40%)
-     - Cálculo: ({data_se.get('sleep_score', 0):.1f} × 0.6) + ({data_se.get('stress_score', 0):.1f} × 0.4) = {data_se.get('ir_se', 0):.1f}
-
-🎯 CLASIFICACIÓN DE RECUPERACIÓN:
-   • Nivel: {data_se.get('nivel_recuperacion', 'No determinado')} {data_se.get('emoji_nivel', '')}
-   • Evaluación: {data_se.get('mensaje_nivel', 'Sin mensaje disponible')}
-
-RANGOS DE REFERENCIA:
-   • ALTA (70-100): Excelente estado de recuperación, óptimo para entrenamiento intenso
-   • MEDIA (50-69): Recuperación moderada, considerar mejoras en sueño o manejo de estrés
-   • BAJA (<50): Recuperación comprometida, intervención necesaria
-
-⚠️ BANDERAS DE ALERTA:
-"""
-    
-    if data_se.get('banderas'):
-        for tipo, titulo, descripcion in data_se['banderas']:
-            tabla_resumen += f"""
-{tipo}: {titulo}
-{descripcion}
-
-"""
-    else:
-        tabla_resumen += """
-✅ No se detectaron banderas de alerta. El estado de sueño y estrés está dentro
-   de rangos saludables.
-
-"""
-    
-    tabla_resumen += f"""
-💡 RECOMENDACIONES GENERALES SUEÑO + ESTRÉS:
-
-HIGIENE DEL SUEÑO:
-• Mantener horarios regulares de sueño (acostarse y levantarse a la misma hora)
-• Ambiente oscuro, silencioso y fresco (16-19°C ideal)
-• Evitar pantallas 1-2 horas antes de dormir (luz azul inhibe melatonina)
-• Limitar cafeína después de las 14:00h
-• Rutina de relajación pre-sueño (lectura, meditación, estiramientos suaves)
-
-MANEJO DEL ESTRÉS:
-• Practicar técnicas de respiración profunda o meditación (10-15 min/día)
-• Ejercicio regular (libera endorfinas, reduce cortisol)
-• Establecer límites claros entre trabajo y tiempo personal
-• Priorizar tareas y delegar cuando sea posible
-• Mantener conexiones sociales de apoyo
-
-IMPACTO EN ENTRENAMIENTO:
-• Un sueño insuficiente (<7h) reduce la síntesis proteica hasta un 18%
-• El estrés crónico eleva el cortisol, promoviendo catabolismo muscular
-• La recuperación óptima requiere tanto sueño de calidad como bajo estrés
-• Considera ajustar volumen/intensidad de entrenamiento si IR-SE < 50
-
-NOTA IMPORTANTE:
-Los datos de sueño y estrés son autorreportados y reflejan la percepción
-subjetiva del cliente. Para casos con banderas rojas, considerar derivación
-a especialistas (médico del sueño, psicólogo clínico).
-
-        """
-
-# ==================== AGREGAR SECCIÓN DE METAS PERSONALES AL EMAIL ====================
-# Integrar datos del cuestionario de metas personales si están disponibles
+# ==================== METAS PERSONALES (si disponible) ====================
 if st.session_state.get('metas_personales_completado', False):
     metas_texto = st.session_state.metas_personales
     
     tabla_resumen += f"""
-=====================================
-METAS PERSONALES: OBJETIVOS A MEDIANO Y LARGO PLAZO
-=====================================
 
-El cliente ha definido los siguientes objetivos personales relacionados con 
-su composición corporal, rendimiento físico y bienestar general:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 8: METAS PERSONALES DEL CLIENTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+🎯 OBJETIVOS AUTODECLARADOS:
 {metas_texto}
 
-ANÁLISIS Y CONSIDERACIONES:
-• Estos objetivos personales deben ser considerados al diseñar el plan de 
-  entrenamiento y nutrición individualizado.
-• Se recomienda establecer hitos intermedios medibles para evaluar el progreso.
-• Los plazos definidos (mediano: 6-12 meses / largo: >12 meses) deben ajustarse
-  según la respuesta individual del cliente y factores contextuales.
-• La adherencia y consistencia serán factores clave para alcanzar estas metas.
+📋 CONSIDERACIONES:
+   • Establecer hitos intermedios medibles
+   • Ajustar plazos según respuesta individual
+   • Adherencia y consistencia son clave"""
 
-PRÓXIMOS PASOS SUGERIDOS:
-1. Diseñar plan nutricional alineado con los objetivos específicos del cliente
-2. Estructurar programa de entrenamiento progresivo acorde a metas
-3. Establecer sistema de seguimiento y evaluación periódica (cada 2-4 semanas)
-4. Ajustar estrategias según progreso real y retroalimentación del cliente
+tabla_resumen += f"""
 
-    """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 9: RECOMENDACIONES Y ADVERTENCIAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💊 9.1 SUPLEMENTACIÓN RECOMENDADA:
+   • Creatina monohidrato: 5g/día
+   • Vitamina D3: 2000-4000 UI/día
+   • Omega-3 (EPA+DHA): 2-3g/día
+   • Multivitamínico: 1/día
+{'   • ADICIONAL PSMF: Electrolitos, magnesio, complejo B' if plan_psmf_disponible else ''}
+
+💧 9.2 HIDRATACIÓN:
+   • Mínimo recomendado: {peso * 35 if 'peso' in locals() and peso > 0 else 2450:.0f} ml/día (35ml/kg)
+
+📈 9.3 MÉTRICAS DE SEGUIMIENTO:
+   • Peso: Diario (misma hora y condiciones)
+   • Medidas: Semanal (cintura, cadera, brazos)
+   • Fotos: Bisemanal (misma iluminación/pose)
+   • Rendimiento: Cada sesión (cargas/repeticiones)
+   • Energía: Diario (escala 1-10)
+
+🎯 9.4 RECOMENDACIONES ESPECÍFICAS:
+   • Reevaluación: Cada 2-3 semanas
+   • Enfoque: {'Pérdida de grasa manteniendo músculo' if porcentaje_email < 0 else 'Ganancia muscular controlada' if porcentaje_email > 0 else 'Recomposición corporal'}
+   • Timing: Proteína en cada comida, carbos pre/post entreno
+   • Descanso: 7-9 horas/noche
+
+⚠️ 9.5 ADVERTENCIAS IMPORTANTES:
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ • Este análisis es herramienta de apoyo, NO sustituye          │
+   │   supervisión profesional                                      │
+   │ • Cálculos basados en ecuaciones validadas, pero la            │
+   │   respuesta individual varía                                   │
+   │ • Se recomienda evaluación médica antes de planes restrictivos │
+{'   │ • PSMF: Supervisión médica OBLIGATORIA                         │' if plan_psmf_disponible else ''}
+   └─────────────────────────────────────────────────────────────────┘
+
+   NATURALEZA DE LAS ESTIMACIONES:
+   El cuerpo humano es un sistema complejo, no lineal y dinámico.
+   Los resultados dependen de: adherencia, sueño, estrés, respuesta
+   individual, factores hormonales/genéticos, actividad no planificada.
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    © 2025 MUPAI - Muscle Up GYM                               ║
+║                       Digital Training Science                                ║
+║                        muscleupgym.fitness                                    ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+"""
 
 # ==================== RESUMEN PERSONALIZADO ====================
 # Solo mostrar si los datos están completos para la evaluación
