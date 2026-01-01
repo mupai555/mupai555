@@ -2162,8 +2162,279 @@ def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
         # Para plan tradicional, usar el porcentaje tradicional
         return porcentaje if porcentaje is not None else 0
 
+def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso, estatura, imc,
+                         grasa_corregida, mlg, ffmi=None, nivel_entrenamiento=None, 
+                         circunferencia_cintura=None, grasa_visceral=None, edad_metabolica=None,
+                         wthr=None, masa_grasa=None, progress_photos=None):
+    """
+    Envía email al cliente con resultados completos de evaluación corporal.
+    
+    Incluye:
+    - Datos personales básicos (incluye ciclo menstrual si aplica)
+    - Composición corporal completa
+    - Índices corporales (FFMI, WtHR, grasa visceral)
+    - Edad metabólica
+    - Nivel de entrenamiento
+    - Nivel de recuperación (sueño/estrés si disponible)
+    - Fotos de progreso
+    
+    NO incluye:
+    - Plan nutricional (macros/calorías) - cliente debe consultarte
+    - Proyección de progreso - cliente debe consultarte
+    - Ecuaciones científicas (TMB, cálculos GEAF, ETA, etc.)
+    - Metodología de cálculo
+    - Factores multiplicadores
+    """
+    try:
+        email_origen = "administracion@muscleupgym.fitness"
+        email_destino = email_cliente
+        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+
+        # Calcular valores derivados
+        masa_grasa_calc = peso - mlg if masa_grasa is None else masa_grasa
+        pct_masa_muscular = (mlg / peso * 100) if peso > 0 else 0
+        
+        # Clasificar WtHR si está disponible
+        wthr_clasificacion = ""
+        if wthr is not None:
+            if wthr < 0.40:
+                wthr_clasificacion = " - 🟢 Extremadamente delgado"
+            elif wthr < 0.50:
+                wthr_clasificacion = " - 🟢 Saludable"
+            elif wthr < 0.60:
+                wthr_clasificacion = " - 🟡 Sobrepeso"
+            else:
+                wthr_clasificacion = " - 🔴 Obesidad"
+        
+        # Clasificar grasa visceral si está disponible
+        grasa_visceral_clasificacion = ""
+        if grasa_visceral is not None:
+            if grasa_visceral < 10:
+                grasa_visceral_clasificacion = " - 🟢 Nivel saludable"
+            elif grasa_visceral < 15:
+                grasa_visceral_clasificacion = " - 🟡 Nivel elevado"
+            else:
+                grasa_visceral_clasificacion = " - 🔴 Nivel alto (riesgo)"
+        
+        # Categorizar grasa corporal
+        if sexo == "Hombre":
+            if grasa_corregida < 6:
+                categoria_grasa = "Muy bajo (Competición)"
+                emoji_grasa = "⚠️"
+            elif grasa_corregida < 12:
+                categoria_grasa = "Atlético"
+                emoji_grasa = "💪"
+            elif grasa_corregida < 18:
+                categoria_grasa = "Fitness"
+                emoji_grasa = "🏃"
+            elif grasa_corregida < 25:
+                categoria_grasa = "Promedio"
+                emoji_grasa = "📊"
+            else:
+                categoria_grasa = "Alto"
+                emoji_grasa = "⚠️"
+        else:  # Mujer
+            if grasa_corregida < 12:
+                categoria_grasa = "Muy bajo (Competición)"
+                emoji_grasa = "⚠️"
+            elif grasa_corregida < 17:
+                categoria_grasa = "Atlético"
+                emoji_grasa = "💪"
+            elif grasa_corregida < 23:
+                categoria_grasa = "Fitness"
+                emoji_grasa = "🏃"
+            elif grasa_corregida < 30:
+                categoria_grasa = "Promedio"
+                emoji_grasa = "📊"
+            else:
+                categoria_grasa = "Alto"
+                emoji_grasa = "⚠️"
+        
+        # Obtener datos de ciclo menstrual si aplica
+        ciclo_menstrual_info = ""
+        if sexo == "Mujer":
+            ciclo = st.session_state.get('ciclo_menstrual', None)
+            if ciclo:
+                ciclo_menstrual_info = f"\n   • Fase del ciclo menstrual: {ciclo}"
+        
+        # Obtener datos de sueño y estrés si están disponibles
+        seccion_recuperacion = ""
+        if st.session_state.get('suenyo_estres_completado', False):
+            data_se = st.session_state.get('suenyo_estres_data', {})
+            if data_se and 'ir_se' in data_se:
+                ir_se = data_se.get('ir_se', 0)
+                nivel_recup = data_se.get('nivel_recuperacion', 'No determinado')
+                emoji_recup = data_se.get('emoji_nivel', '')
+                
+                seccion_recuperacion = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+😴 ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  ÍNDICE DE RECUPERACIÓN (IR-SE): {ir_se:.1f}/100                   ║
+   ║  NIVEL: {nivel_recup} {emoji_recup}                                      ║
+   ╚════════════════════════════════════════════════════════════════╝
+
+   • Calidad de sueño: {data_se.get('sleep_score', 0):.1f}/100
+   • Nivel de estrés: {data_se.get('stress_score', 0):.1f}/100
+   
+   💡 Este índice refleja tu capacidad de recuperación y adaptación al
+      entrenamiento. Valores bajos pueden limitar tu progreso.
+"""
+
+        contenido = f"""
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                   REPORTE DE EVALUACIÓN CORPORAL                              ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  Muscle Up Performance Assessment Intelligence                               ║
+║  {datetime.now().strftime("%Y-%m-%d")}                                                              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+Hola {nombre_cliente},
+
+¡Gracias por confiar en nosotros para tu evaluación! Aquí están los resultados
+completos de tu análisis de composición corporal y rendimiento.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 DATOS DE EVALUACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 IDENTIFICACIÓN:
+   • Nombre: {nombre_cliente}
+   • Edad: {edad} años
+   • Sexo: {sexo}
+   • Fecha de evaluación: {fecha}{ciclo_menstrual_info}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📐 COMPOSICIÓN CORPORAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📏 MEDIDAS BÁSICAS:
+   
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  Peso corporal:         {peso:.1f} kg                              ║
+   ║  Estatura:              {estatura:.1f} cm                           ║
+   ║  IMC:                   {imc:.1f} kg/m²                         ║
+   ╚════════════════════════════════════════════════════════════════╝
+
+📊 ANÁLISIS DE TEJIDOS:
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  % Grasa corporal:      {grasa_corregida:.1f}% {emoji_grasa}                        ║
+   ║  Categoría:             {categoria_grasa}                  ║
+   ║                                                                ║
+   ║  Masa Libre de Grasa:   {mlg:.1f} kg                            ║
+   ║  Masa Grasa:            {masa_grasa_calc:.1f} kg                            ║
+   ║  % Masa Muscular:       {pct_masa_muscular:.1f}%                           ║
+   ╚════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 ÍNDICES CORPORALES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💪 FFMI (Índice de Masa Libre de Grasa):
+   • Valor: {ffmi:.1f} {'(dato no disponible)' if ffmi is None else ''}
+   • Indicador: Desarrollo muscular ajustado por altura
+   
+⚕️ ÍNDICES DE SALUD:"""
+
+        # Agregar circunferencia de cintura y WtHR si están disponibles
+        if circunferencia_cintura is not None:
+            contenido += f"""
+   • Circunferencia de cintura: {circunferencia_cintura} cm"""
+        
+        if wthr is not None:
+            contenido += f"""
+   • Ratio Cintura-Altura (WtHR): {wthr:.3f}{wthr_clasificacion}"""
+        
+        if grasa_visceral is not None:
+            contenido += f"""
+   • Grasa visceral: Nivel {grasa_visceral}{grasa_visceral_clasificacion}"""
+        
+        if edad_metabolica is not None:
+            contenido += f"""
+
+🧬 EDAD METABÓLICA:
+   • Edad cronológica: {edad} años
+   • Edad metabólica: {edad_metabolica} años
+   • {'✅ Tu metabolismo es ' + str(edad - edad_metabolica) + ' años más joven' if edad_metabolica < edad else '⚠️ Tu metabolismo está ' + str(edad_metabolica - edad) + ' años por encima' if edad_metabolica > edad else '📊 Tu edad metabólica coincide con tu edad'}"""
+
+        # Agregar nivel de entrenamiento si está disponible
+        if nivel_entrenamiento:
+            contenido += f"""
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💪 NIVEL DE ENTRENAMIENTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  NIVEL: {nivel_entrenamiento.upper()}                                       ║
+   ╚════════════════════════════════════════════════════════════════╝
+   
+   Este nivel se calcula evaluando tu desarrollo muscular, rendimiento
+   funcional y experiencia de entrenamiento."""
+
+        # Agregar sección de recuperación si está disponible
+        contenido += seccion_recuperacion
+
+        contenido += f"""
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📸 FOTOGRAFÍAS DE PROGRESO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Las fotografías de tu evaluación están adjuntas a este correo para tu registro.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 PRÓXIMOS PASOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tu coach se pondrá en contacto contigo para:
+
+   ✅ Revisar en detalle tus resultados
+   ✅ Diseñar tu plan nutricional personalizado
+   ✅ Establecer objetivos específicos y proyecciones
+   ✅ Programar tu seguimiento y ajustes
+
+Si tienes alguna pregunta o inquietud, no dudes en contactarnos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Muscle Up GYM
+Digital Training Science
+muscleupgym.fitness
+administracion@muscleupgym.fitness
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+        msg = MIMEMultipart()
+        msg['From'] = email_origen
+        msg['To'] = email_destino
+        msg['Subject'] = f"Resultados de tu Evaluación Corporal - {nombre_cliente}"
+
+        msg.attach(MIMEText(contenido, 'plain'))
+        
+        # Adjuntar fotos de progreso si están disponibles
+        if progress_photos:
+            success, total_size_mb, error_msg = attach_progress_photos_to_email(msg, progress_photos)
+            if not success:
+                st.warning(f"⚠️ No se pudieron adjuntar fotos al email del cliente: {error_msg}")
+
+        server = smtplib.SMTP('smtp.zoho.com', 587)
+        server.starttls()
+        server.login(email_origen, password)
+        server.send_message(msg)
+        server.quit()
+
+        return True
+    except Exception as e:
+        st.error(f"Error al enviar email al cliente: {str(e)}")
+        return False
+
 def enviar_email_resumen(contenido, nombre_cliente, email_cliente, fecha, edad, telefono, progress_photos=None):
-    """Envía el email con el resumen completo de la evaluación."""
+    """Envía el email COMPLETO CIENTÍFICO a administración."""
     try:
         email_origen = "administracion@muscleupgym.fitness"
         email_destino = "administracion@muscleupgym.fitness"
@@ -6170,10 +6441,32 @@ if not st.session_state.get("correo_enviado", False):
                 # Get progress photos from session state
                 progress_photos = st.session_state.get("progress_photos", {})
                 
+                # Enviar email completo a administración
                 ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono, progress_photos)
+                
+                # Enviar reporte de evaluación corporal completo al cliente
+                ok_cliente = enviar_email_cliente(
+                    nombre, email_cliente, fecha_llenado, edad, sexo, peso, estatura, imc,
+                    grasa_corregida, mlg, 
+                    ffmi if 'ffmi' in locals() else None,
+                    nivel_entrenamiento if 'nivel_entrenamiento' in locals() else None,
+                    circunferencia_cintura if 'circunferencia_cintura' in locals() else None,
+                    grasa_visceral if 'grasa_visceral' in locals() else None,
+                    edad_metabolica if 'edad_metabolica' in locals() else None,
+                    wthr if 'wthr' in locals() else None,
+                    peso - mlg,  # masa_grasa
+                    progress_photos
+                )
+                
                 if ok:
                     st.session_state["correo_enviado"] = True
-                    st.success("✅ Email enviado exitosamente a administración")
+                    st.success("✅ Email completo enviado exitosamente a administración")
+                    
+                    if ok_cliente:
+                        st.success(f"✅ Reporte de evaluación enviado exitosamente a {email_cliente}")
+                    else:
+                        st.warning(f"⚠️ Email a administración enviado, pero hubo un error al enviar el reporte al cliente ({email_cliente})")
+                    
                     # Enviar email Parte 2 (interno)
                     ok_parte2 = enviar_email_parte2(
                         nombre, fecha_llenado, edad, sexo, peso, estatura, 
@@ -6183,7 +6476,7 @@ if not st.session_state.get("correo_enviado", False):
                     if ok_parte2:
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
                     else:
-                        st.warning("⚠️ Email principal enviado, pero hubo un error con el reporte interno")
+                        st.warning("⚠️ Emails enviados, pero hubo un error con el reporte interno")
                 else:
                     st.error("❌ Error al enviar email. Contacta a soporte técnico.")
     
@@ -6214,10 +6507,32 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
             # Get progress photos from session state
             progress_photos = st.session_state.get("progress_photos", {})
             
+            # Reenviar email completo a administración
             ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono, progress_photos)
+            
+            # Reenviar reporte de evaluación corporal completo al cliente
+            ok_cliente = enviar_email_cliente(
+                nombre, email_cliente, fecha_llenado, edad, sexo, peso, estatura, imc,
+                grasa_corregida, mlg,
+                ffmi if 'ffmi' in locals() else None,
+                nivel_entrenamiento if 'nivel_entrenamiento' in locals() else None,
+                circunferencia_cintura if 'circunferencia_cintura' in locals() else None,
+                grasa_visceral if 'grasa_visceral' in locals() else None,
+                edad_metabolica if 'edad_metabolica' in locals() else None,
+                wthr if 'wthr' in locals() else None,
+                peso - mlg,  # masa_grasa
+                progress_photos
+            )
+            
             if ok:
                 st.session_state["correo_enviado"] = True
-                st.success("✅ Email reenviado exitosamente a administración")
+                st.success("✅ Email completo reenviado exitosamente a administración")
+                
+                if ok_cliente:
+                    st.success(f"✅ Reporte de evaluación reenviado exitosamente a {email_cliente}")
+                else:
+                    st.warning(f"⚠️ Email a administración reenviado, pero hubo un error al reenviar el reporte al cliente ({email_cliente})")
+                
                 # Reenviar email Parte 2 (interno)
                 ok_parte2 = enviar_email_parte2(
                     nombre, fecha_llenado, edad, sexo, peso, estatura, 
@@ -6227,7 +6542,7 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                 if ok_parte2:
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
                 else:
-                    st.warning("⚠️ Email principal reenviado, pero hubo un error con el reporte interno")
+                    st.warning("⚠️ Emails reenviados, pero hubo un error con el reporte interno")
             else:
                 st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
 
