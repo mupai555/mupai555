@@ -4088,9 +4088,8 @@ administracion@muscleupgym.fitness
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-logos">
-                <img src="data:image/png;base64,{logo_mupai_b64}" alt="MUPAI Logo" class="header-logo" />
-                <img src="data:image/png;base64,{logo_gym_b64}" alt="Muscle Up GYM Logo" class="header-logo" />
+            <div class="header-logos" style="text-align: center;">
+                <img src="data:image/png;base64,{logo_mupai_b64}" alt="MUPAI Logo" class="header-logo" style="max-width: 200px; margin: 0 auto; display: block;" />
             </div>
             <h1>REPORTE DE EVALUACIÓN CORPORAL</h1>
             <p>Muscle Up Performance Assessment Intelligence</p>
