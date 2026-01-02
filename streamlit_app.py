@@ -6108,7 +6108,8 @@ def formulario_suenyo_estres():
                 "5-5.9 horas",
                 "<5 horas"
             ],
-            help="Selecciona el rango que mejor describe tu promedio de sueño"
+            help="Selecciona el rango que mejor describe tu promedio de sueño",
+            key="horas_sueno"
         )
         
         # Pregunta 2: Tiempo para conciliar el sueño
@@ -6120,7 +6121,8 @@ def formulario_suenyo_estres():
                 "30-60 minutos",
                 "Más de 60 minutos"
             ],
-            help="Tiempo promedio desde que te acuestas hasta que te duermes"
+            help="Tiempo promedio desde que te acuestas hasta que te duermes",
+            key="tiempo_conciliar"
         )
     
     with col2:
@@ -6133,7 +6135,8 @@ def formulario_suenyo_estres():
                 "2 veces",
                 "3 o más veces"
             ],
-            help="Número promedio de despertares por noche"
+            help="Número promedio de despertares por noche",
+            key="veces_despierta"
         )
         
         # Pregunta 4: Calidad del sueño
@@ -6146,7 +6149,8 @@ def formulario_suenyo_estres():
                 "Mala",
                 "Muy mala"
             ],
-            help="Calificación subjetiva de qué tan reparador es tu sueño"
+            help="Calificación subjetiva de qué tan reparador es tu sueño",
+            key="calidad_sueno"
         )
     
     # ========== PREGUNTAS DE ESTRÉS ==========
@@ -6165,7 +6169,8 @@ def formulario_suenyo_estres():
                 "Frecuentemente",
                 "Muy frecuentemente"
             ],
-            help="Evalúa tu sensación de estar desbordado por responsabilidades"
+            help="Evalúa tu sensación de estar desbordado por responsabilidades",
+            key="sobrecarga"
         )
         
         # Pregunta 6: Falta de control
@@ -6178,7 +6183,8 @@ def formulario_suenyo_estres():
                 "Frecuentemente",
                 "Muy frecuentemente"
             ],
-            help="Sensación de control sobre tu vida y circunstancias"
+            help="Sensación de control sobre tu vida y circunstancias",
+            key="falta_control"
         )
     
     with col4:
@@ -6192,7 +6198,8 @@ def formulario_suenyo_estres():
                 "Frecuentemente",
                 "Muy frecuentemente"
             ],
-            help="Capacidad para enfrentar problemas y desafíos"
+            help="Capacidad para enfrentar problemas y desafíos",
+            key="dificultad_manejar"
         )
         
         # Pregunta 8: Irritabilidad
@@ -6205,7 +6212,8 @@ def formulario_suenyo_estres():
                 "Frecuentemente",
                 "Muy frecuentemente"
             ],
-            help="Nivel de irritabilidad en tu día a día"
+            help="Nivel de irritabilidad en tu día a día",
+            key="irritabilidad"
         )
     
     # ========== CÁLCULO SILENCIOSO DE PUNTUACIONES ==========
@@ -6978,10 +6986,8 @@ def check_step_completion(step_number):
         
         return peso_valid and estatura_valid and grasa_valid
     elif step_number == 1:  # Paso 3: Sueño + Estrés
-        # Verificar que haya seleccionado horas de sueño y nivel de estrés
-        horas_sueno = st.session_state.get('horas_sueno', 0)
-        estres = st.session_state.get('estres', 0)
-        return horas_sueno > 0 and estres >= 0
+        # Verificar que se haya completado el formulario de sueño + estrés
+        return st.session_state.get('suenyo_estres_completado', False)
     elif step_number == 2:  # Paso 4: Evaluación funcional
         # Verificar experiencia completa Y al menos 3 ejercicios registrados
         experiencia_completa = st.session_state.get('experiencia_completa', False)
