@@ -4069,18 +4069,18 @@ def formulario_ciclo_menstrual(sexo):
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 🌸 Información del Ciclo Menstrual")
     st.markdown("""
-    Por favor selecciona la fase actual de tu ciclo menstrual. Esta información será incluida 
-    en tu reporte de evaluación y no afecta los cálculos nutricionales.
+    Esta información es importante para interpretar correctamente los resultados de tu evaluación 
+    de bioimpedancia y composición corporal. Por favor responde estas preguntas simples:
     """)
     
-    # Opciones del ciclo menstrual con descripciones detalladas
+    # Opciones del ciclo menstrual con lenguaje más simple y cotidiano
     opciones_ciclo = [
         "Selecciona una opción...",
-        "Menstruación (sangrado menstrual, típico al inicio del ciclo)",
-        "Fase folicular (después del sangrado, preparación del óvulo)",
-        "Ovulación (liberación del óvulo, fertilidad más alta)",
-        "Fase lútea (posterior a la ovulación, síntomas premenstruales típicos)",
-        "Menopausia/Ausencia de ovulación (sin menstruación por retiro natural o condiciones específicas)"
+        "Estoy en mi periodo (menstruando actualmente)",
+        "Terminé mi periodo hace 1-7 días (semana después del periodo)",
+        "Estoy a mitad de ciclo - días 12-16 (semana en medio del ciclo)",
+        "Estoy en la segunda mitad del ciclo - días 17-28 (1-2 semanas antes del siguiente periodo)",
+        "No tengo ciclo menstrual (menopausia, embarazo, condición médica, o anticonceptivos sin regla)"
     ]
     
     # Calculate index for selectbox (restore previous selection if exists)
@@ -4090,16 +4090,34 @@ def formulario_ciclo_menstrual(sexo):
     
     # Select box para la fase del ciclo
     ciclo_seleccionado = st.selectbox(
-        "🌸 Fase actual del ciclo menstrual*",
+        "🌸 ¿En qué momento de tu ciclo menstrual estás?*",
         options=opciones_ciclo,
         index=default_index,
-        help="Selecciona la fase que mejor describe tu estado actual"
+        help="Selecciona la opción que mejor describe tu situación actual. Si no estás segura del día exacto, elige la opción que más se acerque."
     )
     
     # Validación: no se permite continuar sin seleccionar una opción válida
     if ciclo_seleccionado == "Selecciona una opción...":
-        st.warning("⚠️ **Campo obligatorio:** Por favor selecciona la fase actual de tu ciclo menstrual para continuar.")
+        st.warning("⚠️ **Campo obligatorio:** Por favor selecciona en qué momento de tu ciclo menstrual estás para continuar.")
         st.session_state.ciclo_menstrual_completado = False
+        
+        # Agregar ayuda adicional
+        with st.expander("❓ ¿Necesitas ayuda para responder?"):
+            st.markdown("""
+            **Guía rápida:**
+            
+            - **Estoy en mi periodo:** Si estás menstruando actualmente (días 1-5 aprox.)
+            
+            - **Terminé mi periodo hace 1-7 días:** Si tu periodo terminó hace poco (días 6-12 aprox.)
+            
+            - **Estoy a mitad de ciclo:** Si estás aproximadamente a la mitad entre un periodo y otro (días 13-16 aprox.)
+            
+            - **Segunda mitad del ciclo:** Si estás entre la mitad del ciclo y tu próximo periodo (días 17-28 aprox.)
+            
+            - **No tengo ciclo menstrual:** Si estás en menopausia, embarazada, usas anticonceptivos que eliminan tu periodo, o tienes alguna condición médica que detiene tu ciclo
+            
+            💡 **Tip:** Si no estás segura del día exacto, no te preocupes. Elige la opción que más se acerque a tu situación actual.
+            """)
     else:
         # Guardar en session state
         st.session_state.ciclo_menstrual = ciclo_seleccionado
