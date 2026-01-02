@@ -31,3 +31,17 @@ gatherUsageStats = false
 [client]
 # Show detailed error messages
 showErrorDetails = true
+
+# Ocultar menú hamburger y toolbar superior
+toolbarMode = "minimal"
+
+[ui]
+# Ocultar botones de Share, GitHub, etc
+hideTopBar = true
+
+[theme]
+# Tema personalizado MUPAI
+primaryColor = "#FFD700"
+backgroundColor = "#0A0A0A"
+secondaryBackgroundColor = "#1A1A1A"
+textColor = "#FFFFFF"

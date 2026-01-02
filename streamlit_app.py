@@ -429,6 +429,44 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+/* ========== OCULTAR BARRA SUPERIOR Y BOTONES DE STREAMLIT ========== */
+/* Ocultar toolbar completo (Share, GitHub, etc) */
+header[data-testid="stHeader"] {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0px !important;
+}
+
+/* Ocultar menú hamburger */
+button[kind="header"] {
+    display: none !important;
+}
+
+/* Ocultar botones específicos */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Ocultar botón de Deploy */
+.stDeployButton {
+    display: none !important;
+}
+
+/* Ocultar cualquier link a GitHub */
+a[href*="github.com"] {
+    display: none !important;
+}
+
+/* Ajustar padding superior para compensar */
+.block-container {
+    padding-top: 1rem !important;
+}
+
+/* ========== ESTILOS MUPAI ========== */
 /* MUPAI UI/UX v2.2 - ALTO CONTRASTE Y COLORES VIBRANTES */
 :root {
     --mupai-yellow: #FFD700;
