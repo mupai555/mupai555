@@ -3097,6 +3097,19 @@ administracion@muscleupgym.fitness
             color: #FFD700;
             padding: 30px 20px;
             text-align: center;
+            position: relative;
+        }}
+        .header-logos {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }}
+        .header-logo {{
+            max-height: 60px;
+            max-width: 150px;
+            object-fit: contain;
         }}
         .header h1 {{
             margin: 0;
@@ -3250,9 +3263,22 @@ administracion@muscleupgym.fitness
         .footer {{
             background-color: #1a1a1a;
             color: #cccccc;
-            padding: 20px;
+            padding: 30px 20px;
             text-align: center;
             font-size: 14px;
+        }}
+        .footer-logos {{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 20px;
+        }}
+        .footer-logo {{
+            max-height: 50px;
+            max-width: 120px;
+            object-fit: contain;
+            opacity: 0.9;
         }}
         .footer a {{
             color: #FFD700;
@@ -3275,6 +3301,10 @@ administracion@muscleupgym.fitness
 <body>
     <div class="container">
         <div class="header">
+            <div class="header-logos">
+                <img src="data:image/png;base64,{logo_mupai_b64}" alt="MUPAI Logo" class="header-logo" />
+                <img src="data:image/png;base64,{logo_gym_b64}" alt="Muscle Up GYM Logo" class="header-logo" />
+            </div>
             <h1>REPORTE DE EVALUACIÓN CORPORAL</h1>
             <p>Muscle Up Performance Assessment Intelligence</p>
             <p>{datetime.now().strftime("%d de %B, %Y")}</p>
@@ -3536,6 +3566,10 @@ administracion@muscleupgym.fitness
         </div>
         
         <div class="footer">
+            <div class="footer-logos">
+                <img src="data:image/png;base64,{logo_mupai_b64}" alt="MUPAI" class="footer-logo" />
+                <img src="data:image/png;base64,{logo_gym_b64}" alt="Muscle Up GYM" class="footer-logo" />
+            </div>
             <p style="margin: 0 0 10px 0; font-weight: 600; color: #FFD700;">Muscle Up GYM</p>
             <p style="margin: 0 0 10px 0;">Digital Training Science</p>
             <p style="margin: 0;"><a href="https://muscleupgym.fitness">muscleupgym.fitness</a></p>
