@@ -680,9 +680,25 @@ hr {
     margin: 2.1rem 0;
 }
 @media (max-width: 768px) {
-    .main-header { padding: 1.2rem;}
-    .content-card { padding: 1.1rem;}
-    .stButton > button { padding: 0.5rem 1.1rem; font-size: 0.96rem;}
+    .main-header { 
+        padding: 1rem; 
+        font-size: 0.9rem;
+    }
+    .main-header h1 {
+        font-size: 1.5rem !important;
+    }
+    .content-card { padding: 1rem;}
+    .stButton > button { 
+        padding: 0.6rem 1.2rem; 
+        font-size: 0.9rem;
+        width: 100%;
+    }
+    [data-testid="metric-container"] {
+        font-size: 0.85rem;
+    }
+    .stExpander {
+        font-size: 0.9rem !important;
+    }
 }
 .content-card:hover {
     transform: translateY(-1.5px);
@@ -4556,7 +4572,84 @@ def render_progress_photos_section():
     
     return validation_errors
 
-        # ==================== VISUALES INICIALES ====================
+        # ==================== FUNCIONES DE PROGRESO ====================
+
+def calculate_dynamic_progress():
+    """Calcular progreso dinámico basado en campos completados"""
+    total_required = 0
+    completed = 0
+    
+    # Datos personales básicos (6 campos)
+    personal_fields = {'nombre': st.session_state.get('nombre', ''),
+                      'telefono': st.session_state.get('telefono', ''),
+                      'email_cliente': st.session_state.get('email_cliente', ''),
+                      'edad': st.session_state.get('edad', 0),
+                      'sexo': st.session_state.get('sexo', ''),
+                      'acepto_descargo': st.session_state.get('acepto_descargo', False)}
+    
+    for key, val in personal_fields.items():
+        total_required += 1
+        if val and str(val).strip():
+            completed += 1
+    
+    # Composición corporal (5 campos principales)
+    body_fields = {'peso': st.session_state.get('peso', 0),
+                   'estatura': st.session_state.get('estatura', 0),
+                   'grasa_corporal': st.session_state.get('grasa_corporal', 0),
+                   'masa_muscular': st.session_state.get('masa_muscular', 0)}
+    
+    for key, val in body_fields.items():
+        total_required += 1
+        if val and val > 0:
+            completed += 1
+    
+    # Experiencia de entrenamiento
+    total_required += 1
+    if st.session_state.get('experiencia_completa', False):
+        completed += 1
+    
+    # Ejercicios funcionales (5 ejercicios)
+    total_required += 5
+    ejercicios = st.session_state.get('datos_ejercicios', {})
+    completed += min(len(ejercicios), 5)
+    
+    # Actividad diaria
+    total_required += 1
+    if st.session_state.get('actividad_diaria'):
+        completed += 1
+    
+    # Frecuencia de entrenamiento
+    total_required += 2
+    if st.session_state.get('frecuencia_entrenamiento', 0) > 0:
+        completed += 1
+    if st.session_state.get('minutos_por_sesion', 0) > 0:
+        completed += 1
+    
+    # Fotos de progreso (3 requeridas)
+    total_required += 3
+    photos = st.session_state.get('progress_photos', {})
+    for key in REQUIRED_PROGRESS_PHOTOS:
+        if photos.get(key):
+            completed += 1
+    
+    percentage = int((completed / total_required) * 100) if total_required > 0 else 0
+    return percentage, completed, total_required
+
+# ==================== VISUALES INICIALES ====================
+
+# Progreso dinámico en tiempo real
+progress_pct, fields_done, fields_total = calculate_dynamic_progress()
+st.markdown(f'''
+<div style="background: linear-gradient(135deg, #1E1E1E 0%, #2A2A2A 100%); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border-left: 5px solid #F4C430;">
+    <h3 style="color: #F4C430; margin: 0 0 1rem 0;">📊 Progreso de Evaluación</h3>
+    <div style="background: #0A0A0A; border-radius: 10px; height: 30px; overflow: hidden; margin-bottom: 0.5rem;">
+        <div style="background: linear-gradient(135deg, #F4C430 0%, #DAA520 100%); height: 100%; width: {progress_pct}%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1E1E1E;">
+            {progress_pct}%
+        </div>
+    </div>
+    <p style="color: #AAA; margin: 0; font-size: 0.9rem; text-align: right;">{fields_done} de {fields_total} campos completados</p>
+</div>
+''', unsafe_allow_html=True)
 
 # Misión, Visión y Compromiso con diseño mejorado
 with st.expander("🎯 **Misión, Visión y Compromiso MUPAI**", expanded=False):
@@ -4802,8 +4895,7 @@ if datos_personales_completos and st.session_state.datos_completos:
 
     # BLOQUE 1: Datos antropométricos con diseño mejorado
     with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
-        progress.progress(20)
-        progress_text.text("Paso 1 de 5: Evaluación de composición corporal")
+        st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Completa estos datos para obtener tu análisis de composición corporal</p>', unsafe_allow_html=True)
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         col1, col2, col3 = st.columns(3)
@@ -5346,9 +5438,8 @@ progress = st.progress(0)
 progress_text = st.empty()
 
 # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
-with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=True):
-    progress.progress(40)
-    progress_text.text("Paso 2 de 5: Evaluación de capacidades funcionales")
+with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=False):
+    st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Evalúa tu capacidad funcional y experiencia de entrenamiento</p>', unsafe_allow_html=True)
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -5879,9 +5970,8 @@ else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
 # BLOQUE 3: Actividad física diaria
-with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=True):
-    progress.progress(60)
-    progress_text.text("Paso 3 de 5: Evaluación de actividad diaria")
+with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=False):
+    st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Indica tu nivel de actividad física en el día a día</p>', unsafe_allow_html=True)
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
@@ -6031,7 +6121,8 @@ else:
         """)
 
 # BLOQUE 5: Entrenamiento de fuerza
-with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=True):
+with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=False):
+    st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Proporciona información sobre tu rutina de entrenamiento</p>', unsafe_allow_html=True)
     progress.progress(80)
     progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
 
