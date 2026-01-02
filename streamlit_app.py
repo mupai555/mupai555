@@ -7266,25 +7266,31 @@ if not st.session_state.datos_completos:
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
-                        <span style="font-size:1.3rem;">💪</span> <b>Paso 3:</b> Experiencia y rendimiento funcional<br>
+                        <span style="font-size:1.3rem;">�</span> <b>Paso 3:</b> Sueño y estrés<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Evaluamos tu calidad de recuperación para ajustar recomendaciones.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">💪</span> <b>Paso 4:</b> Experiencia y rendimiento funcional<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
                             Indicas tu experiencia y tus mejores resultados en ejercicios clave.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
-                        <span style="font-size:1.3rem;">🚶</span> <b>Paso 4:</b> Actividad física diaria<br>
+                        <span style="font-size:1.3rem;">🚶</span> <b>Paso 5:</b> Actividad física diaria<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
                             Clasificamos tu nivel de actividad habitual para ajustar el cálculo energético.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
-                        <span style="font-size:1.3rem;">🍽️</span> <b>Paso 5:</b> Efecto térmico de los alimentos (ETA)<br>
+                        <span style="font-size:1.3rem;">🍽️</span> <b>Paso 6:</b> Efecto térmico de los alimentos (ETA)<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
                             Calculamos el gasto energético extra por digestión, según tu composición corporal y evidencia científica.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
-                        <span style="font-size:1.3rem;">🏋️</span> <b>Paso 6:</b> Entrenamiento de fuerza<br>
+                        <span style="font-size:1.3rem;">🏋️</span> <b>Paso 7:</b> Entrenamiento de fuerza<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
                             Ajustamos tu gasto según frecuencia y nivel de entrenamiento de resistencia.
                         </span>
@@ -7309,23 +7315,15 @@ if not st.session_state.datos_completos:
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos and st.session_state.get("acepto_descargo", False)
 
 if datos_personales_completos and st.session_state.datos_completos:
-    # ========== CUESTIONARIO SUEÑO + ESTRÉS (INTEGRADO) ==========
-    # Llamar al formulario de sueño y estrés ANTES de cualquier cálculo complejo
-    # Los datos se capturan y se incluirán automáticamente en el email final
-    resultado_suenyo_estres = formulario_suenyo_estres()
-    
-    # ========== CUESTIONARIO CICLO MENSTRUAL (SOLO PARA MUJERES) ==========
-    # Llamar al formulario del ciclo menstrual después de datos personales
-    # y antes de la composición corporal. Solo se muestra si sexo == "Mujer"
-    # La información se captura y se incluirá en el reporte sin afectar cálculos
-    ciclo_menstrual = formulario_ciclo_menstrual(sexo)
     
     # Progress bar general
     progress = st.progress(0)
     progress_text = st.empty()
 
-    # BLOQUE 1: Datos antropométricos con diseño mejorado
-    with st.expander("📊 **Paso 1: Composición Corporal y Antropometría**", expanded=True):
+    # PASO 2: Composición Corporal (Siempre visible)
+    st.markdown('<div class="content-card" style="border: 3px solid #FFD700; background: #1A1A1A;">', unsafe_allow_html=True)
+    st.markdown("## 📊 **Paso 2: Composición Corporal y Antropometría**")
+    st.markdown('<p style="color: #00E676; font-size: 1rem; margin-bottom: 1rem; font-weight: bold;">✓ Sección obligatoria - Completa todos los campos</p>', unsafe_allow_html=True)
         st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Completa estos datos para obtener tu análisis de composición corporal</p>', unsafe_allow_html=True)
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
@@ -7864,15 +7862,26 @@ if fuera_rango:
     ligeramente tu potencial muscular.
     """)
     st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ========== PASO 3: CUESTIONARIO SUEÑO + ESTRÉS ==========
+# Ubicado DESPUÉS de composición corporal para flujo lógico
+# Los datos se capturan y se incluirán automáticamente en el email final
+resultado_suenyo_estres = formulario_suenyo_estres()
+
+# ========== CUESTIONARIO CICLO MENSTRUAL (SOLO MUJERES) ==========
+# Ubicado después de datos antropométricos para contexto completo
+# La información se captura y se incluirá en el reporte sin afectar cálculos
+ciclo_menstrual = formulario_ciclo_menstrual(sexo)
 
 progress = st.progress(0)
 progress_text = st.empty()
 
-# BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
-step2_icon, step2_color, step2_status = get_step_status_indicator(2)
-step2_title = f"💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento** {step2_icon}"
-with st.expander(step2_title, expanded=False):
-    st.markdown(f'<p style="color: {step2_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step2_status}</p>', unsafe_allow_html=True)
+# PASO 4: Evaluación funcional (Obligatorio - Siempre expandido)
+step4_icon, step4_color, step4_status = get_step_status_indicator(2)
+step4_title = f"💪 **Paso 4: Evaluación Funcional y Nivel de Entrenamiento** {step4_icon}"
+with st.expander(step4_title, expanded=True):
+    st.markdown(f'<p style="color: {step4_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step4_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Evalúa tu capacidad funcional y experiencia de entrenamiento</p>', unsafe_allow_html=True)
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
@@ -8473,10 +8482,10 @@ if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0 and 'mo
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
-# BLOQUE 3: Actividad física diaria
-step3_icon, step3_color, step3_status = get_step_status_indicator(3)
-step3_title = f"🚶 **Paso 3: Nivel de Actividad Física Diaria** {step3_icon}"
-with st.expander(step3_title, expanded=False):
+# PASO 5: Actividad física diaria (Obligatorio - Siempre expandido)
+step5_icon, step5_color, step5_status = get_step_status_indicator(4)
+step5_title = f"🚶 **Paso 5: Nivel de Actividad Física Diaria** {step5_icon}"
+with st.expander(step5_title, expanded=True):
     st.markdown(f'<p style="color: {step3_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step3_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Indica tu nivel de actividad física en el día a día</p>', unsafe_allow_html=True)
 
@@ -8587,7 +8596,7 @@ st.session_state.eta_color = eta_color
 # UI Display: Only show ETA expander if MOSTRAR_ETA_AL_USUARIO is True
 if MOSTRAR_ETA_AL_USUARIO:
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
-    with st.expander("🍽️ **Paso 4: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
+    with st.expander("🍽️ **Paso 6: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
         progress.progress(70)
         progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
 
@@ -8616,7 +8625,7 @@ if MOSTRAR_ETA_AL_USUARIO:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     # BLOQUE 4: Placeholder when ETA details are hidden from users
-    with st.expander("📊 **Paso 4: Cálculo Automático de Factores Metabólicos**", expanded=False):
+    with st.expander("📊 **Paso 6: Cálculo Automático de Factores Metabólicos**", expanded=False):
         progress.progress(70)
         progress_text.text("Paso 4 de 5: Procesamiento automático")
         
@@ -8627,14 +8636,14 @@ else:
         ajustar de manera precisa tus requerimientos energéticos totales.
         """)
 
-# BLOQUE 5: Entrenamiento de fuerza
-step5_icon, step5_color, step5_status = get_step_status_indicator(5)
-step5_title = f"🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)** {step5_icon}"
-with st.expander(step5_title, expanded=False):
-    st.markdown(f'<p style="color: {step5_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step5_status}</p>', unsafe_allow_html=True)
+# PASO 7: Entrenamiento de fuerza (Obligatorio - Siempre expandido)
+step7_icon, step7_color, step7_status = get_step_status_indicator(5)
+step7_title = f"🏋️ **Paso 7: Gasto Energético del Ejercicio (GEE)** {step7_icon}"
+with st.expander(step7_title, expanded=True):
+    st.markdown(f'<p style="color: {step7_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step7_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Proporciona información sobre tu rutina de entrenamiento</p>', unsafe_allow_html=True)
     progress.progress(80)
-    progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
+    progress_text.text("Paso 7 de 7: Cálculo del gasto por ejercicio")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
