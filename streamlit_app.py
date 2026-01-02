@@ -4370,6 +4370,8 @@ administracion@muscleupgym.fitness
             <p style="margin: 0 0 10px 0;">Digital Training Science</p>
             <p style="margin: 0;"><a href="https://muscleupgym.fitness">muscleupgym.fitness</a></p>
             <p style="margin: 5px 0 0 0;"><a href="mailto:administracion@muscleupgym.fitness">administracion@muscleupgym.fitness</a></p>
+            <p style="margin: 5px 0 0 0;"><a href="https://mupai-digital-training-science.streamlit.app/">Sistema MUPAI</a></p>
+            <p style="margin: 5px 0 0 0;"><a href="https://wa.me/528662580594">WhatsApp: 866-258-0594</a></p>
         </div>
     </div>
 </body>
@@ -5928,6 +5930,8 @@ muscleupgym.fitness
             <p style="margin: 0 0 10px 0;">Digital Training Science</p>
             <p style="margin: 0;"><a href="https://muscleupgym.fitness">muscleupgym.fitness</a></p>
             <p style="margin: 5px 0 0 0;"><a href="mailto:administracion@muscleupgym.fitness">administracion@muscleupgym.fitness</a></p>
+            <p style="margin: 5px 0 0 0;"><a href="https://mupai-digital-training-science.streamlit.app/">Sistema MUPAI</a></p>
+            <p style="margin: 5px 0 0 0;"><a href="https://wa.me/528662580594">WhatsApp: 866-258-0594</a></p>
         </div>
     </div>
 </body>
