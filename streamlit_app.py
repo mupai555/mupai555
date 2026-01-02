@@ -755,6 +755,36 @@ a:contains("Fork") {display: none !important;}
 # Header principal visual con logos
 import base64
 
+# JavaScript para auto-scroll y manejo de navegación
+navigation_js = """
+<script>
+// Auto-scroll suave a secciones
+function scrollToSection(sectionId) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Expandir siguiente expander automáticamente
+function expandNextExpander(currentIndex) {
+    setTimeout(() => {
+        const expanders = document.querySelectorAll('[data-testid="stExpander"]');
+        if (expanders[currentIndex + 1]) {
+            const summary = expanders[currentIndex + 1].querySelector('summary');
+            if (summary && !summary.parentElement.hasAttribute('open')) {
+                summary.click();
+                setTimeout(() => {
+                    summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    }, 300);
+}
+</script>
+"""
+st.markdown(navigation_js, unsafe_allow_html=True)
+
 # JavaScript para ocultar elementos de GitHub/Fork que puedan aparecer dinámicamente
 github_hide_js = """
 <script>
@@ -4574,6 +4604,31 @@ def render_progress_photos_section():
 
         # ==================== FUNCIONES DE PROGRESO ====================
 
+def check_step_completion(step_number):
+    """Verificar si un paso específico está completo"""
+    if step_number == 1:  # Datos personales
+        required = ['nombre', 'telefono', 'email_cliente', 'edad', 'sexo', 'acepto_descargo']
+        return all(st.session_state.get(field) for field in required)
+    elif step_number == 2:  # Composición corporal
+        required = ['peso', 'estatura', 'grasa_corporal', 'masa_muscular']
+        return all(st.session_state.get(field, 0) > 0 for field in required)
+    elif step_number == 3:  # Evaluación funcional
+        return (st.session_state.get('experiencia_completa', False) and 
+                len(st.session_state.get('datos_ejercicios', {})) >= 5)
+    elif step_number == 4:  # Actividad física
+        return bool(st.session_state.get('actividad_diaria'))
+    elif step_number == 5:  # Entrenamiento
+        return (st.session_state.get('frecuencia_entrenamiento', 0) > 0 and
+                st.session_state.get('minutos_por_sesion', 0) > 0)
+    return False
+
+def get_step_status_indicator(step_number):
+    """Obtener indicador visual del estado del paso"""
+    if check_step_completion(step_number):
+        return '✅', '#27AE60', 'Completado'
+    else:
+        return '⏳', '#F4C430', 'Pendiente'
+
 def calculate_dynamic_progress():
     """Calcular progreso dinámico basado en campos completados"""
     total_required = 0
@@ -4809,6 +4864,23 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.s
         st.error(error_message)
 
 st.markdown('</div>', unsafe_allow_html=True)
+
+# Botón de navegación inteligente
+if st.session_state.datos_completos:
+    status_icon, status_color, status_text = get_step_status_indicator(1)
+    st.markdown(f'''
+    <div style="text-align: right; margin: 1.5rem 0;">
+        <span style="background: {status_color}; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold; margin-right: 1rem;">
+            {status_icon} Paso 1 {status_text}
+        </span>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        if st.button("➡️ Continuar al Paso 2", key="nav_to_step2", use_container_width=True):
+            st.markdown('<script>expandNextExpander(0);</script>', unsafe_allow_html=True)
+            st.rerun()
 
 if not st.session_state.datos_completos:
     st.markdown("""
@@ -5438,7 +5510,10 @@ progress = st.progress(0)
 progress_text = st.empty()
 
 # BLOQUE 2: Evaluación funcional mejorada (versión científica y capciosa)
-with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento**", expanded=False):
+step2_icon, step2_color, step2_status = get_step_status_indicator(2)
+step2_title = f"💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento** {step2_icon}"
+with st.expander(step2_title, expanded=False):
+    st.markdown(f'<p style="color: {step2_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step2_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Evalúa tu capacidad funcional y experiencia de entrenamiento</p>', unsafe_allow_html=True)
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
@@ -5970,7 +6045,10 @@ else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
 # BLOQUE 3: Actividad física diaria
-with st.expander("🚶 **Paso 3: Nivel de Actividad Física Diaria**", expanded=False):
+step3_icon, step3_color, step3_status = get_step_status_indicator(3)
+step3_title = f"🚶 **Paso 3: Nivel de Actividad Física Diaria** {step3_icon}"
+with st.expander(step3_title, expanded=False):
+    st.markdown(f'<p style="color: {step3_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step3_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Indica tu nivel de actividad física en el día a día</p>', unsafe_allow_html=True)
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
@@ -6121,7 +6199,10 @@ else:
         """)
 
 # BLOQUE 5: Entrenamiento de fuerza
-with st.expander("🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)**", expanded=False):
+step5_icon, step5_color, step5_status = get_step_status_indicator(5)
+step5_title = f"🏋️ **Paso 5: Gasto Energético del Ejercicio (GEE)** {step5_icon}"
+with st.expander(step5_title, expanded=False):
+    st.markdown(f'<p style="color: {step5_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step5_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Proporciona información sobre tu rutina de entrenamiento</p>', unsafe_allow_html=True)
     progress.progress(80)
     progress_text.text("Paso 5 de 5: Cálculo del gasto por ejercicio")
