@@ -8601,7 +8601,8 @@ with st.expander(step5_title, expanded=True):
     nivel_actividad = st.radio(
         "Selecciona el nivel que mejor te describe:",
         opciones_radio,
-        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual"
+        help="No incluyas el ejercicio planificado, solo tu actividad diaria habitual",
+        key="actividad_diaria"
     )
 
     # Extraer el texto base del nivel seleccionado (antes del paréntesis)
@@ -8752,8 +8753,13 @@ with st.expander(step7_title, expanded=True):
     dias_fuerza = st.slider(
         "¿Cuántos días por semana entrenas con pesas/resistencia?",
         min_value=0, max_value=7, value=3,
-        help="Solo cuenta entrenamientos de fuerza, no cardio"
+        help="Solo cuenta entrenamientos de fuerza, no cardio",
+        key="frecuencia_entrenamiento_dias"
     )
+    
+    # Guardar minutos por sesión (estimado basado en nivel)
+    st.session_state.minutos_por_sesion = 60  # Valor estándar para validación
+    st.session_state.frecuencia_entrenamiento = f"{dias_fuerza} días/semana"
     st.session_state.dias_fuerza = dias_fuerza
 
     # Cálculo del GEE según nivel global de entrenamiento
