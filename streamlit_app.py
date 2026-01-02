@@ -3481,7 +3481,7 @@ administracion@muscleupgym.fitness
                         <p style="margin: 0 0 8px 0; font-size: 13px; color: #444;">{feedback_ffmi}</p>
                         <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_ffmi}</p>
                     </div>
-                    {f'''<div style="margin-top: 12px; padding: 12px; background-color: {('#d4edda' if modo_ffmi_email == 'GREEN' else '#fff3cd' if modo_ffmi_email == 'AMBER' else '#f8d7da')}; border-radius: 5px; border-left: 4px solid {('#28a745' if modo_ffmi_email == 'GREEN' else '#ffc107' if modo_ffmi_email == 'AMBER' else '#dc3545')};">
+                    <div style="margin-top: 12px; padding: 12px; background-color: {('#d4edda' if modo_ffmi_email == 'GREEN' else '#fff3cd' if modo_ffmi_email == 'AMBER' else '#f8d7da')}; border-radius: 5px; border-left: 4px solid {('#28a745' if modo_ffmi_email == 'GREEN' else '#ffc107' if modo_ffmi_email == 'AMBER' else '#dc3545')};">
                         <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #333;">⚠️ Validez de interpretación:</p>
                         <p style="margin: 0 0 8px 0; font-size: 12px; color: #555; line-height: 1.5;">
                             <strong>{('🟢 ALTA' if modo_ffmi_email == 'GREEN' else '🟡 MODERADA' if modo_ffmi_email == 'AMBER' else '🔴 LIMITADA')}</strong> - 
@@ -3490,7 +3490,7 @@ administracion@muscleupgym.fitness
                         <p style="margin: 0; font-size: 11px; color: #666; font-style: italic;">
                             Rangos válidos: Hombres 12-23%, Mujeres 21-31%. Fuera de estos rangos, la MLG incluye más agua/inflamación que músculo real.
                         </p>
-                    </div>''' if 'modo_ffmi_email' in locals() else ''}
+                    </div>
                 </div>
                 
                 <div class="card">
@@ -5023,7 +5023,7 @@ muscleupgym.fitness
                         <p style="margin: 0 0 8px 0; font-size: 13px; color: #444;">{feedback_ffmi}</p>
                         <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_ffmi}</p>
                     </div>
-                    {f'''<div style="margin-top: 12px; padding: 12px; background-color: {('#d4edda' if modo_ffmi_email == 'GREEN' else '#fff3cd' if modo_ffmi_email == 'AMBER' else '#f8d7da')}; border-radius: 5px; border-left: 4px solid {('#28a745' if modo_ffmi_email == 'GREEN' else '#ffc107' if modo_ffmi_email == 'AMBER' else '#dc3545')};">
+                    <div style="margin-top: 12px; padding: 12px; background-color: {('#d4edda' if modo_ffmi_email == 'GREEN' else '#fff3cd' if modo_ffmi_email == 'AMBER' else '#f8d7da')}; border-radius: 5px; border-left: 4px solid {('#28a745' if modo_ffmi_email == 'GREEN' else '#ffc107' if modo_ffmi_email == 'AMBER' else '#dc3545')};">
                         <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #333;">⚠️ Validez de interpretación:</p>
                         <p style="margin: 0 0 8px 0; font-size: 12px; color: #555; line-height: 1.5;">
                             <strong>{('🟢 ALTA' if modo_ffmi_email == 'GREEN' else '🟡 MODERADA' if modo_ffmi_email == 'AMBER' else '🔴 LIMITADA')}</strong> - 
@@ -5032,7 +5032,7 @@ muscleupgym.fitness
                         <p style="margin: 0; font-size: 11px; color: #666; font-style: italic;">
                             Rangos válidos: Hombres 12-23%, Mujeres 21-31%. Fuera de estos rangos, la MLG incluye más agua/inflamación que músculo real.
                         </p>
-                    </div>''' if 'modo_ffmi_email' in locals() else ''}
+                    </div>
                 </div>
                 
                 <div class="card">
