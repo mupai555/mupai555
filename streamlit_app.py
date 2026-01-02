@@ -2339,6 +2339,20 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
         email_origen = "administracion@muscleupgym.fitness"
         email_destino = email_cliente
         password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+        
+        # Cargar logos para emails
+        import base64
+        try:
+            with open('LOGO MUPAI.png', 'rb') as f:
+                logo_mupai_b64 = base64.b64encode(f.read()).decode()
+        except FileNotFoundError:
+            logo_mupai_b64 = ""
+        
+        try:
+            with open('LOGO MUP.png', 'rb') as f:
+                logo_gym_b64 = base64.b64encode(f.read()).decode()
+        except FileNotFoundError:
+            logo_gym_b64 = ""
 
         # Calcular valores derivados
         masa_grasa_calc = peso - mlg if masa_grasa is None else masa_grasa
@@ -5184,8 +5198,9 @@ def enviar_email_yaml(datos_completos):
         email_destino = "administracion@muscleupgym.fitness"
         password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
         
-        nombre_cliente = datos_completos.get('nombre_cliente', 'N/A')
-        fecha = datos_completos.get('fecha', datetime.now().strftime("%Y-%m-%d"))
+        # Extraer nombre y fecha del diccionario anidado
+        nombre_cliente = datos_completos.get('datos_personales', {}).get('nombre_cliente', 'N/A')
+        fecha = datos_completos.get('metadata', {}).get('fecha_evaluacion', datetime.now().strftime("%Y-%m-%d"))
         
         # Generar contenido YAML estructurado
         yaml_content = yaml.dump(datos_completos, allow_unicode=True, default_flow_style=False, sort_keys=False)
@@ -9269,6 +9284,8 @@ if not st.session_state.get("correo_enviado", False):
                     
                     # Construir diccionario completo para email YAML
                     datos_completos_yaml = {
+                        'nombre_cliente': nombre,  # Para compatibilidad
+                        'fecha': fecha_llenado,  # Para compatibilidad
                         'metadata': {
                             'fecha_evaluacion': fecha_llenado,
                             'sistema': 'MUPAI v2.0',
