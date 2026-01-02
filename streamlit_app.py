@@ -653,43 +653,43 @@ div[data-testid="stExpander"] details summary {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
 @keyframes slideIn { from { opacity: 0; transform: translateX(-18px);} to { opacity: 1; transform: translateX(0);} }
 
-/* ========== MEJORAS UI/UX PROFESIONALES - 100% STREAMLIT COMPATIBLE ========== */
+/* ========== MEJORAS UI/UX PROFESIONALES ULTRA VISIBLES ========== */
 
-/* Badge System - Mejorado con gradientes y sombras */
+/* Badge System - EFECTOS MUY NOTORIOS */
 .badge {
     display: inline-block;
-    padding: 0.4rem 1rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 700;
-    margin: 0.25rem;
-    color: #FFF;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    padding: 0.5rem 1.2rem !important;
+    border-radius: 25px !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    margin: 0.3rem !important;
+    color: #FFF !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    transition: all 0.4s ease !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
 }
 .badge:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transform: scale(1.15) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5) !important;
 }
 .badge-success { 
-    background: linear-gradient(135deg, #27AE60, #229954);
-    border: none;
+    background: linear-gradient(135deg, #27AE60, #229954) !important;
+    border: none !important;
 }
 .badge-warning { 
-    background: linear-gradient(135deg, #F39C12, #E67E22);
-    color: #FFF;
-    border: none;
+    background: linear-gradient(135deg, #F39C12, #E67E22) !important;
+    color: #FFF !important;
+    border: none !important;
 }
 .badge-danger { 
-    background: linear-gradient(135deg, #E74C3C, #C0392B);
-    border: none;
+    background: linear-gradient(135deg, #E74C3C, #C0392B) !important;
+    border: none !important;
 }
 .badge-info { 
-    background: linear-gradient(135deg, var(--mupai-yellow), var(--mupai-dark-yellow));
-    color: #1E1E1E;
-    border: none;
+    background: linear-gradient(135deg, var(--mupai-yellow), var(--mupai-dark-yellow)) !important;
+    color: #1E1E1E !important;
+    border: none !important;
 }
 
 /* Metric Cards - Hover mejorado */
@@ -707,21 +707,22 @@ div[data-testid="stExpander"] details summary {
     border-left-width: 6px;
 }
 
-/* Content Cards - Mejoras de spacing y bordes */
+/* Content Cards - HOVER MUY NOTORIO */
 .content-card {
-    background: #1E1E1E;
-    padding: 1.75rem;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(244,196,48,0.08), 0 2px 8px rgba(0,0,0,0.12);
-    margin-bottom: 1.5rem;
-    border-left: 5px solid var(--mupai-yellow);
-    animation: slideIn 0.5s ease-out;
-    transition: all 0.3s ease;
+    background: #1E1E1E !important;
+    padding: 1.75rem !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 16px rgba(244,196,48,0.15), 0 2px 8px rgba(0,0,0,0.2) !important;
+    margin-bottom: 1.5rem !important;
+    border-left: 6px solid var(--mupai-yellow) !important;
+    animation: slideIn 0.5s ease-out !important;
+    transition: all 0.4s ease !important;
 }
 .content-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 28px rgba(244,196,48,0.12), 0 4px 12px rgba(0,0,0,0.18);
-    border-left-width: 6px;
+    transform: translateY(-8px) !important;
+    box-shadow: 0 15px 40px rgba(244,196,48,0.25), 0 8px 20px rgba(0,0,0,0.3) !important;
+    border-left-width: 10px !important;
+    background: #252525 !important;
 }
 
 /* Card Variants con mejor jerarquía visual */
@@ -754,95 +755,100 @@ div[data-testid="stExpander"] details summary {
     50% { opacity: 0.85; }
 }
 
-/* Buttons - Mejor feedback táctil */
+/* Buttons - EFECTO HOVER MUY VISIBLE */
 .stButton > button {
-    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
-    color: #1E1E1E;
-    border: none;
-    padding: 0.875rem 2rem;
-    font-weight: 700;
-    border-radius: 28px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 16px rgba(244, 196, 48, 0.25);
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    font-size: 1rem;
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%) !important;
+    color: #1E1E1E !important;
+    border: none !important;
+    padding: 1rem 2.5rem !important;
+    font-weight: 800 !important;
+    border-radius: 30px !important;
+    transition: all 0.4s ease !important;
+    box-shadow: 0 6px 20px rgba(244, 196, 48, 0.4) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    font-size: 1.05rem !important;
 }
 .stButton > button:hover {
-    background: linear-gradient(135deg, var(--mupai-dark-yellow) 0%, #C89F1C 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(244, 196, 48, 0.35);
+    background: linear-gradient(135deg, #FFD700 0%, var(--mupai-yellow) 100%) !important;
+    transform: translateY(-5px) scale(1.02) !important;
+    box-shadow: 0 10px 30px rgba(244, 196, 48, 0.6) !important;
 }
 .stButton > button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(244, 196, 48, 0.2);
+    transform: translateY(-2px) scale(0.98) !important;
+    box-shadow: 0 4px 12px rgba(244, 196, 48, 0.3) !important;
 }
 .stButton > button:disabled {
-    background: linear-gradient(135deg, #444 0%, #555 100%);
-    color: #888;
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
+    background: linear-gradient(135deg, #444 0%, #555 100%) !important;
+    color: #888 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
-
-/* Input Fields - Mejor contraste y focus */
+FOCUS RING MUY VISIBLE */
 .stTextInput > div > div > input,
 .stNumberInput > div > div > input,
 .stSelectbox > div > div > select {
-    border: 2px solid #444 !important;
-    border-radius: 10px !important;
-    padding: 0.75rem 1rem !important;
+    border: 2px solid #555 !important;
+    border-radius: 12px !important;
+    padding: 0.85rem 1.1rem !important;
     background: #2A2A2A !important;
     color: #FFF !important;
-    font-size: 1rem !important;
+    font-size: 1.05rem !important;
     font-weight: 500 !important;
-    transition: all 0.3s ease;
+    transition: all 0.4s ease !important;
 }
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > div > input:focus,
 .stSelectbox > div > div > select:focus {
     border-color: var(--mupai-yellow) !important;
-    box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.15) !important;
-    background: #323232 !important;
-}
-
-/* Expanders - Sticky headers y mejor jerarquía */
+    border-width: 3px !important;
+    box-shadow: 0 0 0 6px rgba(244, 196, 48, 0.3) !important;
+    background: #353535 !important;
+    transform: scale(1.01)px rgba(244, 196, 48, 0.15) !important;
+    background:EFECTO HOVER DRAMÁTICO */
 .streamlit-expanderHeader {
-    background: linear-gradient(135deg, #2A2A2A 0%, #232425 100%);
-    border-radius: 12px;
-    font-weight: 700;
+    background: linear-gradient(135deg, #2A2A2A 0%, #232425 100%) !important;
+    border-radius: 14px !important;
+    font-weight: 800 !important;
     color: #FFFFFF !important;
-    border: 2px solid var(--mupai-yellow);
-    font-size: 1.1rem;
-    padding: 1rem 1.25rem;
-    transition: all 0.3s ease;
+    border: 3px solid var(--mupai-yellow) !important;
+    font-size: 1.15rem !important;
+    padding: 1.1rem 1.4rem !important;
+    transition: all 0.4s ease !important;
 }
 .streamlit-expanderHeader:hover {
+    background: linear-gradient(135deg, #3A3A3A 0%, #323232 100%) !important;
+    border-width: 5px !important;
+    box-shadow: 0 8px 25px rgba(244, 196, 48, 0.35) !important;
+    transform: translateX(5px) !important
     background: linear-gradient(135deg, #323232 0%, #2A2A2A 100%);
-    border-width: 3px;
-    box-shadow: 0 4px 12px rgba(244, 196, 48, 0.15);
-}
-
-/* Tabs - Mejor diseño */
+    borderTAB ACTIVO MUY VISIBLE */
 .stTabs [data-baseweb="tab-list"] {
-    background: #2A2A2A;
-    border-radius: 12px;
-    padding: 0.5rem;
-    gap: 0.5rem;
+    background: #2A2A2A !important;
+    border-radius: 15px !important;
+    padding: 0.7rem !important;
+    gap: 0.7rem !important;
 }
 .stTabs [data-baseweb="tab"] {
-    background: transparent;
-    border-radius: 8px;
-    color: #888;
-    font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    transition: all 0.3s ease;
+    background: transparent !important;
+    border-radius: 10px !important;
+    color: #888 !important;
+    font-weight: 600 !important;
+    padding: 0.85rem 1.7rem !important;
+    transition: all 0.4s ease !important;
 }
 .stTabs [data-baseweb="tab"]:hover {
-    background: #323232;
-    color: var(--mupai-yellow);
+    background: #3A3A3A !important;
+    color: var(--mupai-yellow) !important;
+    transform: scale(1.03) !important;
 }
 .stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #FFD700, var(--mupai-yellow)) !important;
+    color: #1E1E1E !important;
+    font-weight: 800 !important;
+    box-shadow: 0 5px 20px rgba(244, 196, 48, 0.5) !important;
+    transform: scale(1.05) !important
     background: linear-gradient(135deg, var(--mupai-yellow), var(--mupai-dark-yellow)) !important;
     color: #1E1E1E !important;
     font-weight: 700;
