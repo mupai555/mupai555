@@ -10324,7 +10324,7 @@ if not st.session_state.get("correo_enviado", False):
                         'metabolismo': {
                             'tmb_kcal': float(tmb) if 'tmb' in locals() else None,
                             'ge_kcal': float(GE) if 'GE' in locals() else None,
-                            'geaf': float(GEAF) if 'GEAF' in locals() else None
+                            'geaf': float(geaf) if 'geaf' in locals() else None
                         },
                         'macronutrientes_tradicionales': {
                             'proteina_g': float(proteina_g) if 'proteina_g' in locals() else None,
