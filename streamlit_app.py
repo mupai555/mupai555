@@ -6370,22 +6370,23 @@ def formulario_metas_personales():
     """
     st.markdown("---")
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    st.markdown("### 🎯 Metas Personales — Objetivos a Mediano y Largo Plazo")
-    st.markdown("""
-    **Este apartado es obligatorio.** Describe tus objetivos personales relacionados con la composición corporal 
-    y rendimiento físico. Esta información nos ayudará a personalizar mejor tu plan de entrenamiento y nutrición.
-    """)
+    with st.expander("🎯 **Metas Personales — Objetivos a Mediano y Largo Plazo** ✍️", expanded=True):
+        st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Apartado obligatorio - Describe tus objetivos personales</p>', unsafe_allow_html=True)
+        st.markdown("""
+        **Este apartado es obligatorio.** Describe tus objetivos personales relacionados con la composición corporal 
+        y rendimiento físico. Esta información nos ayudará a personalizar mejor tu plan de entrenamiento y nutrición.
+        """)
     
-    # Initialize session state for personal goals
-    if 'metas_personales_completado' not in st.session_state:
-        st.session_state.metas_personales_completado = False
-    if 'metas_personales' not in st.session_state:
-        st.session_state.metas_personales = ""
+        # Initialize session state for personal goals
+        if 'metas_personales_completado' not in st.session_state:
+            st.session_state.metas_personales_completado = False
+        if 'metas_personales' not in st.session_state:
+            st.session_state.metas_personales = ""
     
-    # Instructions and examples
-    st.markdown("""
-    <div style="background: #252525; padding: 1rem; border-radius: 8px; border-left: 4px solid #FFD700; margin-bottom: 1rem;">
-        <h4 style="color: #FFD700; margin-top: 0;">💡 Instrucciones y Ejemplos</h4>
+        # Instructions and examples
+        st.markdown("""
+        <div style="background: #252525; padding: 1rem; border-radius: 8px; border-left: 4px solid #FFD700; margin-bottom: 1rem;">
+            <h4 style="color: #FFD700; margin-top: 0;">💡 Instrucciones y Ejemplos</h4>
         <p style="color: #CCCCCC; margin-bottom: 0.5rem;">
             Por favor describe tus objetivos específicos considerando los siguientes aspectos:
         </p>
@@ -6402,50 +6403,48 @@ def formulario_metas_personales():
             Mantener un porcentaje de grasa corporal entre 12-15%, competir en mi primera carrera de medio maratón, 
             desarrollar un físico atlético y funcional para deportes recreativos."
         </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Text area for personal goals with initial value from session state
-    metas_texto = st.text_area(
-        "✍️ Describe tus metas personales (mínimo 50 caracteres)*",
-        value=st.session_state.metas_personales,
-        height=250,
-        placeholder="Escribe aquí tus objetivos a mediano plazo (6-12 meses) y largo plazo (más de 12 meses)...",
-        help="Campo obligatorio. Describe tus metas específicas de composición corporal, rendimiento físico y bienestar general.",
-        key="metas_personales_input"
-    )
-    
-    # Real-time validation and feedback
-    metas_texto_clean = metas_texto.strip() if metas_texto else ""
-    char_count = len(metas_texto_clean)
-    
-    # Character counter with color coding
-    if char_count == 0:
-        st.markdown(f"""
-        <div style="color: #E74C3C; font-weight: bold; margin-top: -10px;">
-            ⚠️ Campo vacío. Por favor describe tus metas personales (mínimo 50 caracteres).
         </div>
         """, unsafe_allow_html=True)
-    elif char_count < 50:
-        st.markdown(f"""
-        <div style="color: #F39C12; font-weight: bold; margin-top: -10px;">
-            ⚠️ Caracteres: {char_count}/50 (mínimo). Por favor proporciona más detalles sobre tus objetivos.
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div style="color: #27AE60; font-weight: bold; margin-top: -10px;">
-            ✅ Caracteres: {char_count} - ¡Perfecto! Tus metas han sido capturadas correctamente.
-        </div>
-        """, unsafe_allow_html=True)
+        metas_texto = st.text_area(
+            "✍️ Describe tus metas personales (mínimo 50 caracteres)*",
+            value=st.session_state.metas_personales,
+            height=250,
+            placeholder="Escribe aquí tus objetivos a mediano plazo (6-12 meses) y largo plazo (más de 12 meses)...",
+            help="Campo obligatorio. Describe tus metas específicas de composición corporal, rendimiento físico y bienestar general.",
+            key="metas_personales_input"
+        )
     
-    # Update session state
-    st.session_state.metas_personales = metas_texto_clean
-    st.session_state.metas_personales_completado = char_count >= 50
+        # Real-time validation and feedback
+        metas_texto_clean = metas_texto.strip() if metas_texto else ""
+        char_count = len(metas_texto_clean)
     
-    # Show confirmation message if complete
-    if st.session_state.metas_personales_completado:
-        st.success("✅ Metas personales completadas. Esta información será incluida en tu reporte de evaluación.")
+        # Character counter with color coding
+        if char_count == 0:
+            st.markdown(f"""
+            <div style="color: #E74C3C; font-weight: bold; margin-top: -10px;">
+                ⚠️ Campo vacío. Por favor describe tus metas personales (mínimo 50 caracteres).
+            </div>
+            """, unsafe_allow_html=True)
+        elif char_count < 50:
+            st.markdown(f"""
+            <div style="color: #F39C12; font-weight: bold; margin-top: -10px;">
+                ⚠️ Caracteres: {char_count}/50 (mínimo). Por favor proporciona más detalles sobre tus objetivos.
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="color: #27AE60; font-weight: bold; margin-top: -10px;">
+                ✅ Caracteres: {char_count} - ¡Perfecto! Tus metas han sido capturadas correctamente.
+            </div>
+            """, unsafe_allow_html=True)
+    
+        # Update session state
+        st.session_state.metas_personales = metas_texto_clean
+        st.session_state.metas_personales_completado = char_count >= 50
+    
+        # Show confirmation message if complete
+        if st.session_state.metas_personales_completado:
+            st.success("✅ Metas personales completadas. Esta información será incluida en tu reporte de evaluación.")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -6784,30 +6783,30 @@ def render_progress_photos_section():
     """
     st.markdown("---")
     st.markdown('<div class="content-card" style="background: #1A1A1A; border-left: 4px solid var(--mupai-yellow);">', unsafe_allow_html=True)
-    st.markdown("### 📸 Fotografías de Progreso (PNG o JPG)")
+    with st.expander("📸 **Fotografías de Progreso (PNG o JPG)** 📷", expanded=True):
+        st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Apartado obligatorio - Sube 3 fotos requeridas</p>', unsafe_allow_html=True)
+        st.markdown("""
+        <p style="color: #CCCCCC; line-height: 1.6; margin-bottom: 1.5rem;">
+        Sube tus fotos de progreso siguiendo el protocolo (misma luz, misma distancia, cámara a altura del ombligo). 
+        <strong style="color: var(--mupai-yellow);">Estas fotos son obligatorias</strong> para evaluar tu composición corporal.
+        </p>
+        """, unsafe_allow_html=True)
     
-    st.markdown("""
-    <p style="color: #CCCCCC; line-height: 1.6; margin-bottom: 1.5rem;">
-    Sube tus fotos de progreso siguiendo el protocolo (misma luz, misma distancia, cámara a altura del ombligo). 
-    <strong style="color: var(--mupai-yellow);">Estas fotos son obligatorias</strong> para evaluar tu composición corporal.
-    </p>
-    """, unsafe_allow_html=True)
+        # Initialize session state for photos if not exists
+        if "progress_photos" not in st.session_state:
+            st.session_state.progress_photos = {
+                "front_relaxed": None,
+                "side_relaxed_right": None,
+                "back_relaxed": None,
+                "pose_libre": None
+            }
     
-    # Initialize session state for photos if not exists
-    if "progress_photos" not in st.session_state:
-        st.session_state.progress_photos = {
-            "front_relaxed": None,
-            "side_relaxed_right": None,
-            "back_relaxed": None,
-            "pose_libre": None
-        }
+        # Create three columns for the first row of photo uploads
+        col1, col2, col3 = st.columns(3)
     
-    # Create three columns for the first row of photo uploads
-    col1, col2, col3 = st.columns(3)
+        validation_errors = []
     
-    validation_errors = []
-    
-    with col1:
+        with col1:
         st.markdown("#### 📷 Foto 1 – Frontal relajado")
         front_photo = st.file_uploader(
             "Foto frontal",
