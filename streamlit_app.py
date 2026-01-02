@@ -6592,15 +6592,15 @@ def check_step_completion(step_number):
         return all(st.session_state.get(field) for field in required)
     elif step_number == 2:  # Composición corporal
         required = ['peso', 'estatura', 'grasa_corporal', 'masa_muscular']
-        return all(st.session_state.get(field, 0) > 0 for field in required)
+        return all(st.session_state.get(field) for field in required)
     elif step_number == 3:  # Evaluación funcional
         return (st.session_state.get('experiencia_completa', False) and 
                 len(st.session_state.get('datos_ejercicios', {})) >= 5)
     elif step_number == 4:  # Actividad física
         return bool(st.session_state.get('actividad_diaria'))
     elif step_number == 5:  # Entrenamiento
-        return (st.session_state.get('frecuencia_entrenamiento', 0) > 0 and
-                st.session_state.get('minutos_por_sesion', 0) > 0)
+        return (st.session_state.get('frecuencia_entrenamiento') and
+                st.session_state.get('minutos_por_sesion'))
     return False
 
 def get_step_status_indicator(step_number):
