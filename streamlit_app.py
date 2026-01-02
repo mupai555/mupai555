@@ -3776,33 +3776,737 @@ def format_photo_status(progress_photos):
         return "✓ 3 fotografías adjuntas (frontal, lateral, posterior)"
 
 def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, grasa_corregida, 
-                        masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura=0.0, progress_photos=None, ciclo_menstrual=None):
+                        mlg, ffmi=None, nivel_entrenamiento=None, circunferencia_cintura=None, grasa_visceral=None, 
+                        edad_metabolica=None, wthr=None, masa_grasa=None, progress_photos=None, 
+                        masa_muscular_aparato=0, masa_muscular_estimada=0, masa_muscular=None, tmb=None, ciclo_menstrual=None):
     """
-    Envía el email interno (Parte 2) con reporte profesional de composición corporal.
+    Envía el email interno (Parte 2) con TODO EL CONTENIDO del email cliente.
     Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
     
+    IMPORTANTE: Este email contiene EXACTAMENTE el mismo contenido que recibe el cliente,
+    para que el administrador pueda ver qué información se envió al usuario.
+    La única diferencia es el badge "CONFIDENCIAL - USO INTERNO" en el header.
+    
     Args:
-        ciclo_menstrual: Fase del ciclo menstrual (solo para mujeres), opcional
+        Los mismos parámetros que enviar_email_cliente() para mantener sincronía total.
     """
     try:
         email_origen = "administracion@muscleupgym.fitness"
         email_destino = "administracion@muscleupgym.fitness"
         password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
 
-        # Formatear valores con safe conversions
-        masa_muscular_val = safe_float(masa_muscular, 0.0)
-        grasa_visceral_val = safe_int(grasa_visceral, 0)
-        circunferencia_cintura_val = safe_float(circunferencia_cintura, 0.0)
+        # === COPIAR TODA LA LÓGICA DE CÁLCULOS DEL EMAIL CLIENTE ===
+        # (Para que el contenido sea IDÉNTICO)
         
-        # Calcular WtHR si hay datos disponibles
-        wthr = 0.0
-        if circunferencia_cintura_val > 0 and estatura > 0:
-            wthr = circunferencia_cintura_val / estatura
+        # Calcular valores derivados
+        masa_grasa_calc = peso - mlg if masa_grasa is None else masa_grasa
+        pct_mlg = (mlg / peso * 100) if peso > 0 else 0
         
-        # Clasificaciones automáticas SOLO cuando N/D
-        clasificacion_grasa_visceral = clasificar_grasa_visceral(grasa_visceral_val)
-        clasificacion_masa_muscular = clasificar_masa_muscular(masa_muscular_val, edad, sexo)
-        clasificacion_wthr = clasificar_wthr(wthr)
+        # Calcular modo de interpretación FFMI
+        modo_ffmi_email = obtener_modo_interpretacion_ffmi(grasa_corregida, sexo)
+        
+        # Porcentajes de masa muscular
+        pct_masa_muscular_aparato = (masa_muscular_aparato / peso * 100) if peso > 0 and masa_muscular_aparato > 0 else 0
+        pct_masa_muscular_estimada = (masa_muscular_estimada / peso * 100) if peso > 0 and masa_muscular_estimada > 0 else 0
+
+        # Categorizar grasa corporal con feedback detallado
+        if sexo == "Hombre":
+            if grasa_corregida < 6:
+                categoria_grasa = "Muy bajo (Competición)"
+                emoji_grasa = "⚠️"
+                feedback_grasa = "Nivel de competición. Difícil de mantener a largo plazo. Puede afectar hormonas y rendimiento."
+                rango_saludable = "Rango saludable: 12-18%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Hombres):</strong><br>
+                • 3-6%: Esencial (mínimo para sobrevivir)<br>
+                • 6-12%: Atlético/Competición (muy definido)<br>
+                • 12-18%: Fitness (saludable, estético)<br>
+                • 18-25%: Promedio aceptable<br>
+                • 25-30%: Sobrepeso (considerar reducir)<br>
+                • 30%+: Obesidad (riesgo metabólico alto)
+                """
+            elif grasa_corregida < 12:
+                categoria_grasa = "Atlético"
+                emoji_grasa = "💪"
+                feedback_grasa = "Excelente nivel. Buena definición muscular visible. Rendimiento deportivo óptimo."
+                rango_saludable = "Rango saludable: 12-18%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Hombres):</strong><br>
+                • 3-6%: Esencial (mínimo para sobrevivir)<br>
+                • <strong>6-12%: Atlético/Competición (muy definido) ← Tú estás aquí</strong><br>
+                • 12-18%: Fitness (saludable, estético)<br>
+                • 18-25%: Promedio aceptable<br>
+                • 25-30%: Sobrepeso (considerar reducir)<br>
+                • 30%+: Obesidad (riesgo metabólico alto)
+                """
+            elif grasa_corregida < 18:
+                categoria_grasa = "Fitness"
+                emoji_grasa = "🏃"
+                feedback_grasa = "Nivel fitness saludable. Buena relación salud-estética. Sostenible a largo plazo."
+                rango_saludable = "Rango saludable: 12-18%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Hombres):</strong><br>
+                • 3-6%: Esencial (mínimo para sobrevivir)<br>
+                • 6-12%: Atlético/Competición (muy definido)<br>
+                • <strong>12-18%: Fitness (saludable, estético) ← Tú estás aquí</strong><br>
+                • 18-25%: Promedio aceptable<br>
+                • 25-30%: Sobrepeso (considerar reducir)<br>
+                • 30%+: Obesidad (riesgo metabólico alto)
+                """
+            elif grasa_corregida < 25:
+                categoria_grasa = "Promedio"
+                emoji_grasa = "📊"
+                feedback_grasa = "Nivel promedio. Espacio para mejorar composición corporal con entrenamiento y nutrición."
+                rango_saludable = "Rango fitness: 12-18%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Hombres):</strong><br>
+                • 3-6%: Esencial (mínimo para sobrevivir)<br>
+                • 6-12%: Atlético/Competición (muy definido)<br>
+                • 12-18%: Fitness (saludable, estético)<br>
+                • <strong>18-25%: Promedio aceptable ← Tú estás aquí</strong><br>
+                • 25-30%: Sobrepeso (considerar reducir)<br>
+                • 30%+: Obesidad (riesgo metabólico alto)
+                """
+            else:
+                categoria_grasa = "Alto"
+                emoji_grasa = "⚠️"
+                feedback_grasa = "Nivel elevado. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
+                rango_saludable = "Rango fitness: 12-18%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Hombres):</strong><br>
+                • 3-6%: Esencial (mínimo para sobrevivir)<br>
+                • 6-12%: Atlético/Competición (muy definido)<br>
+                • 12-18%: Fitness (saludable, estético)<br>
+                • 18-25%: Promedio aceptable<br>
+                • <strong>25-30%: Sobrepeso (considerar reducir) ← Tú estás aquí</strong><br>
+                • 30%+: Obesidad (riesgo metabólico alto)
+                """
+        else:  # Mujer
+            if grasa_corregida < 12:
+                categoria_grasa = "Muy bajo (Competición)"
+                emoji_grasa = "⚠️"
+                feedback_grasa = "Nivel de competición. Muy difícil de mantener. Puede afectar ciclo menstrual y hormonas."
+                rango_saludable = "Rango saludable: 17-23%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Mujeres):</strong><br>
+                • 10-12%: Esencial (mínimo, puede afectar fertilidad)<br>
+                • 12-17%: Atlético/Competición (muy definido)<br>
+                • 17-23%: Fitness (saludable, estético)<br>
+                • 23-30%: Promedio aceptable<br>
+                • 30-35%: Sobrepeso (considerar reducir)<br>
+                • 35%+: Obesidad (riesgo metabólico alto)
+                """
+            elif grasa_corregida < 17:
+                categoria_grasa = "Atlético"
+                emoji_grasa = "💪"
+                feedback_grasa = "Excelente nivel atlético. Muy buena definición muscular. Rendimiento deportivo óptimo."
+                rango_saludable = "Rango saludable: 17-23%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Mujeres):</strong><br>
+                • 10-12%: Esencial (mínimo, puede afectar fertilidad)<br>
+                • <strong>12-17%: Atlético/Competición (muy definido) ← Tú estás aquí</strong><br>
+                • 17-23%: Fitness (saludable, estético)<br>
+                • 23-30%: Promedio aceptable<br>
+                • 30-35%: Sobrepeso (considerar reducir)<br>
+                • 35%+: Obesidad (riesgo metabólico alto)
+                """
+            elif grasa_corregida < 23:
+                categoria_grasa = "Fitness"
+                emoji_grasa = "🏃"
+                feedback_grasa = "Nivel fitness saludable. Buena relación salud-estética. Sostenible a largo plazo."
+                rango_saludable = "Rango saludable: 17-23%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Mujeres):</strong><br>
+                • 10-12%: Esencial (mínimo, puede afectar fertilidad)<br>
+                • 12-17%: Atlético/Competición (muy definido)<br>
+                • <strong>17-23%: Fitness (saludable, estético) ← Tú estás aquí</strong><br>
+                • 23-30%: Promedio aceptable<br>
+                • 30-35%: Sobrepeso (considerar reducir)<br>
+                • 35%+: Obesidad (riesgo metabólico alto)
+                """
+            elif grasa_corregida < 30:
+                categoria_grasa = "Promedio"
+                emoji_grasa = "📊"
+                feedback_grasa = "Nivel promedio. Espacio para mejorar composición corporal con entrenamiento y nutrición."
+                rango_saludable = "Rango fitness: 17-23%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Mujeres):</strong><br>
+                • 10-12%: Esencial (mínimo, puede afectar fertilidad)<br>
+                • 12-17%: Atlético/Competición (muy definido)<br>
+                • 17-23%: Fitness (saludable, estético)<br>
+                • <strong>23-30%: Promedio aceptable ← Tú estás aquí</strong><br>
+                • 30-35%: Sobrepeso (considerar reducir)<br>
+                • 35%+: Obesidad (riesgo metabólico alto)
+                """
+            else:
+                categoria_grasa = "Alto"
+                emoji_grasa = "⚠️"
+                feedback_grasa = "Nivel elevado. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
+                rango_saludable = "Rango fitness: 17-23%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Mujeres):</strong><br>
+                • 10-12%: Esencial (mínimo, puede afectar fertilidad)<br>
+                • 12-17%: Atlético/Competición (muy definido)<br>
+                • 17-23%: Fitness (saludable, estético)<br>
+                • 23-30%: Promedio aceptable<br>
+                • <strong>30-35%: Sobrepeso (considerar reducir) ← Tú estás aquí</strong><br>
+                • 35%+: Obesidad (riesgo metabólico alto)
+                """
+        
+        # Feedback para FFMI si está disponible
+        feedback_ffmi = ""
+        rangos_ffmi = ""
+        if ffmi is not None:
+            if sexo == "Hombre":
+                if ffmi < 18:
+                    feedback_ffmi = "Por debajo del promedio. Potencial de ganancia muscular significativo con entrenamiento."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Hombres):</strong><br>
+                    • <strong>&lt;18: Por debajo del promedio ← Tú estás aquí</strong><br>
+                    • 18-20: Promedio (desarrollo natural normal)<br>
+                    • 20-22: Por encima del promedio (buen entrenamiento)<br>
+                    • 22-25: Excelente (años de entrenamiento)<br>
+                    • 25+: Elite/excepcional (límite natural ~25-26)
+                    """
+                elif ffmi < 20:
+                    feedback_ffmi = "Nivel promedio. Desarrollo muscular natural normal. Buen punto de partida."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Hombres):</strong><br>
+                    • &lt;18: Por debajo del promedio<br>
+                    • <strong>18-20: Promedio (desarrollo natural normal) ← Tú estás aquí</strong><br>
+                    • 20-22: Por encima del promedio (buen entrenamiento)<br>
+                    • 22-25: Excelente (años de entrenamiento)<br>
+                    • 25+: Elite/excepcional (límite natural ~25-26)
+                    """
+                elif ffmi < 22:
+                    feedback_ffmi = "Por encima del promedio. Buen desarrollo muscular. Nivel de entrenamiento intermedio-avanzado."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Hombres):</strong><br>
+                    • &lt;18: Por debajo del promedio<br>
+                    • 18-20: Promedio (desarrollo natural normal)<br>
+                    • <strong>20-22: Por encima del promedio (buen entrenamiento) ← Tú estás aquí</strong><br>
+                    • 22-25: Excelente (años de entrenamiento)<br>
+                    • 25+: Elite/excepcional (límite natural ~25-26)
+                    """
+                elif ffmi < 25:
+                    feedback_ffmi = "Excelente desarrollo. Nivel avanzado. Años de entrenamiento consistente."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Hombres):</strong><br>
+                    • &lt;18: Por debajo del promedio<br>
+                    • 18-20: Promedio (desarrollo natural normal)<br>
+                    • 20-22: Por encima del promedio (buen entrenamiento)<br>
+                    • <strong>22-25: Excelente (años de entrenamiento) ← Tú estás aquí</strong><br>
+                    • 25+: Elite/excepcional (límite natural ~25-26)
+                    """
+                else:
+                    feedback_ffmi = "Elite/excepcional. Desarrollo muscular muy avanzado. Genética favorable o entrenamiento de años."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Hombres):</strong><br>
+                    • &lt;18: Por debajo del promedio<br>
+                    • 18-20: Promedio (desarrollo natural normal)<br>
+                    • 20-22: Por encima del promedio (buen entrenamiento)<br>
+                    • 22-25: Excelente (años de entrenamiento)<br>
+                    • <strong>25+: Elite/excepcional (límite natural ~25-26) ← Tú estás aquí</strong>
+                    """
+            else:  # Mujer
+                if ffmi < 15:
+                    feedback_ffmi = "Por debajo del promedio. Potencial de ganancia muscular significativo con entrenamiento."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Mujeres):</strong><br>
+                    • <strong>&lt;15: Por debajo del promedio ← Tú estás aquí</strong><br>
+                    • 15-17: Promedio (desarrollo natural normal)<br>
+                    • 17-18: Por encima del promedio (buen entrenamiento)<br>
+                    • 18-20: Excelente (años de entrenamiento)<br>
+                    • 20+: Elite/excepcional (límite natural ~20-21)
+                    """
+                elif ffmi < 17:
+                    feedback_ffmi = "Nivel promedio. Desarrollo muscular natural normal. Buen punto de partida."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Mujeres):</strong><br>
+                    • &lt;15: Por debajo del promedio<br>
+                    • <strong>15-17: Promedio (desarrollo natural normal) ← Tú estás aquí</strong><br>
+                    • 17-18: Por encima del promedio (buen entrenamiento)<br>
+                    • 18-20: Excelente (años de entrenamiento)<br>
+                    • 20+: Elite/excepcional (límite natural ~20-21)
+                    """
+                elif ffmi < 18:
+                    feedback_ffmi = "Por encima del promedio. Buen desarrollo muscular. Nivel intermedio-avanzado."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Mujeres):</strong><br>
+                    • &lt;15: Por debajo del promedio<br>
+                    • 15-17: Promedio (desarrollo natural normal)<br>
+                    • <strong>17-18: Por encima del promedio (buen entrenamiento) ← Tú estás aquí</strong><br>
+                    • 18-20: Excelente (años de entrenamiento)<br>
+                    • 20+: Elite/excepcional (límite natural ~20-21)
+                    """
+                elif ffmi < 20:
+                    feedback_ffmi = "Excelente desarrollo. Nivel avanzado. Años de entrenamiento consistente."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Mujeres):</strong><br>
+                    • &lt;15: Por debajo del promedio<br>
+                    • 15-17: Promedio (desarrollo natural normal)<br>
+                    • 17-18: Por encima del promedio (buen entrenamiento)<br>
+                    • <strong>18-20: Excelente (años de entrenamiento) ← Tú estás aquí</strong><br>
+                    • 20+: Elite/excepcional (límite natural ~20-21)
+                    """
+                else:
+                    feedback_ffmi = "Elite/excepcional. Desarrollo muscular muy avanzado. Genética favorable o entrenamiento de años."
+                    rangos_ffmi = """
+                    <strong>Rangos FFMI (Mujeres):</strong><br>
+                    • &lt;15: Por debajo del promedio<br>
+                    • 15-17: Promedio (desarrollo natural normal)<br>
+                    • 17-18: Por encima del promedio (buen entrenamiento)<br>
+                    • 18-20: Excelente (años de entrenamiento)<br>
+                    • <strong>20+: Elite/excepcional (límite natural ~20-21) ← Tú estás aquí</strong>
+                    """
+        
+        # Feedback para IMC (Índice de Masa Corporal)
+        feedback_imc = ""
+        rangos_imc = ""
+        if imc < 16:
+            feedback_imc = "Delgadez severa. Por debajo del peso saludable. Considera consulta nutricional."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • <strong>&lt;16: Delgadez severa ← Tú estás aquí</strong><br>
+            • 16-17: Delgadez moderada<br>
+            • 17-18.5: Delgadez leve<br>
+            • 18.5-25: Normopeso (saludable)<br>
+            • 25-30: Sobrepeso<br>
+            • 30-35: Obesidad grado I<br>
+            • 35-40: Obesidad grado II<br>
+            • 40+: Obesidad grado III (mórbida)
+            """
+        elif imc < 17:
+            feedback_imc = "Delgadez moderada. Por debajo del peso recomendado. Evalúa aumentar masa muscular."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • &lt;16: Delgadez severa<br>
+            • <strong>16-17: Delgadez moderada ← Tú estás aquí</strong><br>
+            • 17-18.5: Delgadez leve<br>
+            • 18.5-25: Normopeso (saludable)<br>
+            • 25-30: Sobrepeso<br>
+            • 30-35: Obesidad grado I<br>
+            • 35-40: Obesidad grado II<br>
+            • 40+: Obesidad grado III (mórbida)
+            """
+        elif imc < 18.5:
+            feedback_imc = "Delgadez leve. Cerca del rango saludable. Considera ganar masa muscular."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • &lt;16: Delgadez severa<br>
+            • 16-17: Delgadez moderada<br>
+            • <strong>17-18.5: Delgadez leve ← Tú estás aquí</strong><br>
+            • 18.5-25: Normopeso (saludable)<br>
+            • 25-30: Sobrepeso<br>
+            • 30-35: Obesidad grado I<br>
+            • 35-40: Obesidad grado II<br>
+            • 40+: Obesidad grado III (mórbida)
+            """
+        elif imc < 25:
+            feedback_imc = "¡Excelente! Normopeso. Rango saludable según OMS. Mantén buenos hábitos."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • &lt;16: Delgadez severa<br>
+            • 16-17: Delgadez moderada<br>
+            • 17-18.5: Delgadez leve<br>
+            • <strong>18.5-25: Normopeso (saludable) ← Tú estás aquí</strong><br>
+            • 25-30: Sobrepeso<br>
+            • 30-35: Obesidad grado I<br>
+            • 35-40: Obesidad grado II<br>
+            • 40+: Obesidad grado III (mórbida)
+            """
+        elif imc < 30:
+            feedback_imc = "Sobrepeso. Riesgo moderado de complicaciones metabólicas. Beneficio de reducir grasa."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • &lt;16: Delgadez severa<br>
+            • 16-17: Delgadez moderada<br>
+            • 17-18.5: Delgadez leve<br>
+            • 18.5-25: Normopeso (saludable)<br>
+            • <strong>25-30: Sobrepeso ← Tú estás aquí</strong><br>
+            • 30-35: Obesidad grado I<br>
+            • 35-40: Obesidad grado II<br>
+            • 40+: Obesidad grado III (mórbida)
+            """
+        elif imc < 35:
+            feedback_imc = "Obesidad grado I. Riesgo incrementado. Importante reducir grasa corporal para salud."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • &lt;16: Delgadez severa<br>
+            • 16-17: Delgadez moderada<br>
+            • 17-18.5: Delgadez leve<br>
+            • 18.5-25: Normopeso (saludable)<br>
+            • 25-30: Sobrepeso<br>
+            • <strong>30-35: Obesidad grado I ← Tú estás aquí</strong><br>
+            • 35-40: Obesidad grado II<br>
+            • 40+: Obesidad grado III (mórbida)
+            """
+        elif imc < 40:
+            feedback_imc = "Obesidad grado II (severa). Alto riesgo. Prioritario trabajar en reducción de peso."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • &lt;16: Delgadez severa<br>
+            • 16-17: Delgadez moderada<br>
+            • 17-18.5: Delgadez leve<br>
+            • 18.5-25: Normopeso (saludable)<br>
+            • 25-30: Sobrepeso<br>
+            • 30-35: Obesidad grado I<br>
+            • <strong>35-40: Obesidad grado II ← Tú estás aquí</strong><br>
+            • 40+: Obesidad grado III (mórbida)
+            """
+        else:
+            feedback_imc = "Obesidad grado III (mórbida). Riesgo muy alto. Urgente intervención médica y nutricional."
+            rangos_imc = """
+            <strong>Clasificación IMC (OMS):</strong><br>
+            • &lt;16: Delgadez severa<br>
+            • 16-17: Delgadez moderada<br>
+            • 17-18.5: Delgadez leve<br>
+            • 18.5-25: Normopeso (saludable)<br>
+            • 25-30: Sobrepeso<br>
+            • 30-35: Obesidad grado I<br>
+            • 35-40: Obesidad grado II<br>
+            • <strong>40+: Obesidad grado III (mórbida) ← Tú estás aquí</strong>
+            """
+        
+        # Feedback para edad metabólica
+        feedback_edad_metabolica = ""
+        rangos_edad_metabolica = ""
+        if edad_metabolica is not None:
+            diff_edad = edad - edad_metabolica
+            if diff_edad > 5:
+                feedback_edad_metabolica = "¡Excelente! Tu metabolismo está significativamente más joven. Refleja buenos hábitos y composición corporal saludable."
+                rangos_edad_metabolica = """
+                <strong>Interpretación Edad Metabólica:</strong><br>
+                • <strong>Tu edad real - metabólica = {diff:.0f} años (Excelente) ← Tú estás aquí</strong><br>
+                • Más de 5 años menor: Metabolismo juvenil, salud óptima<br>
+                • 1-5 años menor: Buen estado, por encima del promedio<br>
+                • Igual: Normal, hay espacio para mejorar<br>
+                • 1-5 años mayor: Atención, prioriza mejorar composición<br>
+                • Más de 5 años mayor: Urgente optimizar estilo de vida
+                """.format(diff=diff_edad)
+            elif diff_edad > 0:
+                feedback_edad_metabolica = "Bien. Tu metabolismo es ligeramente más joven. Continúa con buenos hábitos de entrenamiento y nutrición."
+                rangos_edad_metabolica = """
+                <strong>Interpretación Edad Metabólica:</strong><br>
+                • Más de 5 años menor: Metabolismo juvenil, salud óptima<br>
+                • <strong>1-5 años menor: Buen estado, por encima del promedio ← Tú estás aquí ({diff:.0f} años)</strong><br>
+                • Igual: Normal, hay espacio para mejorar<br>
+                • 1-5 años mayor: Atención, prioriza mejorar composición<br>
+                • Más de 5 años mayor: Urgente optimizar estilo de vida
+                """.format(diff=diff_edad)
+            elif diff_edad == 0:
+                feedback_edad_metabolica = "Tu edad metabólica coincide con tu edad cronológica. Hay espacio para mejorar con ejercicio y nutrición."
+                rangos_edad_metabolica = """
+                <strong>Interpretación Edad Metabólica:</strong><br>
+                • Más de 5 años menor: Metabolismo juvenil, salud óptima<br>
+                • 1-5 años menor: Buen estado, por encima del promedio<br>
+                • <strong>Igual: Normal, hay espacio para mejorar ← Tú estás aquí</strong><br>
+                • 1-5 años mayor: Atención, prioriza mejorar composición<br>
+                • Más de 5 años mayor: Urgente optimizar estilo de vida
+                """
+            elif diff_edad > -5:
+                feedback_edad_metabolica = "Tu metabolismo está ligeramente envejecido. Mejorar composición corporal ayudará a revertir esto."
+                rangos_edad_metabolica = """
+                <strong>Interpretación Edad Metabólica:</strong><br>
+                • Más de 5 años menor: Metabolismo juvenil, salud óptima<br>
+                • 1-5 años menor: Buen estado, por encima del promedio<br>
+                • Igual: Normal, hay espacio para mejorar<br>
+                • <strong>1-5 años mayor: Atención, prioriza mejorar composición ← Tú estás aquí ({diff:.0f} años)</strong><br>
+                • Más de 5 años mayor: Urgente optimizar estilo de vida
+                """.format(diff=abs(diff_edad))
+            else:
+                feedback_edad_metabolica = "Atención: metabolismo envejecido. Prioriza mejorar composición corporal, ejercicio y hábitos de sueño."
+                rangos_edad_metabolica = """
+                <strong>Interpretación Edad Metabólica:</strong><br>
+                • Más de 5 años menor: Metabolismo juvenil, salud óptima<br>
+                • 1-5 años menor: Buen estado, por encima del promedio<br>
+                • Igual: Normal, hay espacio para mejorar<br>
+                • 1-5 años mayor: Atención, prioriza mejorar composición<br>
+                • <strong>Más de 5 años mayor: Urgente optimizar estilo de vida ← Tú estás aquí ({diff:.0f} años)</strong>
+                """.format(diff=abs(diff_edad))
+        
+        # Feedback para WtHR
+        feedback_wthr = ""
+        rangos_wthr = ""
+        if wthr is not None:
+            if wthr < 0.40:
+                feedback_wthr = "Extremadamente delgado. Considera si es saludable para ti."
+                rangos_wthr = """
+                <strong>Rangos WtHR (Waist-to-Height Ratio):</strong><br>
+                • <strong>&lt;0.40: Muy delgado/Atlético ← Tú estás aquí</strong><br>
+                • 0.40-0.50: Saludable (riesgo CVD bajo)<br>
+                • 0.50-0.60: Sobrepeso (riesgo CVD incrementado)<br>
+                • 0.60+: Obesidad central (riesgo CVD alto)<br><br>
+                <em>CVD = Enfermedad cardiovascular. Recomendación general: mantener WtHR &lt;0.50</em>
+                """
+            elif wthr < 0.50:
+                feedback_wthr = "¡Excelente! Rango saludable. Bajo riesgo cardiovascular y metabólico."
+                rangos_wthr = """
+                <strong>Rangos WtHR (Waist-to-Height Ratio):</strong><br>
+                • &lt;0.40: Muy delgado/Atlético<br>
+                • <strong>0.40-0.50: Saludable (riesgo CVD bajo) ← Tú estás aquí</strong><br>
+                • 0.50-0.60: Sobrepeso (riesgo CVD incrementado)<br>
+                • 0.60+: Obesidad central (riesgo CVD alto)<br><br>
+                <em>CVD = Enfermedad cardiovascular. Recomendación general: mantener WtHR &lt;0.50</em>
+                """
+            elif wthr < 0.60:
+                feedback_wthr = "Atención: sobrepeso. Riesgo moderado. Reducir cintura mejorará salud metabólica."
+                rangos_wthr = """
+                <strong>Rangos WtHR (Waist-to-Height Ratio):</strong><br>
+                • &lt;0.40: Muy delgado/Atlético<br>
+                • 0.40-0.50: Saludable (riesgo CVD bajo)<br>
+                • <strong>0.50-0.60: Sobrepeso (riesgo CVD incrementado) ← Tú estás aquí</strong><br>
+                • 0.60+: Obesidad central (riesgo CVD alto)<br><br>
+                <em>CVD = Enfermedad cardiovascular. Recomendación general: mantener WtHR &lt;0.50</em>
+                """
+            else:
+                feedback_wthr = "Alerta: obesidad central. Alto riesgo cardiovascular. Prioriza reducir grasa abdominal."
+                rangos_wthr = """
+                <strong>Rangos WtHR (Waist-to-Height Ratio):</strong><br>
+                • &lt;0.40: Muy delgado/Atlético<br>
+                • 0.40-0.50: Saludable (riesgo CVD bajo)<br>
+                • 0.50-0.60: Sobrepeso (riesgo CVD incrementado)<br>
+                • <strong>0.60+: Obesidad central (riesgo CVD alto) ← Tú estás aquí</strong><br><br>
+                <em>CVD = Enfermedad cardiovascular. Recomendación general: mantener WtHR &lt;0.50</em>
+                """
+        
+        # Feedback para grasa visceral
+        feedback_visceral = ""
+        if grasa_visceral is not None:
+            if grasa_visceral < 10:
+                feedback_visceral = "¡Perfecto! Nivel saludable. La grasa visceral es la más peligrosa y la tuya está bien controlada."
+                info_visceral = "Nivel 1-9 = Saludable. Bajo riesgo de diabetes tipo 2, enfermedades cardíacas y síndrome metabólico."
+            elif grasa_visceral < 15:
+                feedback_visceral = "Atención: nivel elevado. Considera reducirlo con ejercicio cardiovascular y dieta antiinflamatoria."
+                info_visceral = "Nivel 10-14 = Elevado. Riesgo moderado. Prioriza ejercicio aeróbico y reducir calorías."
+            else:
+                feedback_visceral = "Alerta: nivel alto. Aumenta riesgo de diabetes, enfermedades cardíacas. Prioriza reducirlo urgentemente."
+                info_visceral = "Nivel 15+ = Alto riesgo. Requiere atención inmediata. La grasa visceral rodea órganos internos."
+        
+        # Feedback para masa muscular (priorizar aparato, fallback a estimada)
+        masa_muscular_para_feedback = masa_muscular_aparato if masa_muscular_aparato > 0 else masa_muscular_estimada
+        pct_masa_muscular_para_feedback = pct_masa_muscular_aparato if pct_masa_muscular_aparato > 0 else pct_masa_muscular_estimada
+        
+        feedback_masa_muscular = ""
+        if masa_muscular_para_feedback > 0 and pct_masa_muscular_para_feedback > 0:
+            if sexo == "Hombre":
+                if pct_masa_muscular_para_feedback < 33:
+                    feedback_masa_muscular = "Bajo. Potencial significativo de ganancia muscular con entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                elif pct_masa_muscular_para_feedback < 38:
+                    feedback_masa_muscular = "Por debajo del promedio. Responderás bien al entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                elif pct_masa_muscular_para_feedback < 44:
+                    feedback_masa_muscular = "Promedio saludable. Buen punto de partida para desarrollo muscular."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                elif pct_masa_muscular_para_feedback < 50:
+                    feedback_masa_muscular = "Por encima del promedio. Buen desarrollo muscular. Sigue con entrenamiento consistente."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                else:
+                    feedback_masa_muscular = "Excelente. Desarrollo muscular avanzado. Mantén con entrenamiento y nutrición óptimos."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+            else:  # Mujer
+                if pct_masa_muscular_para_feedback < 28:
+                    feedback_masa_muscular = "Bajo. Gran potencial de ganancia muscular con entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                elif pct_masa_muscular_para_feedback < 31:
+                    feedback_masa_muscular = "Por debajo del promedio. Responderás bien al entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                elif pct_masa_muscular_para_feedback < 35:
+                    feedback_masa_muscular = "Promedio saludable. Buen punto de partida para desarrollo muscular."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                elif pct_masa_muscular_para_feedback < 40:
+                    feedback_masa_muscular = "Por encima del promedio. Buen desarrollo muscular. Sigue así."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                else:
+                    feedback_masa_muscular = "Excelente. Desarrollo muscular avanzado. Mantén con entrenamiento y nutrición óptimos."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+        else:
+            feedback_masa_muscular = "No hay suficientes datos para evaluar masa muscular."
+            rango_masa_muscular = ""
+        
+        # Feedback para nivel de entrenamiento
+        feedback_nivel = ""
+        if nivel_entrenamiento:
+            if nivel_entrenamiento.lower() == 'principiante':
+                feedback_nivel = "Inicio del viaje. Gran potencial de mejora. Enfócate en aprender técnica y crear hábitos consistentes."
+            elif nivel_entrenamiento.lower() == 'intermedio':
+                feedback_nivel = "Nivel sólido. Ya tienes base. Enfócate en periodización, progresión e intensidad para seguir avanzando."
+            elif nivel_entrenamiento.lower() == 'avanzado':
+                feedback_nivel = "Nivel avanzado. Años de entrenamiento. Necesitas programación muy específica y recuperación óptima."
+            else:
+                feedback_nivel = "Tu nivel refleja tu experiencia, desarrollo muscular y capacidad funcional actual."
+        
+        # Obtener datos de ciclo menstrual si aplica
+        ciclo_menstrual_info = ""
+        if sexo == "Mujer":
+            ciclo = st.session_state.get('ciclo_menstrual', None)
+            if ciclo:
+                ciclo_menstrual_info = f"\n   • Fase del ciclo menstrual: {ciclo}"
+        
+        # Obtener datos de sueño y estrés si están disponibles
+        seccion_recuperacion = ""
+        if st.session_state.get('suenyo_estres_completado', False):
+            data_se = st.session_state.get('suenyo_estres_data', {})
+            if data_se and 'ir_se' in data_se:
+                ir_se = data_se.get('ir_se', 0)
+                nivel_recup = data_se.get('nivel_recuperacion', 'No determinado')
+                emoji_recup = data_se.get('emoji_nivel', '')
+                
+                seccion_recuperacion = f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+😴 ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  ÍNDICE DE RECUPERACIÓN (IR-SE): {ir_se:.1f}/100                   ║
+   ║  NIVEL: {nivel_recup} {emoji_recup}                                      ║
+   ╚════════════════════════════════════════════════════════════════╝
+
+   • Calidad de sueño: {data_se.get('sleep_score', 0):.1f}/100
+   • Nivel de estrés: {data_se.get('stress_score', 0):.1f}/100
+   
+   💡 Este índice refleja tu capacidad de recuperación y adaptación al
+      entrenamiento. Valores bajos pueden limitar tu progreso.
+"""
+
+        contenido = f"""
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                   REPORTE DE EVALUACIÓN CORPORAL                              ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  Muscle Up Performance Assessment Intelligence                               ║
+║  {datetime.now().strftime("%Y-%m-%d")}                                                              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+Hola {nombre_cliente},
+
+¡Gracias por confiar en nosotros para tu evaluación! Aquí están los resultados
+completos de tu análisis de composición corporal y rendimiento.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 DATOS DE EVALUACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 IDENTIFICACIÓN:
+   • Nombre: {nombre_cliente}
+   • Edad: {edad} años
+   • Sexo: {sexo}
+   • Fecha de evaluación: {fecha}{ciclo_menstrual_info}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📐 COMPOSICIÓN CORPORAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📏 MEDIDAS BÁSICAS:
+   
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  Peso corporal:         {peso:.1f} kg                              ║
+   ║  Estatura:              {estatura:.1f} cm                           ║
+   ║  IMC:                   {imc:.1f} kg/m²                         ║
+   ╚════════════════════════════════════════════════════════════════╝
+
+📊 ANÁLISIS DE TEJIDOS:
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  % Grasa corporal:      {grasa_corregida:.1f}% {emoji_grasa}                        ║
+   ║  Categoría:             {categoria_grasa}                  ║
+   ║                                                                ║
+   ║  Masa Grasa:            {masa_grasa_calc:.1f} kg                            ║
+   ║  Masa Libre de Grasa (MLG): {mlg:.1f} kg ({pct_mlg:.1f}%)              ║
+   ╚════════════════════════════════════════════════════════════════╝
+   
+   💪 MASA MUSCULAR ESQUELÉTICA:
+   {f'   🔵 Omron (medido):      {masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)' if masa_muscular_aparato > 0 else ''}
+   🟣 Estimado científico: {masa_muscular_estimada:.1f} kg ({pct_masa_muscular_estimada:.1f}%)
+   
+   📝 Nota: Omron mide directamente; estimado se calcula desde MLG.
+      Si difieren >15%, puede ser por hidratación o método.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 ÍNDICES CORPORALES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💪 FFMI (Índice de Masa Libre de Grasa):
+   • Valor: {ffmi:.1f} {'(dato no disponible)' if ffmi is None else ''}
+   • Indicador: Desarrollo muscular ajustado por altura
+   
+⚕️ ÍNDICES DE SALUD:"""
+
+        # Agregar circunferencia de cintura y WtHR si están disponibles
+        if circunferencia_cintura is not None:
+            contenido += f"""
+   • Circunferencia de cintura: {circunferencia_cintura} cm"""
+        
+        if wthr is not None:
+            contenido += f"""
+   • Ratio Cintura-Altura (WtHR): {wthr:.3f}{wthr_clasificacion}"""
+        
+        if grasa_visceral is not None:
+            contenido += f"""
+   • Grasa visceral: Nivel {grasa_visceral}{grasa_visceral_clasificacion}"""
+        
+        if edad_metabolica is not None:
+            contenido += f"""
+
+🧬 EDAD METABÓLICA:
+   • Edad cronológica: {edad} años
+   • Edad metabólica: {edad_metabolica} años
+   • {'✅ Tu metabolismo es ' + str(edad - edad_metabolica) + ' años más joven' if edad_metabolica < edad else '⚠️ Tu metabolismo está ' + str(edad_metabolica - edad) + ' años por encima' if edad_metabolica > edad else '📊 Tu edad metabólica coincide con tu edad'}"""
+
+        # Agregar nivel de entrenamiento si está disponible
+        if nivel_entrenamiento:
+            contenido += f"""
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💪 NIVEL DE ENTRENAMIENTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  NIVEL: {nivel_entrenamiento.upper()}                                       ║
+   ╚════════════════════════════════════════════════════════════════╝
+   
+   Este nivel se calcula evaluando tu desarrollo muscular, rendimiento
+   funcional y experiencia de entrenamiento."""
+
+        # Agregar sección de recuperación si está disponible
+        contenido += seccion_recuperacion
+
+        contenido += f"""
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📸 FOTOGRAFÍAS DE PROGRESO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Las fotografías de tu evaluación están adjuntas a este correo para tu registro.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 PRÓXIMOS PASOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tu coach se pondrá en contacto contigo para:
+
+   ✅ Revisar en detalle tus resultados
+   ✅ Diseñar tu plan nutricional personalizado
+   ✅ Establecer objetivos específicos y proyecciones
+   ✅ Programar tu seguimiento y ajustes
+
+Si tienes alguna pregunta o inquietud, no dudes en contactarnos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Muscle Up GYM
+Digital Training Science
+muscleupgym.fitness
+administracion@muscleupgym.fitness
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+        msg = MIMEMultipart('alternative')
+        msg['From'] = email_origen
+        msg['To'] = email_destino
+        msg['Subject'] = f"Resultados de tu Evaluación Corporal - {nombre_cliente}"
+
         
         # Construir el cuerpo del email profesional (texto plano como fallback)
         contenido = f"""
@@ -3875,28 +4579,8 @@ muscleupgym.fitness
 =====================================
 """
 
-        # Copiar TODO el contenido HTML del email cliente (masa muscular dual, FFMI, sueño/estrés, etc.)
-        # Solo cambiar el header para indicar que es reporte interno
-        
-        # Calcular todos los valores igual que en email cliente
-        masa_grasa_calc = peso - mlg
-        pct_mlg = (mlg / peso * 100) if peso > 0 else 0
-        
-        # Modo de interpretación FFMI
-        modo_ffmi_email = obtener_modo_interpretacion_ffmi(grasa_corregida, sexo)
-        
-        # Porcentajes de masa muscular (DUAL: aparato + estimada)
-        pct_masa_muscular_aparato = (masa_muscular_aparato / peso * 100) if peso > 0 and masa_muscular_aparato > 0 else 0
-        pct_masa_muscular_estimada = (masa_muscular_estimada / peso * 100) if peso > 0 and masa_muscular_estimada > 0 else 0
-        
-        # Masa muscular para feedback (priorizar aparato)
-        masa_muscular_para_feedback = masa_muscular_aparato if masa_muscular_aparato > 0 else masa_muscular_estimada
-        pct_masa_muscular_para_feedback = pct_masa_muscular_aparato if pct_masa_muscular_aparato > 0 else pct_masa_muscular_estimada
-        
-        # Clasificaciones y feedbacks (copiar lógica completa del email cliente)
-        # ... [Aquí irían TODAS las clasificaciones completas del email cliente] ...
-        
         contenido_html = f"""
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -3947,17 +4631,6 @@ muscleupgym.fitness
             margin: 10px 0 0 0;
             color: #cccccc;
             font-size: 14px;
-        }}
-        .badge-internal {{
-            display: inline-block;
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 10px;
-            letter-spacing: 1px;
         }}
         .content {{
             padding: 30px 20px;
@@ -4150,19 +4823,271 @@ muscleupgym.fitness
         </div>
         
         <div class="content">
-            <p style="font-size: 14px; color: #666; margin-bottom: 30px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
-                <strong>⚠️ Nota administrativa:</strong> Este reporte contiene TODA la información enviada al cliente,
-                más datos adicionales para uso interno. Basado en evaluación científica con corrección DEXA.
+            <p style="font-size: 16px; color: #555;">Hola <strong>{nombre_cliente}</strong>,</p>
+            <p style="font-size: 14px; color: #666; margin-bottom: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                <strong>⚠️ Nota administrativa:</strong> Este reporte contiene TODA la información enviada al cliente para referencia interna.
+            </p>
+            <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
+                ¡Gracias por confiar en nosotros para tu evaluación! Aquí están los resultados 
+                completos de tu análisis de composición corporal y rendimiento.
             </p>
             
-            <!--  CONTENIDO COMPLETO IDÉNTICO AL EMAIL CLIENTE - LA ÚNICA DIFERENCIA ES EL HEADER -->
-            <!-- TODO EL RESTO DEL CONTENIDO ES COPIADO TAL CUAL DEL EMAIL CLIENTE -->
+            <!-- DATOS DE EVALUACIÓN -->
+            <div class="section">
+                <div class="section-title">📊 Datos de Evaluación</div>
+                <div class="card">
+                    <div class="metric-grid">
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Nombre</div>
+                            <div class="metric-cell metric-value">{nombre_cliente}</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Edad</div>
+                            <div class="metric-cell metric-value">{edad} años</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Sexo</div>
+                            <div class="metric-cell metric-value">{sexo}</div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Fecha de evaluación</div>
+                            <div class="metric-cell metric-value">{fecha}</div>
+                        </div>
+                        {f'''<div class="metric-row">
+                            <div class="metric-cell metric-label">Fase del ciclo</div>
+                            <div class="metric-cell metric-value">{st.session_state.get('ciclo_menstrual', '')}</div>
+                        </div>''' if sexo == "Mujer" and st.session_state.get('ciclo_menstrual') else ''}
+                    </div>
+                </div>
+            </div>
             
-            <!-- [CONTINUARÁ CON TODO EL HTML DEL EMAIL CLIENTE...] -->
+            <!-- COMPOSICIÓN CORPORAL -->
+            <div class="section">
+                <div class="section-title">📐 Composición Corporal</div>
+                
+                <div class="card">
+                    <h4 style="margin-top: 0; color: #555;">Medidas Básicas</h4>
+                    <div class="metric-grid">
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Peso corporal</div>
+                            <div class="metric-cell metric-value"><strong>{peso:.1f} kg</strong></div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Estatura</div>
+                            <div class="metric-cell metric-value"><strong>{estatura:.1f} cm</strong></div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">IMC</div>
+                            <div class="metric-cell metric-value"><strong>{imc:.1f} kg/m²</strong></div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background-color: #e3f2fd; border-radius: 5px; border-left: 4px solid #3498DB;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #666; font-weight: 600;">📊 Sobre tu IMC:</p>
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #444;">{feedback_imc}</p>
+                        <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_imc}</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h4 style="margin-top: 0; color: #555;">Análisis de Tejidos</h4>
+                    <div class="metric-grid">
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">% Grasa corporal</div>
+                            <div class="metric-cell metric-value">
+                                <strong>{grasa_corregida:.1f}%</strong>
+                                <span class="badge badge-{('green' if emoji_grasa == '💪' else 'yellow' if emoji_grasa == '🏃' else 'blue' if emoji_grasa == '📊' else 'red')}">{categoria_grasa}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid #FFD700;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #666; font-weight: 600;">💡 Interpretación:</p>
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #444;">{feedback_grasa}</p>
+                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #888;">{rango_saludable}</p>
+                        <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_detallados}</p>
+                    </div>
+                    <div class="metric-grid" style="margin-top: 15px;">
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Masa Grasa</div>
+                            <div class="metric-cell metric-value"><strong>{masa_grasa_calc:.1f} kg</strong></div>
+                        </div>
+                        <div class="metric-row" style="background-color: #fff9e6;">
+                            <div class="metric-cell metric-label">Masa Libre de Grasa (MLG)</div>
+                            <div class="metric-cell metric-value"><strong>{mlg:.1f} kg ({pct_mlg:.1f}%)</strong></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección de Masa Muscular -->
+                    <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; border-left: 4px solid #27AE60;">
+                        <h4 style="margin: 0 0 12px 0; color: #27AE60; font-size: 16px;">💪 Masa Muscular Esquelética</h4>
+                        
+                        {f'''<div style="background-color: rgba(255,255,255,0.9); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #2196F3;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="font-weight: 600; color: #555;">🔵 Omron (bioimpedancia):</span>
+                                <span style="font-size: 18px; font-weight: 700; color: #2196F3;">{masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)</span>
+                            </div>
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: #666; font-style: italic;">Valor medido directamente por tu báscula de bioimpedancia</p>
+                        </div>''' if masa_muscular_aparato > 0 else ''}
+                        
+                        <div style="background-color: rgba(255,255,255,0.9); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #9C27B0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="font-weight: 600; color: #555;">🟣 Estimado científico:</span>
+                                <span style="font-size: 18px; font-weight: 700; color: #9C27B0;">{masa_muscular_estimada:.1f} kg ({pct_masa_muscular_estimada:.1f}%)</span>
+                            </div>
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: #666; font-style: italic;">Calculado desde MLG usando factores por nivel de entrenamiento</p>
+                        </div>
+                        
+                        <div style="background-color: rgba(255,193,7,0.15); padding: 10px; border-radius: 5px; font-size: 12px; color: #555; line-height: 1.5;">
+                            <p style="margin: 0 0 5px 0; font-weight: 600;">📊 ¿Por qué dos valores?</p>
+                            <p style="margin: 0 0 5px 0;">• <strong>Omron</strong>: Medición directa por corriente eléctrica (±3-5% error)</p>
+                            <p style="margin: 0 0 5px 0;">• <strong>Estimado</strong>: Cálculo desde MLG × factor ({('0.37-0.43' if sexo == 'Hombre' else '0.33-0.40')} según nivel)</p>
+                            <p style="margin: 0; font-style: italic; color: #777;">Ambos métodos son válidos. Si difieren mucho (>15%), puede indicar variación en hidratación o método de medición.</p>
+                        </div>
+                    </div>
+                    
+                    {f'''<div style="margin-top: 15px; padding: 12px; background-color: #e3f2fd; border-radius: 5px; border-left: 4px solid #3498DB;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #666; font-weight: 600;">💡 Interpretación (usando {('Omron' if masa_muscular_aparato > 0 else 'valor estimado')}):</p>
+                        <p style="margin: 0 0 5px 0; font-size: 13px; color: #444;">{feedback_masa_muscular}</p>
+                        <p style="margin: 0; font-size: 12px; color: #888;">{rango_masa_muscular}</p>
+                    </div>''' if feedback_masa_muscular else ''}
+                    
+                    <div style="margin-top: 10px; padding: 10px; background-color: #fff3e0; border-radius: 5px; font-size: 12px; color: #555; line-height: 1.5;">
+                        <p style="margin: 0 0 5px 0; font-weight: 600;">🔬 Nota científica:</p>
+                        <p style="margin: 0;">La <strong>MLG incluye</strong>: músculo + huesos (~15%) + órganos (~12%) + agua (~30-35%). La masa muscular es solo el componente esquelético contráctil.</p>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background-color: #e8f5e9; border-radius: 5px; border-left: 4px solid #27AE60;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #666; font-weight: 600;">💪 Sobre tu masa muscular:</p>
+                        <p style="margin: 0 0 5px 0; font-size: 13px; color: #444;">{feedback_masa_muscular}</p>
+                        <p style="margin: 0; font-size: 12px; color: #888;">{rango_masa_muscular}</p>
+                    </div>
+                </div>
+            </div>
             
-            <p style="margin-top: 40px; text-align: center; color: #999; font-size: 12px;">
-                <em>Este reporte contiene el mismo contenido que recibe el cliente.</em>
-            </p>
+            <!-- ÍNDICES CORPORALES -->
+            <div class="section">
+                <div class="section-title">📈 Índices Corporales</div>
+                
+                <div class="index-card">
+                    <div class="index-label">💪 FFMI (Índice de Masa Libre de Grasa)</div>
+                    <div class="index-value">{ffmi:.1f}</div>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #666;">Desarrollo muscular ajustado por altura</p>
+                    <div style="margin-top: 10px; padding: 10px; background-color: #fff9e6; border-radius: 5px; font-size: 12px; color: #555; line-height: 1.5;">
+                        <p style="margin: 0 0 5px 0; font-weight: 600;">📊 ¿Qué es el FFMI?</p>
+                        <p style="margin: 0;">El FFMI normaliza tu masa muscular según tu altura, permitiendo comparaciones justas entre personas de diferentes estaturas. Es el "IMC del músculo".</p>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background-color: rgba(255,215,0,0.1); border-radius: 5px;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #444; font-weight: 600;">💡 Tu nivel:</p>
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #444;">{feedback_ffmi}</p>
+                        <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_ffmi}</p>
+                    </div>
+                    {f'''<div style="margin-top: 12px; padding: 12px; background-color: {('#d4edda' if modo_ffmi_email == 'GREEN' else '#fff3cd' if modo_ffmi_email == 'AMBER' else '#f8d7da')}; border-radius: 5px; border-left: 4px solid {('#28a745' if modo_ffmi_email == 'GREEN' else '#ffc107' if modo_ffmi_email == 'AMBER' else '#dc3545')};">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #333;">⚠️ Validez de interpretación:</p>
+                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #555; line-height: 1.5;">
+                            <strong>{('🟢 ALTA' if modo_ffmi_email == 'GREEN' else '🟡 MODERADA' if modo_ffmi_email == 'AMBER' else '🔴 LIMITADA')}</strong> - 
+                            {('Tu % de grasa está en rango saludable. El FFMI refleja fielmente tu desarrollo muscular.' if modo_ffmi_email == 'GREEN' else 'Tu % de grasa está elevado. El FFMI puede estar ligeramente inflado por retención de agua/inflamación.' if modo_ffmi_email == 'AMBER' else 'Tu % de grasa está muy alto o muy bajo. El FFMI no es confiable en este rango debido a alteraciones en la composición de MLG.')}
+                        </p>
+                        <p style="margin: 0; font-size: 11px; color: #666; font-style: italic;">
+                            Rangos válidos: Hombres 12-23%, Mujeres 21-31%. Fuera de estos rangos, la MLG incluye más agua/inflamación que músculo real.
+                        </p>
+                    </div>''' if 'modo_ffmi_email' in locals() else ''}
+                </div>
+                
+                <div class="card">
+                    <h4 style="margin-top: 0; color: #555;">Índices de Salud</h4>
+                    <div class="metric-grid">
+                        {f'''<div class="metric-row">
+                            <div class="metric-cell metric-label">Circunferencia cintura</div>
+                            <div class="metric-cell metric-value"><strong>{circunferencia_cintura} cm</strong></div>
+                        </div>''' if circunferencia_cintura is not None else ''}
+                        {f'''<div class="metric-row">
+                            <div class="metric-cell metric-label">Ratio Cintura-Altura</div>
+                            <div class="metric-cell metric-value">
+                                <strong>{wthr:.3f}</strong>
+                                <span class="badge badge-{('green' if '🟢' in wthr_clasificacion else 'yellow' if '🟡' in wthr_clasificacion else 'red')}">{wthr_clasificacion.replace(' - 🟢', '').replace(' - 🟡', '').replace(' - 🔴', '')}</span>
+                            </div>
+                        </div>''' if wthr is not None else ''}
+                        {f'''<div class="metric-row">
+                            <div class="metric-cell metric-label">Grasa visceral</div>
+                            <div class="metric-cell metric-value">
+                                <strong>Nivel {grasa_visceral}</strong>
+                                <span class="badge badge-{('green' if '🟢' in grasa_visceral_clasificacion else 'yellow' if '🟡' in grasa_visceral_clasificacion else 'red')}">{grasa_visceral_clasificacion.replace(' - 🟢', '').replace(' - 🟡', '').replace(' - 🔴', '')}</span>
+                            </div>
+                        </div>''' if grasa_visceral is not None else ''}
+                    </div>
+                </div>
+                
+                {f'''<div style="margin-top: 10px; padding: 12px; background-color: #f0f8ff; border-radius: 5px; border-left: 3px solid #3498DB; font-size: 13px; color: #555;">
+                    <p style="margin: 0 0 8px 0; font-weight: 600;">💡 Sobre estos índices:</p>
+                    {('<p style="margin: 0 0 5px 0;"><strong>WtHR:</strong> ' + feedback_wthr + '</p><p style="margin: 8px 0 0 0; font-size: 12px; color: #777; line-height: 1.6;">' + rangos_wthr + '</p>') if wthr is not None else ''}
+                    {('<p style="margin: 0 0 5px 0;"><strong>Grasa visceral:</strong> ' + feedback_visceral + '</p>') if grasa_visceral is not None else ''}
+                    {('<p style="margin: 8px 0 0 0; font-size: 12px; color: #777;"><em>' + info_visceral + '</em></p>') if grasa_visceral is not None else ''}
+                </div>''' if wthr is not None or grasa_visceral is not None else ''}
+                
+                {f'''<div class="card" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left-color: #3498DB;">
+                    <h4 style="margin-top: 0; color: #3498DB;">🧬 Edad Metabólica</h4>
+                    <div class="metric-grid">
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Edad cronológica</div>
+                            <div class="metric-cell metric-value"><strong>{edad} años</strong></div>
+                        </div>
+                        <div class="metric-row">
+                            <div class="metric-cell metric-label">Edad metabólica</div>
+                            <div class="metric-cell metric-value"><strong>{edad_metabolica} años</strong></div>
+                        </div>
+                    </div>
+                    <p style="margin: 15px 0 0 0; padding: 10px; background-color: {'#d4edda' if edad_metabolica < edad else '#fff3cd' if edad_metabolica == edad else '#f8d7da'}; border-radius: 5px; font-size: 14px; text-align: center;">
+                        {'✅ Tu metabolismo es ' + str(edad - edad_metabolica) + ' años más joven' if edad_metabolica < edad else '⚠️ Tu metabolismo está ' + str(edad_metabolica - edad) + ' años por encima' if edad_metabolica > edad else '📊 Tu edad metabólica coincide con tu edad'}
+                    </p>
+                    <div style="margin-top: 12px; padding: 10px; background-color: rgba(255,255,255,0.7); border-radius: 5px; font-size: 12px; color: #555;">
+                        <p style="margin: 0 0 8px 0;"><strong>💡 Qué significa:</strong> {feedback_edad_metabolica}</p>
+                        <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_edad_metabolica}</p>
+                    </div>
+                </div>''' if edad_metabolica is not None else ''}
+            </div>
+            
+            <!-- NIVEL DE ENTRENAMIENTO -->
+            {f'''<div class="section">
+                <div class="section-title">💪 Nivel de Entrenamiento</div>
+                <div class="card-highlight">
+                    NIVEL: {nivel_entrenamiento.upper()}
+                </div>
+                <p style="font-size: 14px; color: #666; text-align: center;">
+                    Este nivel se calcula evaluando tu desarrollo muscular, rendimiento funcional y experiencia de entrenamiento.
+                </p>
+                <div style="margin-top: 15px; padding: 12px; background-color: #fff9e6; border-radius: 5px; border-left: 3px solid #FFD700; font-size: 13px; color: #555;">
+                    <p style="margin: 0; font-weight: 600;">💡 Interpretación de tu nivel:</p>
+                    <p style="margin: 8px 0 0 0;">{feedback_nivel}</p>
+                </div>
+            </div>''' if nivel_entrenamiento else ''}
+            
+            <!-- ESTADO DE RECUPERACIÓN -->
+            {(lambda s: s.replace('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '<div class="section">').replace('😴 ESTADO DE RECUPERACIÓN (SUEÑO + ESTRÉS)', '<div class="section-title">😴 Estado de Recuperación</div>').replace('   ╔════════════════════════════════════════════════════════════════╗' + chr(10) + '   ║  ÍNDICE DE RECUPERACIÓN (IR-SE):', '<div class="index-card"><div class="index-label">Índice de Recuperación (IR-SE)</div><div class="index-value">').replace('/100                   ║' + chr(10) + '   ║  NIVEL:', '/100</div><div style="font-size: 18px; font-weight: 600; margin-top: 10px;">NIVEL:').replace(' ║' + chr(10) + '   ╚════════════════════════════════════════════════════════════════╝' + chr(10) + chr(10) + '   • Calidad de sueño:', '</div></div><div class="card"><div class="metric-grid"><div class="metric-row"><div class="metric-cell metric-label">Calidad de sueño</div><div class="metric-cell metric-value"><strong>').replace('/100' + chr(10) + '   • Nivel de estrés:', '/100</strong></div></div><div class="metric-row"><div class="metric-cell metric-label">Nivel de estrés</div><div class="metric-cell metric-value"><strong>').replace('/100' + chr(10) + '   ' + chr(10) + '   💡 Este índice refleja tu capacidad de recuperación y adaptación al' + chr(10) + '      entrenamiento. Valores bajos pueden limitar tu progreso.', '/100</strong></div></div></div></div><p style="font-size: 14px; color: #666; padding: 15px; background-color: #f0f8ff; border-radius: 5px;">💡 Este índice refleja tu capacidad de recuperación y adaptación al entrenamiento. Valores bajos pueden limitar tu progreso.</p></div>'))(seccion_recuperacion) if seccion_recuperacion else ''}
+            
+            <!-- FOTOGRAFÍAS -->
+            <div class="section">
+                <div class="section-title">📸 Fotografías de Progreso</div>
+                <div class="card">
+                    <p style="margin: 0; font-size: 14px; color: #666;">
+                        Las fotografías de tu evaluación están adjuntas a este correo para tu registro personal.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- PRÓXIMOS PASOS -->
+            <div class="section">
+                <div class="section-title">📱 Próximos Pasos</div>
+                <div class="cta-box">
+                    <div class="cta-title">Tu coach se pondrá en contacto contigo para:</div>
+                    <ul class="cta-list">
+                        <li>Revisar en detalle tus resultados</li>
+                        <li>Diseñar tu plan nutricional personalizado</li>
+                        <li>Establecer objetivos específicos y proyecciones</li>
+                        <li>Programar tu seguimiento y ajustes</li>
+                    </ul>
+                </div>
+                <p style="font-size: 14px; color: #666; text-align: center; margin-top: 20px;">
+                    Si tienes alguna pregunta o inquietud, no dudes en contactarnos.
+                </p>
+            </div>
         </div>
         
         <div class="footer">
@@ -4177,8 +5102,7 @@ muscleupgym.fitness
         </div>
     </div>
 </body>
-</html>
-"""
+</html>"""
 
         msg = MIMEMultipart('alternative')
         msg['From'] = email_origen
@@ -8193,10 +9117,22 @@ if not st.session_state.get("correo_enviado", False):
                     else:
                         st.warning(f"⚠️ Email a administración enviado, pero hubo un error al enviar el reporte al cliente ({email_cliente})")
                     
-                    # Enviar email Parte 2 (interno)
+                    # Enviar email Parte 2 (interno) con TODO EL CONTENIDO del email cliente
                     ok_parte2 = enviar_email_parte2(
-                        nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                        imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos, 
+                        nombre, fecha_llenado, edad, sexo, peso, estatura, imc,
+                        grasa_corregida, mlg,
+                        ffmi_para_email,  # FFMI completo
+                        nivel_entrenamiento if 'nivel_entrenamiento' in locals() else None,
+                        circunferencia_cintura if 'circunferencia_cintura' in locals() else None,
+                        grasa_visceral if 'grasa_visceral' in locals() else None,
+                        edad_metabolica if 'edad_metabolica' in locals() else None,
+                        wthr if 'wthr' in locals() else None,
+                        peso - mlg,  # masa_grasa
+                        progress_photos,
+                        masa_muscular_aparato,  # Masa muscular del Omron
+                        masa_muscular_estimada_email,  # Masa muscular estimada
+                        masa_muscular if 'masa_muscular' in locals() else None,  # Fallback legacy
+                        tmb if 'tmb' in locals() else None,  # TMB
                         st.session_state.get('ciclo_menstrual')
                     )
                     if ok_parte2:
@@ -8261,8 +9197,20 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                 
                 # Reenviar email Parte 2 (interno)
                 ok_parte2 = enviar_email_parte2(
-                    nombre, fecha_llenado, edad, sexo, peso, estatura, 
-                    imc, grasa_corregida, masa_muscular, grasa_visceral, mlg, tmb, circunferencia_cintura, progress_photos, 
+                    nombre, fecha_llenado, edad, sexo, peso, estatura, imc,
+                    grasa_corregida, mlg,
+                    ffmi_para_email,  # FFMI completo
+                    nivel_entrenamiento if 'nivel_entrenamiento' in locals() else None,
+                    circunferencia_cintura if 'circunferencia_cintura' in locals() else None,
+                    grasa_visceral if 'grasa_visceral' in locals() else None,
+                    edad_metabolica if 'edad_metabolica' in locals() else None,
+                    wthr if 'wthr' in locals() else None,
+                    peso - mlg,  # masa_grasa
+                    progress_photos,
+                    masa_muscular_aparato,  # Masa muscular del Omron
+                    masa_muscular_estimada_email,  # Masa muscular estimada
+                    masa_muscular if 'masa_muscular' in locals() else None,  # Fallback legacy
+                    tmb if 'tmb' in locals() else None,  # TMB
                     st.session_state.get('ciclo_menstrual')
                 )
                 if ok_parte2:
