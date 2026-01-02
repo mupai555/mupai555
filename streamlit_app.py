@@ -7327,98 +7327,98 @@ if datos_personales_completos and st.session_state.datos_completos:
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
-        with col1:
-            # Ensure peso has a valid default
-            peso_default = 70.0
-            peso_value = st.session_state.get("peso", peso_default)
-            if peso_value == '' or peso_value is None or peso_value == 0:
-                peso_value = peso_default
-            peso = st.number_input(
-                "⚖️ Peso corporal (kg)",
-                min_value=30.0,
-                max_value=200.0,
-                value=safe_float(peso_value, peso_default),
-                step=0.1,
-                key="peso",
-                help="Peso en ayunas, sin ropa"
-            )
-        with col2:
-            # Ensure estatura has a valid default
-            estatura_default = 170.0
-            estatura_value = st.session_state.get("estatura", estatura_default)
-            if estatura_value == '' or estatura_value is None or estatura_value == 0:
-                estatura_value = estatura_default
-            estatura = st.number_input(
-                "📏 Estatura (cm)",
-                min_value=120.0,
-                max_value=220.0,
-                value=safe_float(estatura_value, estatura_default),
-                step=0.1,
-                key="estatura",
-                help="Medida sin zapatos (puede incluir decimales, ej: 165.5)"
-            )
-        with col3:
-            st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
-            metodo_grasa = st.selectbox(
-                "📊 Método de medición de grasa",
-                ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
-                key="metodo_grasa",
-                help="Selecciona el método utilizado"
-            )
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        # Ensure grasa_corporal has a valid default
-        grasa_default = 20.0
-        grasa_value = st.session_state.get("grasa_corporal", grasa_default)
-        if grasa_value == '' or grasa_value is None or grasa_value == 0:
-            grasa_value = grasa_default
-        grasa_corporal = st.number_input(
-            f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
-            min_value=3.0,
-            max_value=60.0,
-            value=safe_float(grasa_value, grasa_default),
-            step=0.1,
-            key="grasa_corporal",
-            help="Valor medido con el método seleccionado"
-        )
-
-        # Campo opcional - % Masa muscular (no afecta cálculos)
-        masa_muscular_default = st.session_state.get("masa_muscular", 0.0)
-        masa_muscular = st.number_input(
-            "💪 % Masa muscular (medición Omron, opcional)",
-            min_value=0.0,
-            max_value=100.0,
-            value=safe_float(masa_muscular_default, 0.0),
-            step=0.1,
-            key="masa_muscular",
-            help="Introduce el % de masa muscular según tu báscula Omron. Se comparará con el valor estimado científico en el reporte. Si no lo conoces, déjalo en 0."
-        )
-
-        # Campo opcional - Grasa visceral (no afecta cálculos)
-        grasa_visceral_default = st.session_state.get("grasa_visceral", 0)
-        grasa_visceral_safe = safe_int(grasa_visceral_default, 0)
-        grasa_visceral = st.number_input(
-            "🫀 Grasa visceral (nivel, opcional)",
-            min_value=1,
-            max_value=59,
-            value=grasa_visceral_safe if grasa_visceral_safe >= 1 else 1,
-            step=1,
-            key="grasa_visceral",
-            help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
-        )
-
-        # Campo opcional - Circunferencia de cintura (no afecta cálculos)
-        circunferencia_cintura_default = st.session_state.get("circunferencia_cintura", 0.0)
-        circunferencia_cintura_safe = safe_float(circunferencia_cintura_default, 0.0)
-        circunferencia_cintura = st.number_input(
-            "📏 Circunferencia de cintura (cm, opcional)",
-            min_value=0.0,
+    with col1:
+        # Ensure peso has a valid default
+        peso_default = 70.0
+        peso_value = st.session_state.get("peso", peso_default)
+        if peso_value == '' or peso_value is None or peso_value == 0:
+            peso_value = peso_default
+        peso = st.number_input(
+            "⚖️ Peso corporal (kg)",
+            min_value=30.0,
             max_value=200.0,
-            value=circunferencia_cintura_safe if circunferencia_cintura_safe > 0 else 0.0,
+        value=safe_float(peso_value, peso_default),
             step=0.1,
-            key="circunferencia_cintura",
-            help="Medida de la circunferencia de la cintura a la altura del ombligo. Este dato se incluye en el reporte junto con el ratio cintura-altura (WtHR). Valores saludables WtHR: <0.5 (hombres y mujeres)."
+            key="peso",
+            help="Peso en ayunas, sin ropa"
         )
+    with col2:
+        # Ensure estatura has a valid default
+        estatura_default = 170.0
+        estatura_value = st.session_state.get("estatura", estatura_default)
+        if estatura_value == '' or estatura_value is None or estatura_value == 0:
+            estatura_value = estatura_default
+        estatura = st.number_input(
+            "📏 Estatura (cm)",
+            min_value=120.0,
+            max_value=220.0,
+            value=safe_float(estatura_value, estatura_default),
+            step=0.1,
+            key="estatura",
+            help="Medida sin zapatos (puede incluir decimales, ej: 165.5)"
+        )
+    with col3:
+        st.markdown('<div class="body-fat-method-selector">', unsafe_allow_html=True)
+        metodo_grasa = st.selectbox(
+            "📊 Método de medición de grasa",
+            ["Omron HBF-516 (BIA)", "InBody 270 (BIA profesional)", "Bod Pod (Pletismografía)", "DEXA (Gold Standard)"],
+            key="metodo_grasa",
+            help="Selecciona el método utilizado"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # Ensure grasa_corporal has a valid default
+    grasa_default = 20.0
+    grasa_value = st.session_state.get("grasa_corporal", grasa_default)
+    if grasa_value == '' or grasa_value is None or grasa_value == 0:
+        grasa_value = grasa_default
+    grasa_corporal = st.number_input(
+        f"💪 % de grasa corporal ({metodo_grasa.split('(')[0].strip()})",
+        min_value=3.0,
+        max_value=60.0,
+        value=safe_float(grasa_value, grasa_default),
+        step=0.1,
+        key="grasa_corporal",
+        help="Valor medido con el método seleccionado"
+    )
+
+    # Campo opcional - % Masa muscular (no afecta cálculos)
+    masa_muscular_default = st.session_state.get("masa_muscular", 0.0)
+    masa_muscular = st.number_input(
+        "💪 % Masa muscular (medición Omron, opcional)",
+        min_value=0.0,
+        max_value=100.0,
+        value=safe_float(masa_muscular_default, 0.0),
+        step=0.1,
+        key="masa_muscular",
+        help="Introduce el % de masa muscular según tu báscula Omron. Se comparará con el valor estimado científico en el reporte. Si no lo conoces, déjalo en 0."
+    )
+
+    # Campo opcional - Grasa visceral (no afecta cálculos)
+    grasa_visceral_default = st.session_state.get("grasa_visceral", 0)
+    grasa_visceral_safe = safe_int(grasa_visceral_default, 0)
+    grasa_visceral = st.number_input(
+        "🫀 Grasa visceral (nivel, opcional)",
+        min_value=1,
+        max_value=59,
+        value=grasa_visceral_safe if grasa_visceral_safe >= 1 else 1,
+        step=1,
+        key="grasa_visceral",
+        help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
+    )
+
+    # Campo opcional - Circunferencia de cintura (no afecta cálculos)
+    circunferencia_cintura_default = st.session_state.get("circunferencia_cintura", 0.0)
+    circunferencia_cintura_safe = safe_float(circunferencia_cintura_default, 0.0)
+    circunferencia_cintura = st.number_input(
+        "📏 Circunferencia de cintura (cm, opcional)",
+        min_value=0.0,
+        max_value=200.0,
+        value=circunferencia_cintura_safe if circunferencia_cintura_safe > 0 else 0.0,
+        step=0.1,
+        key="circunferencia_cintura",
+        help="Medida de la circunferencia de la cintura a la altura del ombligo. Este dato se incluye en el reporte junto con el ratio cintura-altura (WtHR). Valores saludables WtHR: <0.5 (hombres y mujeres)."
+    )
 
         st.markdown('</div>', unsafe_allow_html=True)
 
