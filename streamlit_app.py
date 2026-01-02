@@ -7978,6 +7978,37 @@ with st.expander(step2_title, expanded=False):
                     help="Sin pausas, sin perder rango completo de movimiento."
                 )
                 ejercicios_data[empuje] = empuje_reps
+                
+                # FEEDBACK VISUAL EN TIEMPO REAL
+                if empuje_reps > 0 and empuje in referencias_funcionales[sexo]:
+                    ref = referencias_funcionales[sexo][empuje]
+                    nivel_actual = "Bajo"
+                    for nombre_nivel, umbral in ref["niveles"]:
+                        if empuje_reps >= umbral:
+                            nivel_actual = nombre_nivel
+                        else:
+                            break
+                    
+                    color_map = {
+                        "Bajo": ("#FF5252", "🔴"),
+                        "Promedio": ("#FF9800", "🟠"),
+                        "Bueno": ("#00E676", "🟢"),
+                        "Avanzado": ("#FFD700", "⭐")
+                    }
+                    color, emoji = color_map.get(nivel_actual, ("#888", "⚪"))
+                    
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, {color}22, {color}11); 
+                                border-left: 4px solid {color}; 
+                                padding: 0.75rem 1rem; 
+                                border-radius: 8px; 
+                                margin-top: 0.5rem;
+                                animation: fadeIn 0.3s ease;">
+                        <span style="font-size: 1.1rem; font-weight: 800; color: {color};">
+                            {emoji} NIVEL: {nivel_actual.upper()}
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
 
         with tab2:
             st.markdown("#### Tracción superior")
@@ -8010,6 +8041,19 @@ with st.expander(step2_title, expanded=False):
                     key="sentadilla_bulgara_reps"
                 )
                 ejercicios_data["Sentadilla búlgara unilateral"] = pierna_empuje_reps
+                
+                # FEEDBACK VISUAL
+                if pierna_empuje_reps > 0:
+                    ref = referencias_funcionales[sexo]["Sentadilla búlgara unilateral"]
+                    nivel_actual = "Bajo"
+                    for nombre_nivel, umbral in ref["niveles"]:
+                        if pierna_empuje_reps >= umbral:
+                            nivel_actual = nombre_nivel
+                        else:
+                            break
+                    color_map = {"Bajo": ("#FF5252", "🔴"), "Promedio": ("#FF9800", "🟠"), "Bueno": ("#00E676", "🟢"), "Avanzado": ("#FFD700", "⭐")}
+                    color, emoji = color_map.get(nivel_actual, ("#888", "⚪"))
+                    st.markdown(f'<div style="background: linear-gradient(135deg, {color}22, {color}11); border-left: 4px solid {color}; padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.5rem; animation: fadeIn 0.3s ease;"><span style="font-size: 1.1rem; font-weight: 800; color: {color};">{emoji} NIVEL: {nivel_actual.upper()}</span></div>', unsafe_allow_html=True)
 
         with tab4:
             st.markdown("#### Tren inferior tracción")
@@ -8025,6 +8069,19 @@ with st.expander(step2_title, expanded=False):
                     key="puente_gluteo_reps"
                 )
                 ejercicios_data["Puente de glúteo unilateral"] = pierna_traccion_reps
+                
+                # FEEDBACK VISUAL
+                if pierna_traccion_reps > 0:
+                    ref = referencias_funcionales[sexo]["Puente de glúteo unilateral"]
+                    nivel_actual = "Bajo"
+                    for nombre_nivel, umbral in ref["niveles"]:
+                        if pierna_traccion_reps >= umbral:
+                            nivel_actual = nombre_nivel
+                        else:
+                            break
+                    color_map = {"Bajo": ("#FF5252", "🔴"), "Promedio": ("#FF9800", "🟠"), "Bueno": ("#00E676", "🟢"), "Avanzado": ("#FFD700", "⭐")}
+                    color, emoji = color_map.get(nivel_actual, ("#888", "⚪"))
+                    st.markdown(f'<div style="background: linear-gradient(135deg, {color}22, {color}11); border-left: 4px solid {color}; padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.5rem; animation: fadeIn 0.3s ease;"><span style="font-size: 1.1rem; font-weight: 800; color: {color};">{emoji} NIVEL: {nivel_actual.upper()}</span></div>', unsafe_allow_html=True)
 
         with tab5:
             st.markdown("#### Core y estabilidad")
@@ -8037,6 +8094,19 @@ with st.expander(step2_title, expanded=False):
                 help="Mantén la posición sin perder alineación corporal: cuerpo recto desde cabeza hasta talones, sin elevar cadera ni dejarla caer."
             )
             ejercicios_data["Plancha"] = core_tiempo
+            
+            # FEEDBACK VISUAL
+            if core_tiempo > 0:
+                ref = referencias_funcionales[sexo]["Plancha"]
+                nivel_actual = "Bajo"
+                for nombre_nivel, umbral in ref["niveles"]:
+                    if core_tiempo >= umbral:
+                        nivel_actual = nombre_nivel
+                    else:
+                        break
+                color_map = {"Bajo": ("#FF5252", "🔴"), "Promedio": ("#FF9800", "🟠"), "Bueno": ("#00E676", "🟢"), "Avanzado": ("#FFD700", "⭐")}
+                color, emoji = color_map.get(nivel_actual, ("#888", "⚪"))
+                st.markdown(f'<div style="background: linear-gradient(135deg, {color}22, {color}11); border-left: 4px solid {color}; padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.5rem; animation: fadeIn 0.3s ease;"><span style="font-size: 1.1rem; font-weight: 800; color: {color};">{emoji} NIVEL: {nivel_actual.upper()} ({core_tiempo}s)</span></div>', unsafe_allow_html=True)
 
         # Evaluar niveles según referencias (always run calculations)
         if USER_VIEW:
