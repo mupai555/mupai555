@@ -2344,6 +2344,9 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
         masa_grasa_calc = peso - mlg if masa_grasa is None else masa_grasa
         pct_mlg = (mlg / peso * 100) if peso > 0 else 0
         
+        # Calcular modo de interpretación FFMI
+        modo_ffmi_email = obtener_modo_interpretacion_ffmi(grasa_corregida, sexo)
+        
         # Porcentajes de masa muscular
         pct_masa_muscular_aparato = (masa_muscular_aparato / peso * 100) if peso > 0 and masa_muscular_aparato > 0 else 0
         pct_masa_muscular_estimada = (masa_muscular_estimada / peso * 100) if peso > 0 and masa_muscular_estimada > 0 else 0
@@ -3464,6 +3467,16 @@ administracion@muscleupgym.fitness
                         <p style="margin: 0 0 8px 0; font-size: 13px; color: #444;">{feedback_ffmi}</p>
                         <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_ffmi}</p>
                     </div>
+                    {f'''<div style="margin-top: 12px; padding: 12px; background-color: {('#d4edda' if modo_ffmi_email == 'GREEN' else '#fff3cd' if modo_ffmi_email == 'AMBER' else '#f8d7da')}; border-radius: 5px; border-left: 4px solid {('#28a745' if modo_ffmi_email == 'GREEN' else '#ffc107' if modo_ffmi_email == 'AMBER' else '#dc3545')};">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #333;">⚠️ Validez de interpretación:</p>
+                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #555; line-height: 1.5;">
+                            <strong>{('🟢 ALTA' if modo_ffmi_email == 'GREEN' else '🟡 MODERADA' if modo_ffmi_email == 'AMBER' else '🔴 LIMITADA')}</strong> - 
+                            {('Tu % de grasa está en rango saludable. El FFMI refleja fielmente tu desarrollo muscular.' if modo_ffmi_email == 'GREEN' else 'Tu % de grasa está elevado. El FFMI puede estar ligeramente inflado por retención de agua/inflamación.' if modo_ffmi_email == 'AMBER' else 'Tu % de grasa está muy alto o muy bajo. El FFMI no es confiable en este rango debido a alteraciones en la composición de MLG.')}
+                        </p>
+                        <p style="margin: 0; font-size: 11px; color: #666; font-style: italic;">
+                            Rangos válidos: Hombres 12-23%, Mujeres 21-31%. Fuera de estos rangos, la MLG incluye más agua/inflamación que músculo real.
+                        </p>
+                    </div>''' if 'modo_ffmi_email' in locals() else ''}
                 </div>
                 
                 <div class="card">
