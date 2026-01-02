@@ -6080,9 +6080,7 @@ def formulario_suenyo_estres():
     Returns:
         dict: Diccionario con resultados calculados para incluir en email
     """
-    st.markdown("---")
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    st.markdown("### 😴 Estado de Recuperación (Sueño + Estrés)")
     st.markdown("""
     Por favor responde las siguientes preguntas sobre tu calidad de sueño y nivel de estrés. 
     Esta información será incluida en tu reporte de evaluación para un análisis integral.
@@ -7867,15 +7865,18 @@ if fuera_rango:
 # Ubicado DESPUÉS de composición corporal para flujo lógico
 # Los datos se capturan y se incluirán automáticamente en el email final
 step3_icon, step3_color, step3_status = get_step_status_indicator(1)
-resultado_suenyo_estres = formulario_suenyo_estres()
+step3_title = f"😴 **Paso 3: Estado de Recuperación (Sueño + Estrés)** {step3_icon}"
+with st.expander(step3_title, expanded=True):
+    st.markdown(f'<p style="color: {step3_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step3_status}</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Evalúa tu calidad de sueño y nivel de estrés</p>', unsafe_allow_html=True)
+    progress.progress(25)
+    progress_text.text("Paso 3 de 7: Evaluación de recuperación")
+    resultado_suenyo_estres = formulario_suenyo_estres()
 
 # ========== CUESTIONARIO CICLO MENSTRUAL (SOLO MUJERES) ==========
 # Ubicado después de datos antropométricos para contexto completo
 # La información se captura y se incluirá en el reporte sin afectar cálculos
 ciclo_menstrual = formulario_ciclo_menstrual(sexo)
-
-progress = st.progress(0)
-progress_text = st.empty()
 
 # PASO 4: Evaluación funcional (Obligatorio - Siempre expandido)
 step4_icon, step4_color, step4_status = get_step_status_indicator(2)
