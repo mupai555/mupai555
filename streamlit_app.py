@@ -7324,10 +7324,9 @@ if datos_personales_completos and st.session_state.datos_completos:
     st.markdown('<div class="content-card" style="border: 3px solid #FFD700; background: #1A1A1A;">', unsafe_allow_html=True)
     st.markdown("## 📊 **Paso 2: Composición Corporal y Antropometría**")
     st.markdown('<p style="color: #00E676; font-size: 1rem; margin-bottom: 1rem; font-weight: bold;">✓ Sección obligatoria - Completa todos los campos</p>', unsafe_allow_html=True)
-        st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Completa estos datos para obtener tu análisis de composición corporal</p>', unsafe_allow_html=True)
 
-        st.markdown('<div class="content-card">', unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
+    st.markdown('<div class="content-card">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
         with col1:
             # Ensure peso has a valid default
             peso_default = 70.0
