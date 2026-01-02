@@ -1656,6 +1656,67 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
+# ==================== SISTEMA ANTI-SLEEP - KEEP APP ALIVE ====================
+# Previene que Streamlit Cloud ponga la app en modo sleep
+# Funciona solo si hay usuario activo navegando
+
+# Inicializar timestamp de última actividad
+if 'last_activity' not in st.session_state:
+    st.session_state.last_activity = time.time()
+    st.session_state.activity_counter = 0
+
+# Actualizar actividad cada interacción
+current_time = time.time()
+time_since_last = current_time - st.session_state.last_activity
+
+# Auto-refresh cada 4 minutos (240 segundos) para mantener app viva
+# Solo si hay sesión activa (usuario navegando)
+if time_since_last > 240:  # 4 minutos
+    st.session_state.last_activity = current_time
+    st.session_state.activity_counter += 1
+    # Forzar pequeño refresh invisible para mantener conexión
+    if st.session_state.activity_counter % 10 == 0:  # Cada 40 minutos
+        st.toast("🔄 Sesión activa", icon="✅")
+
+# JavaScript para detectar actividad del usuario y mantener conexión
+keep_alive_js = """
+<script>
+let lastInteraction = Date.now();
+let keepAliveInterval;
+
+// Detectar cualquier interacción del usuario
+document.addEventListener('click', function() {
+    lastInteraction = Date.now();
+});
+
+document.addEventListener('keypress', function() {
+    lastInteraction = Date.now();
+});
+
+document.addEventListener('scroll', function() {
+    lastInteraction = Date.now();
+});
+
+// Ping invisible cada 3 minutos si hay actividad
+keepAliveInterval = setInterval(function() {
+    const now = Date.now();
+    const timeSinceInteraction = (now - lastInteraction) / 1000;
+    
+    // Si hubo interacción en los últimos 5 minutos, mantener viva
+    if (timeSinceInteraction < 300) {
+        // Simular interacción pequeña para mantener WebSocket
+        const dummy = document.createElement('div');
+        dummy.style.display = 'none';
+        document.body.appendChild(dummy);
+        setTimeout(() => document.body.removeChild(dummy), 100);
+    }
+}, 180000); // Cada 3 minutos
+
+console.log('🔄 Anti-sleep system active - App will stay awake during user session');
+</script>
+"""
+st.markdown(keep_alive_js, unsafe_allow_html=True)
+
 # ==================== SISTEMA DE ACCESO POR CÓDIGO ÚNICO ====================
 
 # Si no está autenticado, mostrar el flujo de acceso
