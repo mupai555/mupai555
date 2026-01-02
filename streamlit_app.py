@@ -5347,18 +5347,68 @@ with st.expander("💪 **Paso 2: Evaluación Funcional y Nivel de Entrenamiento*
 
     st.markdown("### 📋 Experiencia en entrenamiento **(Requerido)**")
     st.markdown("*Este campo es obligatorio para continuar con la evaluación*")
-    # Using key parameter ensures experiencia is automatically stored in session_state
-    experiencia = st.radio(
-        "¿Cuál de las siguientes afirmaciones describe con mayor precisión tu hábito de entrenamiento en los últimos dos años?",
+    
+    st.markdown("""
+    **Responde las siguientes preguntas sobre tu historial de entrenamiento:**
+    """)
+    
+    # Pregunta 1: Frecuencia real de entrenamiento
+    st.markdown("#### 1️⃣ Frecuencia de entrenamiento")
+    frecuencia = st.radio(
+        "En los **últimos 6 meses**, ¿con qué frecuencia has entrenado de manera consistente?",
         [
-            "A) He entrenado de forma irregular, con semanas sin entrenar y sin un plan estructurado.",
-            "B) He entrenado al menos 2 veces por semana siguiendo rutinas generales sin mucha progresión planificada.",
-            "C) He seguido un programa de entrenamiento estructurado con objetivos claros y progresión semanal.",
-            "D) He diseñado o ajustado personalmente mis planes de entrenamiento, monitoreando variables como volumen, intensidad y recuperación."
+            "Menos de 1 vez por semana o con pausas largas (más de 2 semanas sin entrenar)",
+            "1-2 veces por semana de forma irregular",
+            "2-3 veces por semana de forma consistente",
+            "4 o más veces por semana de forma consistente"
         ],
-        help="Campo obligatorio: Tu respuesta debe reflejar tu consistencia y planificación real.",
-        key="experiencia_seleccion"
+        help="Sé honesto. La consistencia real es más importante que la intención.",
+        key="frecuencia_entrenamiento"
     )
+    
+    # Pregunta 2: Tiempo total de experiencia
+    st.markdown("#### 2️⃣ Tiempo de experiencia acumulada")
+    tiempo_experiencia = st.radio(
+        "¿Cuánto tiempo **acumulado** llevas entrenando de forma consistente en tu vida? (suma todos los períodos en los que entrenaste regularmente)",
+        [
+            "Menos de 6 meses",
+            "6 meses a 1 año",
+            "1 a 2 años",
+            "Más de 2 años"
+        ],
+        help="Cuenta solo los períodos donde entrenaste al menos 2 veces por semana de forma regular.",
+        key="tiempo_experiencia"
+    )
+    
+    # Pregunta 3: Tipo de entrenamiento
+    st.markdown("#### 3️⃣ Tipo de entrenamiento y progresión")
+    tipo_entrenamiento = st.radio(
+        "¿Qué describe mejor tu forma de entrenar actualmente?",
+        [
+            "Hago ejercicios variados sin llevar registro ni plan específico",
+            "Sigo rutinas de internet o apps pero no registro mis cargas ni progresión",
+            "Sigo un programa con progresión de cargas y llevo registro de mis entrenamientos",
+            "Planeo mi entrenamiento considerando periodización, volumen, intensidad y ajusto según mi progreso"
+        ],
+        help="Selecciona la opción que refleje tu realidad actual, no tus aspiraciones.",
+        key="tipo_entrenamiento"
+    )
+    
+    # Guardar respuestas en session state
+    if frecuencia and tiempo_experiencia and tipo_entrenamiento:
+        st.session_state.experiencia_completa = True
+        st.session_state.experiencia_respuestas = {
+            'frecuencia': frecuencia,
+            'tiempo': tiempo_experiencia,
+            'tipo': tipo_entrenamiento
+        }
+        
+        # Mostrar confirmación
+        st.success("✅ Cuestionario de experiencia completado")
+        experiencia = True  # Para mantener compatibilidad con el resto del código
+    else:
+        st.session_state.experiencia_completa = False
+        experiencia = False
 
     # Allow all users to access functional exercises regardless of experience level
     if experiencia:
@@ -5543,7 +5593,43 @@ if 'niveles_ejercicios' not in locals() or niveles_ejercicios is None:
 puntos_ffmi = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4, "Élite": 5}.get(nivel_ffmi, 1)
 
 # 2. Experiencia: 1-4 puntos basado en historial de entrenamiento
-puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}.get(experiencia[:2] if experiencia and len(experiencia) >= 2 else "", 1)
+# Calcular puntos de experiencia basados en las nuevas preguntas específicas
+if st.session_state.get('experiencia_completa', False):
+    respuestas = st.session_state.get('experiencia_respuestas', {})
+    
+    # Frecuencia (0-1.5 puntos)
+    frecuencia_puntos = {
+        "Menos de 1 vez por semana o con pausas largas (más de 2 semanas sin entrenar)": 0.25,
+        "1-2 veces por semana de forma irregular": 0.5,
+        "2-3 veces por semana de forma consistente": 1.0,
+        "4 o más veces por semana de forma consistente": 1.5
+    }.get(respuestas.get('frecuencia', ''), 0.25)
+    
+    # Tiempo de experiencia (0-1.5 puntos)
+    tiempo_puntos = {
+        "Menos de 6 meses": 0.25,
+        "6 meses a 1 año": 0.5,
+        "1 a 2 años": 1.0,
+        "Más de 2 años": 1.5
+    }.get(respuestas.get('tiempo', ''), 0.25)
+    
+    # Tipo de entrenamiento (0-1 punto)
+    tipo_puntos = {
+        "Hago ejercicios variados sin llevar registro ni plan específico": 0.25,
+        "Sigo rutinas de internet o apps pero no registro mis cargas ni progresión": 0.5,
+        "Sigo un programa con progresión de cargas y llevo registro de mis entrenamientos": 0.75,
+        "Planeo mi entrenamiento considerando periodización, volumen, intensidad y ajusto según mi progreso": 1.0
+    }.get(respuestas.get('tipo', ''), 0.25)
+    
+    # Total: 1-4 puntos (similar al sistema anterior)
+    puntos_exp = frecuencia_puntos + tiempo_puntos + tipo_puntos
+    
+    # Guardar para compatibilidad con validación
+    st.session_state.experiencia_seleccion = f"Nuevo sistema: {puntos_exp:.2f} puntos"
+else:
+    # Sistema antiguo para compatibilidad (deprecated)
+    experiencia_valor = st.session_state.get("experiencia_seleccion", "") or experiencia
+    puntos_exp = {"A)": 1, "B)": 2, "C)": 3, "D)": 4}.get(experiencia_valor[:2] if experiencia_valor and len(experiencia_valor) >= 2 else "", 1)
 
 # 3. Rendimiento Funcional: 1-4 puntos promedio de los 5 ejercicios funcionales
 puntos_por_nivel = {"Bajo": 1, "Promedio": 2, "Bueno": 3, "Avanzado": 4}
@@ -6587,10 +6673,15 @@ def datos_completos_para_email():
         faltantes.append("Porcentaje de grasa corporal")
     
     # Validar experiencia de entrenamiento
-    # Check both the widget key and the old experiencia variable for backward compatibility
-    experiencia_valor = st.session_state.get("experiencia_seleccion", "") or st.session_state.get("experiencia", "")
-    if not experiencia_valor or not isinstance(experiencia_valor, str) or len(experiencia_valor) < 3:
-        faltantes.append("Nivel de experiencia en entrenamiento")
+    # Check both the new system and old system for backward compatibility
+    if st.session_state.get('experiencia_completa', False):
+        # Nuevo sistema - validar que esté completo
+        pass  # Ya está validado
+    else:
+        # Sistema antiguo
+        experiencia_valor = st.session_state.get("experiencia_seleccion", "") or st.session_state.get("experiencia", "")
+        if not experiencia_valor or not isinstance(experiencia_valor, str) or len(experiencia_valor) < 3:
+            faltantes.append("Nivel de experiencia en entrenamiento")
     
     # Validar ejercicios funcionales (deben ser 5)
     ejercicios_data = st.session_state.get("datos_ejercicios", {})
