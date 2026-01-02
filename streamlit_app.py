@@ -7210,10 +7210,11 @@ st.markdown(f"""
 acepto_terminos = st.checkbox(
     "✅ **He leído y acepto la política de privacidad y el descargo de responsabilidad**",
     disabled=not st.session_state.get("acepto_descargo", False),
-    help="Primero debes leer y aceptar el descargo de responsabilidad profesional arriba" if not st.session_state.get("acepto_descargo", False) else "Acepto los términos para continuar con la evaluación"
+    help="Primero debes leer y aceptar el descargo de responsabilidad profesional arriba" if not st.session_state.get("acepto_descargo", False) else "Acepto los términos para continuar con la evaluación",
+    key="acepto_terminos"
 )
 
-if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.session_state.get("acepto_descargo", False))):
+if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.session_state.get("acepto_descargo", False)), key="btn_comenzar_evaluacion"):
     # Validación estricta de cada campo
     name_valid, name_error = validate_name(nombre)
     phone_valid, phone_error = validate_phone(telefono)
@@ -7234,10 +7235,10 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.s
         # No asignar manualmente: nombre, telefono, email_cliente, edad, sexo
         # ya tienen keys en los widgets y Streamlit los maneja automáticamente
         st.session_state.fecha_llenado = fecha_llenado
-        st.session_state.acepto_terminos = acepto_terminos
         # Transition to 'final' phase to show technical outputs
         set_flow_phase("final")
         st.success("✅ Datos registrados correctamente. ¡Continuemos con tu evaluación!")
+        st.rerun()  # Forzar recarga para mostrar nueva fase
     else:
         # Mostrar todos los errores de validación
         error_message = "⚠️ **Por favor corrige los siguientes errores:**\n\n" + "\n\n".join(validation_errors)
