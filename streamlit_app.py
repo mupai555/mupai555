@@ -6895,7 +6895,6 @@ def render_progress_photos_section():
         col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
         
         with col_libre:
-        with col_libre:
             st.markdown("#### 📷 Foto 4 – Pose Libre")
             libre_photo = st.file_uploader(
                 "Foto pose libre",
