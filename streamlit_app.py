@@ -1050,6 +1050,287 @@ html {
     border-color: var(--mupai-yellow) !important;
 }
 
+/* ========== ANIMACIONES PROFESIONALES EXTRA ========== */
+
+/* SUCCESS ANIMATIONS - Aparecen al completar pasos */
+@keyframes checkmarkBounce {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.success-checkmark {
+    animation: checkmarkBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    display: inline-block;
+}
+
+/* TOAST NOTIFICATIONS - Feedback visual flotante */
+@keyframes slideInRight {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
+}
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border-left: 5px solid var(--mupai-yellow);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,215,0,0.2);
+    color: #FFF;
+    font-weight: 600;
+    animation: slideInRight 0.5s ease-out;
+    z-index: 9999;
+    max-width: 350px;
+}
+.toast-success { border-left-color: #00E676 !important; }
+.toast-warning { border-left-color: #FF9800 !important; }
+.toast-error { border-left-color: #FF5252 !important; }
+
+/* LOADING STATES PERSONALIZADOS */
+@keyframes spinMupai {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+@keyframes pulse3D {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,215,0,0.7); }
+    50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255,215,0,0); }
+}
+.spinner-mupai {
+    border: 4px solid rgba(255,215,0,0.2);
+    border-top: 4px solid var(--mupai-yellow);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spinMupai 1s linear infinite;
+    margin: 2rem auto;
+}
+.button-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+.button-loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    right: 15px;
+    margin-top: -8px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spinMupai 0.8s linear infinite;
+}
+
+/* PROGRESS INDICATORS MEJORADOS */
+@keyframes countUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.progress-number {
+    animation: countUp 0.5s ease-out;
+    font-weight: 800;
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, var(--mupai-yellow), #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+.step-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #2A2A2A;
+    border: 3px solid #444;
+    color: #888;
+    font-weight: 800;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+.step-indicator.active {
+    background: linear-gradient(135deg, var(--mupai-yellow), #FFA500);
+    border-color: var(--mupai-yellow);
+    color: #1E1E1E;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(255,215,0,0.2), 0 5px 20px rgba(255,215,0,0.4);
+}
+.step-indicator.completed {
+    background: linear-gradient(135deg, #00E676, #00C853);
+    border-color: #00E676;
+    color: #1E1E1E;
+    animation: pulse3D 2s infinite;
+}
+.step-indicator.completed::after {
+    content: "✓";
+    position: absolute;
+    font-size: 1.5rem;
+    animation: checkmarkBounce 0.6s ease-out;
+}
+
+/* MICRO-ANIMACIONES EN ICONOS */
+@keyframes iconBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+@keyframes iconRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+.icon-animated:hover {
+    animation: iconBounce 0.6s ease infinite;
+}
+.icon-spin:hover {
+    animation: iconRotate 1.5s linear infinite;
+}
+.icon-pulse {
+    animation: iconPulse 1.5s ease-in-out infinite;
+}
+
+/* VALIDACIÓN VISUAL EN TIEMPO REAL */
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+@keyframes successPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+.input-valid {
+    border-color: #00E676 !important;
+    box-shadow: 0 0 0 4px rgba(0,230,118,0.2) !important;
+}
+.input-valid::after {
+    content: "✓";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #00E676;
+    font-weight: 800;
+    font-size: 1.3rem;
+    animation: successPop 0.4s ease-out;
+}
+.input-invalid {
+    border-color: #FF5252 !important;
+    box-shadow: 0 0 0 4px rgba(255,82,82,0.2) !important;
+    animation: errorShake 0.5s ease;
+}
+.input-invalid::after {
+    content: "✗";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #FF5252;
+    font-weight: 800;
+    font-size: 1.3rem;
+}
+.error-message {
+    color: #FF5252;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    animation: fadeIn 0.3s ease;
+}
+.success-message {
+    color: #00E676;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    animation: fadeIn 0.3s ease;
+}
+
+/* SKELETON SCREENS para loading */
+@keyframes skeletonLoading {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        #2A2A2A 0px,
+        #3A3A3A 40px,
+        #2A2A2A 80px
+    );
+    background-size: 200px 100%;
+    animation: skeletonLoading 1.5s infinite;
+    border-radius: 8px;
+}
+.skeleton-text {
+    height: 16px;
+    margin-bottom: 10px;
+}
+.skeleton-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+/* STAGGER ANIMATIONS - elementos aparecen uno tras otro */
+@keyframes staggerFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.stagger-item {
+    animation: staggerFadeIn 0.5s ease-out backwards;
+}
+.stagger-item:nth-child(1) { animation-delay: 0.1s; }
+.stagger-item:nth-child(2) { animation-delay: 0.2s; }
+.stagger-item:nth-child(3) { animation-delay: 0.3s; }
+.stagger-item:nth-child(4) { animation-delay: 0.4s; }
+.stagger-item:nth-child(5) { animation-delay: 0.5s; }
+
+/* BADGES CON BOUNCE */
+.badge:hover {
+    animation: iconBounce 0.5s ease !important;
+}
+
+/* SUCCESS CELEBRATION - Aparece al completar evaluación */
+@keyframes celebrationBurst {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.5) rotate(180deg); opacity: 0.8; }
+    100% { transform: scale(2) rotate(360deg); opacity: 0; }
+}
+.celebration-burst {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    margin: -100px 0 0 -100px;
+    background: radial-gradient(circle, var(--mupai-yellow) 0%, transparent 70%);
+    animation: celebrationBurst 1s ease-out;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* GLASSMORPHISM EFFECTS */
+.glass-card {
+    background: rgba(26, 26, 26, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 215, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========== FIN ANIMACIONES PROFESIONALES ========== */
+
 /* Slider mejorado */
 .stSlider > div > div > div {
     background: var(--mupai-yellow) !important;
