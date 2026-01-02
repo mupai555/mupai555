@@ -6807,154 +6807,155 @@ def render_progress_photos_section():
         validation_errors = []
     
         with col1:
-        st.markdown("#### 📷 Foto 1 – Frontal relajado")
-        front_photo = st.file_uploader(
-            "Foto frontal",
-            type=["jpg", "jpeg", "png"],
-            key="front_relaxed_uploader",
-            help="Foto de frente, brazos a los lados, postura natural",
-            label_visibility="collapsed"
-        )
-        
-        if front_photo:
-            is_valid, error_msg = validate_progress_photo(front_photo)
-            if is_valid:
-                st.session_state.progress_photos["front_relaxed"] = front_photo
-                st.image(front_photo, caption="✅ Foto frontal cargada", use_container_width=True)
-                st.success(f"✓ {front_photo.size / (1024*1024):.2f} MB")
+            st.markdown("#### 📷 Foto 1 – Frontal relajado")
+            front_photo = st.file_uploader(
+                "Foto frontal",
+                type=["jpg", "jpeg", "png"],
+                key="front_relaxed_uploader",
+                help="Foto de frente, brazos a los lados, postura natural",
+                label_visibility="collapsed"
+            )
+            
+            if front_photo:
+                is_valid, error_msg = validate_progress_photo(front_photo)
+                if is_valid:
+                    st.session_state.progress_photos["front_relaxed"] = front_photo
+                    st.image(front_photo, caption="✅ Foto frontal cargada", use_container_width=True)
+                    st.success(f"✓ {front_photo.size / (1024*1024):.2f} MB")
+                else:
+                    st.session_state.progress_photos["front_relaxed"] = None
+                    st.error(f"❌ {error_msg}")
+                    validation_errors.append(f"Foto 1 (Frontal): {error_msg}")
             else:
                 st.session_state.progress_photos["front_relaxed"] = None
-                st.error(f"❌ {error_msg}")
-                validation_errors.append(f"Foto 1 (Frontal): {error_msg}")
-        else:
-            st.session_state.progress_photos["front_relaxed"] = None
-            st.warning("⚠️ Foto frontal requerida")
+                st.warning("⚠️ Foto frontal requerida")
     
-    with col2:
-        st.markdown("#### 📷 Foto 2 – Perfil lateral relajado")
-        side_photo = st.file_uploader(
-            "Foto lateral",
-            type=["jpg", "jpeg", "png"],
-            key="side_relaxed_right_uploader",
-            help="Foto de perfil derecho, brazos a los lados, postura natural",
-            label_visibility="collapsed"
-        )
-        
-        if side_photo:
-            is_valid, error_msg = validate_progress_photo(side_photo)
-            if is_valid:
-                st.session_state.progress_photos["side_relaxed_right"] = side_photo
-                st.image(side_photo, caption="✅ Foto lateral cargada", use_container_width=True)
-                st.success(f"✓ {side_photo.size / (1024*1024):.2f} MB")
+        with col2:
+            st.markdown("#### 📷 Foto 2 – Perfil lateral relajado")
+            side_photo = st.file_uploader(
+                "Foto lateral",
+                type=["jpg", "jpeg", "png"],
+                key="side_relaxed_right_uploader",
+                help="Foto de perfil derecho, brazos a los lados, postura natural",
+                label_visibility="collapsed"
+            )
+            
+            if side_photo:
+                is_valid, error_msg = validate_progress_photo(side_photo)
+                if is_valid:
+                    st.session_state.progress_photos["side_relaxed_right"] = side_photo
+                    st.image(side_photo, caption="✅ Foto lateral cargada", use_container_width=True)
+                    st.success(f"✓ {side_photo.size / (1024*1024):.2f} MB")
+                else:
+                    st.session_state.progress_photos["side_relaxed_right"] = None
+                    st.error(f"❌ {error_msg}")
+                    validation_errors.append(f"Foto 2 (Lateral): {error_msg}")
             else:
                 st.session_state.progress_photos["side_relaxed_right"] = None
-                st.error(f"❌ {error_msg}")
-                validation_errors.append(f"Foto 2 (Lateral): {error_msg}")
-        else:
-            st.session_state.progress_photos["side_relaxed_right"] = None
-            st.warning("⚠️ Foto lateral requerida")
+                st.warning("⚠️ Foto lateral requerida")
     
-    with col3:
-        st.markdown("#### 📷 Foto 3 – Posterior relajado")
-        back_photo = st.file_uploader(
-            "Foto posterior",
-            type=["jpg", "jpeg", "png"],
-            key="back_relaxed_uploader",
-            help="Foto de espalda, brazos a los lados, postura natural",
-            label_visibility="collapsed"
-        )
-        
-        if back_photo:
-            is_valid, error_msg = validate_progress_photo(back_photo)
-            if is_valid:
-                st.session_state.progress_photos["back_relaxed"] = back_photo
-                st.image(back_photo, caption="✅ Foto posterior cargada", use_container_width=True)
-                st.success(f"✓ {back_photo.size / (1024*1024):.2f} MB")
+        with col3:
+            st.markdown("#### 📷 Foto 3 – Posterior relajado")
+            back_photo = st.file_uploader(
+                "Foto posterior",
+                type=["jpg", "jpeg", "png"],
+                key="back_relaxed_uploader",
+                help="Foto de espalda, brazos a los lados, postura natural",
+                label_visibility="collapsed"
+            )
+            
+            if back_photo:
+                is_valid, error_msg = validate_progress_photo(back_photo)
+                if is_valid:
+                    st.session_state.progress_photos["back_relaxed"] = back_photo
+                    st.image(back_photo, caption="✅ Foto posterior cargada", use_container_width=True)
+                    st.success(f"✓ {back_photo.size / (1024*1024):.2f} MB")
+                else:
+                    st.session_state.progress_photos["back_relaxed"] = None
+                    st.error(f"❌ {error_msg}")
+                    validation_errors.append(f"Foto 3 (Posterior): {error_msg}")
             else:
                 st.session_state.progress_photos["back_relaxed"] = None
-                st.error(f"❌ {error_msg}")
-                validation_errors.append(f"Foto 3 (Posterior): {error_msg}")
-        else:
-            st.session_state.progress_photos["back_relaxed"] = None
-            st.warning("⚠️ Foto posterior requerida")
+                st.warning("⚠️ Foto posterior requerida")
     
-    # Add spacing between rows
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # New section for the free pose photo
-    st.markdown("""
-    <div style="margin-top: 1.5rem; padding: 1rem; background: #252525; border-radius: 10px; border-left: 3px solid #F39C12;">
-        <h4 style="color: #F39C12; margin-bottom: 0.5rem;">📸 Foto Adicional - Pose Libre</h4>
-        <p style="color: #CCCCCC; font-size: 0.95rem; margin-bottom: 0;">
-            Opcional: Carga una fotografía adicional en la pose que prefieras para complementar tu evaluación.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Create centered column for the free pose photo
-    col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
-    
-    with col_libre:
-        st.markdown("#### 📷 Foto 4 – Pose Libre")
-        libre_photo = st.file_uploader(
-            "Foto pose libre",
-            type=["jpg", "jpeg", "png"],
-            key="pose_libre_uploader",
-            help="Foto en la pose que prefieras - Opcional",
-            label_visibility="collapsed"
-        )
+        # Add spacing between rows
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        if libre_photo:
-            is_valid, error_msg = validate_progress_photo(libre_photo)
-            if is_valid:
-                st.session_state.progress_photos["pose_libre"] = libre_photo
-                st.image(libre_photo, caption="✅ Foto pose libre cargada", use_container_width=True)
-                st.success(f"✓ {libre_photo.size / (1024*1024):.2f} MB")
+        # New section for the free pose photo
+        st.markdown("""
+        <div style="margin-top: 1.5rem; padding: 1rem; background: #252525; border-radius: 10px; border-left: 3px solid #F39C12;">
+            <h4 style="color: #F39C12; margin-bottom: 0.5rem;">📸 Foto Adicional - Pose Libre</h4>
+            <p style="color: #CCCCCC; font-size: 0.95rem; margin-bottom: 0;">
+                Opcional: Carga una fotografía adicional en la pose que prefieras para complementar tu evaluación.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Create centered column for the free pose photo
+        col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
+        
+        with col_libre:
+        with col_libre:
+            st.markdown("#### 📷 Foto 4 – Pose Libre")
+            libre_photo = st.file_uploader(
+                "Foto pose libre",
+                type=["jpg", "jpeg", "png"],
+                key="pose_libre_uploader",
+                help="Foto en la pose que prefieras - Opcional",
+                label_visibility="collapsed"
+            )
+            
+            if libre_photo:
+                is_valid, error_msg = validate_progress_photo(libre_photo)
+                if is_valid:
+                    st.session_state.progress_photos["pose_libre"] = libre_photo
+                    st.image(libre_photo, caption="✅ Foto pose libre cargada", use_container_width=True)
+                    st.success(f"✓ {libre_photo.size / (1024*1024):.2f} MB")
+                else:
+                    st.session_state.progress_photos["pose_libre"] = None
+                    st.error(f"❌ {error_msg}")
+                    validation_errors.append(f"Foto 4 (Pose Libre): {error_msg}")
             else:
                 st.session_state.progress_photos["pose_libre"] = None
-                st.error(f"❌ {error_msg}")
-                validation_errors.append(f"Foto 4 (Pose Libre): {error_msg}")
+                st.info("💡 Foto opcional - No requerida")
+        
+        # Show validation summary
+        if validation_errors:
+            st.error("**Errores de validación:**")
+            for error in validation_errors:
+                st.markdown(f"- {error}")
+        
+        # Calculate total size of all photos
+        total_size = 0
+        photos_uploaded = 0
+        for key, photo in st.session_state.progress_photos.items():
+            if photo is not None:
+                total_size += photo.size
+                photos_uploaded += 1
+        
+        # Display upload status
+        st.markdown("---")
+        
+        # Count required photos and optional photo
+        required_photos_uploaded = sum(1 for key in REQUIRED_PROGRESS_PHOTOS 
+                                       if st.session_state.progress_photos.get(key) is not None)
+        optional_photo_uploaded = st.session_state.progress_photos.get("pose_libre") is not None
+        
+        if required_photos_uploaded == 3:
+            total_size_mb = total_size / (1024 * 1024)
+            if total_size_mb > EMAIL_ATTACHMENT_SIZE_LIMIT_MB:
+                st.warning(f"⚠️ **Advertencia:** El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email ({EMAIL_ATTACHMENT_SIZE_LIMIT_MB} MB). Las fotos se subirán a almacenamiento externo y se incluirán enlaces en el email.")
+            else:
+                status_msg = f"✅ Las 3 fotos requeridas están cargadas correctamente"
+                if optional_photo_uploaded:
+                    status_msg += " + 1 foto opcional"
+                status_msg += f". Tamaño total: {total_size_mb:.2f} MB"
+                st.success(status_msg)
         else:
-            st.session_state.progress_photos["pose_libre"] = None
-            st.info("💡 Foto opcional - No requerida")
-    
-    # Show validation summary
-    if validation_errors:
-        st.error("**Errores de validación:**")
-        for error in validation_errors:
-            st.markdown(f"- {error}")
-    
-    # Calculate total size of all photos
-    total_size = 0
-    photos_uploaded = 0
-    for key, photo in st.session_state.progress_photos.items():
-        if photo is not None:
-            total_size += photo.size
-            photos_uploaded += 1
-    
-    # Display upload status
-    st.markdown("---")
-    
-    # Count required photos and optional photo
-    required_photos_uploaded = sum(1 for key in REQUIRED_PROGRESS_PHOTOS 
-                                   if st.session_state.progress_photos.get(key) is not None)
-    optional_photo_uploaded = st.session_state.progress_photos.get("pose_libre") is not None
-    
-    if required_photos_uploaded == 3:
-        total_size_mb = total_size / (1024 * 1024)
-        if total_size_mb > EMAIL_ATTACHMENT_SIZE_LIMIT_MB:
-            st.warning(f"⚠️ **Advertencia:** El tamaño total de las fotos ({total_size_mb:.2f} MB) excede el límite de email ({EMAIL_ATTACHMENT_SIZE_LIMIT_MB} MB). Las fotos se subirán a almacenamiento externo y se incluirán enlaces en el email.")
-        else:
-            status_msg = f"✅ Las 3 fotos requeridas están cargadas correctamente"
+            status_msg = f"📊 **Estado:** {required_photos_uploaded} de 3 fotos requeridas cargadas"
             if optional_photo_uploaded:
-                status_msg += " + 1 foto opcional"
-            status_msg += f". Tamaño total: {total_size_mb:.2f} MB"
-            st.success(status_msg)
-    else:
-        status_msg = f"📊 **Estado:** {required_photos_uploaded} de 3 fotos requeridas cargadas"
-        if optional_photo_uploaded:
-            status_msg += " (+ 1 foto opcional cargada)"
-        st.info(status_msg)
+                status_msg += " (+ 1 foto opcional cargada)"
+            st.info(status_msg)
     
     st.markdown('</div>', unsafe_allow_html=True)
     
