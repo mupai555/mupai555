@@ -540,8 +540,8 @@ a[href*="github.com"] {
     padding: 0.7rem 0.9rem!important;
     background: #1A1A1A!important;
     color: #FFFFFF!important;
-    font-size: 1.13rem!important;
-    font-weight: 700!important;
+    font-size: 0.9rem!important;
+    font-weight: 600!important;
     box-shadow: inset 0 2px 8px rgba(0,0,0,0.3)!important;
 }
 /* Special styling for body fat measurement method selector */
@@ -563,7 +563,7 @@ a[href*="github.com"] {
 .stExpander .streamlit-expanderHeader, .stExpander label, .stExpander p, .stExpander div {
     color: #FFFFFF !important;
     opacity: 1 !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     font-size: 0.9rem !important;
     text-shadow: 0 1px 3px rgba(0,0,0,0.7) !important;
 }
@@ -574,7 +574,7 @@ a[href*="github.com"] {
 [data-testid="stExpander"] summary * {
     color: #FFFFFF !important;
     opacity: 1 !important;
-    font-weight: bold !important;
+    font-weight: 600 !important;
     visibility: visible !important;
     filter: none !important;
     text-shadow: none !important;
@@ -606,10 +606,10 @@ a[href*="github.com"] {
 .streamlit-expanderHeader {
     background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%);
     border-radius: 12px;
-    font-weight: bold;
+    font-weight: 600;
     color: #FFFFFF !important;
     border: 2px solid var(--mupai-yellow);
-    font-size: 1.16rem;
+    font-size: 1rem;
     opacity: 1 !important;
 }
 /* Reglas específicas para títulos de expanders principales con máxima visibilidad */
@@ -623,7 +623,7 @@ a[href*="github.com"] {
 [data-testid="stExpander"] summary p {
     color: #FFFFFF !important;
     opacity: 1 !important;
-    font-weight: bold !important;
+    font-weight: 600 !important;
     text-shadow: none !important;
     filter: none !important;
 }
@@ -639,7 +639,7 @@ a[href*="github.com"] {
 [data-testid="stExpander"] summary:hover p {
     color: #FFFFFF !important;
     opacity: 1 !important;
-    font-weight: bold !important;
+    font-weight: 600 !important;
 }
 
 /* Estilos específicos para asegurar fondo consistente en todos los expanders */
@@ -649,10 +649,10 @@ a[href*="github.com"] {
 div[data-testid="stExpander"] details summary {
     background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%) !important;
     border-radius: 12px !important;
-    font-weight: bold !important;
+    font-weight: 600 !important;
     color: #FFFFFF !important;
     border: 2px solid var(--mupai-yellow) !important;
-    font-size: 1.16rem !important;
+    font-size: 1rem !important;
     opacity: 1 !important;
 }
 
@@ -684,7 +684,7 @@ div[data-testid="stExpander"] details summary {
 .stCheckbox > label, .stCheckbox > span {
     color: #FFF !important;
     opacity: 1 !important;
-    font-size: 1.05rem;
+    font-size: 0.9rem;
 }
 .stProgress > div > div > div {
     background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%)!important;
@@ -706,8 +706,8 @@ div[data-testid="stExpander"] details summary {
     display: inline-block;
     padding: 0.5rem 1.2rem !important;
     border-radius: 25px !important;
-    font-size: 0.95rem !important;
-    font-weight: 800 !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
     margin: 0.3rem !important;
     color: #FFF !important;
     text-transform: uppercase !important;
@@ -807,13 +807,13 @@ div[data-testid="stExpander"] details summary {
     color: #1E1E1E !important;
     border: none !important;
     padding: 1rem 2.5rem !important;
-    font-weight: 800 !important;
+    font-weight: 600 !important;
     border-radius: 30px !important;
     transition: all 0.4s ease !important;
     box-shadow: 0 6px 20px rgba(244, 196, 48, 0.4) !important;
     text-transform: uppercase !important;
     letter-spacing: 1.5px !important;
-    font-size: 1.05rem !important;
+    font-size: 0.9rem !important;
 }
 .stButton > button:hover {
     background: linear-gradient(135deg, #FFD700 0%, var(--mupai-yellow) 100%) !important;
@@ -856,10 +856,10 @@ FOCUS RING MUY VISIBLE */
 .streamlit-expanderHeader {
     background: linear-gradient(135deg, #2A2A2A 0%, #232425 100%) !important;
     border-radius: 14px !important;
-    font-weight: 800 !important;
+    font-weight: 600 !important;
     color: #FFFFFF !important;
     border: 3px solid var(--mupai-yellow) !important;
-    font-size: 1.15rem !important;
+    font-size: 1rem !important;
     padding: 1.1rem 1.4rem !important;
     transition: all 0.4s ease !important;
 }
@@ -892,12 +892,12 @@ FOCUS RING MUY VISIBLE */
 .stTabs [aria-selected="true"] {
     background: linear-gradient(135deg, #FFD700, var(--mupai-yellow)) !important;
     color: #1E1E1E !important;
-    font-weight: 800 !important;
+    font-weight: 600 !important;
     box-shadow: 0 5px 20px rgba(244, 196, 48, 0.5) !important;
     transform: scale(1.05) !important
     background: linear-gradient(135deg, var(--mupai-yellow), var(--mupai-dark-yellow)) !important;
     color: #1E1E1E !important;
-    font-weight: 700;
+    font-weight: 600;
     box-shadow: 0 2px 8px rgba(244, 196, 48, 0.3);
 }
 
