@@ -2232,7 +2232,9 @@ def calcular_macros_tradicional(ingesta_calorica_tradicional, tmb, sexo, grasa_c
         'carbo_g': carbo_g,
         'carbo_kcal': carbo_kcal,
         'base_proteina': base_proteina_nombre,
-        'factor_proteina': factor_proteina
+        'base_proteina_kg': base_proteina_kg,
+        'factor_proteina': factor_proteina,
+        'usar_mlg': usar_mlg
     }
 
 def calcular_macros_psmf(psmf_recs):
@@ -2361,8 +2363,10 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
         # Calcular modo de interpretación FFMI
         modo_ffmi_email = obtener_modo_interpretacion_ffmi(grasa_corregida, sexo)
         
-        # Porcentajes de masa muscular
-        pct_masa_muscular_aparato = (masa_muscular_aparato / peso * 100) if peso > 0 and masa_muscular_aparato > 0 else 0
+        # Masa muscular: aparato viene como %, estimada como kg
+        # Convertir aparato de % a kg, y calcular % de estimada
+        masa_muscular_aparato_kg = (peso * masa_muscular_aparato / 100) if peso > 0 and masa_muscular_aparato > 0 else 0
+        pct_masa_muscular_aparato = masa_muscular_aparato  # Ya es porcentaje desde Omron
         pct_masa_muscular_estimada = (masa_muscular_estimada / peso * 100) if peso > 0 and masa_muscular_estimada > 0 else 0
         
         # Clasificar WtHR si está disponible
@@ -2994,7 +2998,7 @@ completos de tu análisis de composición corporal y rendimiento.
    ╚════════════════════════════════════════════════════════════════╝
    
    💪 MASA MUSCULAR ESQUELÉTICA:
-   {f'   🔵 Omron (medido):      {masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)' if masa_muscular_aparato > 0 else ''}
+   {f'   🔵 Omron (medido):      {masa_muscular_aparato_kg:.1f} kg ({pct_masa_muscular_aparato:.1f}%)' if masa_muscular_aparato > 0 else ''}
    🟣 Estimado científico: {masa_muscular_estimada:.1f} kg ({pct_masa_muscular_estimada:.1f}%)
    
    📝 Nota: Omron mide directamente; estimado se calcula desde MLG.
@@ -3425,7 +3429,7 @@ administracion@muscleupgym.fitness
                         {f'''<div style="background-color: rgba(255,255,255,0.9); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #2196F3;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                 <span style="font-weight: 600; color: #555;">🔵 Omron (bioimpedancia):</span>
-                                <span style="font-size: 18px; font-weight: 700; color: #2196F3;">{masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)</span>
+                                <span style="font-size: 18px; font-weight: 700; color: #2196F3;">{masa_muscular_aparato_kg:.1f} kg ({pct_masa_muscular_aparato:.1f}%)</span>
                             </div>
                             <p style="margin: 5px 0 0 0; font-size: 11px; color: #666; font-style: italic;">Valor medido directamente por tu báscula de bioimpedancia</p>
                         </div>''' if masa_muscular_aparato > 0 else ''}
@@ -3819,8 +3823,10 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
         # Calcular modo de interpretación FFMI
         modo_ffmi_email = obtener_modo_interpretacion_ffmi(grasa_corregida, sexo)
         
-        # Porcentajes de masa muscular
-        pct_masa_muscular_aparato = (masa_muscular_aparato / peso * 100) if peso > 0 and masa_muscular_aparato > 0 else 0
+        # Masa muscular: aparato viene como %, estimada como kg
+        # Convertir aparato de % a kg, y calcular % de estimada
+        masa_muscular_aparato_kg = (peso * masa_muscular_aparato / 100) if peso > 0 and masa_muscular_aparato > 0 else 0
+        pct_masa_muscular_aparato = masa_muscular_aparato  # Ya es porcentaje desde Omron
         pct_masa_muscular_estimada = (masa_muscular_estimada / peso * 100) if peso > 0 and masa_muscular_estimada > 0 else 0
         
         # Clasificar WtHR si está disponible
@@ -4460,7 +4466,7 @@ completos de tu análisis de composición corporal y rendimiento.
    ╚════════════════════════════════════════════════════════════════╝
    
    💪 MASA MUSCULAR ESQUELÉTICA:
-   {f'   🔵 Omron (medido):      {masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)' if masa_muscular_aparato > 0 else ''}
+   {f'   🔵 Omron (medido):      {masa_muscular_aparato_kg:.1f} kg ({pct_masa_muscular_aparato:.1f}%)' if masa_muscular_aparato > 0 else ''}
    🟣 Estimado científico: {masa_muscular_estimada:.1f} kg ({pct_masa_muscular_estimada:.1f}%)
    
    📝 Nota: Omron mide directamente; estimado se calcula desde MLG.
@@ -4967,7 +4973,7 @@ muscleupgym.fitness
                         {f'''<div style="background-color: rgba(255,255,255,0.9); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #2196F3;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                 <span style="font-weight: 600; color: #555;">🔵 Omron (bioimpedancia):</span>
-                                <span style="font-size: 18px; font-weight: 700; color: #2196F3;">{masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)</span>
+                                <span style="font-size: 18px; font-weight: 700; color: #2196F3;">{masa_muscular_aparato_kg:.1f} kg ({pct_masa_muscular_aparato:.1f}%)</span>
                             </div>
                             <p style="margin: 5px 0 0 0; font-size: 11px; color: #666; font-style: italic;">Valor medido directamente por tu báscula de bioimpedancia</p>
                         </div>''' if masa_muscular_aparato > 0 else ''}
@@ -6602,15 +6608,15 @@ if datos_personales_completos and st.session_state.datos_completos:
         )
 
         # Campo opcional - % Masa muscular (no afecta cálculos)
-        masa_muscular_default = st.session_state.get("masa_muscular", 40.0)
+        masa_muscular_default = st.session_state.get("masa_muscular", 0.0)
         masa_muscular = st.number_input(
-            "💪 % Masa muscular (medición, opcional)",
+            "💪 % Masa muscular (medición Omron, opcional)",
             min_value=0.0,
             max_value=100.0,
-            value=safe_float(masa_muscular_default, 40.0),
+            value=safe_float(masa_muscular_default, 0.0),
             step=0.1,
             key="masa_muscular",
-            help="Introduce el % de masa muscular según tu medición. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
+            help="Introduce el % de masa muscular según tu báscula Omron. Se comparará con el valor estimado científico en el reporte. Si no lo conoces, déjalo en 0."
         )
 
         # Campo opcional - Grasa visceral (no afecta cálculos)
@@ -8119,7 +8125,9 @@ if USER_VIEW:
             carbo_g = macros_tradicional['carbo_g']
             carbo_kcal = macros_tradicional['carbo_kcal']
             base_proteina_nombre = macros_tradicional['base_proteina']
+            base_proteina_kg = macros_tradicional['base_proteina_kg']
             factor_proteina = macros_tradicional['factor_proteina']
+            usar_mlg_para_proteina = macros_tradicional['usar_mlg']
             if carbo_g < 50:
                 st.warning(f"⚠️ Tus carbohidratos han quedado muy bajos ({carbo_g}g). Considera aumentar calorías o reducir grasa para una dieta más sostenible.")
 
@@ -9217,6 +9225,15 @@ if not st.session_state.get("correo_enviado", False):
             with st.spinner("📧 Enviando resumen por email..."):
                 # Get progress photos from session state
                 progress_photos = st.session_state.get("progress_photos", {})
+                
+                # Definir variables opcionales para evitar errores de Pylance
+                wthr = None
+                GEAF = None
+                proyecciones = None
+                
+                # Calcular wthr si tenemos circunferencia_cintura
+                if 'circunferencia_cintura' in locals() and circunferencia_cintura and circunferencia_cintura > 0 and estatura > 0:
+                    wthr = circunferencia_cintura / estatura
                 
                 # Enviar email completo a administración
                 ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono, progress_photos)
