@@ -651,28 +651,243 @@ div[data-testid="stExpander"] details summary {
 }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
 @keyframes slideIn { from { opacity: 0; transform: translateX(-18px);} to { opacity: 1; transform: translateX(0);} }
+
+/* ========== MEJORAS UI/UX PROFESIONALES - 100% STREAMLIT COMPATIBLE ========== */
+
+/* Badge System - Mejorado con gradientes y sombras */
 .badge {
     display: inline-block;
-    padding: 0.32rem 0.98rem;
-    border-radius: 18px;
-    font-size: 0.97rem;
-    font-weight: 800;
-    margin: 0.27rem;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin: 0.25rem;
     color: #FFF;
-    background: #313131;
-    border: 1px solid #555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
-.badge-success { background: var(--mupai-success); }
-.badge-warning { background: var(--mupai-warning); color: #222; border: 1px solid #b78a09;}
-.badge-danger { background: var(--mupai-danger); }
-.badge-info { background: var(--mupai-yellow); color: #1E1E1E;}
+.badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.badge-success { 
+    background: linear-gradient(135deg, #27AE60, #229954);
+    border: none;
+}
+.badge-warning { 
+    background: linear-gradient(135deg, #F39C12, #E67E22);
+    color: #FFF;
+    border: none;
+}
+.badge-danger { 
+    background: linear-gradient(135deg, #E74C3C, #C0392B);
+    border: none;
+}
+.badge-info { 
+    background: linear-gradient(135deg, var(--mupai-yellow), var(--mupai-dark-yellow));
+    color: #1E1E1E;
+    border: none;
+}
+
+/* Metric Cards - Hover mejorado */
+[data-testid="metric-container"] {
+    background: linear-gradient(135deg, #252525 0%, #2A2A2A 100%);
+    padding: 1.25rem;
+    border-radius: 12px;
+    border-left: 4px solid var(--mupai-yellow);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+[data-testid="metric-container"]:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(244, 196, 48, 0.2);
+    border-left-width: 6px;
+}
+
+/* Content Cards - Mejoras de spacing y bordes */
+.content-card {
+    background: #1E1E1E;
+    padding: 1.75rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(244,196,48,0.08), 0 2px 8px rgba(0,0,0,0.12);
+    margin-bottom: 1.5rem;
+    border-left: 5px solid var(--mupai-yellow);
+    animation: slideIn 0.5s ease-out;
+    transition: all 0.3s ease;
+}
+.content-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(244,196,48,0.12), 0 4px 12px rgba(0,0,0,0.18);
+    border-left-width: 6px;
+}
+
+/* Card Variants con mejor jerarquía visual */
+.card-psmf {
+    border-left: 5px solid var(--mupai-warning) !important;
+    background: linear-gradient(135deg, #1E1E1E 0%, #2A2418 100%);
+}
+.card-success {
+    border-left: 5px solid var(--mupai-success) !important;
+    background: linear-gradient(135deg, #1E1E1E 0%, #1E2A1E 100%);
+}
+.card-danger {
+    border-left: 5px solid var(--mupai-danger) !important;
+    background: linear-gradient(135deg, #1E1E1E 0%, #2A1E1E 100%);
+}
+.card-info {
+    border-left: 5px solid #3498DB !important;
+    background: linear-gradient(135deg, #1E1E1E 0%, #1E232A 100%);
+}
+
+/* Progress Bar - Animación suave */
+.stProgress > div > div > div {
+    background: linear-gradient(90deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 50%, #C89F1C 100%) !important;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(244, 196, 48, 0.3);
+    animation: progressPulse 2s infinite;
+}
+@keyframes progressPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+/* Buttons - Mejor feedback táctil */
+.stButton > button {
+    background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
+    color: #1E1E1E;
+    border: none;
+    padding: 0.875rem 2rem;
+    font-weight: 700;
+    border-radius: 28px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(244, 196, 48, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-size: 1rem;
+}
+.stButton > button:hover {
+    background: linear-gradient(135deg, var(--mupai-dark-yellow) 0%, #C89F1C 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(244, 196, 48, 0.35);
+}
+.stButton > button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(244, 196, 48, 0.2);
+}
+.stButton > button:disabled {
+    background: linear-gradient(135deg, #444 0%, #555 100%);
+    color: #888;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Input Fields - Mejor contraste y focus */
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stSelectbox > div > div > select {
+    border: 2px solid #444 !important;
+    border-radius: 10px !important;
+    padding: 0.75rem 1rem !important;
+    background: #2A2A2A !important;
+    color: #FFF !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease;
+}
+.stTextInput > div > div > input:focus,
+.stNumberInput > div > div > input:focus,
+.stSelectbox > div > div > select:focus {
+    border-color: var(--mupai-yellow) !important;
+    box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.15) !important;
+    background: #323232 !important;
+}
+
+/* Expanders - Sticky headers y mejor jerarquía */
+.streamlit-expanderHeader {
+    background: linear-gradient(135deg, #2A2A2A 0%, #232425 100%);
+    border-radius: 12px;
+    font-weight: 700;
+    color: #FFFFFF !important;
+    border: 2px solid var(--mupai-yellow);
+    font-size: 1.1rem;
+    padding: 1rem 1.25rem;
+    transition: all 0.3s ease;
+}
+.streamlit-expanderHeader:hover {
+    background: linear-gradient(135deg, #323232 0%, #2A2A2A 100%);
+    border-width: 3px;
+    box-shadow: 0 4px 12px rgba(244, 196, 48, 0.15);
+}
+
+/* Tabs - Mejor diseño */
+.stTabs [data-baseweb="tab-list"] {
+    background: #2A2A2A;
+    border-radius: 12px;
+    padding: 0.5rem;
+    gap: 0.5rem;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent;
+    border-radius: 8px;
+    color: #888;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    background: #323232;
+    color: var(--mupai-yellow);
+}
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, var(--mupai-yellow), var(--mupai-dark-yellow)) !important;
+    color: #1E1E1E !important;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(244, 196, 48, 0.3);
+}
+
+/* Alert boxes - Mejor contraste */
+.stAlert {
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    border-left: 4px solid;
+}
+.stAlert[data-baseweb="notification"] {
+    background: #2A2A2A !important;
+}
+
+/* Selectbox dropdown mejorado */
+.stSelectbox [data-baseweb="popover"] {
+    background: #2A2A2A !important;
+    border: 2px solid var(--mupai-yellow) !important;
+    border-radius: 10px !important;
+}
+
+/* Radio buttons - Mejor visualización */
+.stRadio > div {
+    background: #232425;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 2px solid #444;
+    transition: all 0.3s ease;
+}
+.stRadio > div:hover {
+    border-color: var(--mupai-yellow);
+    background: #2A2A2A;
+}
+
+/* Dataframes - Tema oscuro */
 .dataframe {
     border-radius: 10px !important;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    background: #2A2A2A!important;
-    color: #FFF!important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    background: #2A2A2A !important;
+    color: #FFF !important;
 }
+
+/* ========== FIN MEJORAS UI/UX ========== */
 hr {
     border: none;
     height: 2.5px;
@@ -687,17 +902,48 @@ hr {
     .main-header h1 {
         font-size: 1.5rem !important;
     }
-    .content-card { padding: 1rem;}
+    .content-card { 
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
     .stButton > button { 
-        padding: 0.6rem 1.2rem; 
-        font-size: 0.9rem;
+        padding: 0.75rem 1.5rem; 
+        font-size: 0.875rem;
         width: 100%;
+        letter-spacing: 1px;
     }
     [data-testid="metric-container"] {
-        font-size: 0.85rem;
+        font-size: 0.875rem;
+        padding: 1rem;
     }
     .stExpander {
-        font-size: 0.9rem !important;
+        font-size: 0.95rem !important;
+    }
+    .streamlit-expanderHeader {
+        font-size: 1rem !important;
+        padding: 0.875rem 1rem;
+    }
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.75rem;
+    }
+    /* Columnas a full-width en móvil */
+    .stColumns {
+        flex-direction: column !important;
+    }
+    .stColumns > div {
+        width: 100% !important;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Optimización para tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .content-card {
+        padding: 1.5rem;
+    }
+    .stButton > button {
+        font-size: 0.95rem;
     }
 }
 .content-card:hover {
@@ -727,7 +973,132 @@ hr {
     margin: 0 1.2rem;
     font-weight: 600;
     font-size: 1.01rem;
+    transition: all 0.3s ease;
 }
+.footer-mupai a:hover {
+    color: var(--mupai-dark-yellow);
+    text-decoration: underline;
+}
+
+/* ========== MICRO-INTERACCIONES Y ACCESIBILIDAD ========== */
+
+/* Smooth scroll para toda la página */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus visible para accesibilidad */
+*:focus-visible {
+    outline: 3px solid var(--mupai-yellow);
+    outline-offset: 2px;
+}
+
+/* Animación de entrada para elementos */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading states */
+.stSpinner > div {
+    border-color: var(--mupai-yellow) !important;
+}
+
+/* Tooltip mejorado */
+[data-baseweb="tooltip"] {
+    background: #2A2A2A !important;
+    color: #FFF !important;
+    border: 1px solid var(--mupai-yellow) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0.75rem !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+/* Checkbox mejorado */
+.stCheckbox > label > div {
+    background: #2A2A2A;
+    border: 2px solid #444;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+.stCheckbox > label > div:hover {
+    border-color: var(--mupai-yellow);
+}
+.stCheckbox input:checked + div {
+    background: var(--mupai-yellow) !important;
+    border-color: var(--mupai-yellow) !important;
+}
+
+/* Slider mejorado */
+.stSlider > div > div > div {
+    background: var(--mupai-yellow) !important;
+}
+
+/* File uploader mejorado */
+[data-testid="stFileUploader"] {
+    background: #2A2A2A;
+    border: 2px dashed var(--mupai-yellow);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+[data-testid="stFileUploader"]:hover {
+    background: #323232;
+    border-style: solid;
+}
+
+/* Success/Error messages con mejor visibilidad */
+.stSuccess {
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.15) 0%, rgba(34, 153, 84, 0.15) 100%) !important;
+    border-left: 4px solid var(--mupai-success) !important;
+    color: #FFF !important;
+}
+.stError {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(192, 57, 43, 0.15) 100%) !important;
+    border-left: 4px solid var(--mupai-danger) !important;
+    color: #FFF !important;
+}
+.stWarning {
+    background: linear-gradient(135deg, rgba(243, 156, 18, 0.15) 0%, rgba(230, 126, 34, 0.15) 100%) !important;
+    border-left: 4px solid var(--mupai-warning) !important;
+    color: #FFF !important;
+}
+.stInfo {
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.15) 0%, rgba(41, 128, 185, 0.15) 100%) !important;
+    border-left: 4px solid #3498DB !important;
+    color: #FFF !important;
+}
+
+/* Skeleton loading para mejor percepción de carga */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-skeleton {
+    background: linear-gradient(90deg, #2A2A2A 25%, #323232 50%, #2A2A2A 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* Mejora de contraste para texto en fondos oscuros */
+.content-card p,
+.content-card span,
+.content-card li {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Divider mejorado */
 
 /* ULTIMATE GITHUB/FORK HIDING - Hide any possible GitHub elements */
 [data-testid="stAppViewContainer"] header {display: none !important;}
