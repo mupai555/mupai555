@@ -3798,12 +3798,12 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
                         edad_metabolica=None, wthr=None, masa_grasa=None, progress_photos=None, 
                         masa_muscular_aparato=0, masa_muscular_estimada=0, masa_muscular=None, tmb=None, ciclo_menstrual=None):
     """
-    Envía el email interno (Parte 2) con TODO EL CONTENIDO del email cliente.
+    Envía el email interno (Parte 2) con TODO EL CONTENIDO IDÉNTICO del email cliente.
     Destinatario exclusivo: administracion@muscleupgym.fitness (sin CC/BCC)
     
-    IMPORTANTE: Este email contiene EXACTAMENTE el mismo contenido que recibe el cliente,
+    IMPORTANTE: Este email contiene EXACTAMENTE el mismo contenido HTML que recibe el cliente,
     para que el administrador pueda ver qué información se envió al usuario.
-    La única diferencia es el badge "CONFIDENCIAL - USO INTERNO" en el header.
+    La única diferencia es el asunto del email que indica que es copia interna.
     
     Args:
         Los mismos parámetros que enviar_email_cliente() para mantener sincronía total.
@@ -3812,9 +3812,23 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
         email_origen = "administracion@muscleupgym.fitness"
         email_destino = "administracion@muscleupgym.fitness"
         password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+        
+        # Cargar logos para emails (igual que en enviar_email_cliente)
+        import base64
+        try:
+            with open('LOGO MUPAI.png', 'rb') as f:
+                logo_mupai_b64 = base64.b64encode(f.read()).decode()
+        except FileNotFoundError:
+            logo_mupai_b64 = ""
+        
+        try:
+            with open('LOGO MUP.png', 'rb') as f:
+                logo_gym_b64 = base64.b64encode(f.read()).decode()
+        except FileNotFoundError:
+            logo_gym_b64 = ""
 
-        # === COPIAR TODA LA LÓGICA DE CÁLCULOS DEL EMAIL CLIENTE ===
-        # (Para que el contenido sea IDÉNTICO)
+        # === USAR TODO EL CÓDIGO DEL EMAIL CLIENTE (contenido idéntico) ===
+        # Este email contiene EXACTAMENTE el mismo HTML que el cliente recibe
         
         # Calcular valores derivados
         masa_grasa_calc = peso - mlg if masa_grasa is None else masa_grasa
@@ -5157,7 +5171,7 @@ muscleupgym.fitness
         msg = MIMEMultipart('alternative')
         msg['From'] = email_origen
         msg['To'] = email_destino
-        msg['Subject'] = f"Reporte de Evaluación — Parte 2 (Lectura Visual, Línea Base) — {nombre_cliente} — {fecha}"
+        msg['Subject'] = f"[COPIA INTERNA] Reporte de Evaluación Corporal — {nombre_cliente} — {fecha}"
 
         # Adjuntar versión texto plano como fallback
         msg.attach(MIMEText(contenido, 'plain', 'utf-8'))
