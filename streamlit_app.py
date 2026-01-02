@@ -1292,6 +1292,103 @@ def corregir_porcentaje_grasa(medido, metodo, sexo):
 
 def calcular_ffmi(mlg, estatura_cm):
     """
+    Calcula el Fat-Free Mass Index (FFMI) - Índice de Masa Libre de Grasa.
+    
+    FFMI = MLG / estatura^2
+    
+    Parámetros:
+        mlg: Masa Libre de Grasa en kg
+        estatura_cm: Estatura en centímetros
+    
+    Retorna:
+        float: FFMI calculado
+    """
+    if not mlg or not estatura_cm or mlg <= 0 or estatura_cm <= 0:
+        return 0.0
+    
+    try:
+        estatura_m = estatura_cm / 100
+        mlg = float(mlg)
+    except:
+        return 0.0
+    
+    # Fórmula: FFMI = MLG (kg) / Estatura (m)^2
+    # Rango normal hombres: 18-22
+    # Rango normal mujeres: 15-18
+    # Límite natural superior: ~25-26 (hombres), ~20-21 (mujeres)
+    
+    # Masa Libre de Grasa en kg
+    # Se calcula como: MLG = Peso Total * (1 - Porcentaje_Grasa/100)
+    # O directamente si la báscula lo reporta
+    
+    # Validación: MLG no puede ser 0 o negativa
+    if mlg <= 0:
+        return 0.0
+    
+    # FFMI = MLG / (Estatura en metros)^2
+    # Similar al IMC pero usando MLG en vez de peso total
+    
+    # Normalizar por estatura
+    estatura_m = estatura_cm / 100.0
+    
+    if estatura_m <= 0:
+        return 0.0
+    
+    try:
+        mlg = float(mlg)
+    except:
+        mlg = 0.0
+    
+    ffmi = mlg / (estatura_m ** 2)
+    
+    return ffmi
+
+def estimar_masa_muscular_desde_mlg(mlg, sexo, nivel_entrenamiento='intermedio'):
+    """
+    Estima masa muscular esquelética desde MLG usando factores científicos.
+    
+    MLG incluye: músculo + huesos (~15%) + órganos (~10-15%) + agua (~30%)
+    Músculo esquelético ≈ 35-45% de MLG según nivel de entrenamiento
+    
+    Factores basados en literatura científica:
+    - Wang et al. (2000): distribución de tejidos en MLG
+    - Kim et al. (2002): masa muscular apendicular
+    - Janssen et al. (2000): ecuaciones de predicción
+    
+    Parámetros:
+        mlg: Masa Libre de Grasa en kg
+        sexo: 'Hombre' o 'Mujer'
+        nivel_entrenamiento: 'principiante', 'intermedio' o 'avanzado'
+    
+    Retorna:
+        float: Masa muscular estimada en kg
+    """
+    if not mlg or mlg <= 0:
+        return 0.0
+    
+    # Factores conservadores por nivel y sexo
+    factores = {
+        'Hombre': {
+            'principiante': 0.37,  # 37% de MLG es músculo
+            'intermedio': 0.40,    # 40% de MLG es músculo
+            'avanzado': 0.43       # 43% de MLG es músculo
+        },
+        'Mujer': {
+            'principiante': 0.33,  # 33% de MLG es músculo
+            'intermedio': 0.36,    # 36% de MLG es músculo  
+            'avanzado': 0.40       # 40% de MLG es músculo
+        }
+    }
+    
+    nivel = nivel_entrenamiento.lower() if nivel_entrenamiento else 'intermedio'
+    factor = factores.get(sexo, factores['Hombre']).get(nivel, 0.38)
+    
+    masa_muscular_estimada = mlg * factor
+    
+    return masa_muscular_estimada
+
+def calcular_ffmi(mlg, estatura_cm):
+    """
     Calcula el FFMI (Fat-Free Mass Index) y lo normaliza a 1.80m de estatura.
     
     El FFMI es un indicador de la masa muscular ajustado por altura que permite
@@ -2218,7 +2315,7 @@ def obtener_porcentaje_para_proyeccion(plan_elegido, psmf_recs, GE, porcentaje):
 def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso, estatura, imc,
                          grasa_corregida, mlg, ffmi=None, nivel_entrenamiento=None, 
                          circunferencia_cintura=None, grasa_visceral=None, edad_metabolica=None,
-                         wthr=None, masa_grasa=None, progress_photos=None):
+                         wthr=None, masa_grasa=None, progress_photos=None, masa_muscular_aparato=0, masa_muscular_estimada=0):
     """
     Envía email al cliente con resultados completos de evaluación corporal.
     
@@ -2245,7 +2342,11 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
 
         # Calcular valores derivados
         masa_grasa_calc = peso - mlg if masa_grasa is None else masa_grasa
-        pct_masa_muscular = (mlg / peso * 100) if peso > 0 else 0
+        pct_mlg = (mlg / peso * 100) if peso > 0 else 0
+        
+        # Porcentajes de masa muscular
+        pct_masa_muscular_aparato = (masa_muscular_aparato / peso * 100) if peso > 0 and masa_muscular_aparato > 0 else 0
+        pct_masa_muscular_estimada = (masa_muscular_estimada / peso * 100) if peso > 0 and masa_muscular_estimada > 0 else 0
         
         # Clasificar WtHR si está disponible
         wthr_clasificacion = ""
@@ -2743,40 +2844,47 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
                 feedback_visceral = "Alerta: nivel alto. Aumenta riesgo de diabetes, enfermedades cardíacas. Prioriza reducirlo urgentemente."
                 info_visceral = "Nivel 15+ = Alto riesgo. Requiere atención inmediata. La grasa visceral rodea órganos internos."
         
-        # Feedback para masa muscular
+        # Feedback para masa muscular (priorizar aparato, fallback a estimada)
+        masa_muscular_para_feedback = masa_muscular_aparato if masa_muscular_aparato > 0 else masa_muscular_estimada
+        pct_masa_muscular_para_feedback = pct_masa_muscular_aparato if pct_masa_muscular_aparato > 0 else pct_masa_muscular_estimada
+        
         feedback_masa_muscular = ""
-        if sexo == "Hombre":
-            if pct_masa_muscular < 33:
-                feedback_masa_muscular = "Bajo. Potencial significativo de ganancia muscular con entrenamiento de fuerza."
-                rango_masa_muscular = "Rango objetivo: 38-54%"
-            elif pct_masa_muscular < 38:
-                feedback_masa_muscular = "Por debajo del promedio. Responderás bien al entrenamiento de fuerza."
-                rango_masa_muscular = "Rango objetivo: 38-54%"
-            elif pct_masa_muscular < 44:
-                feedback_masa_muscular = "Promedio saludable. Buen punto de partida para desarrollo muscular."
-                rango_masa_muscular = "Rango objetivo: 38-54%"
-            elif pct_masa_muscular < 54:
-                feedback_masa_muscular = "Por encima del promedio. Buen desarrollo muscular. Sigue con entrenamiento consistente."
-                rango_masa_muscular = "Rango objetivo: 38-54%"
-            else:
-                feedback_masa_muscular = "Excelente. Desarrollo muscular avanzado. Mantén con entrenamiento y nutrición óptimos."
-                rango_masa_muscular = "Rango objetivo: 38-54%"
-        else:  # Mujer
-            if pct_masa_muscular < 28:
-                feedback_masa_muscular = "Bajo. Gran potencial de ganancia muscular con entrenamiento de fuerza."
-                rango_masa_muscular = "Rango objetivo: 31-45%"
-            elif pct_masa_muscular < 31:
-                feedback_masa_muscular = "Por debajo del promedio. Responderás bien al entrenamiento de fuerza."
-                rango_masa_muscular = "Rango objetivo: 31-45%"
-            elif pct_masa_muscular < 35:
-                feedback_masa_muscular = "Promedio saludable. Buen punto de partida para desarrollo muscular."
-                rango_masa_muscular = "Rango objetivo: 31-45%"
-            elif pct_masa_muscular < 45:
-                feedback_masa_muscular = "Por encima del promedio. Buen desarrollo muscular para mujer. Sigue así."
-                rango_masa_muscular = "Rango objetivo: 31-45%"
-            else:
-                feedback_masa_muscular = "Excelente. Desarrollo muscular avanzado. Mantén con entrenamiento y nutrición óptimos."
-                rango_masa_muscular = "Rango objetivo: 31-45%"
+        if masa_muscular_para_feedback > 0 and pct_masa_muscular_para_feedback > 0:
+            if sexo == "Hombre":
+                if pct_masa_muscular_para_feedback < 33:
+                    feedback_masa_muscular = "Bajo. Potencial significativo de ganancia muscular con entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                elif pct_masa_muscular_para_feedback < 38:
+                    feedback_masa_muscular = "Por debajo del promedio. Responderás bien al entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                elif pct_masa_muscular_para_feedback < 44:
+                    feedback_masa_muscular = "Promedio saludable. Buen punto de partida para desarrollo muscular."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                elif pct_masa_muscular_para_feedback < 50:
+                    feedback_masa_muscular = "Por encima del promedio. Buen desarrollo muscular. Sigue con entrenamiento consistente."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+                else:
+                    feedback_masa_muscular = "Excelente. Desarrollo muscular avanzado. Mantén con entrenamiento y nutrición óptimos."
+                    rango_masa_muscular = "Rango objetivo: 38-44%"
+            else:  # Mujer
+                if pct_masa_muscular_para_feedback < 28:
+                    feedback_masa_muscular = "Bajo. Gran potencial de ganancia muscular con entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                elif pct_masa_muscular_para_feedback < 31:
+                    feedback_masa_muscular = "Por debajo del promedio. Responderás bien al entrenamiento de fuerza."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                elif pct_masa_muscular_para_feedback < 35:
+                    feedback_masa_muscular = "Promedio saludable. Buen punto de partida para desarrollo muscular."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                elif pct_masa_muscular_para_feedback < 40:
+                    feedback_masa_muscular = "Por encima del promedio. Buen desarrollo muscular. Sigue así."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+                else:
+                    feedback_masa_muscular = "Excelente. Desarrollo muscular avanzado. Mantén con entrenamiento y nutrición óptimos."
+                    rango_masa_muscular = "Rango objetivo: 31-37%"
+        else:
+            feedback_masa_muscular = "No hay suficientes datos para evaluar masa muscular."
+            rango_masa_muscular = ""
         
         # Feedback para nivel de entrenamiento
         feedback_nivel = ""
@@ -2864,10 +2972,16 @@ completos de tu análisis de composición corporal y rendimiento.
    ║  % Grasa corporal:      {grasa_corregida:.1f}% {emoji_grasa}                        ║
    ║  Categoría:             {categoria_grasa}                  ║
    ║                                                                ║
-   ║  Masa Libre de Grasa:   {mlg:.1f} kg                            ║
    ║  Masa Grasa:            {masa_grasa_calc:.1f} kg                            ║
-   ║  % Masa Muscular:       {pct_masa_muscular:.1f}%                           ║
+   ║  Masa Libre de Grasa (MLG): {mlg:.1f} kg ({pct_mlg:.1f}%)              ║
    ╚════════════════════════════════════════════════════════════════╝
+   
+   💪 MASA MUSCULAR ESQUELÉTICA:
+   {f'   🔵 Omron (medido):      {masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)' if masa_muscular_aparato > 0 else ''}
+   🟣 Estimado científico: {masa_muscular_estimada:.1f} kg ({pct_masa_muscular_estimada:.1f}%)
+   
+   📝 Nota: Omron mide directamente; estimado se calcula desde MLG.
+      Si difieren >15%, puede ser por hidratación o método.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📈 ÍNDICES CORPORALES
@@ -3248,17 +3362,52 @@ administracion@muscleupgym.fitness
                     </div>
                     <div class="metric-grid" style="margin-top: 15px;">
                         <div class="metric-row">
-                            <div class="metric-cell metric-label">Masa Libre de Grasa</div>
-                            <div class="metric-cell metric-value"><strong>{mlg:.1f} kg</strong></div>
-                        </div>
-                        <div class="metric-row">
                             <div class="metric-cell metric-label">Masa Grasa</div>
                             <div class="metric-cell metric-value"><strong>{masa_grasa_calc:.1f} kg</strong></div>
                         </div>
-                        <div class="metric-row">
-                            <div class="metric-cell metric-label">% Masa Muscular</div>
-                            <div class="metric-cell metric-value"><strong>{pct_masa_muscular:.1f}%</strong></div>
+                        <div class="metric-row" style="background-color: #fff9e6;">
+                            <div class="metric-cell metric-label">Masa Libre de Grasa (MLG)</div>
+                            <div class="metric-cell metric-value"><strong>{mlg:.1f} kg ({pct_mlg:.1f}%)</strong></div>
                         </div>
+                    </div>
+                    
+                    <!-- Sección de Masa Muscular -->
+                    <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; border-left: 4px solid #27AE60;">
+                        <h4 style="margin: 0 0 12px 0; color: #27AE60; font-size: 16px;">💪 Masa Muscular Esquelética</h4>
+                        
+                        {f'''<div style="background-color: rgba(255,255,255,0.9); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #2196F3;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="font-weight: 600; color: #555;">🔵 Omron (bioimpedancia):</span>
+                                <span style="font-size: 18px; font-weight: 700; color: #2196F3;">{masa_muscular_aparato:.1f} kg ({pct_masa_muscular_aparato:.1f}%)</span>
+                            </div>
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: #666; font-style: italic;">Valor medido directamente por tu báscula de bioimpedancia</p>
+                        </div>''' if masa_muscular_aparato > 0 else ''}
+                        
+                        <div style="background-color: rgba(255,255,255,0.9); padding: 12px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid #9C27B0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="font-weight: 600; color: #555;">🟣 Estimado científico:</span>
+                                <span style="font-size: 18px; font-weight: 700; color: #9C27B0;">{masa_muscular_estimada:.1f} kg ({pct_masa_muscular_estimada:.1f}%)</span>
+                            </div>
+                            <p style="margin: 5px 0 0 0; font-size: 11px; color: #666; font-style: italic;">Calculado desde MLG usando factores por nivel de entrenamiento</p>
+                        </div>
+                        
+                        <div style="background-color: rgba(255,193,7,0.15); padding: 10px; border-radius: 5px; font-size: 12px; color: #555; line-height: 1.5;">
+                            <p style="margin: 0 0 5px 0; font-weight: 600;">📊 ¿Por qué dos valores?</p>
+                            <p style="margin: 0 0 5px 0;">• <strong>Omron</strong>: Medición directa por corriente eléctrica (±3-5% error)</p>
+                            <p style="margin: 0 0 5px 0;">• <strong>Estimado</strong>: Cálculo desde MLG × factor ({('0.37-0.43' if sexo == 'Hombre' else '0.33-0.40')} según nivel)</p>
+                            <p style="margin: 0; font-style: italic; color: #777;">Ambos métodos son válidos. Si difieren mucho (>15%), puede indicar variación en hidratación o método de medición.</p>
+                        </div>
+                    </div>
+                    
+                    {f'''<div style="margin-top: 15px; padding: 12px; background-color: #e3f2fd; border-radius: 5px; border-left: 4px solid #3498DB;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #666; font-weight: 600;">💡 Interpretación (usando {('Omron' if masa_muscular_aparato > 0 else 'valor estimado')}):</p>
+                        <p style="margin: 0 0 5px 0; font-size: 13px; color: #444;">{feedback_masa_muscular}</p>
+                        <p style="margin: 0; font-size: 12px; color: #888;">{rango_masa_muscular}</p>
+                    </div>''' if feedback_masa_muscular else ''}
+                    
+                    <div style="margin-top: 10px; padding: 10px; background-color: #fff3e0; border-radius: 5px; font-size: 12px; color: #555; line-height: 1.5;">
+                        <p style="margin: 0 0 5px 0; font-weight: 600;">🔬 Nota científica:</p>
+                        <p style="margin: 0;">La <strong>MLG incluye</strong>: músculo + huesos (~15%) + órganos (~12%) + agua (~30-35%). La masa muscular es solo el componente esquelético contráctil.</p>
                     </div>
                     <div style="margin-top: 15px; padding: 12px; background-color: #e8f5e9; border-radius: 5px; border-left: 4px solid #27AE60;">
                         <p style="margin: 0 0 8px 0; font-size: 13px; color: #666; font-weight: 600;">💪 Sobre tu masa muscular:</p>
@@ -3272,15 +3421,20 @@ administracion@muscleupgym.fitness
             <div class="section">
                 <div class="section-title">📈 Índices Corporales</div>
                 
-                {f'''<div class="index-card">
-                    <div class="index-label">FFMI (Índice de Masa Libre de Grasa)</div>
+                <div class="index-card">
+                    <div class="index-label">💪 FFMI (Índice de Masa Libre de Grasa)</div>
                     <div class="index-value">{ffmi:.1f}</div>
                     <p style="margin: 5px 0 0 0; font-size: 13px; color: #666;">Desarrollo muscular ajustado por altura</p>
+                    <div style="margin-top: 10px; padding: 10px; background-color: #fff9e6; border-radius: 5px; font-size: 12px; color: #555; line-height: 1.5;">
+                        <p style="margin: 0 0 5px 0; font-weight: 600;">📊 ¿Qué es el FFMI?</p>
+                        <p style="margin: 0;">El FFMI normaliza tu masa muscular según tu altura, permitiendo comparaciones justas entre personas de diferentes estaturas. Es el "IMC del músculo".</p>
+                    </div>
                     <div style="margin-top: 15px; padding: 12px; background-color: rgba(255,215,0,0.1); border-radius: 5px;">
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #444; font-weight: 600;">💡 Tu nivel:</p>
                         <p style="margin: 0 0 8px 0; font-size: 13px; color: #444;">{feedback_ffmi}</p>
                         <p style="margin: 0; font-size: 12px; color: #888; line-height: 1.6;">{rangos_ffmi}</p>
                     </div>
-                </div>''' if ffmi is not None else ''}
+                </div>
                 
                 <div class="card">
                     <h4 style="margin-top: 0; color: #555;">Índices de Salud</h4>
@@ -7646,18 +7800,33 @@ if not st.session_state.get("correo_enviado", False):
                 # Enviar email completo a administración
                 ok = enviar_email_resumen(tabla_resumen, nombre, email_cliente, fecha_llenado, edad, telefono, progress_photos)
                 
+                # Calcular FFMI antes de enviar (asegurar que siempre existe)
+                ffmi_para_email = calcular_ffmi(mlg, estatura) if 'ffmi' not in locals() or ffmi is None else ffmi
+                
+                # Recuperar masa muscular original del aparato (dato ingresado por usuario)
+                masa_muscular_aparato = st.session_state.get('masa_muscular', 0)
+                
+                # Calcular masa muscular estimada científicamente
+                masa_muscular_estimada_email = estimar_masa_muscular_desde_mlg(
+                    mlg, 
+                    sexo, 
+                    nivel_entrenamiento if 'nivel_entrenamiento' in locals() else 'intermedio'
+                )
+                
                 # Enviar reporte de evaluación corporal completo al cliente
                 ok_cliente = enviar_email_cliente(
                     nombre, email_cliente, fecha_llenado, edad, sexo, peso, estatura, imc,
                     grasa_corregida, mlg, 
-                    ffmi if 'ffmi' in locals() else None,
+                    ffmi_para_email,  # Siempre enviamos FFMI calculado
                     nivel_entrenamiento if 'nivel_entrenamiento' in locals() else None,
                     circunferencia_cintura if 'circunferencia_cintura' in locals() else None,
                     grasa_visceral if 'grasa_visceral' in locals() else None,
                     edad_metabolica if 'edad_metabolica' in locals() else None,
                     wthr if 'wthr' in locals() else None,
                     peso - mlg,  # masa_grasa
-                    progress_photos
+                    progress_photos,
+                    masa_muscular_aparato,  # Masa muscular del Omron
+                    masa_muscular_estimada_email  # Masa muscular estimada
                 )
                 
                 if ok:
