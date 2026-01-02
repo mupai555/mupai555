@@ -7284,9 +7284,9 @@ if not st.session_state.datos_completos:
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
-                        <span style="font-size:1.3rem;">🍽️</span> <b>Paso 6:</b> Efecto térmico de los alimentos (ETA)<br>
+                        <span style="font-size:1.3rem;">⚡</span> <b>Paso 6:</b> Análisis metabólico<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
-                            Calculamos el gasto energético extra por digestión, según tu composición corporal y evidencia científica.
+                            Calculamos factores metabólicos personalizados según tu composición corporal y nivel de actividad.
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
@@ -8596,7 +8596,7 @@ st.session_state.eta_color = eta_color
 # UI Display: Only show ETA expander if MOSTRAR_ETA_AL_USUARIO is True
 if MOSTRAR_ETA_AL_USUARIO:
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
-    with st.expander("🍽️ **Paso 6: Efecto Térmico de los Alimentos (ETA)**", expanded=True):
+    with st.expander("⚡ **Paso 6: Análisis Metabólico Personalizado**", expanded=True):
         progress.progress(70)
         progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
 
@@ -8625,7 +8625,7 @@ if MOSTRAR_ETA_AL_USUARIO:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     # BLOQUE 4: Placeholder when ETA details are hidden from users
-    with st.expander("📊 **Paso 6: Cálculo Automático de Factores Metabólicos**", expanded=False):
+    with st.expander("⚡ **Paso 6: Análisis Metabólico Personalizado**", expanded=False):
         progress.progress(70)
         progress_text.text("Paso 4 de 5: Procesamiento automático")
         
