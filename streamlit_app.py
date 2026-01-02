@@ -5162,6 +5162,103 @@ muscleupgym.fitness
         st.error(f"Error al enviar email Parte 2: {str(e)}")
         return False
 
+def enviar_email_yaml(datos_completos):
+    """
+    Envía email a administración con TODO el contenido del reporte completo en formato YAML.
+    
+    Propósito: Facilitar el procesamiento de datos por ChatGPT u otros LLMs.
+    El formato YAML es más fácil de parsear que HTML para análisis automatizado.
+    
+    Args:
+        datos_completos: Diccionario con TODOS los datos del Email 1 (reporte completo)
+    
+    Returns:
+        bool: True si se envió exitosamente, False en caso contrario
+    """
+    try:
+        import yaml
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        email_origen = "administracion@muscleupgym.fitness"
+        email_destino = "administracion@muscleupgym.fitness"
+        password = st.secrets.get("zoho_password", "TU_PASSWORD_AQUI")
+        
+        nombre_cliente = datos_completos.get('nombre_cliente', 'N/A')
+        fecha = datos_completos.get('fecha', datetime.now().strftime("%Y-%m-%d"))
+        
+        # Generar contenido YAML estructurado
+        yaml_content = yaml.dump(datos_completos, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        
+        # Crear mensaje
+        msg = MIMEMultipart()
+        msg['From'] = email_origen
+        msg['To'] = email_destino
+        msg['Subject'] = f"📊 YAML Data Export — {nombre_cliente} — {fecha}"
+        
+        # Cuerpo del email explicativo
+        body = f"""
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    REPORTE COMPLETO EN FORMATO YAML                         ║
+║                  Para procesamiento por ChatGPT/LLMs                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Cliente: {nombre_cliente}
+Fecha: {fecha}
+Sistema: MUPAI v2.0
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 PROPÓSITO:
+   Este archivo contiene TODOS los datos del reporte completo en formato YAML
+   para facilitar su procesamiento por ChatGPT u otros sistemas de IA.
+
+📊 CONTENIDO INCLUIDO:
+   ✅ Datos personales (nombre, edad, sexo, contacto)
+   ✅ Composición corporal completa (peso, estatura, IMC, grasa, MLG)
+   ✅ Índices corporales (FFMI, WtHR, grasa visceral, edad metabólica)
+   ✅ Macronutrientes tradicionales (proteína, grasa, carbohidratos)
+   ✅ Plan PSMF (si aplica)
+   ✅ Proyecciones de progreso (1, 2, 3 meses)
+   ✅ Metabolismo (TMB, GE, GEAF)
+   ✅ Nivel de entrenamiento
+   ✅ Sueño y estrés (si disponible)
+   ✅ Clasificaciones y feedbacks
+
+💡 USO SUGERIDO:
+   - Copiar el contenido YAML en ChatGPT para análisis
+   - Usar en proyectos de automatización
+   - Crear dashboards personalizados
+   - Comparar evolución entre evaluaciones
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CONTENIDO YAML:
+
+{yaml_content}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+© 2025 MUPAI - Muscle Up GYM
+Digital Training Science
+muscleupgym.fitness
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+        
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        
+        # Enviar
+        server = smtplib.SMTP('smtp.zoho.com', 587)
+        server.starttls()
+        server.login(email_origen, password)
+        server.send_message(msg)
+        server.quit()
+        
+        return True
+    except Exception as e:
+        st.error(f"Error al enviar email YAML: {str(e)}")
+        return False
+
 # ==================== CUESTIONARIO SUEÑO + ESTRÉS ====================
 
 def formulario_suenyo_estres():
@@ -9169,6 +9266,85 @@ if not st.session_state.get("correo_enviado", False):
                         st.success("✅ Reporte interno (Parte 2) enviado exitosamente")
                     else:
                         st.warning("⚠️ Emails enviados, pero hubo un error con el reporte interno")
+                    
+                    # Construir diccionario completo para email YAML
+                    datos_completos_yaml = {
+                        'metadata': {
+                            'fecha_evaluacion': fecha_llenado,
+                            'sistema': 'MUPAI v2.0',
+                            'version': '2.0.0',
+                            'tipo_reporte': 'Evaluacion_Completa'
+                        },
+                        'datos_personales': {
+                            'nombre_cliente': nombre,
+                            'email': email_cliente,
+                            'telefono': telefono if 'telefono' in locals() else None,
+                            'edad': edad,
+                            'sexo': sexo,
+                            'ciclo_menstrual': st.session_state.get('ciclo_menstrual')
+                        },
+                        'composicion_corporal': {
+                            'peso_kg': float(peso),
+                            'estatura_cm': float(estatura),
+                            'imc': float(imc),
+                            'grasa_corporal_pct': float(grasa_corregida),
+                            'mlg_kg': float(mlg),
+                            'masa_grasa_kg': float(peso - mlg),
+                            'circunferencia_cintura_cm': float(circunferencia_cintura) if 'circunferencia_cintura' in locals() and circunferencia_cintura else None,
+                            'masa_muscular_omron_kg': float(masa_muscular_aparato) if masa_muscular_aparato > 0 else None,
+                            'masa_muscular_estimada_kg': float(masa_muscular_estimada_email),
+                        },
+                        'indices_corporales': {
+                            'ffmi': float(ffmi_para_email) if ffmi_para_email else None,
+                            'wthr': float(wthr) if 'wthr' in locals() and wthr else None,
+                            'grasa_visceral_nivel': int(grasa_visceral) if 'grasa_visceral' in locals() and grasa_visceral else None,
+                            'edad_metabolica': int(edad_metabolica) if 'edad_metabolica' in locals() and edad_metabolica else None,
+                            'nivel_entrenamiento': nivel_entrenamiento if 'nivel_entrenamiento' in locals() else None
+                        },
+                        'metabolismo': {
+                            'tmb_kcal': float(tmb) if 'tmb' in locals() else None,
+                            'ge_kcal': float(GE) if 'GE' in locals() else None,
+                            'geaf': float(GEAF) if 'GEAF' in locals() else None
+                        },
+                        'macronutrientes_tradicionales': {
+                            'proteina_g': float(proteina_g) if 'proteina_g' in locals() else None,
+                            'proteina_kcal': float(proteina_kcal) if 'proteina_kcal' in locals() else None,
+                            'grasa_g': float(grasa_g) if 'grasa_g' in locals() else None,
+                            'grasa_kcal': float(grasa_kcal) if 'grasa_kcal' in locals() else None,
+                            'carbohidratos_g': float(carbo_g) if 'carbo_g' in locals() else None,
+                            'carbohidratos_kcal': float(carbo_kcal) if 'carbo_kcal' in locals() else None,
+                            'calorias_totales': float(ingesta_calorica) if 'ingesta_calorica' in locals() else None,
+                            'base_proteina': base_proteina_nombre if 'base_proteina_nombre' in locals() else None,
+                            'factor_proteina': float(factor_proteina) if 'factor_proteina' in locals() else None
+                        },
+                        'plan_psmf': {
+                            'aplicable': psmf_recs.get('psmf_aplicable', False) if 'psmf_recs' in locals() else False,
+                            'proteina_g': float(psmf_recs.get('proteina_g_dia', 0)) if 'psmf_recs' in locals() else None,
+                            'grasa_g': float(psmf_recs.get('grasa_g_dia', 0)) if 'psmf_recs' in locals() else None,
+                            'carbohidratos_g': float(psmf_recs.get('carbs_g_dia', 0)) if 'psmf_recs' in locals() else None,
+                            'calorias_dia': float(psmf_recs.get('calorias_dia', 0)) if 'psmf_recs' in locals() else None,
+                            'tier': psmf_recs.get('tier', None) if 'psmf_recs' in locals() else None
+                        },
+                        'proyecciones': {
+                            '1_mes': proyecciones[0] if 'proyecciones' in locals() and len(proyecciones) > 0 else None,
+                            '2_meses': proyecciones[1] if 'proyecciones' in locals() and len(proyecciones) > 1 else None,
+                            '3_meses': proyecciones[2] if 'proyecciones' in locals() and len(proyecciones) > 2 else None
+                        },
+                        'recuperacion': {
+                            'suenyo_estres_completado': st.session_state.get('suenyo_estres_completado', False),
+                            'ir_se': st.session_state.get('suenyo_estres_data', {}).get('ir_se', None),
+                            'nivel_recuperacion': st.session_state.get('suenyo_estres_data', {}).get('nivel_recuperacion', None),
+                            'sleep_score': st.session_state.get('suenyo_estres_data', {}).get('sleep_score', None),
+                            'stress_score': st.session_state.get('suenyo_estres_data', {}).get('stress_score', None)
+                        }
+                    }
+                    
+                    # Enviar email con datos en formato YAML
+                    ok_yaml = enviar_email_yaml(datos_completos_yaml)
+                    if ok_yaml:
+                        st.success("✅ Reporte YAML enviado exitosamente (para ChatGPT/análisis)")
+                    else:
+                        st.warning("⚠️ Emails principales enviados, pero hubo un error con el reporte YAML")
                 else:
                     st.error("❌ Error al enviar email. Contacta a soporte técnico.")
     
@@ -9247,6 +9423,84 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                     st.success("✅ Reporte interno (Parte 2) reenviado exitosamente")
                 else:
                     st.warning("⚠️ Emails reenviados, pero hubo un error con el reporte interno")
+                
+                # Construir y reenviar email YAML
+                datos_completos_yaml_reenvio = {
+                    'metadata': {
+                        'fecha_evaluacion': fecha_llenado,
+                        'sistema': 'MUPAI v2.0',
+                        'version': '2.0.0',
+                        'tipo_reporte': 'Evaluacion_Completa_Reenvio'
+                    },
+                    'datos_personales': {
+                        'nombre_cliente': nombre,
+                        'email': email_cliente,
+                        'telefono': telefono if 'telefono' in locals() else None,
+                        'edad': edad,
+                        'sexo': sexo,
+                        'ciclo_menstrual': st.session_state.get('ciclo_menstrual')
+                    },
+                    'composicion_corporal': {
+                        'peso_kg': float(peso),
+                        'estatura_cm': float(estatura),
+                        'imc': float(imc),
+                        'grasa_corporal_pct': float(grasa_corregida),
+                        'mlg_kg': float(mlg),
+                        'masa_grasa_kg': float(peso - mlg),
+                        'circunferencia_cintura_cm': float(circunferencia_cintura) if 'circunferencia_cintura' in locals() and circunferencia_cintura else None,
+                        'masa_muscular_omron_kg': float(masa_muscular_aparato) if masa_muscular_aparato > 0 else None,
+                        'masa_muscular_estimada_kg': float(masa_muscular_estimada_email),
+                    },
+                    'indices_corporales': {
+                        'ffmi': float(ffmi_para_email) if ffmi_para_email else None,
+                        'wthr': float(wthr) if 'wthr' in locals() and wthr else None,
+                        'grasa_visceral_nivel': int(grasa_visceral) if 'grasa_visceral' in locals() and grasa_visceral else None,
+                        'edad_metabolica': int(edad_metabolica) if 'edad_metabolica' in locals() and edad_metabolica else None,
+                        'nivel_entrenamiento': nivel_entrenamiento if 'nivel_entrenamiento' in locals() else None
+                    },
+                    'metabolismo': {
+                        'tmb_kcal': float(tmb) if 'tmb' in locals() else None,
+                        'ge_kcal': float(GE) if 'GE' in locals() else None,
+                        'geaf': float(GEAF) if 'GEAF' in locals() else None
+                    },
+                    'macronutrientes_tradicionales': {
+                        'proteina_g': float(proteina_g) if 'proteina_g' in locals() else None,
+                        'proteina_kcal': float(proteina_kcal) if 'proteina_kcal' in locals() else None,
+                        'grasa_g': float(grasa_g) if 'grasa_g' in locals() else None,
+                        'grasa_kcal': float(grasa_kcal) if 'grasa_kcal' in locals() else None,
+                        'carbohidratos_g': float(carbo_g) if 'carbo_g' in locals() else None,
+                        'carbohidratos_kcal': float(carbo_kcal) if 'carbo_kcal' in locals() else None,
+                        'calorias_totales': float(ingesta_calorica) if 'ingesta_calorica' in locals() else None,
+                        'base_proteina': base_proteina_nombre if 'base_proteina_nombre' in locals() else None,
+                        'factor_proteina': float(factor_proteina) if 'factor_proteina' in locals() else None
+                    },
+                    'plan_psmf': {
+                        'aplicable': psmf_recs.get('psmf_aplicable', False) if 'psmf_recs' in locals() else False,
+                        'proteina_g': float(psmf_recs.get('proteina_g_dia', 0)) if 'psmf_recs' in locals() else None,
+                        'grasa_g': float(psmf_recs.get('grasa_g_dia', 0)) if 'psmf_recs' in locals() else None,
+                        'carbohidratos_g': float(psmf_recs.get('carbs_g_dia', 0)) if 'psmf_recs' in locals() else None,
+                        'calorias_dia': float(psmf_recs.get('calorias_dia', 0)) if 'psmf_recs' in locals() else None,
+                        'tier': psmf_recs.get('tier', None) if 'psmf_recs' in locals() else None
+                    },
+                    'proyecciones': {
+                        '1_mes': proyecciones[0] if 'proyecciones' in locals() and len(proyecciones) > 0 else None,
+                        '2_meses': proyecciones[1] if 'proyecciones' in locals() and len(proyecciones) > 1 else None,
+                        '3_meses': proyecciones[2] if 'proyecciones' in locals() and len(proyecciones) > 2 else None
+                    },
+                    'recuperacion': {
+                        'suenyo_estres_completado': st.session_state.get('suenyo_estres_completado', False),
+                        'ir_se': st.session_state.get('suenyo_estres_data', {}).get('ir_se', None),
+                        'nivel_recuperacion': st.session_state.get('suenyo_estres_data', {}).get('nivel_recuperacion', None),
+                        'sleep_score': st.session_state.get('suenyo_estres_data', {}).get('sleep_score', None),
+                        'stress_score': st.session_state.get('suenyo_estres_data', {}).get('stress_score', None)
+                    }
+                }
+                
+                ok_yaml_reenvio = enviar_email_yaml(datos_completos_yaml_reenvio)
+                if ok_yaml_reenvio:
+                    st.success("✅ Reporte YAML reenviado exitosamente")
+                else:
+                    st.warning("⚠️ Emails principales reenviados, pero hubo un error con el reporte YAML")
             else:
                 st.error("❌ Error al reenviar email. Contacta a soporte técnico.")
 
