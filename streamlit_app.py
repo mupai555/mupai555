@@ -7001,10 +7001,10 @@ def check_step_completion(step_number):
         # Este paso es opcional, considerarlo completo si tiene algún dato
         return True  # Siempre completo porque es opcional
     elif step_number == 5:  # Paso 7: Entrenamiento GEE
-        # Verificar frecuencia y minutos por sesión
-        frecuencia = st.session_state.get('frecuencia_entrenamiento', '')
+        # Verificar que haya seleccionado días de entrenamiento
+        dias = st.session_state.get('frecuencia_entrenamiento_dias', 0)
         minutos = st.session_state.get('minutos_por_sesion', 0)
-        return bool(frecuencia) and minutos > 0
+        return dias >= 0 and minutos > 0  # dias puede ser 0 (no entrena)
     return False
 
 def get_step_status_indicator(step_number):
@@ -8755,9 +8755,9 @@ with st.expander(step7_title, expanded=True):
         key="frecuencia_entrenamiento_dias"
     )
     
-    # Guardar minutos por sesión (estimado basado en nivel)
+    # Guardar variables para validación (sin conflicto con keys de widgets)
     st.session_state.minutos_por_sesion = 60  # Valor estándar para validación
-    st.session_state.frecuencia_entrenamiento = f"{dias_fuerza} días/semana"
+    st.session_state.frecuencia_entrenamiento_gee = f"{dias_fuerza} días/semana"  # Renombrado para evitar conflicto
     st.session_state.dias_fuerza = dias_fuerza
 
     # Cálculo del GEE según nivel global de entrenamiento
