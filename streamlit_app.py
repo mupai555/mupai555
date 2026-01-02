@@ -429,21 +429,21 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* MUPAI UI/UX v2.1 - Last update: 2026-01-02 - Force refresh */
+/* MUPAI UI/UX v2.2 - ALTO CONTRASTE Y COLORES VIBRANTES */
 :root {
-    --mupai-yellow: #F4C430;
-    --mupai-dark-yellow: #DAA520;
-    --mupai-black: #181A1B;
-    --mupai-gray: #232425;
-    --mupai-light-gray: #EDEDED;
+    --mupai-yellow: #FFD700;
+    --mupai-dark-yellow: #FFA500;
+    --mupai-black: #0A0A0A;
+    --mupai-gray: #1A1A1A;
+    --mupai-light-gray: #F5F5F5;
     --mupai-white: #FFFFFF;
-    --mupai-success: #27AE60;
-    --mupai-warning: #F39C12;
-    --mupai-danger: #E74C3C;
+    --mupai-success: #00E676;
+    --mupai-warning: #FF9800;
+    --mupai-danger: #FF5252;
 }
-/* Fondo general */
+/* Fondo general - MÁS OSCURO PARA MEJOR CONTRASTE */
 .stApp {
-    background: linear-gradient(135deg, #1E1E1E 0%, #232425 100%);
+    background: linear-gradient(135deg, #0A0A0A 0%, #121212 100%);
 }
 .main-header {
     background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
@@ -456,13 +456,14 @@ st.markdown("""
     animation: fadeIn 0.5s ease-out;
 }
 .content-card {
-    background: #1E1E1E;
+    background: #1A1A1A;
     padding: 2rem 1.3rem;
     border-radius: 16px;
-    box-shadow: 0 5px 22px 0px rgba(244,196,48,0.07), 0 1.5px 8px rgba(0,0,0,0.11);
+    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.2), 0 4px 15px rgba(0,0,0,0.4);
     margin-bottom: 1.7rem;
-    border-left: 5px solid var(--mupai-yellow);
+    border-left: 6px solid var(--mupai-yellow);
     animation: slideIn 0.5s;
+    border: 1px solid rgba(255, 215, 0, 0.15);
 }
 .card-psmf {
     border-left-color: var(--mupai-warning)!important;
@@ -471,9 +472,10 @@ st.markdown("""
     border-left-color: var(--mupai-success)!important;
 }
 .content-card, .content-card * {
-    color: #FFF !important;
-    font-weight: 500;
+    color: #FFFFFF !important;
+    font-weight: 600;
     letter-spacing: 0.02em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 .stButton > button {
     background: linear-gradient(135deg, var(--mupai-yellow) 0%, var(--mupai-dark-yellow) 100%);
@@ -498,10 +500,11 @@ st.markdown("""
     border: 2px solid var(--mupai-yellow)!important;
     border-radius: 11px!important;
     padding: 0.7rem 0.9rem!important;
-    background: #232425!important;
-    color: #fff!important;
+    background: #1A1A1A!important;
+    color: #FFFFFF!important;
     font-size: 1.13rem!important;
-    font-weight: 600!important;
+    font-weight: 700!important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3)!important;
 }
 /* Special styling for body fat measurement method selector */
 .stSelectbox[data-testid="stSelectbox"]:has(label:contains("Método de medición de grasa")) > div > div > select,
@@ -520,10 +523,11 @@ st.markdown("""
 .stTextInput label, .stNumberInput label, .stSelectbox label,
 .stRadio label, .stCheckbox label, .stDateInput label, .stMarkdown,
 .stExpander .streamlit-expanderHeader, .stExpander label, .stExpander p, .stExpander div {
-    color: #fff !important;
+    color: #FFFFFF !important;
     opacity: 1 !important;
-    font-weight: 700 !important;
-    font-size: 1.04rem !important;
+    font-weight: 800 !important;
+    font-size: 1.06rem !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7) !important;
 }
 /* Reglas específicas adicionales para máxima visibilidad de títulos de expanders */
 .stExpander .streamlit-expanderHeader,
@@ -539,23 +543,27 @@ st.markdown("""
 }
 .stTextInput input::placeholder,
 .stNumberInput input::placeholder {
-    color: #e0e0e0 !important;
+    color: #B0B0B0 !important;
     opacity: 1 !important;
+    font-weight: 500 !important;
 }
 .stAlert > div {
     border-radius: 11px;
     padding: 1.1rem;
     border-left: 5px solid;
-    background: #222326 !important;
-    color: #FFF !important;
+    background: #1A1A1A !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
 }
 [data-testid="metric-container"] {
-    background: linear-gradient(125deg, #252525 0%, #303030 100%);
+    background: linear-gradient(125deg, #1A1A1A 0%, #252525 100%);
     padding: 1.1rem 1rem;
     border-radius: 12px;
-    border-left: 4px solid var(--mupai-yellow);
-    box-shadow: 0 2.5px 11px rgba(0,0,0,0.11);
-    color: #fff !important;
+    border-left: 5px solid var(--mupai-yellow);
+    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2), 0 2px 10px rgba(0,0,0,0.3);
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 215, 0, 0.2);
 }
 .streamlit-expanderHeader {
     background: linear-gradient(135deg, var(--mupai-gray) 70%, #242424 100%);
