@@ -563,8 +563,8 @@ a[href*="github.com"] {
 .stExpander .streamlit-expanderHeader, .stExpander label, .stExpander p, .stExpander div {
     color: #FFFFFF !important;
     opacity: 1 !important;
-    font-weight: 800 !important;
-    font-size: 1.06rem !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
     text-shadow: 0 1px 3px rgba(0,0,0,0.7) !important;
 }
 /* Reglas específicas adicionales para máxima visibilidad de títulos de expanders */
