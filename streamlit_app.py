@@ -6963,12 +6963,12 @@ def render_progress_photos_section():
             if optional_photo_uploaded:
                 status_msg += " (+ 1 foto opcional cargada)"
             st.info(status_msg)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     return validation_errors
 
-        # ==================== FUNCIONES DE PROGRESO ====================
+# ==================== FUNCIONES DE PROGRESO ====================
 
 def check_step_completion(step_number):
     """Verificar si un paso específico está completo"""
@@ -7894,7 +7894,7 @@ if psmf_recs.get("psmf_aplicable") and MOSTRAR_PSMF_AL_USUARIO:
         
         *PSMF = Protein Sparing Modified Fast (ayuno modificado ahorrador de proteína)*
         """)
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
 rango_grasa_ok = (4, 12) if sexo == "Hombre" else (10, 18)
 fuera_rango = grasa_corregida < rango_grasa_ok[0] or grasa_corregida > rango_grasa_ok[1]
@@ -7906,8 +7906,8 @@ if fuera_rango:
     {'subestimar' if grasa_corregida < rango_grasa_ok[0] else 'sobrestimar'} 
     ligeramente tu potencial muscular.
     """)
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ========== PASO 3: CUESTIONARIO SUEÑO + ESTRÉS ==========
 # Ubicado DESPUÉS de composición corporal para flujo lógico
