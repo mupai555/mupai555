@@ -7330,9 +7330,21 @@ if datos_personales_completos and st.session_state.datos_completos:
     progress_text = st.empty()
 
     # PASO 2: Composición Corporal (Siempre visible)
-    st.markdown('<div class="content-card" style="border: 3px solid #FFD700; background: #1A1A1A;">', unsafe_allow_html=True)
-    st.markdown("## 📊 **Paso 2: Composición Corporal y Antropometría**")
-    st.markdown('<p style="color: #00E676; font-size: 1rem; margin-bottom: 1rem; font-weight: bold;">✓ Sección obligatoria - Completa todos los campos</p>', unsafe_allow_html=True)
+    step2_icon, step2_color, step2_status = get_step_status_indicator(0)
+    st.markdown('<div class="content-card" style="border: 3px solid #FFD700; background: #1A1A1A; padding: 2rem;">', unsafe_allow_html=True)
+    st.markdown(f"""
+    <h2 style="color: #FFFFFF; font-weight: 700; margin-bottom: 0.5rem;">
+        📊 <strong>Paso 2: Composición Corporal y Antropometría</strong> {step2_icon}
+    </h2>
+    <p style="color: {step2_color}; font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: bold;">
+        Estado: {step2_status}
+    </p>
+    <p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">
+        ✓ Sección obligatoria - Completa todos los campos
+    </p>
+    """, unsafe_allow_html=True)
+    progress.progress(10)
+    progress_text.text("Paso 2 de 7: Composición corporal")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
