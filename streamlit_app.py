@@ -7293,6 +7293,18 @@ if not st.session_state.datos_completos:
                         </span>
                     </li>
                     <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">🎯</span> <b>Metas personales:</b> Objetivos a mediano y largo plazo<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Describes tus objetivos específicos de composición corporal, rendimiento y bienestar.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
+                        <span style="font-size:1.3rem;">📸</span> <b>Fotografías de progreso:</b> Evaluación visual<br>
+                        <span style="color:#F5F5F5;font-size:1rem;">
+                            Subes 3 fotos obligatorias (frontal, lateral, posterior) para análisis de composición corporal.
+                        </span>
+                    </li>
+                    <li style="margin-bottom:1.1em;">
                         <span style="font-size:1.3rem;">📈</span> <b>Resultado final:</b> Plan nutricional personalizado<br>
                         <span style="color:#F5F5F5;font-size:1rem;">
                             Recibes tus métricas clave, diagnóstico y recomendaciones basadas en ciencia.
@@ -7301,7 +7313,7 @@ if not st.session_state.datos_completos:
                 </ul>
                 <div style="margin-top:1.2em; font-size:1rem; color:#F4C430;">
                     <b>Finalidad:</b> Este cuestionario integra principios científicos y experiencia práctica para ofrecerte un diagnóstico preciso y recomendaciones útiles. <br>
-                    <b>Tiempo estimado:</b> Menos de 5 minutos.
+                    <b>Tiempo estimado:</b> 7-10 minutos (incluye subida de fotos).
                 </div>
             </div>
         </div>
