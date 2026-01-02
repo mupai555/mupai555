@@ -6646,11 +6646,9 @@ def calculate_dynamic_progress():
     if st.session_state.get('actividad_diaria'):
         completed += 1
     
-    # Frecuencia de entrenamiento
-    total_required += 2
-    if st.session_state.get('frecuencia_entrenamiento', 0) > 0:
-        completed += 1
-    if st.session_state.get('minutos_por_sesion', 0) > 0:
+    # Frecuencia de entrenamiento (checkear strings, no números)
+    total_required += 1
+    if st.session_state.get('frecuencia_entrenamiento'):
         completed += 1
     
     # Fotos de progreso (3 requeridas)
