@@ -7091,13 +7091,13 @@ st.markdown("Por favor, completa todos los campos para comenzar tu evaluación p
 
 col1, col2 = st.columns(2)
 with col1:
-    nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez García", help="Tu nombre legal completo")
-    telefono = st.text_input("Teléfono*", placeholder="Ej: 8661234567", help="10 dígitos sin espacios")
-    email_cliente = st.text_input("Email*", placeholder="correo@ejemplo.com", help="Email válido para recibir resultados")
+    nombre = st.text_input("Nombre completo*", placeholder="Ej: Juan Pérez García", help="Tu nombre legal completo", key="nombre")
+    telefono = st.text_input("Teléfono*", placeholder="Ej: 8661234567", help="10 dígitos sin espacios", key="telefono")
+    email_cliente = st.text_input("Email*", placeholder="correo@ejemplo.com", help="Email válido para recibir resultados", key="email_cliente")
 
 with col2:
-    edad = st.number_input("Edad (años)*", min_value=15, max_value=80, value=safe_int(st.session_state.get("edad", 25), 25), help="Tu edad actual")
-    sexo = st.selectbox("Sexo biológico*", ["Hombre", "Mujer"], help="Necesario para cálculos precisos")
+    edad = st.number_input("Edad (años)*", min_value=15, max_value=80, value=safe_int(st.session_state.get("edad", 25), 25), help="Tu edad actual", key="edad")
+    sexo = st.selectbox("Sexo biológico*", ["Hombre", "Mujer"], help="Necesario para cálculos precisos", key="sexo")
     fecha_llenado = datetime.now().strftime("%Y-%m-%d")
     st.info(f"📅 Fecha de evaluación: {fecha_llenado}")
 
@@ -8007,12 +8007,18 @@ with st.expander(step4_title, expanded=True):
                     help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
                 )
             with col2:
+                # Key único por ejercicio para evitar pérdida de estado
+                empuje_key = f"empuje_{empuje.lower().replace(' ', '_')}_reps"
+                empuje_default = 10
                 empuje_reps = st.number_input(
                     f"¿Cuántas repeticiones continuas realizas con buena forma en {empuje}?",
-                    min_value=0, max_value=100, value=safe_int(st.session_state.get(f"{empuje}_reps", 10), 10),
-                    help="Sin pausas, sin perder rango completo de movimiento."
+                    min_value=0, max_value=100, 
+                    value=safe_int(st.session_state.get(empuje_key, empuje_default), empuje_default),
+                    help="Sin pausas, sin perder rango completo de movimiento.",
+                    key=empuje_key
                 )
                 ejercicios_data[empuje] = empuje_reps
+                st.session_state[f"{empuje}_reps"] = empuje_reps  # Persistir también con nombre original
                 
                 # FEEDBACK VISUAL EN TIEMPO REAL
                 if empuje_reps > 0 and empuje in referencias_funcionales[sexo]:
@@ -8055,12 +8061,18 @@ with st.expander(step4_title, expanded=True):
                     help="Selecciona el ejercicio donde tengas mejor rendimiento y técnica."
                 )
             with col2:
+                # Key único por ejercicio para evitar pérdida de estado
+                traccion_key = f"traccion_{traccion.lower().replace(' ', '_')}_reps"
+                traccion_default = 5
                 traccion_reps = st.number_input(
                     f"¿Cuántas repeticiones continuas realizas con buena forma en {traccion}?",
-                    min_value=0, max_value=50, value=safe_int(st.session_state.get(f"{traccion}_reps", 5), 5),
-                    help="Sin balanceo ni uso de impulso; técnica estricta."
+                    min_value=0, max_value=50, 
+                    value=safe_int(st.session_state.get(traccion_key, traccion_default), traccion_default),
+                    help="Sin balanceo ni uso de impulso; técnica estricta.",
+                    key=traccion_key
                 )
                 ejercicios_data[traccion] = traccion_reps
+                st.session_state[f"{traccion}_reps"] = traccion_reps  # Persistir también con nombre original
                 
                 # FEEDBACK VISUAL EN TIEMPO REAL
                 if traccion_reps > 0 and traccion in referencias_funcionales[sexo]:
