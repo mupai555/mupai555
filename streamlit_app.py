@@ -8577,6 +8577,8 @@ if 'ffmi' in locals() and 'nivel_entrenamiento' in locals() and ffmi > 0 and 'mo
 else:
     st.info("Completa primero todos los datos anteriores para ver tu potencial genético.")
 
+    st.markdown('</div>', unsafe_allow_html=True)
+
 # PASO 5: Actividad física diaria (Obligatorio - Siempre expandido)
 step5_icon, step5_color, step5_status = get_step_status_indicator(4)
 step5_title = f"🚶 **Paso 5: Nivel de Actividad Física Diaria** {step5_icon}"
