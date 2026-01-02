@@ -429,6 +429,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+/* MUPAI UI/UX v2.1 - Last update: 2026-01-02 - Force refresh */
 :root {
     --mupai-yellow: #F4C430;
     --mupai-dark-yellow: #DAA520;
@@ -8863,6 +8864,30 @@ except:
 # Initialize missing variables
 if 'fbeo' not in locals():
     fbeo = 1.0
+
+# Ensure critical variables exist for email generation
+if 'fmi' not in locals():
+    fmi = calcular_fmi(peso if 'peso' in locals() else 70, 
+                       grasa_corregida if 'grasa_corregida' in locals() else 20, 
+                       estatura if 'estatura' in locals() else 170) if 'peso' in locals() and 'grasa_corregida' in locals() and 'estatura' in locals() else 0
+
+if 'modo_ffmi' not in locals():
+    modo_ffmi = obtener_modo_interpretacion_ffmi(
+        grasa_corregida if 'grasa_corregida' in locals() else 20,
+        sexo if 'sexo' in locals() else "Hombre"
+    ) if 'grasa_corregida' in locals() and 'sexo' in locals() else "GREEN"
+
+if 'nivel_ffmi' not in locals():
+    nivel_ffmi = "Promedio"
+
+if 'ffmi_genetico_max' not in locals():
+    ffmi_genetico_max = 22 if sexo == "Hombre" else 19
+
+if 'porc_potencial' not in locals():
+    porc_potencial = 0
+
+if 'ffmi' not in locals():
+    ffmi = 0
 
 # Helper function to generate FFMI classification text for email
 def generar_texto_clasificacion_ffmi(modo_ffmi, sexo, nivel_ffmi, ffmi_genetico_max, porc_potencial, ffmi):
