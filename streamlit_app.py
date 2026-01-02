@@ -6964,20 +6964,41 @@ def render_progress_photos_section():
 
 def check_step_completion(step_number):
     """Verificar si un paso específico está completo"""
-    if step_number == 1:  # Datos personales
-        required = ['nombre', 'telefono', 'email_cliente', 'edad', 'sexo', 'acepto_descargo']
-        return all(st.session_state.get(field) for field in required)
-    elif step_number == 2:  # Composición corporal
-        required = ['peso', 'estatura', 'grasa_corporal', 'masa_muscular']
-        return all(st.session_state.get(field) for field in required)
-    elif step_number == 3:  # Evaluación funcional
-        return (st.session_state.get('experiencia_completa', False) and 
-                len(st.session_state.get('datos_ejercicios', {})) >= 5)
-    elif step_number == 4:  # Actividad física
-        return bool(st.session_state.get('actividad_diaria'))
-    elif step_number == 5:  # Entrenamiento
-        return (st.session_state.get('frecuencia_entrenamiento') and
-                st.session_state.get('minutos_por_sesion'))
+    if step_number == 0:  # Paso 2: Composición corporal (índice 0 en get_step_status_indicator)
+        # Verificar que los campos tengan valores válidos Y diferentes a los defaults
+        peso = st.session_state.get('peso', 0)
+        estatura = st.session_state.get('estatura', 0)
+        grasa = st.session_state.get('grasa_corporal', 0)
+        
+        # Verificar que existan, sean > 0, y además verificar que se haya tocado al menos uno
+        # usando una bandera específica o verificando que no sean exactamente los valores default
+        peso_valid = peso and peso > 0 and peso != 70.0
+        estatura_valid = estatura and estatura > 0 and estatura != 170.0
+        grasa_valid = grasa and grasa > 0 and grasa != 20.0
+        
+        return peso_valid and estatura_valid and grasa_valid
+    elif step_number == 1:  # Paso 3: Sueño + Estrés
+        # Verificar que haya seleccionado horas de sueño y nivel de estrés
+        horas_sueno = st.session_state.get('horas_sueno', 0)
+        estres = st.session_state.get('estres', 0)
+        return horas_sueno > 0 and estres >= 0
+    elif step_number == 2:  # Paso 4: Evaluación funcional
+        # Verificar experiencia completa Y al menos 3 ejercicios registrados
+        experiencia_completa = st.session_state.get('experiencia_completa', False)
+        ejercicios = st.session_state.get('datos_ejercicios', {})
+        return experiencia_completa and len(ejercicios) >= 3
+    elif step_number == 3:  # Paso 5: Actividad física
+        # Verificar que haya seleccionado nivel de actividad
+        actividad = st.session_state.get('actividad_diaria', '')
+        return bool(actividad) and actividad != ""
+    elif step_number == 4:  # Paso 6: Análisis metabólico (opcional)
+        # Este paso es opcional, considerarlo completo si tiene algún dato
+        return True  # Siempre completo porque es opcional
+    elif step_number == 5:  # Paso 7: Entrenamiento GEE
+        # Verificar frecuencia y minutos por sesión
+        frecuencia = st.session_state.get('frecuencia_entrenamiento', '')
+        minutos = st.session_state.get('minutos_por_sesion', 0)
+        return bool(frecuencia) and minutos > 0
     return False
 
 def get_step_status_indicator(step_number):
