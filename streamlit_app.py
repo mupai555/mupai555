@@ -7866,6 +7866,7 @@ if fuera_rango:
 # ========== PASO 3: CUESTIONARIO SUEÑO + ESTRÉS ==========
 # Ubicado DESPUÉS de composición corporal para flujo lógico
 # Los datos se capturan y se incluirán automáticamente en el email final
+step3_icon, step3_color, step3_status = get_step_status_indicator(1)
 resultado_suenyo_estres = formulario_suenyo_estres()
 
 # ========== CUESTIONARIO CICLO MENSTRUAL (SOLO MUJERES) ==========
@@ -7882,6 +7883,8 @@ step4_title = f"💪 **Paso 4: Evaluación Funcional y Nivel de Entrenamiento** 
 with st.expander(step4_title, expanded=True):
     st.markdown(f'<p style="color: {step4_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step4_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Evalúa tu capacidad funcional y experiencia de entrenamiento</p>', unsafe_allow_html=True)
+    progress.progress(40)
+    progress_text.text("Paso 4 de 7: Evaluación funcional")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -8485,8 +8488,10 @@ else:
 step5_icon, step5_color, step5_status = get_step_status_indicator(4)
 step5_title = f"🚶 **Paso 5: Nivel de Actividad Física Diaria** {step5_icon}"
 with st.expander(step5_title, expanded=True):
-    st.markdown(f'<p style="color: {step3_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step3_status}</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="color: {step5_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step5_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Indica tu nivel de actividad física en el día a día</p>', unsafe_allow_html=True)
+    progress.progress(55)
+    progress_text.text("Paso 5 de 7: Actividad física diaria")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
@@ -8593,11 +8598,14 @@ st.session_state.eta_desc = eta_desc
 st.session_state.eta_color = eta_color
 
 # UI Display: Only show ETA expander if MOSTRAR_ETA_AL_USUARIO is True
+step6_icon, step6_color, step6_status = get_step_status_indicator(3)
 if MOSTRAR_ETA_AL_USUARIO:
     # BLOQUE 4: ETA (Efecto Térmico de los Alimentos)
-    with st.expander("⚡ **Paso 6: Análisis Metabólico Personalizado**", expanded=True):
+    step6_title = f"⚡ **Paso 6: Análisis Metabólico Personalizado** {step6_icon}"
+    with st.expander(step6_title, expanded=True):
+        st.markdown(f'<p style="color: {step6_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step6_status}</p>', unsafe_allow_html=True)
         progress.progress(70)
-        progress_text.text("Paso 4 de 5: Cálculo del efecto térmico")
+        progress_text.text("Paso 6 de 7: Cálculo del efecto térmico")
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -8624,9 +8632,11 @@ if MOSTRAR_ETA_AL_USUARIO:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     # BLOQUE 4: Placeholder when ETA details are hidden from users
-    with st.expander("⚡ **Paso 6: Análisis Metabólico Personalizado**", expanded=False):
+    step6_title = f"⚡ **Paso 6: Análisis Metabólico Personalizado** {step6_icon}"
+    with st.expander(step6_title, expanded=False):
+        st.markdown(f'<p style="color: {step6_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step6_status}</p>', unsafe_allow_html=True)
         progress.progress(70)
-        progress_text.text("Paso 4 de 5: Procesamiento automático")
+        progress_text.text("Paso 6 de 7: Procesamiento automático")
         
         st.info("""
         ℹ️ **Este paso se calcula automáticamente en función de los datos que has proporcionado.**
