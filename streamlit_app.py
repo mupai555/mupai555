@@ -7225,11 +7225,8 @@ if st.button("🚀 COMENZAR EVALUACIÓN", disabled=not (acepto_terminos and st.s
     # Solo proceder si todas las validaciones pasan
     if name_valid and phone_valid and email_valid:
         st.session_state.datos_completos = True
-        st.session_state.nombre = nombre
-        st.session_state.telefono = telefono
-        st.session_state.email_cliente = email_cliente
-        st.session_state.edad = edad
-        st.session_state.sexo = sexo
+        # No asignar manualmente: nombre, telefono, email_cliente, edad, sexo
+        # ya tienen keys en los widgets y Streamlit los maneja automáticamente
         st.session_state.fecha_llenado = fecha_llenado
         st.session_state.acepto_terminos = acepto_terminos
         # Transition to 'final' phase to show technical outputs
