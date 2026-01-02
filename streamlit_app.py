@@ -7337,7 +7337,7 @@ if datos_personales_completos and st.session_state.datos_completos:
             "⚖️ Peso corporal (kg)",
             min_value=30.0,
             max_value=200.0,
-        value=safe_float(peso_value, peso_default),
+            value=safe_float(peso_value, peso_default),
             step=0.1,
             key="peso",
             help="Peso en ayunas, sin ropa"
@@ -7420,7 +7420,7 @@ if datos_personales_completos and st.session_state.datos_completos:
         help="Medida de la circunferencia de la cintura a la altura del ombligo. Este dato se incluye en el reporte junto con el ratio cintura-altura (WtHR). Valores saludables WtHR: <0.5 (hombres y mujeres)."
     )
 
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Note: session_state is automatically managed by widget keys, so no explicit assignments needed
 
