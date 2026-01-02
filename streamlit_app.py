@@ -8049,6 +8049,37 @@ with st.expander(step4_title, expanded=True):
                     help="Sin balanceo ni uso de impulso; técnica estricta."
                 )
                 ejercicios_data[traccion] = traccion_reps
+                
+                # FEEDBACK VISUAL EN TIEMPO REAL
+                if traccion_reps > 0 and traccion in referencias_funcionales[sexo]:
+                    ref = referencias_funcionales[sexo][traccion]
+                    nivel_actual = "Bajo"
+                    for nombre_nivel, umbral in ref["niveles"]:
+                        if traccion_reps >= umbral:
+                            nivel_actual = nombre_nivel
+                        else:
+                            break
+                    
+                    color_map = {
+                        "Bajo": ("#FF5252", "🔴"),
+                        "Promedio": ("#FF9800", "🟠"),
+                        "Bueno": ("#00E676", "🟢"),
+                        "Avanzado": ("#FFD700", "⭐")
+                    }
+                    color, emoji = color_map.get(nivel_actual, ("#888", "⚪"))
+                    
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, {color}22, {color}11); 
+                                border-left: 4px solid {color}; 
+                                padding: 0.75rem 1rem; 
+                                border-radius: 8px; 
+                                margin-top: 0.5rem;
+                                animation: fadeIn 0.3s ease;">
+                        <span style="font-size: 1.1rem; font-weight: 800; color: {color};">
+                            {emoji} NIVEL: {nivel_actual.upper()}
+                        </span>
+                    </div>
+                    """, unsafe_allow_html=True)
 
         with tab3:
             st.markdown("#### Tren inferior empuje")
@@ -8114,7 +8145,8 @@ with st.expander(step4_title, expanded=True):
             core_tiempo = st.number_input(
                 "¿Cuál es el máximo tiempo (segundos) que mantienes la posición de plancha con técnica correcta?",
                 min_value=0, max_value=600, value=safe_int(st.session_state.get("plancha_tiempo", 60), 60),
-                help="Mantén la posición sin perder alineación corporal: cuerpo recto desde cabeza hasta talones, sin elevar cadera ni dejarla caer."
+                help="Mantén la posición sin perder alineación corporal: cuerpo recto desde cabeza hasta talones, sin elevar cadera ni dejarla caer.",
+                key="plancha_tiempo"
             )
             ejercicios_data["Plancha"] = core_tiempo
             
