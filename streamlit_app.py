@@ -7429,38 +7429,33 @@ if datos_personales_completos and st.session_state.datos_completos:
     )
 
     # Campo opcional - % Masa muscular (no afecta cálculos)
-    masa_muscular_default = st.session_state.get("masa_muscular", 0.0)
     masa_muscular = st.number_input(
         "💪 % Masa muscular (medición Omron, opcional)",
         min_value=0.0,
         max_value=100.0,
-        value=safe_float(masa_muscular_default, 0.0),
+        value=0.0,
         step=0.1,
         key="masa_muscular",
         help="Introduce el % de masa muscular según tu báscula Omron. Se comparará con el valor estimado científico en el reporte. Si no lo conoces, déjalo en 0."
     )
 
     # Campo opcional - Grasa visceral (no afecta cálculos)
-    grasa_visceral_default = st.session_state.get("grasa_visceral", 0)
-    grasa_visceral_safe = safe_int(grasa_visceral_default, 0)
     grasa_visceral = st.number_input(
         "🫀 Grasa visceral (nivel, opcional)",
         min_value=1,
         max_value=59,
-        value=grasa_visceral_safe if grasa_visceral_safe >= 1 else 1,
+        value=1,
         step=1,
         key="grasa_visceral",
         help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
     )
 
     # Campo opcional - Circunferencia de cintura (no afecta cálculos)
-    circunferencia_cintura_default = st.session_state.get("circunferencia_cintura", 0.0)
-    circunferencia_cintura_safe = safe_float(circunferencia_cintura_default, 0.0)
     circunferencia_cintura = st.number_input(
         "📏 Circunferencia de cintura (cm, opcional)",
         min_value=0.0,
         max_value=200.0,
-        value=circunferencia_cintura_safe if circunferencia_cintura_safe > 0 else 0.0,
+        value=0.0,
         step=0.1,
         key="circunferencia_cintura",
         help="Medida de la circunferencia de la cintura a la altura del ombligo. Este dato se incluye en el reporte junto con el ratio cintura-altura (WtHR). Valores saludables WtHR: <0.5 (hombres y mujeres)."
