@@ -3808,6 +3808,36 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
         # Porcentajes de masa muscular
         pct_masa_muscular_aparato = (masa_muscular_aparato / peso * 100) if peso > 0 and masa_muscular_aparato > 0 else 0
         pct_masa_muscular_estimada = (masa_muscular_estimada / peso * 100) if peso > 0 and masa_muscular_estimada > 0 else 0
+        
+        # Clasificar WtHR si está disponible
+        wthr_clasificacion = ""
+        if wthr is not None:
+            if wthr < 0.40:
+                wthr_clasificacion = " - 🟢 Extremadamente delgado"
+            elif wthr < 0.50:
+                wthr_clasificacion = " - 🟢 Saludable"
+            elif wthr < 0.60:
+                wthr_clasificacion = " - 🟡 Sobrepeso"
+            else:
+                wthr_clasificacion = " - 🔴 Obesidad"
+        
+        # Clasificar grasa visceral si está disponible
+        grasa_visceral_clasificacion = ""
+        if grasa_visceral is not None:
+            if grasa_visceral < 10:
+                grasa_visceral_clasificacion = " - 🟢 Nivel saludable"
+            elif grasa_visceral < 15:
+                grasa_visceral_clasificacion = " - 🟡 Nivel elevado"
+            else:
+                grasa_visceral_clasificacion = " - 🔴 Nivel alto (riesgo)"
+        
+        # Variables para compatibilidad con contenido texto plano (legacy)
+        circunferencia_cintura_val = circunferencia_cintura if circunferencia_cintura is not None else 0
+        masa_muscular_val = masa_muscular if masa_muscular is not None else 0
+        grasa_visceral_val = grasa_visceral if grasa_visceral is not None else 0
+        clasificacion_wthr = wthr_clasificacion.replace(' - ', '').replace('🟢 ', '').replace('🟡 ', '').replace('🔴 ', '')
+        clasificacion_grasa_visceral = grasa_visceral_clasificacion.replace(' - ', '').replace('🟢 ', '').replace('🟡 ', '').replace('🔴 ', '')
+        clasificacion_masa_muscular = "Normal"  # Placeholder para el texto plano
 
         # Categorizar grasa corporal con feedback detallado
         if sexo == "Hombre":
