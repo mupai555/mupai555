@@ -6890,33 +6890,33 @@ def render_progress_photos_section():
         </p>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Create centered column for the free pose photo
+    col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
+    
+    with col_libre:
+        st.markdown("#### 📷 Foto 4 – Pose Libre")
+        libre_photo = st.file_uploader(
+            "Foto pose libre",
+            type=["jpg", "jpeg", "png"],
+            key="pose_libre_uploader",
+            help="Foto en la pose que prefieras - Opcional",
+            label_visibility="collapsed"
+        )
         
-        # Create centered column for the free pose photo
-        col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
-        
-        with col_libre:
-            st.markdown("#### 📷 Foto 4 – Pose Libre")
-            libre_photo = st.file_uploader(
-                "Foto pose libre",
-                type=["jpg", "jpeg", "png"],
-                key="pose_libre_uploader",
-                help="Foto en la pose que prefieras - Opcional",
-                label_visibility="collapsed"
-            )
-            
-            if libre_photo:
-                is_valid, error_msg = validate_progress_photo(libre_photo)
-                if is_valid:
-                    st.session_state.progress_photos["pose_libre"] = libre_photo
-                    st.image(libre_photo, caption="✅ Foto pose libre cargada", use_container_width=True)
-                    st.success(f"✓ {libre_photo.size / (1024*1024):.2f} MB")
-                else:
-                    st.session_state.progress_photos["pose_libre"] = None
-                    st.error(f"❌ {error_msg}")
-                    validation_errors.append(f"Foto 4 (Pose Libre): {error_msg}")
+        if libre_photo:
+            is_valid, error_msg = validate_progress_photo(libre_photo)
+            if is_valid:
+                st.session_state.progress_photos["pose_libre"] = libre_photo
+                st.image(libre_photo, caption="✅ Foto pose libre cargada", use_container_width=True)
+                st.success(f"✓ {libre_photo.size / (1024*1024):.2f} MB")
             else:
                 st.session_state.progress_photos["pose_libre"] = None
-                st.info("💡 Foto opcional - No requerida")
+                st.error(f"❌ {error_msg}")
+                validation_errors.append(f"Foto 4 (Pose Libre): {error_msg}")
+        else:
+            st.session_state.progress_photos["pose_libre"] = None
+            st.info("💡 Foto opcional - No requerida")
     
     # Show validation summary
     if validation_errors:
