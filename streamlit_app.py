@@ -6358,31 +6358,260 @@ def formulario_suenyo_estres():
 
 def formulario_metas_personales():
     """
-    Cuestionario modular para capturar objetivos personales a mediano y largo plazo.
+    Cuestionario modular para capturar objetivos personales, condiciones médicas, lesiones y preferencias musculares.
     
-    Permite al usuario detallar sus metas relacionadas con composición corporal,
-    rendimiento físico, y otros objetivos personales para 6-12 meses y más de 12 meses.
+    Permite al usuario detallar:
+    - Condiciones médicas actuales
+    - Lesiones musculoesqueléticas
+    - Facilidades y dificultades en desarrollo muscular
+    - Prioridades y limitaciones de entrenamiento
+    - Objetivos detallados a mediano y largo plazo
     
-    Este campo es obligatorio y debe estar completo antes de poder enviar el cuestionario.
+    Este formulario es obligatorio y debe estar completo antes de poder enviar el cuestionario.
     
     Returns:
-        dict: Diccionario con la información de metas personales para incluir en email
+        dict: Diccionario con toda la información de metas personales para incluir en email
     """
+    
+    GRUPOS_MUSCULARES = [
+        "Pectoral (Pecho)",
+        "Deltoide anterior (Hombro frontal)",
+        "Deltoide medial (Hombro lateral)",
+        "Trapecio medio, romboides y deltoide posterior (Espalda alta y hombro trasero)",
+        "Dorsal ancho (Espalda ancha / 'Alas')",
+        "Tríceps (Parte trasera del brazo)",
+        "Bíceps (braquial, braquiorradial, músculos de los antebrazos) (Parte frontal del brazo y antebrazos)",
+        "Recto abdominal (Abdomen frontal / 'Six pack')",
+        "Oblicuos (Costados del abdomen)",
+        "Cuádriceps (Parte frontal del muslo)",
+        "Isquiotibiales (Parte trasera del muslo / Femorales)",
+        "Glúteos (Glúteos / Pompis)",
+        "Sóleo y gastrocnemio (Pantorrillas)",
+        "Aductores (Parte interna del muslo)"
+    ]
+    
+    # Initialize session state
+    if 'metas_condiciones_medicas' not in st.session_state:
+        st.session_state.metas_condiciones_medicas = []
+    if 'metas_condiciones_otras' not in st.session_state:
+        st.session_state.metas_condiciones_otras = ""
+    if 'metas_lesiones' not in st.session_state:
+        st.session_state.metas_lesiones = []
+    if 'metas_lesiones_otras' not in st.session_state:
+        st.session_state.metas_lesiones_otras = ""
+    if 'metas_facilidad_muscular' not in st.session_state:
+        st.session_state.metas_facilidad_muscular = []
+    if 'metas_dificultad_muscular' not in st.session_state:
+        st.session_state.metas_dificultad_muscular = []
+    if 'metas_prioridades_muscular' not in st.session_state:
+        st.session_state.metas_prioridades_muscular = []
+    if 'metas_limitacion_muscular' not in st.session_state:
+        st.session_state.metas_limitacion_muscular = []
+    if 'metas_personales' not in st.session_state:
+        st.session_state.metas_personales = ""
+    if 'metas_personales_completado' not in st.session_state:
+        st.session_state.metas_personales_completado = False
+    
     st.markdown("---")
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
-    with st.expander("🎯 **Metas Personales — Objetivos a Mediano y Largo Plazo** ✍️", expanded=True):
-        st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Apartado obligatorio - Describe tus objetivos personales</p>', unsafe_allow_html=True)
+    with st.expander("🎯 **Metas Personales — Objetivos y Consideraciones Personalizadas** ✍️", expanded=True):
+        st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Todas las secciones son obligatorias - Completa toda la información</p>', unsafe_allow_html=True)
         st.markdown("""
-        **Este apartado es obligatorio.** Describe tus objetivos personales relacionados con la composición corporal 
-        y rendimiento físico. Esta información nos ayudará a personalizar mejor tu plan de entrenamiento y nutrición.
+        **Este apartado es obligatorio y está dividido en varias secciones.** Toda esta información nos ayudará a 
+        personalizar mejor tu plan de entrenamiento y nutrición considerando tus condiciones, limitaciones y objetivos específicos.
         """)
-    
-        # Initialize session state for personal goals
-        if 'metas_personales_completado' not in st.session_state:
-            st.session_state.metas_personales_completado = False
-        if 'metas_personales' not in st.session_state:
-            st.session_state.metas_personales = ""
-    
+        
+        # ==================== 1. CONDICIONES MÉDICAS Y FISIOLÓGICAS ====================
+        st.markdown("---")
+        st.markdown("### 🩺 1. Condiciones Médicas y Fisiológicas Actuales")
+        st.markdown("Selecciona todas las condiciones que apliquen actualmente:")
+        
+        opciones_medicas = [
+            "Diabetes Tipo 1",
+            "Diabetes Tipo 2",
+            "Hipertensión arterial",
+            "Hipotiroidismo",
+            "Hipertiroidismo",
+            "Síndrome de ovario poliquístico (SOP)",
+            "Resistencia a la insulina",
+            "Enfermedad cardiovascular",
+            "Embarazo",
+            "Lactancia",
+            "Ninguna de las anteriores"
+        ]
+        
+        condiciones_seleccionadas = []
+        cols_medicas = st.columns(3)
+        for idx, opcion in enumerate(opciones_medicas):
+            with cols_medicas[idx % 3]:
+                if st.checkbox(opcion, key=f"cond_med_{idx}"):
+                    condiciones_seleccionadas.append(opcion)
+        
+        condiciones_otras = st.text_input(
+            "¿Otra condición médica o fisiológica no listada?",
+            value=st.session_state.metas_condiciones_otras,
+            placeholder="Especifica si tienes otra condición...",
+            key="condiciones_otras_input"
+        )
+        
+        st.session_state.metas_condiciones_medicas = condiciones_seleccionadas
+        st.session_state.metas_condiciones_otras = condiciones_otras.strip()
+        
+        # Validación
+        if not condiciones_seleccionadas:
+            st.warning("⚠️ **Obligatorio:** Selecciona al menos una opción (o 'Ninguna de las anteriores').")
+        else:
+            st.success(f"✅ {len(condiciones_seleccionadas)} condición(es) registrada(s).")
+        
+        # ==================== 2. LESIONES Y LIMITACIONES ====================
+        st.markdown("---")
+        st.markdown("### 🩹 2. Lesiones o Limitaciones Musculoesqueléticas")
+        st.markdown("Selecciona todas las lesiones o limitaciones actuales que tengas:")
+        
+        opciones_lesiones = [
+            "Lesión de hombro (manguito rotador, tendinitis, etc.)",
+            "Lesión de codo (epicondilitis, tendinitis, etc.)",
+            "Lesión de muñeca/mano",
+            "Lesión de espalda baja (lumbar)",
+            "Lesión de espalda alta (torácica)",
+            "Lesión de rodilla (menisco, ligamentos, tendinitis, etc.)",
+            "Lesión de tobillo/pie",
+            "Lesión de cadera",
+            "Hernia discal",
+            "Escoliosis o desviaciones posturales",
+            "Ninguna lesión o limitación"
+        ]
+        
+        lesiones_seleccionadas = []
+        cols_lesiones = st.columns(3)
+        for idx, opcion in enumerate(opciones_lesiones):
+            with cols_lesiones[idx % 3]:
+                if st.checkbox(opcion, key=f"lesion_{idx}"):
+                    lesiones_seleccionadas.append(opcion)
+        
+        lesiones_otras = st.text_input(
+            "¿Otra lesión o limitación no listada?",
+            value=st.session_state.metas_lesiones_otras,
+            placeholder="Especifica si tienes otra lesión...",
+            key="lesiones_otras_input"
+        )
+        
+        st.session_state.metas_lesiones = lesiones_seleccionadas
+        st.session_state.metas_lesiones_otras = lesiones_otras.strip()
+        
+        # Validación
+        if not lesiones_seleccionadas:
+            st.warning("⚠️ **Obligatorio:** Selecciona al menos una opción (o 'Ninguna lesión o limitación').")
+        else:
+            st.success(f"✅ {len(lesiones_seleccionadas)} lesión(es)/limitación(es) registrada(s).")
+        
+        # ==================== 3. FACILIDAD DE DESARROLLO MUSCULAR ====================
+        st.markdown("---")
+        st.markdown("### 💪 3. Grupos Musculares — Facilidad de Desarrollo")
+        st.markdown("¿Qué grupos musculares se te facilitan desarrollar/hipertrofiar naturalmente?")
+        
+        facilidad_seleccionada = []
+        cols_facilidad = st.columns(2)
+        for idx, grupo in enumerate(GRUPOS_MUSCULARES):
+            with cols_facilidad[idx % 2]:
+                if st.checkbox(grupo, key=f"facilidad_{idx}"):
+                    facilidad_seleccionada.append(grupo)
+        
+        # Opción adicional
+        with cols_facilidad[0]:
+            if st.checkbox("Ninguno en particular / No he notado diferencias", key="facilidad_ninguno"):
+                facilidad_seleccionada.append("Ninguno en particular")
+        
+        st.session_state.metas_facilidad_muscular = facilidad_seleccionada
+        
+        # Validación
+        if not facilidad_seleccionada:
+            st.warning("⚠️ **Obligatorio:** Selecciona al menos una opción.")
+        else:
+            st.success(f"✅ {len(facilidad_seleccionada)} grupo(s) muscular(es) registrado(s).")
+        
+        # ==================== 4. DIFICULTAD DE DESARROLLO MUSCULAR ====================
+        st.markdown("---")
+        st.markdown("### 🔥 4. Grupos Musculares — Dificultad de Desarrollo")
+        st.markdown("¿Con qué grupos musculares batallas más para lograr hipertrofia/desarrollo?")
+        
+        dificultad_seleccionada = []
+        cols_dificultad = st.columns(2)
+        for idx, grupo in enumerate(GRUPOS_MUSCULARES):
+            with cols_dificultad[idx % 2]:
+                if st.checkbox(grupo, key=f"dificultad_{idx}"):
+                    dificultad_seleccionada.append(grupo)
+        
+        # Opción adicional
+        with cols_dificultad[0]:
+            if st.checkbox("Ninguno en particular / Todos se desarrollan similar", key="dificultad_ninguno"):
+                dificultad_seleccionada.append("Ninguno en particular")
+        
+        st.session_state.metas_dificultad_muscular = dificultad_seleccionada
+        
+        # Validación
+        if not dificultad_seleccionada:
+            st.warning("⚠️ **Obligatorio:** Selecciona al menos una opción.")
+        else:
+            st.success(f"✅ {len(dificultad_seleccionada)} grupo(s) muscular(es) registrado(s).")
+        
+        # ==================== 5. PRIORIDADES DE DESARROLLO ====================
+        st.markdown("---")
+        st.markdown("### 🎯 5. Grupos Musculares — Prioridades de Desarrollo")
+        st.markdown("¿Qué grupos musculares quieres PRIORIZAR y enfatizar en tu entrenamiento?")
+        
+        prioridades_seleccionada = []
+        cols_prioridades = st.columns(2)
+        for idx, grupo in enumerate(GRUPOS_MUSCULARES):
+            with cols_prioridades[idx % 2]:
+                if st.checkbox(grupo, key=f"prioridad_{idx}"):
+                    prioridades_seleccionada.append(grupo)
+        
+        # Opción adicional
+        with cols_prioridades[0]:
+            if st.checkbox("Desarrollo equilibrado (sin prioridades específicas)", key="prioridad_equilibrado"):
+                prioridades_seleccionada.append("Desarrollo equilibrado")
+        
+        st.session_state.metas_prioridades_muscular = prioridades_seleccionada
+        
+        # Validación
+        if not prioridades_seleccionada:
+            st.warning("⚠️ **Obligatorio:** Selecciona al menos una opción.")
+        else:
+            st.success(f"✅ {len(prioridades_seleccionada)} prioridad(es) registrada(s).")
+        
+        # ==================== 6. LIMITACIÓN DE DESARROLLO ====================
+        st.markdown("---")
+        st.markdown("### 🚫 6. Grupos Musculares — Limitación de Desarrollo")
+        st.markdown("¿Hay grupos musculares que NO quieres enfatizar o prefieres mantener/reducir?")
+        
+        limitacion_seleccionada = []
+        cols_limitacion = st.columns(2)
+        for idx, grupo in enumerate(GRUPOS_MUSCULARES):
+            with cols_limitacion[idx % 2]:
+                if st.checkbox(grupo, key=f"limitacion_{idx}"):
+                    limitacion_seleccionada.append(grupo)
+        
+        # Opción adicional
+        with cols_limitacion[0]:
+            if st.checkbox("Ninguno (quiero desarrollar todos por igual)", key="limitacion_ninguno"):
+                limitacion_seleccionada.append("Ninguno")
+        
+        st.session_state.metas_limitacion_muscular = limitacion_seleccionada
+        
+        # Validación
+        if not limitacion_seleccionada:
+            st.warning("⚠️ **Obligatorio:** Selecciona al menos una opción.")
+        else:
+            st.success(f"✅ {len(limitacion_seleccionada)} limitación(es) registrada(s).")
+        
+        # ==================== 7. OBJETIVOS PERSONALES DETALLADOS ====================
+        st.markdown("---")
+        st.markdown("### ✍️ 7. Objetivos Personales Detallados")
+        st.markdown("""
+        Describe tus objetivos personales a mediano y largo plazo considerando toda la información que proporcionaste anteriormente.
+        """)
+        
         # Instructions and examples
         st.markdown("""
         <div style="background: #252525; padding: 1rem; border-radius: 8px; border-left: 4px solid #FFD700; margin-bottom: 1rem;">
@@ -6405,6 +6634,7 @@ def formulario_metas_personales():
         </p>
         </div>
         """, unsafe_allow_html=True)
+        
         metas_texto = st.text_area(
             "✍️ Describe tus metas personales (mínimo 50 caracteres)*",
             value=st.session_state.metas_personales,
@@ -6413,11 +6643,11 @@ def formulario_metas_personales():
             help="Campo obligatorio. Describe tus metas específicas de composición corporal, rendimiento físico y bienestar general.",
             key="metas_personales_input"
         )
-    
+        
         # Real-time validation and feedback
         metas_texto_clean = metas_texto.strip() if metas_texto else ""
         char_count = len(metas_texto_clean)
-    
+        
         # Character counter with color coding
         if char_count == 0:
             st.markdown(f"""
@@ -6437,19 +6667,47 @@ def formulario_metas_personales():
                 ✅ Caracteres: {char_count} - ¡Perfecto! Tus metas han sido capturadas correctamente.
             </div>
             """, unsafe_allow_html=True)
-    
+        
         # Update session state
         st.session_state.metas_personales = metas_texto_clean
-        st.session_state.metas_personales_completado = char_count >= 50
-    
+        
+        # Verificar que todas las secciones estén completas
+        todas_completas = (
+            len(condiciones_seleccionadas) > 0 and
+            len(lesiones_seleccionadas) > 0 and
+            len(facilidad_seleccionada) > 0 and
+            len(dificultad_seleccionada) > 0 and
+            len(prioridades_seleccionada) > 0 and
+            len(limitacion_seleccionada) > 0 and
+            char_count >= 50
+        )
+        
+        st.session_state.metas_personales_completado = todas_completas
+        
         # Show confirmation message if complete
         if st.session_state.metas_personales_completado:
-            st.success("✅ Metas personales completadas. Esta información será incluida en tu reporte de evaluación.")
+            st.success("✅ Todas las secciones de Metas Personales están completas. Esta información será incluida en tu reporte de evaluación.")
+        else:
+            st.info("ℹ️ Completa todas las secciones anteriores para finalizar este apartado.")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Return data for integration into main email
-    return st.session_state.metas_personales if st.session_state.metas_personales_completado else None
+    if st.session_state.metas_personales_completado:
+        return {
+            'completado': True,
+            'condiciones_medicas': st.session_state.metas_condiciones_medicas,
+            'condiciones_otras': st.session_state.metas_condiciones_otras,
+            'lesiones': st.session_state.metas_lesiones,
+            'lesiones_otras': st.session_state.metas_lesiones_otras,
+            'facilidad_muscular': st.session_state.metas_facilidad_muscular,
+            'dificultad_muscular': st.session_state.metas_dificultad_muscular,
+            'prioridades_muscular': st.session_state.metas_prioridades_muscular,
+            'limitacion_muscular': st.session_state.metas_limitacion_muscular,
+            'objetivos_detallados': st.session_state.metas_personales
+        }
+    else:
+        return None
 
 # ==================== CUESTIONARIO CICLO MENSTRUAL ====================
 
@@ -9870,7 +10128,31 @@ SECCIÓN 7: PROYECCIÓN A 6 SEMANAS
 
 # ==================== METAS PERSONALES (si disponible) ====================
 if st.session_state.get('metas_personales_completado', False):
-    metas_texto = st.session_state.metas_personales
+    metas_data = {
+        'condiciones_medicas': st.session_state.get('metas_condiciones_medicas', []),
+        'condiciones_otras': st.session_state.get('metas_condiciones_otras', ''),
+        'lesiones': st.session_state.get('metas_lesiones', []),
+        'lesiones_otras': st.session_state.get('metas_lesiones_otras', ''),
+        'facilidad_muscular': st.session_state.get('metas_facilidad_muscular', []),
+        'dificultad_muscular': st.session_state.get('metas_dificultad_muscular', []),
+        'prioridades_muscular': st.session_state.get('metas_prioridades_muscular', []),
+        'limitacion_muscular': st.session_state.get('metas_limitacion_muscular', []),
+        'objetivos_detallados': st.session_state.get('metas_personales', '')
+    }
+    
+    # Formatear listas para el email
+    condiciones_str = "\n   • ".join(metas_data['condiciones_medicas']) if metas_data['condiciones_medicas'] else "No especificadas"
+    if metas_data['condiciones_otras']:
+        condiciones_str += f"\n   • Otras: {metas_data['condiciones_otras']}"
+    
+    lesiones_str = "\n   • ".join(metas_data['lesiones']) if metas_data['lesiones'] else "No especificadas"
+    if metas_data['lesiones_otras']:
+        lesiones_str += f"\n   • Otras: {metas_data['lesiones_otras']}"
+    
+    facilidad_str = "\n   • ".join(metas_data['facilidad_muscular']) if metas_data['facilidad_muscular'] else "No especificados"
+    dificultad_str = "\n   • ".join(metas_data['dificultad_muscular']) if metas_data['dificultad_muscular'] else "No especificados"
+    prioridades_str = "\n   • ".join(metas_data['prioridades_muscular']) if metas_data['prioridades_muscular'] else "No especificadas"
+    limitacion_str = "\n   • ".join(metas_data['limitacion_muscular']) if metas_data['limitacion_muscular'] else "No especificadas"
     
     tabla_resumen += f"""
 
@@ -9878,10 +10160,31 @@ if st.session_state.get('metas_personales_completado', False):
 SECCIÓN 8: METAS PERSONALES DEL CLIENTE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🎯 OBJETIVOS AUTODECLARADOS:
-{metas_texto}
+🩺 8.1 CONDICIONES MÉDICAS Y FISIOLÓGICAS:
+   • {condiciones_str}
 
-📋 CONSIDERACIONES:
+🩹 8.2 LESIONES O LIMITACIONES MUSCULOESQUELÉTICAS:
+   • {lesiones_str}
+
+💪 8.3 GRUPOS MUSCULARES - FACILIDAD DE DESARROLLO:
+   • {facilidad_str}
+
+🔥 8.4 GRUPOS MUSCULARES - DIFICULTAD DE DESARROLLO:
+   • {dificultad_str}
+
+🎯 8.5 GRUPOS MUSCULARES - PRIORIDADES DE ENTRENAMIENTO:
+   • {prioridades_str}
+
+🚫 8.6 GRUPOS MUSCULARES - LIMITACIÓN DE DESARROLLO:
+   • {limitacion_str}
+
+✍️ 8.7 OBJETIVOS PERSONALES DETALLADOS:
+{metas_data['objetivos_detallados']}
+
+📋 CONSIDERACIONES PARA EL PLAN:
+   • Adaptar ejercicios según lesiones y limitaciones reportadas
+   • Priorizar grupos musculares según objetivos declarados
+   • Considerar condiciones médicas en prescripción de ejercicio e intensidad
    • Establecer hitos intermedios medibles
    • Ajustar plazos según respuesta individual
    • Adherencia y consistencia son clave"""
