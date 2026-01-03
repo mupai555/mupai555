@@ -10575,6 +10575,18 @@ if not st.session_state.get("correo_enviado", False):
                             'nivel_recuperacion': st.session_state.get('suenyo_estres_data', {}).get('nivel_recuperacion', None),
                             'sleep_score': st.session_state.get('suenyo_estres_data', {}).get('sleep_score', None),
                             'stress_score': st.session_state.get('suenyo_estres_data', {}).get('stress_score', None)
+                        },
+                        'metas_personales': {
+                            'completado': st.session_state.get('metas_personales_completado', False),
+                            'condiciones_medicas': st.session_state.get('metas_condiciones_medicas', []),
+                            'condiciones_otras': st.session_state.get('metas_condiciones_otras', ''),
+                            'lesiones': st.session_state.get('metas_lesiones', []),
+                            'lesiones_otras': st.session_state.get('metas_lesiones_otras', ''),
+                            'facilidad_muscular': st.session_state.get('metas_facilidad_muscular', []),
+                            'dificultad_muscular': st.session_state.get('metas_dificultad_muscular', []),
+                            'prioridades_muscular': st.session_state.get('metas_prioridades_muscular', []),
+                            'limitacion_muscular': st.session_state.get('metas_limitacion_muscular', []),
+                            'objetivos_detallados': st.session_state.get('metas_personales', '')
                         }
                     }
                     
@@ -10732,6 +10744,18 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                         'nivel_recuperacion': st.session_state.get('suenyo_estres_data', {}).get('nivel_recuperacion', None),
                         'sleep_score': st.session_state.get('suenyo_estres_data', {}).get('sleep_score', None),
                         'stress_score': st.session_state.get('suenyo_estres_data', {}).get('stress_score', None)
+                    },
+                    'metas_personales': {
+                        'completado': st.session_state.get('metas_personales_completado', False),
+                        'condiciones_medicas': st.session_state.get('metas_condiciones_medicas', []),
+                        'condiciones_otras': st.session_state.get('metas_condiciones_otras', ''),
+                        'lesiones': st.session_state.get('metas_lesiones', []),
+                        'lesiones_otras': st.session_state.get('metas_lesiones_otras', ''),
+                        'facilidad_muscular': st.session_state.get('metas_facilidad_muscular', []),
+                        'dificultad_muscular': st.session_state.get('metas_dificultad_muscular', []),
+                        'prioridades_muscular': st.session_state.get('metas_prioridades_muscular', []),
+                        'limitacion_muscular': st.session_state.get('metas_limitacion_muscular', []),
+                        'objetivos_detallados': st.session_state.get('metas_personales', '')
                     }
                 }
                 
