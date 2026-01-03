@@ -6807,8 +6807,8 @@ def render_progress_photos_section():
         validation_errors = []
     
         with col1:
-        st.markdown("#### 📷 Foto 1 – Frontal relajado")
-        front_photo = st.file_uploader(
+            st.markdown("#### 📷 Foto 1 – Frontal relajado")
+            front_photo = st.file_uploader(
             "Foto frontal",
             type=["jpg", "jpeg", "png"],
             key="front_relaxed_uploader",
@@ -6830,53 +6830,53 @@ def render_progress_photos_section():
             st.session_state.progress_photos["front_relaxed"] = None
             st.warning("⚠️ Foto frontal requerida")
     
-    with col2:
-        st.markdown("#### 📷 Foto 2 – Perfil lateral relajado")
-        side_photo = st.file_uploader(
-            "Foto lateral",
-            type=["jpg", "jpeg", "png"],
-            key="side_relaxed_right_uploader",
-            help="Foto de perfil derecho, brazos a los lados, postura natural",
-            label_visibility="collapsed"
-        )
-        
-        if side_photo:
-            is_valid, error_msg = validate_progress_photo(side_photo)
-            if is_valid:
-                st.session_state.progress_photos["side_relaxed_right"] = side_photo
-                st.image(side_photo, caption="✅ Foto lateral cargada", use_container_width=True)
-                st.success(f"✓ {side_photo.size / (1024*1024):.2f} MB")
+        with col2:
+            st.markdown("#### 📷 Foto 2 – Perfil lateral relajado")
+            side_photo = st.file_uploader(
+                "Foto lateral",
+                type=["jpg", "jpeg", "png"],
+                key="side_relaxed_right_uploader",
+                help="Foto de perfil derecho, brazos a los lados, postura natural",
+                label_visibility="collapsed"
+                )
+            
+            if side_photo:
+                is_valid, error_msg = validate_progress_photo(side_photo)
+                if is_valid:
+                    st.session_state.progress_photos["side_relaxed_right"] = side_photo
+                    st.image(side_photo, caption="✅ Foto lateral cargada", use_container_width=True)
+                    st.success(f"✓ {side_photo.size / (1024*1024):.2f} MB")
+                else:
+                    st.session_state.progress_photos["side_relaxed_right"] = None
+                    st.error(f"❌ {error_msg}")
+                    validation_errors.append(f"Foto 2 (Lateral): {error_msg}")
             else:
                 st.session_state.progress_photos["side_relaxed_right"] = None
-                st.error(f"❌ {error_msg}")
-                validation_errors.append(f"Foto 2 (Lateral): {error_msg}")
-        else:
-            st.session_state.progress_photos["side_relaxed_right"] = None
-            st.warning("⚠️ Foto lateral requerida")
-    
-    with col3:
-        st.markdown("#### 📷 Foto 3 – Posterior relajado")
-        back_photo = st.file_uploader(
-            "Foto posterior",
-            type=["jpg", "jpeg", "png"],
-            key="back_relaxed_uploader",
-            help="Foto de espalda, brazos a los lados, postura natural",
-            label_visibility="collapsed"
-        )
+                st.warning("⚠️ Foto lateral requerida")
         
-        if back_photo:
-            is_valid, error_msg = validate_progress_photo(back_photo)
-            if is_valid:
-                st.session_state.progress_photos["back_relaxed"] = back_photo
-                st.image(back_photo, caption="✅ Foto posterior cargada", use_container_width=True)
-                st.success(f"✓ {back_photo.size / (1024*1024):.2f} MB")
+        with col3:
+            st.markdown("#### 📷 Foto 3 – Posterior relajado")
+            back_photo = st.file_uploader(
+                "Foto posterior",
+                type=["jpg", "jpeg", "png"],
+                key="back_relaxed_uploader",
+                help="Foto de espalda, brazos a los lados, postura natural",
+                label_visibility="collapsed"
+                )
+            
+            if back_photo:
+                is_valid, error_msg = validate_progress_photo(back_photo)
+                if is_valid:
+                    st.session_state.progress_photos["back_relaxed"] = back_photo
+                    st.image(back_photo, caption="✅ Foto posterior cargada", use_container_width=True)
+                    st.success(f"✓ {back_photo.size / (1024*1024):.2f} MB")
+                else:
+                    st.session_state.progress_photos["back_relaxed"] = None
+                    st.error(f"❌ {error_msg}")
+                    validation_errors.append(f"Foto 3 (Posterior): {error_msg}")
             else:
                 st.session_state.progress_photos["back_relaxed"] = None
-                st.error(f"❌ {error_msg}")
-                validation_errors.append(f"Foto 3 (Posterior): {error_msg}")
-        else:
-            st.session_state.progress_photos["back_relaxed"] = None
-            st.warning("⚠️ Foto posterior requerida")
+                st.warning("⚠️ Foto posterior requerida")
     
     # Add spacing between rows
     st.markdown("<br>", unsafe_allow_html=True)
@@ -6890,33 +6890,33 @@ def render_progress_photos_section():
         </p>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Create centered column for the free pose photo
-    col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
-    
-    with col_libre:
-        st.markdown("#### 📷 Foto 4 – Pose Libre")
-        libre_photo = st.file_uploader(
-            "Foto pose libre",
-            type=["jpg", "jpeg", "png"],
-            key="pose_libre_uploader",
-            help="Foto en la pose que prefieras - Opcional",
-            label_visibility="collapsed"
-        )
         
-        if libre_photo:
-            is_valid, error_msg = validate_progress_photo(libre_photo)
-            if is_valid:
-                st.session_state.progress_photos["pose_libre"] = libre_photo
-                st.image(libre_photo, caption="✅ Foto pose libre cargada", use_container_width=True)
-                st.success(f"✓ {libre_photo.size / (1024*1024):.2f} MB")
+        # Create centered column for the free pose photo
+        col_spacer1, col_libre, col_spacer2 = st.columns([1, 2, 1])
+        
+        with col_libre:
+            st.markdown("#### 📷 Foto 4 – Pose Libre")
+            libre_photo = st.file_uploader(
+                "Foto pose libre",
+                type=["jpg", "jpeg", "png"],
+                key="pose_libre_uploader",
+                help="Foto en la pose que prefieras - Opcional",
+                label_visibility="collapsed"
+            )
+            
+            if libre_photo:
+                is_valid, error_msg = validate_progress_photo(libre_photo)
+                if is_valid:
+                    st.session_state.progress_photos["pose_libre"] = libre_photo
+                    st.image(libre_photo, caption="✅ Foto pose libre cargada", use_container_width=True)
+                    st.success(f"✓ {libre_photo.size / (1024*1024):.2f} MB")
+                else:
+                    st.session_state.progress_photos["pose_libre"] = None
+                    st.error(f"❌ {error_msg}")
+                    validation_errors.append(f"Foto 4 (Pose Libre): {error_msg}")
             else:
                 st.session_state.progress_photos["pose_libre"] = None
-                st.error(f"❌ {error_msg}")
-                validation_errors.append(f"Foto 4 (Pose Libre): {error_msg}")
-        else:
-            st.session_state.progress_photos["pose_libre"] = None
-            st.info("💡 Foto opcional - No requerida")
+                st.info("💡 Foto opcional - No requerida")
     
     # Show validation summary
     if validation_errors:
