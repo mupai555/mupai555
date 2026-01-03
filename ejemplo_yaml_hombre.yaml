@@ -1,0 +1,126 @@
+# ============================================================================
+# EJEMPLO EMAIL 4 - FORMATO YAML (HOMBRE)
+# Input para Machine Learning - Generación de Planes Personalizados
+# ============================================================================
+
+nombre_cliente: Juan Pérez García
+fecha: '2026-01-02'
+
+metadata:
+  fecha_evaluacion: '2026-01-02'
+  sistema: MUPAI v2.0
+  version: 2.0.0
+  tipo_reporte: Evaluacion_Completa
+
+datos_personales:
+  nombre_cliente: Juan Pérez García
+  email: juan.perez@email.com
+  telefono: '+52 55 1234 5678'
+  edad: 28
+  sexo: Hombre
+  ciclo_menstrual: null
+
+composicion_corporal:
+  peso_kg: 82.5
+  estatura_cm: 175.0
+  imc: 26.94
+  grasa_corporal_pct: 18.5
+  mlg_kg: 67.24
+  masa_grasa_kg: 15.26
+  circunferencia_cintura_cm: 88.0
+  masa_muscular_omron_kg: 63.2
+  masa_muscular_estimada_kg: 65.8
+
+indices_corporales:
+  ffmi: 21.9
+  wthr: 0.503
+  grasa_visceral_nivel: 8
+  edad_metabolica: 26
+  nivel_entrenamiento: intermedio
+
+metabolismo:
+  tmb_kcal: 1842.5
+  ge_kcal: 2763.75
+  geaf: 1.5
+
+macronutrientes_tradicionales:
+  proteina_g: 165.0
+  proteina_kcal: 660.0
+  grasa_g: 61.56
+  grasa_kcal: 554.0
+  carbohidratos_g: 312.19
+  carbohidratos_kcal: 1248.75
+  calorias_totales: 2462.75
+  base_proteina: MLG (Masa Libre de Grasa)
+  factor_proteina: 2.45
+
+plan_psmf:
+  aplicable: false
+  proteina_g: null
+  grasa_g: null
+  carbohidratos_g: null
+  calorias_dia: null
+  tier: null
+
+proyecciones:
+  1_mes:
+    peso_inicial_kg: 82.5
+    peso_proyectado_kg: 80.8
+    cambio_kg: -1.7
+    cambio_pct: -2.06
+    grasa_proyectada_pct: 17.2
+  2_meses:
+    peso_inicial_kg: 82.5
+    peso_proyectado_kg: 79.1
+    cambio_kg: -3.4
+    cambio_pct: -4.12
+    grasa_proyectada_pct: 16.0
+  3_meses:
+    peso_inicial_kg: 82.5
+    peso_proyectado_kg: 77.4
+    cambio_kg: -5.1
+    cambio_pct: -6.18
+    grasa_proyectada_pct: 14.8
+
+recuperacion:
+  suenyo_estres_completado: true
+  ir_se: 0.78
+  nivel_recuperacion: Buena recuperación
+  sleep_score: 7.5
+  stress_score: 6.0
+
+metas_personales:
+  completado: true
+  condiciones_medicas:
+    - Ninguna de las anteriores
+  condiciones_otras: ''
+  lesiones:
+    - Lesión de hombro (manguito rotador, tendinitis, etc.)
+    - Lesión de rodilla (menisco, ligamentos, tendinitis, etc.)
+  lesiones_otras: Tendinitis patelar leve en rodilla derecha
+  facilidad_muscular:
+    - Pectoral (Pecho)
+    - Deltoide anterior (Hombro frontal)
+    - Tríceps (Parte trasera del brazo)
+    - Cuádriceps (Parte frontal del muslo)
+  dificultad_muscular:
+    - Trapecio medio, romboides y deltoide posterior (Espalda alta y hombro trasero)
+    - Bíceps (braquial, braquiorradial, músculos de los antebrazos) (Parte frontal del brazo y antebrazos)
+    - Sóleo y gastrocnemio (Pantorrillas)
+  prioridades_muscular:
+    - Dorsal ancho (Espalda ancha / 'Alas')
+    - Trapecio medio, romboides y deltoide posterior (Espalda alta y hombro trasero)
+    - Glúteos (Glúteos / Pompis)
+    - Isquiotibiales (Parte trasera del muslo / Femorales)
+  limitacion_muscular:
+    - Ninguno (quiero desarrollar todos por igual)
+  objetivos_detallados: >
+    A mediano plazo (6-12 meses): Reducir mi grasa corporal del 18.5% al 12-14% 
+    mientras mantengo o aumento ligeramente mi masa muscular. Mejorar mi fuerza 
+    en ejercicios compuestos, especialmente en press de banca (actualmente 80kg) 
+    llegar a 100kg, y en peso muerto (actualmente 120kg) llegar a 160kg. Desarrollar 
+    más mi espalda alta ya que es un área rezagada. A largo plazo (más de 12 meses): 
+    Mantener un porcentaje de grasa corporal entre 10-12% de forma sostenible, 
+    competir en mi primera competencia de powerlifting amateur, desarrollar un 
+    físico atlético y equilibrado. Mejorar mi movilidad de hombro para prevenir 
+    lesiones futuras.

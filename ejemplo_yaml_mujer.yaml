@@ -1,0 +1,134 @@
+# ============================================================================
+# EJEMPLO EMAIL 4 - FORMATO YAML (MUJER)
+# Input para Machine Learning - Generación de Planes Personalizados
+# ============================================================================
+
+nombre_cliente: María González López
+fecha: '2026-01-02'
+
+metadata:
+  fecha_evaluacion: '2026-01-02'
+  sistema: MUPAI v2.0
+  version: 2.0.0
+  tipo_reporte: Evaluacion_Completa
+
+datos_personales:
+  nombre_cliente: María González López
+  email: maria.gonzalez@email.com
+  telefono: '+52 33 9876 5432'
+  edad: 32
+  sexo: Mujer
+  ciclo_menstrual: 'Estoy a mitad de ciclo - días 12-16 (semana en medio del ciclo)'
+
+composicion_corporal:
+  peso_kg: 68.0
+  estatura_cm: 163.0
+  imc: 25.59
+  grasa_corporal_pct: 28.3
+  mlg_kg: 48.76
+  masa_grasa_kg: 19.24
+  circunferencia_cintura_cm: 78.0
+  masa_muscular_omron_kg: 45.8
+  masa_muscular_estimada_kg: 47.2
+
+indices_corporales:
+  ffmi: 18.4
+  wthr: 0.478
+  grasa_visceral_nivel: 5
+  edad_metabolica: 30
+  nivel_entrenamiento: principiante-intermedio
+
+metabolismo:
+  tmb_kcal: 1456.8
+  ge_kcal: 2039.52
+  geaf: 1.4
+
+macronutrientes_tradicionales:
+  proteina_g: 136.0
+  proteina_kcal: 544.0
+  grasa_g: 56.93
+  grasa_kcal: 512.37
+  carbohidratos_g: 183.36
+  carbohidratos_kcal: 733.44
+  calorias_totales: 1789.81
+  base_proteina: MLG (Masa Libre de Grasa)
+  factor_proteina: 2.79
+
+plan_psmf:
+  aplicable: false
+  proteina_g: null
+  grasa_g: null
+  carbohidratos_g: null
+  calorias_dia: null
+  tier: null
+
+proyecciones:
+  1_mes:
+    peso_inicial_kg: 68.0
+    peso_proyectado_kg: 66.6
+    cambio_kg: -1.4
+    cambio_pct: -2.06
+    grasa_proyectada_pct: 26.8
+  2_meses:
+    peso_inicial_kg: 68.0
+    peso_proyectado_kg: 65.2
+    cambio_kg: -2.8
+    cambio_pct: -4.12
+    grasa_proyectada_pct: 25.3
+  3_meses:
+    peso_inicial_kg: 68.0
+    peso_proyectado_kg: 63.8
+    cambio_kg: -4.2
+    cambio_pct: -6.18
+    grasa_proyectada_pct: 23.8
+
+recuperacion:
+  suenyo_estres_completado: true
+  ir_se: 0.65
+  nivel_recuperacion: Recuperación moderada - necesita mejora
+  sleep_score: 6.0
+  stress_score: 7.5
+
+metas_personales:
+  completado: true
+  condiciones_medicas:
+    - Síndrome de ovario poliquístico (SOP)
+    - Resistencia a la insulina
+  condiciones_otras: Hipotiroidismo subclínico en tratamiento
+  lesiones:
+    - Lesión de espalda baja (lumbar)
+    - Escoliosis o desviaciones posturales
+    - Ninguna lesión o limitación
+  lesiones_otras: Lordosis lumbar acentuada, requiere trabajo de core
+  facilidad_muscular:
+    - Cuádriceps (Parte frontal del muslo)
+    - Glúteos (Glúteos / Pompis)
+    - Recto abdominal (Abdomen frontal / 'Six pack')
+  dificultad_muscular:
+    - Trapecio medio, romboides y deltoide posterior (Espalda alta y hombro trasero)
+    - Dorsal ancho (Espalda ancha / 'Alas')
+    - Bíceps (braquial, braquiorradial, músculos de los antebrazos) (Parte frontal del brazo y antebrazos)
+    - Tríceps (Parte trasera del brazo)
+    - Deltoide medial (Hombro lateral)
+  prioridades_muscular:
+    - Glúteos (Glúteos / Pompis)
+    - Isquiotibiales (Parte trasera del muslo / Femorales)
+    - Dorsal ancho (Espalda ancha / 'Alas')
+    - Trapecio medio, romboides y deltoide posterior (Espalda alta y hombro trasero)
+    - Recto abdominal (Abdomen frontal / 'Six pack')
+    - Oblicuos (Costados del abdomen)
+  limitacion_muscular:
+    - Cuádriceps (Parte frontal del muslo)
+  objetivos_detallados: >
+    A mediano plazo (6-12 meses): Reducir mi grasa corporal del 28% al 22-24% 
+    de forma gradual y sostenible. Mejorar mi composición corporal aumentando 
+    masa muscular en glúteos e isquiotibiales para crear una figura más atlética 
+    y equilibrada. Desarrollar mi espalda que es mi punto débil. Mejorar mi fuerza 
+    en sentadilla y peso muerto, actualmente levanto 40kg en sentadilla y quiero 
+    llegar a 60kg. Fortalecer mi core para mejorar mi postura lumbar y reducir 
+    dolores de espalda baja. A largo plazo (más de 12 meses): Alcanzar y mantener 
+    un porcentaje de grasa entre 20-22%, competir en mi primera competencia de 
+    bikini fitness, tener un físico funcional y estético, mejorar mi salud hormonal 
+    y metabólica (controlar mejor mi SOP y resistencia a insulina a través del 
+    ejercicio y nutrición). No quiero desarrollar demasiado mis cuádriceps ya que 
+    ya son mi grupo muscular dominante.
