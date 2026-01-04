@@ -10104,6 +10104,7 @@ if not NUEVA_LOGICA_DISPONIBLE:
 suenyo_estres_data = st.session_state.get('suenyo_estres_data', {})
 calidad_suenyo_valor = suenyo_estres_data.get('horas_sueno', 7.0)
 nivel_estres_valor = suenyo_estres_data.get('nivel_estres_percibido', 'moderado')
+ir_se_valor = suenyo_estres_data.get('ir_se', 60.0)  # IR-SE para guardrails
 
 # Validar tipos
 try:
@@ -10113,6 +10114,11 @@ except (TypeError, ValueError):
 
 if not nivel_estres_valor or not isinstance(nivel_estres_valor, str):
     nivel_estres_valor = 'moderado'
+
+try:
+    ir_se_valor = float(ir_se_valor) if ir_se_valor is not None else 60.0
+except (TypeError, ValueError):
+    ir_se_valor = 60.0
 
 # Calcular plan completo con nueva lógica (CRÍTICO: validar tipos de variables locales)
 geaf_usado = geaf if 'geaf' in locals() and isinstance(geaf, (int, float)) and geaf > 0 else 1.55
@@ -10136,6 +10142,92 @@ plan_nuevo = calcular_plan_con_sistema_actual(
     nivel_estres=nivel_estres_valor,
     activar_ciclaje_4_3=True
 )
+
+# ✅ APLICAR GUARDRAILS (IR-SE + Sueño) AL PLAN GENERADO
+# Esto asegura que el plan use el déficit capeado, no el interpolado
+if 'plan_nuevo' in locals() and plan_nuevo and 'fases' in plan_nuevo:
+    fase_cut = plan_nuevo['fases'].get('cut')
+    if fase_cut:
+        # Obtener déficit interpolado del plan original
+        deficit_interpolado = fase_cut.get('deficit_pct', 30)
+        
+        # Aplicar guardrails
+        # IR-SE guardrail
+        if ir_se_valor >= 70:
+            cap_ir_se = 100  # Sin cap
+        elif 50 <= ir_se_valor < 70:
+            cap_ir_se = 30  # Cap a 30%
+        else:
+            cap_ir_se = 25  # Cap a 25%
+        
+        # Sleep guardrail
+        if calidad_suenyo_valor < 6:
+            cap_sleep = 30  # Cap a 30%
+        else:
+            cap_sleep = 100  # Sin cap
+        
+        # Aplicar cap más restrictivo
+        deficit_capeado = min(deficit_interpolado, cap_ir_se, cap_sleep)
+        
+        # Recalcular kcal con déficit capeado
+        if 'ge' in locals() and ge > 0:
+            kcal_capeado = ge * (1 - deficit_capeado / 100)
+            
+            # Actualizar plan con déficit capeado
+            fase_cut['deficit_pct'] = deficit_capeado
+            fase_cut['kcal'] = kcal_capeado
+            
+            # Recalcular macros proporcionalmente
+            if deficit_capeado < deficit_interpolado:
+                # Factor de ajuste
+                factor_ajuste = kcal_capeado / fase_cut.get('kcal', kcal_capeado)
+                
+                # Actualizar macros en CUT
+                macros_cut = fase_cut.get('macros', {})
+                if macros_cut:
+                    # Proteína se mantiene constante
+                    # Recalcular grasas y carbos proporcionalmente
+                    grasa_g_original = macros_cut.get('fat_g', 0)
+                    carbo_g_original = macros_cut.get('carb_g', 0)
+                    
+                    # Mantener proteína, ajustar grasas y carbos
+                    protein_g = macros_cut.get('protein_g', 0)
+                    protein_kcal = protein_g * 4
+                    
+                    # Calorías disponibles después de proteína
+                    kcal_disponible = kcal_capeado - protein_kcal
+                    
+                    # Mantener ratio grasas/carbos (30% grasas, resto carbos)
+                    grasa_pct = 0.30
+                    grasa_kcal_nueva = kcal_disponible * grasa_pct
+                    grasa_g_nueva = grasa_kcal_nueva / 9
+                    
+                    carbo_kcal_nueva = kcal_disponible - grasa_kcal_nueva
+                    carbo_g_nueva = carbo_kcal_nueva / 4
+                    
+                    macros_cut['fat_g'] = round(grasa_g_nueva, 1)
+                    macros_cut['carb_g'] = round(carbo_g_nueva, 1)
+                    
+                    # Actualizar ciclaje si existe
+                    if 'ciclaje_4_3' in fase_cut:
+                        ciclaje = fase_cut['ciclaje_4_3']
+                        
+                        # Recalcular LOW y HIGH con nuevas calorías
+                        kcal_low_nuevo = kcal_capeado * 0.8
+                        kcal_high_nuevo = ((7 * kcal_capeado) - (4 * kcal_low_nuevo)) / 3
+                        
+                        ciclaje['low_days']['kcal'] = round(kcal_low_nuevo, 0)
+                        ciclaje['high_days']['kcal'] = round(kcal_high_nuevo, 0)
+                        
+                        # Macros LOW (proteína constante, grasas reducidas, carbos mínimos)
+                        ciclaje['low_days']['protein_g'] = protein_g
+                        ciclaje['low_days']['fat_g'] = round((kcal_low_nuevo * 0.30) / 9, 1)
+                        ciclaje['low_days']['carb_g'] = round(((kcal_low_nuevo - protein_g*4 - ciclaje['low_days']['fat_g']*9) / 4), 1)
+                        
+                        # Macros HIGH (proteína constante, grasas constantes, carbos altos)
+                        ciclaje['high_days']['protein_g'] = protein_g
+                        ciclaje['high_days']['fat_g'] = round((kcal_high_nuevo * 0.30) / 9, 1)
+                        ciclaje['high_days']['carb_g'] = round(((kcal_high_nuevo - protein_g*4 - ciclaje['high_days']['fat_g']*9) / 4), 1)
 
 # Calcular bf_operacional y categoría manualmente (no vienen en plan_nuevo)
 bf_operacional, _ = calcular_bf_operacional(bf_corr_pct=grasa_corregida)
