@@ -12,24 +12,119 @@ import time
 import re
 import random
 import string
+from typing import Dict, Tuple, List, Optional
 
-# Importar nueva lógica de cálculo de macros
-try:
-    from nueva_logica_macros import (
-        calcular_bf_operacional,
-        clasificar_bf,
-        obtener_nombre_cliente,
-        calcular_macros_psmf
-    )
-    from integracion_nueva_logica import (
-        calcular_plan_con_sistema_actual,
-        formatear_plan_para_ui,
-        estimar_ir_se_basico
-    )
-    NUEVA_LOGICA_DISPONIBLE = True
-except ImportError:
-    NUEVA_LOGICA_DISPONIBLE = False
-    print("⚠️ Nueva lógica de macros no disponible. Usando lógica tradicional.")
+# Nota: REMOVIDAS importaciones de nueva_logica_macros e integracion_nueva_logica
+# Usando lógica tradicional: calcular_macros_tradicional()
+NUEVA_LOGICA_DISPONIBLE = False
+
+
+# ============================================================================
+# FUNCIONES AUXILIARES PARA BF Y CATEGORIZACIÓN (de nueva_logica_macros.py)
+# ============================================================================
+
+def calcular_bf_operacional(
+    bf_corr_pct: Optional[float] = None,
+    bf_measured_pct: Optional[float] = None
+) -> Tuple[float, str]:
+    """
+    Calcula el BF operacional para todos los cálculos posteriores.
+    
+    Args:
+        bf_corr_pct: BF corregido (ej: ajustado a DEXA)
+        bf_measured_pct: BF medido directo
+        
+    Returns:
+        (bf_operational, confiabilidad)
+    """
+    if bf_corr_pct is not None:
+        return float(bf_corr_pct), "alta"
+    elif bf_measured_pct is not None:
+        return float(bf_measured_pct), "media"
+    else:
+        raise ValueError("Se requiere al menos un valor de BF")
+
+
+def clasificar_bf(bf_operational: float, sexo: str) -> str:
+    """
+    Clasifica el BF en una de 5 categorías según sexo.
+    """
+    if sexo.lower() in ["hombre", "masculino", "male", "m"]:
+        if bf_operational <= 8:
+            return "preparacion"
+        elif bf_operational <= 15:
+            return "zona_triple"
+        elif bf_operational <= 21:
+            return "promedio"
+        elif bf_operational < 26:
+            return "sobrepeso"
+        else:
+            return "obesidad"
+    else:  # Mujer
+        if bf_operational <= 14:
+            return "preparacion"
+        elif bf_operational <= 24:
+            return "zona_triple"
+        elif bf_operational <= 33:
+            return "promedio"
+        elif bf_operational < 39:
+            return "sobrepeso"
+        else:
+            return "obesidad"
+
+
+def obtener_nombre_cliente(categoria_interna: str, sexo: str = "Hombre") -> Dict[str, str]:
+    """
+    Convierte categoría interna a nombres amigables para cliente.
+    """
+    nombres = {
+        "preparacion": {
+            "nombre_corto": "Muy Definido",
+            "nombre_completo": "Muy Definido / Nivel de Fisicoculturismo",
+            "icono": "🏆",
+            "descripcion_h": "Estás en nivel de competencia o fisicoculturismo.",
+            "descripcion_m": "Estás en nivel de competencia."
+        },
+        "zona_triple": {
+            "nombre_corto": "Atlético",
+            "nombre_completo": "Atlético",
+            "icono": "🎯",
+            "descripcion_h": "Tu composición corporal es atlética y óptima para rendimiento.",
+            "descripcion_m": "Tu composición corporal es atlética y óptima para rendimiento."
+        },
+        "promedio": {
+            "nombre_corto": "Saludable",
+            "nombre_completo": "Saludable",
+            "icono": "💪",
+            "descripcion_h": "Estás en un rango saludable con oportunidad de mejorar tu definición muscular.",
+            "descripcion_m": "Estás en un rango saludable con oportunidad de mejorar tu composición corporal."
+        },
+        "sobrepeso": {
+            "nombre_corto": "Sobrepeso",
+            "nombre_completo": "Sobrepeso",
+            "icono": "⚠️",
+            "descripcion_h": "Reducir grasa corporal mejorará significativamente tu salud.",
+            "descripcion_m": "Reducir grasa corporal mejorará significativamente tu salud."
+        },
+        "obesidad": {
+            "nombre_corto": "Obesidad",
+            "nombre_completo": "Obesidad",
+            "icono": "🚨",
+            "descripcion_h": "Tu salud se beneficiará de una reducción supervisada.",
+            "descripcion_m": "Tu salud se beneficiará de una reducción supervisada."
+        }
+    }
+    
+    info = nombres.get(categoria_interna, nombres["promedio"])
+    sexo_key = "descripcion_h" if sexo.lower() in ["hombre", "masculino", "male", "m"] else "descripcion_m"
+    
+    return {
+        "nombre_corto": info["nombre_corto"],
+        "nombre_completo": info["nombre_completo"],
+        "icono": info["icono"],
+        "descripcion": info[sexo_key]
+    }
+
 
 # ==================== CONSTANTES ====================
 
@@ -10137,165 +10232,68 @@ except (TypeError, ValueError):
     ir_se_valor = 60.0
 
 # Calcular plan completo con nueva lógica (CRÍTICO: validar tipos de variables locales)
-geaf_usado = geaf if 'geaf' in locals() and isinstance(geaf, (int, float)) and geaf > 0 else 1.55
-eta_usado = eta if 'eta' in locals() and isinstance(eta, (int, float)) and eta > 0 else 1.10
-gee_usado = gee_prom_dia if 'gee_prom_dia' in locals() and isinstance(gee_prom_dia, (int, float)) and gee_prom_dia >= 0 else 0
-nivel_entrena_usado = nivel_entrena if 'nivel_entrena' in locals() and isinstance(nivel_entrena, str) else 'intermedio'
-dias_entrena_usado = dias_entrenamiento if 'dias_entrenamiento' in locals() and isinstance(dias_entrenamiento, int) and dias_entrenamiento > 0 else 4
+# ==================== CALCULAR PLAN NUTRICIONAL - LÓGICA TRADICIONAL ====================
+# USAR LÓGICA TRADICIONAL (calcular_macros_tradicional) con TMB corregido
 
-plan_nuevo = calcular_plan_con_sistema_actual(
-    peso=peso,
-    grasa_corregida=grasa_corregida,
-    sexo=sexo,
-    mlg=mlg,
-    tmb=tmb,
-    geaf=geaf_usado,
-    eta=eta_usado,
-    gee_promedio_dia=gee_usado,
-    nivel_entrenamiento=nivel_entrena_usado,
-    dias_fuerza=dias_entrena_usado,
-    calidad_suenyo=calidad_suenyo_valor,
-    nivel_estres=nivel_estres_valor,
-    activar_ciclaje_4_3=True
-)
+# Calcular ingesta con déficit
+ingesta_calorica_tradicional = ge * (1 - 0.30 / 100) if 'ge' in locals() and ge > 0 else 0
 
-# ✅ APLICAR GUARDRAILS (IR-SE + Sueño) AL PLAN GENERADO
-# Esto asegura que el plan use el déficit capeado, no el interpolado
-ingesta_calorica_capeada = ingesta_calorica_tradicional if 'ingesta_calorica_tradicional' in locals() else 0
-if 'plan_nuevo' in locals() and plan_nuevo and 'fases' in plan_nuevo:
-    fase_cut = plan_nuevo['fases'].get('cut')
-    if fase_cut:
-        # Obtener déficit interpolado del plan original
-        deficit_interpolado = fase_cut.get('deficit_pct', 30)
-        
-        # Aplicar guardrails
-        # IR-SE guardrail
-        if ir_se_valor >= 70:
-            cap_ir_se = 100  # Sin cap
-        elif 50 <= ir_se_valor < 70:
-            cap_ir_se = 30  # Cap a 30%
-        else:
-            cap_ir_se = 25  # Cap a 25%
-        
-        # Sleep guardrail
-        if calidad_suenyo_valor < 6:
-            cap_sleep = 30  # Cap a 30%
-        else:
-            cap_sleep = 100  # Sin cap
-        
-        # Aplicar cap más restrictivo
-        deficit_capeado = min(deficit_interpolado, cap_ir_se, cap_sleep)
-        
-        # Recalcular kcal con déficit capeado
-        if 'ge' in locals() and ge > 0:
-            kcal_capeado = ge * (1 - deficit_capeado / 100)
-            ingesta_calorica_capeada = kcal_capeado  # ✅ Guardar para sección 6.1
-            
-            # Actualizar plan con déficit capeado
-            fase_cut['deficit_pct'] = deficit_capeado
-            fase_cut['kcal'] = kcal_capeado
-            
-            # Recalcular macros proporcionalmente
-            if deficit_capeado < deficit_interpolado:
-                # Factor de ajuste
-                factor_ajuste = kcal_capeado / fase_cut.get('kcal', kcal_capeado)
-                
-                # Actualizar macros en CUT
-                macros_cut = fase_cut.get('macros', {})
-                if macros_cut:
-                    # Proteína se mantiene constante
-                    # Recalcular grasas y carbos proporcionalmente
-                    grasa_g_original = macros_cut.get('fat_g', 0)
-                    carbo_g_original = macros_cut.get('carb_g', 0)
-                    
-                    # Mantener proteína, ajustar grasas y carbos
-                    protein_g = macros_cut.get('protein_g', 0)
-                    protein_kcal = protein_g * 4
-                    
-                    # Calorías disponibles después de proteína
-                    kcal_disponible = kcal_capeado - protein_kcal
-                    
-                    # Mantener ratio grasas/carbos (30% grasas, resto carbos)
-                    grasa_pct = 0.30
-                    grasa_kcal_nueva = kcal_disponible * grasa_pct
-                    grasa_g_nueva = grasa_kcal_nueva / 9
-                    
-                    carbo_kcal_nueva = kcal_disponible - grasa_kcal_nueva
-                    carbo_g_nueva = carbo_kcal_nueva / 4
-                    
-                    macros_cut['fat_g'] = round(grasa_g_nueva, 1)
-                    macros_cut['carb_g'] = round(carbo_g_nueva, 1)
-                    
-                    # Actualizar ciclaje si existe
-                    if 'ciclaje_4_3' in fase_cut:
-                        ciclaje = fase_cut['ciclaje_4_3']
-                        
-                        # Recalcular LOW y HIGH con nuevas calorías
-                        kcal_low_nuevo = kcal_capeado * 0.8
-                        kcal_high_nuevo = ((7 * kcal_capeado) - (4 * kcal_low_nuevo)) / 3
-                        
-                        ciclaje['low_days']['kcal'] = round(kcal_low_nuevo, 0)
-                        ciclaje['high_days']['kcal'] = round(kcal_high_nuevo, 0)
-                        
-                        # Macros LOW (proteína constante, grasas reducidas, carbos mínimos)
-                        ciclaje['low_days']['protein_g'] = protein_g
-                        ciclaje['low_days']['fat_g'] = round((kcal_low_nuevo * 0.30) / 9, 1)
-                        ciclaje['low_days']['carb_g'] = round(((kcal_low_nuevo - protein_g*4 - ciclaje['low_days']['fat_g']*9) / 4), 1)
-                        
-                        # Macros HIGH (proteína constante, grasas constantes, carbos altos)
-                        ciclaje['high_days']['protein_g'] = protein_g
-                        ciclaje['high_days']['fat_g'] = round((kcal_high_nuevo * 0.30) / 9, 1)
-                        ciclaje['high_days']['carb_g'] = round(((kcal_high_nuevo - protein_g*4 - ciclaje['high_days']['fat_g']*9) / 4), 1)
+# Calcular macros con la lógica tradicional
+if ingesta_calorica_tradicional > 0:
+    macros_tradicional = calcular_macros_tradicional(
+        ingesta_calorica_tradicional=ingesta_calorica_tradicional,
+        tmb=tmb,
+        sexo=sexo,
+        grasa_corregida=grasa_corregida,
+        peso=peso,
+        mlg=mlg
+    )
+else:
+    macros_tradicional = {}
 
-# Calcular bf_operacional y categoría manualmente (no vienen en plan_nuevo)
+# Crear estructura compatible para el resto del código
+# ✅ USAR MACROS DE LÓGICA TRADICIONAL
+# Extraer macros de calcular_macros_tradicional
+if macros_tradicional:
+    proteina_g_tradicional = macros_tradicional.get('protein_g', 0)
+    grasa_g_tradicional = macros_tradicional.get('fat_g', 0)
+    carbo_g_tradicional = macros_tradicional.get('carb_g', 0)
+    proteina_kcal_tradicional = proteina_g_tradicional * 4
+    grasa_kcal_tradicional = grasa_g_tradicional * 9
+    carbo_kcal_tradicional = carbo_g_tradicional * 4
+    plan_tradicional_calorias = ingesta_calorica_tradicional
+    base_proteina_nombre_email = macros_tradicional.get('base_proteina', 'peso')
+    deficit_pct_aplicado = 30  # Déficit fijo en lógica tradicional
+    deficit_warning = ""
+    factor_proteina_tradicional_email = macros_tradicional.get('protein_mult', 1.6)
+    usar_mlg_para_proteina_email = False  # La lógica tradicional no usa MLG por defecto
+    base_proteina_kg_email = peso
+    tiene_ciclaje = False  # No hay ciclaje en lógica tradicional
+else:
+    proteina_g_tradicional = 0
+    grasa_g_tradicional = 0
+    carbo_g_tradicional = 0
+    proteina_kcal_tradicional = 0
+    grasa_kcal_tradicional = 0
+    carbo_kcal_tradicional = 0
+    plan_tradicional_calorias = 0
+    base_proteina_nombre_email = 'peso'
+    deficit_pct_aplicado = 30
+    deficit_warning = ""
+    factor_proteina_tradicional_email = 1.6
+    usar_mlg_para_proteina_email = False
+    base_proteina_kg_email = peso
+    tiene_ciclaje = False
+
+# Calcular bf_operacional y categoría manualmente
 bf_operacional, _ = calcular_bf_operacional(bf_corr_pct=grasa_corregida)
 categoria_bf = clasificar_bf(bf_operacional, sexo)
 categoria_bf_cliente = obtener_nombre_cliente(categoria_bf, sexo)
-fases_disponibles = list(plan_nuevo['fases'].keys())
-
-# Usar fase CUT por defecto para el email (o la primera disponible)
-fase_activa = 'cut' if 'cut' in plan_nuevo['fases'] else list(plan_nuevo['fases'].keys())[0]
-macros_fase = plan_nuevo['fases'][fase_activa]
-
-# Extraer macros de la nueva lógica
-proteina_g_tradicional = macros_fase['macros']['protein_g']
-proteina_kcal_tradicional = proteina_g_tradicional * 4
-grasa_g_tradicional = macros_fase['macros']['fat_g']
-grasa_kcal_tradicional = grasa_g_tradicional * 9
-carbo_g_tradicional = macros_fase['macros']['carb_g']
-carbo_kcal_tradicional = carbo_g_tradicional * 4
-plan_tradicional_calorias = macros_fase['kcal']
-base_proteina_nombre_email = macros_fase.get('base_proteina', 'pbm_ajustado')
-deficit_pct_aplicado = macros_fase.get('deficit_pct', 30)
-deficit_warning = macros_fase.get('warning', '')
-
-# PBM si está disponible
-pbm_kg = plan_nuevo.get('pbm', mlg)
-
-# Determinar si usa MLG/PBM para base de proteína
-usar_mlg_para_proteina_email = (base_proteina_nombre_email.lower() in ['pbm', 'pbm_ajustado', 'mlg'])
-base_proteina_kg_email = pbm_kg if usar_mlg_para_proteina_email else peso
-
-# Calcular factor de proteína manualmente si no está
-factor_proteina_tradicional_email = macros_fase.get('protein_mult', proteina_g_tradicional / base_proteina_kg_email)
-
-# Ciclaje si está disponible (dentro de la fase activa)
-# ✅ IMPORTANTE: Los valores de ciclaje ya fueron recalculados en la sección de guardrails
-# para basarse en kcal_capeado, no en el original. Esto asegura consistencia.
-tiene_ciclaje = 'ciclaje_4_3' in macros_fase
-if tiene_ciclaje:
-    ciclaje_info = macros_fase['ciclaje_4_3']
-    ciclaje_low_kcal = ciclaje_info['low_days']['kcal']
-    ciclaje_high_kcal = ciclaje_info['high_days']['kcal']
-    ciclaje_low_days = 4  # Por definición del ciclaje 4-3
-    ciclaje_high_days = 3
 
 # Nota sobre base de proteína
 nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
-if usar_mlg_para_proteina_email:
-    nota_mlg_email += "\n     ℹ️ Usa PBM (Protein Base Mass) para evitar inflar proteína en alta adiposidad"
 
-USANDO_NUEVA_LOGICA = True
+USANDO_NUEVA_LOGICA = False
 print(f"✅ Nueva lógica activada correctamente")
 print(f"   • BF Operacional: {bf_operacional:.1f}%")
 print(f"   • Categoría: {categoria_bf}")
