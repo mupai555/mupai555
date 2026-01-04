@@ -1,0 +1,34 @@
+﻿diff --git a/streamlit_app.py b/streamlit_app.py
+index 2a132b4..4f2005c 100644
+--- a/streamlit_app.py
++++ b/streamlit_app.py
+@@ -9917,7 +9917,7 @@ if USER_VIEW:
+                 st.write("ÔÇó **Objetivo:** ÔÇô")
+ 
+         # C├ílculo del gasto energ├®tico
+-        GE = tmb * geaf * eta + gee_prom_dia
++        GE = (tmb * geaf) + gee_prom_dia
+         ingesta_calorica_tradicional = GE * fbeo
+ 
+         # COMPARATIVA PSMF si aplica
+@@ -10199,7 +10199,7 @@ else:
+     fbeo = 1 + porcentaje / 100
+     
+     # Calculate energy expenditure
+-    GE = tmb * geaf * eta + gee_prom_dia
++    GE = (tmb * geaf) + gee_prom_dia
+     # Ensure TDEE variable exists for downstream calculations
+     tdee = GE
+     ingesta_calorica_tradicional = GE * fbeo
+@@ -10852,9 +10852,9 @@ SECCI├ôN 5: GASTO ENERG├ëTICO (MOTOR METAB├ôLICO)
+ 
+    ÔòöÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòù
+    Ôòæ  GASTO ENERG├ëTICO TOTAL (GE)                                   Ôòæ
+-   Ôòæ  GE = (TMB ├ù GEAF) + GEE ├ù ETA                                 Ôòæ
++   Ôòæ  GE = (TMB ├ù GEAF) + GEE                                       Ôòæ
+    Ôòæ                                                                Ôòæ
+-   Ôòæ  GE = ({tmb:.0f} ├ù {geaf if 'geaf' in locals() else 1.0}) + {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f} ├ù {eta if 'eta' in locals() else 1.1}                             Ôòæ
++   Ôòæ  GE = ({tmb:.0f} ├ù {geaf if 'geaf' in locals() else 1.0}) + {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f}                             Ôòæ
+    Ôòæ                                                                Ôòæ
+    Ôòæ  ÔòÉÔòÉÔû║ GE TOTAL: {GE:.0f} kcal/d├¡a                               Ôòæ
+    ÔòÜÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòØ"""

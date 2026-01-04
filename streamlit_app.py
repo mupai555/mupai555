@@ -2028,7 +2028,7 @@ def calcular_tmb_cunningham(mlg):
         mlg = float(mlg)
     except (TypeError, ValueError):
         mlg = 0.0
-    return 370 + (21.6 * mlg)
+    return 500 + (22 * mlg)
 
 def calcular_mlg(peso, porcentaje_grasa):
     """Calcula la Masa Libre de Grasa."""
