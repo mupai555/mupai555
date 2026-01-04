@@ -19,7 +19,7 @@ try:
         calcular_bf_operacional,
         clasificar_bf,
         obtener_nombre_cliente,
-        calcular_plan_nutricional_completo
+        calcular_macros_psmf
     )
     from integracion_nueva_logica import (
         calcular_plan_con_sistema_actual,
