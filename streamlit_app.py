@@ -10072,11 +10072,11 @@ if NUEVA_LOGICA_DISPONIBLE:
             activar_ciclaje_4_3=True
         )
         
-        # Extraer datos del plan nuevo
-        bf_operacional = plan_nuevo['bf_operacional']
-        categoria_bf = plan_nuevo['categoria_bf']
+        # Calcular bf_operacional y categoría manualmente (no vienen en plan_nuevo)
+        bf_operacional, _ = calcular_bf_operacional(bf_corr_pct=grasa_corregida)
+        categoria_bf = clasificar_bf(bf_operacional, sexo)
         categoria_bf_cliente = obtener_nombre_cliente(categoria_bf, sexo)
-        fases_disponibles = plan_nuevo['fases_disponibles']
+        fases_disponibles = list(plan_nuevo['fases'].keys())
         
         # Usar fase CUT por defecto para el email (o la primera disponible)
         fase_activa = 'cut' if 'cut' in plan_nuevo['fases'] else list(plan_nuevo['fases'].keys())[0]
@@ -10090,9 +10090,18 @@ if NUEVA_LOGICA_DISPONIBLE:
         carbo_g_tradicional = macros_fase['macros']['carb_g']
         carbo_kcal_tradicional = carbo_g_tradicional * 4
         plan_tradicional_calorias = macros_fase['kcal']
-        base_proteina_nombre_email = macros_fase['base_proteina']
-        factor_proteina_tradicional_email = macros_fase['protein_mult']
-        deficit_pct_aplicado = macros_fase.get('deficit_pct', 0)
+        base_proteina_nombre_email = macros_fase.get('base_proteina', 'pbm_ajustado')
+        deficit_pct_aplicado = macros_fase.get('deficit_pct', 30)
+        
+        # PBM si está disponible
+        pbm_kg = plan_nuevo.get('pbm', mlg)
+        
+        # Determinar si usa MLG/PBM para base de proteína
+        usar_mlg_para_proteina_email = (base_proteina_nombre_email.lower() in ['pbm', 'pbm_ajustado', 'mlg'])
+        base_proteina_kg_email = pbm_kg if usar_mlg_para_proteina_email else peso
+        
+        # Calcular factor de proteína manualmente si no está
+        factor_proteina_tradicional_email = macros_fase.get('protein_mult', proteina_g_tradicional / base_proteina_kg_email)
         
         # Ciclaje si está disponible
         tiene_ciclaje = 'ciclaje' in plan_nuevo
@@ -10103,17 +10112,21 @@ if NUEVA_LOGICA_DISPONIBLE:
             ciclaje_high_days = plan_nuevo['ciclaje']['high_days']
         
         # Nota sobre base de proteína
-        usar_mlg_para_proteina_email = (base_proteina_nombre_email.upper() == "PBM_AJUSTADO")
-        base_proteina_kg_email = plan_nuevo.get('pbm', mlg if usar_mlg_para_proteina_email else peso)
-        
         nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
         if usar_mlg_para_proteina_email:
             nota_mlg_email += "\n     ℹ️ Usa PBM (Protein Base Mass) para evitar inflar proteína en alta adiposidad"
         
         USANDO_NUEVA_LOGICA = True
+        print(f"✅ Nueva lógica activada correctamente")
+        print(f"   • BF Operacional: {bf_operacional:.1f}%")
+        print(f"   • Categoría: {categoria_bf}")
+        print(f"   • Déficit: {deficit_pct_aplicado:.1f}%")
+        print(f"   • Ciclaje: {'Sí' if tiene_ciclaje else 'No'}")
         
     except Exception as e:
-        print(f"⚠️ Error al usar nueva lógica: {e}. Fallback a lógica tradicional.")
+        import traceback
+        print(f"❌ Error al usar nueva lógica: {e}")
+        print(f"   Traceback: {traceback.format_exc()}")
         USANDO_NUEVA_LOGICA = False
 else:
     USANDO_NUEVA_LOGICA = False
@@ -10174,9 +10187,12 @@ if USANDO_NUEVA_LOGICA and categoria_bf:
    • Fases disponibles: {', '.join(fases_disponibles).upper()}
    • Déficit aplicado: {deficit_pct_aplicado:.1f}% (interpolado según BF)"""
 
+# Título de sección según metodología
+titulo_plan = "PLAN CON NUEVA METODOLOGÍA" if USANDO_NUEVA_LOGICA else "PLAN TRADICIONAL (Déficit/Superávit Moderado)"
+
 tabla_resumen += f"""
 
-📊 6.2 PLAN TRADICIONAL (Déficit/Superávit Moderado):
+📊 6.2 {titulo_plan}:
 
    ┌─────────────────────────────────────────────────────────────────┐
    │ CALORÍAS: {plan_tradicional_calorias:.0f} kcal/día                                   │
@@ -10194,21 +10210,37 @@ tabla_resumen += f"""
 
 # Agregar ciclaje 4-3 si está disponible
 if USANDO_NUEVA_LOGICA and tiene_ciclaje:
+    # Extraer macros de ciclaje
+    ciclaje_info = plan_nuevo.get('ciclaje', {})
+    low_macros = ciclaje_info.get('low_day_macros', {})
+    high_macros = ciclaje_info.get('high_day_macros', {})
+    
     tabla_resumen += f"""
 
 🔄 6.3 CICLAJE CALÓRICO 4-3 (Optimización Metabólica):
 
    ┌─────────────────────────────────────────────────────────────────┐
-   │ DÍAS BAJOS ({ciclaje_low_days} días/semana):                                       │
-   │ • Calorías: {ciclaje_low_kcal:.0f} kcal/día                                      │
-   │ • Propósito: Maximizar déficit, promover oxidación de grasa   │
-   │                                                                │
-   │ DÍAS ALTOS ({ciclaje_high_days} días/semana):                                       │
-   │ • Calorías: {ciclaje_high_kcal:.0f} kcal/día                                     │
-   │ • Propósito: Resíntesis glucógeno, soporte hormonal           │
+   │ ESTRATEGIA: Manipulación de carbohidratos según actividad     │
    ├─────────────────────────────────────────────────────────────────┤
-   │ • Beneficios: Adherencia mejorada, minimiza adaptación        │
-   │ • Estrategia: Días bajos en descanso, altos en entrenamiento  │
+   │ 📉 DÍAS LOW ({ciclaje_low_days} días/semana - Entrenamiento Fuerza):          │
+   │   • Calorías: {ciclaje_low_kcal:.0f} kcal/día                                  │
+   │   • Proteína: {low_macros.get('protein_g', 0):.1f}g                                              │
+   │   • Grasas: {low_macros.get('fat_g', 0):.1f}g                                                │
+   │   • Carbos: {low_macros.get('carb_g', 0):.1f}g (REDUCIDOS para oxidación grasa)          │
+   │                                                                │
+   │ 📈 DÍAS HIGH ({ciclaje_high_days} días/semana - Descanso/Cardio):               │
+   │   • Calorías: {ciclaje_high_kcal:.0f} kcal/día                                 │
+   │   • Proteína: {high_macros.get('protein_g', 0):.1f}g (constante)                                 │
+   │   • Grasas: {high_macros.get('fat_g', 0):.1f}g (constante)                                   │
+   │   • Carbos: {high_macros.get('carb_g', 0):.1f}g (AUMENTADOS +{high_macros.get('carb_g', 0) - low_macros.get('carb_g', 0):.0f}g)                 │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ 📊 PROMEDIO SEMANAL: {plan_tradicional_calorias:.0f} kcal/día                           │
+   │                                                                │
+   │ 💡 BENEFICIOS:                                                 │
+   │   • Mejor adherencia vs déficit constante                     │
+   │   • Minimiza adaptación metabólica                            │
+   │   • Soporte hormonal en días altos (leptina, testosterona)   │
+   │   • Mayor oxidación de grasa en días bajos                    │
    └─────────────────────────────────────────────────────────────────┘"""
 
 if plan_psmf_disponible:
