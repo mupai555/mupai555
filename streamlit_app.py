@@ -10149,6 +10149,7 @@ plan_nuevo = calcular_plan_con_sistema_actual(
 
 # ✅ APLICAR GUARDRAILS (IR-SE + Sueño) AL PLAN GENERADO
 # Esto asegura que el plan use el déficit capeado, no el interpolado
+ingesta_calorica_capeada = ingesta_calorica_tradicional if 'ingesta_calorica_tradicional' in locals() else 0
 if 'plan_nuevo' in locals() and plan_nuevo and 'fases' in plan_nuevo:
     fase_cut = plan_nuevo['fases'].get('cut')
     if fase_cut:
@@ -10176,6 +10177,7 @@ if 'plan_nuevo' in locals() and plan_nuevo and 'fases' in plan_nuevo:
         # Recalcular kcal con déficit capeado
         if 'ge' in locals() and ge > 0:
             kcal_capeado = ge * (1 - deficit_capeado / 100)
+            ingesta_calorica_capeada = kcal_capeado  # ✅ Guardar para sección 6.1
             
             # Actualizar plan con déficit capeado
             fase_cut['deficit_pct'] = deficit_capeado
@@ -10266,6 +10268,8 @@ base_proteina_kg_email = pbm_kg if usar_mlg_para_proteina_email else peso
 factor_proteina_tradicional_email = macros_fase.get('protein_mult', proteina_g_tradicional / base_proteina_kg_email)
 
 # Ciclaje si está disponible (dentro de la fase activa)
+# ✅ IMPORTANTE: Los valores de ciclaje ya fueron recalculados en la sección de guardrails
+# para basarse en kcal_capeado, no en el original. Esto asegura consistencia.
 tiene_ciclaje = 'ciclaje_4_3' in macros_fase
 if tiene_ciclaje:
     ciclaje_info = macros_fase['ciclaje_4_3']
@@ -10298,8 +10302,8 @@ SECCIÓN 6: PLAN NUTRICIONAL
 🎯 6.1 DIAGNÓSTICO Y FASE:
    • Fase recomendada: {fase}
    • Factor FBEO: {fbeo:.2f}
-   • Ingesta calórica objetivo: {ingesta_calorica:.0f} kcal/día
-   • Ratio kcal/kg: {ratio_kcal_kg:.1f}"""
+   • Ingesta calórica objetivo: {ingesta_calorica_capeada:.0f} kcal/día
+   • Ratio kcal/kg: {ingesta_calorica_capeada/peso if peso > 0 else 0:.1f}"""
 
 # Agregar información de nueva lógica (siempre disponible)
 deficit_info = f"{deficit_pct_aplicado:.1f}% (interpolado según BF"
