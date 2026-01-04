@@ -78,9 +78,12 @@ def preparar_datos_desde_sistema_actual(
     # 1. Calcular GE (maintenance_kcal)
     maintenance_kcal = calcular_ge_total(tmb, geaf, eta, gee_promedio_dia)
     
-    # 2. Estimar IR-SE si no lo tienes
-    if ir_se_score is None and calidad_suenyo is not None and nivel_estres is not None:
-        ir_se_score = estimar_ir_se_basico(calidad_suenyo, nivel_estres)
+    # 2. Estimar IR-SE si no lo tienes (CRÍTICO: garantizar que nunca sea None)
+    if ir_se_score is None:
+        if calidad_suenyo is not None and nivel_estres is not None:
+            ir_se_score = estimar_ir_se_basico(calidad_suenyo, nivel_estres)
+        else:
+            ir_se_score = 60.0  # Default: recuperación moderada si falta info de sueño/estrés
     
     # 3. Normalizar nivel entrenamiento
     nivel_map = {

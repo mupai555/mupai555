@@ -141,6 +141,12 @@ def interpolar_deficit(bf_operational: float, sexo: str) -> float:
     if bf_operational >= knots[-1][0]:
         return 50.0
     
+    # Validar bf_operational es número válido (CRÍTICO para evitar NaN)
+    if not isinstance(bf_operational, (int, float)):
+        raise ValueError(f"bf_operational debe ser número, recibido: {type(bf_operational).__name__}")
+    if bf_operational < 0 or bf_operational > 100:
+        raise ValueError(f"bf_operational debe estar 0-100%, recibido: {bf_operational}%")
+    
     # Interpolación lineal entre knots
     for i in range(len(knots) - 1):
         bf1, def1 = knots[i]
@@ -240,6 +246,8 @@ def calcular_kcal_bulk(
     """
     Calcula kcal para BULK con superávit según nivel de entrenamiento.
     
+    NOTA: Valida maintenance_kcal > 0 para evitar cálculos inválidos (CRÍTICO).
+    
     Rangos base:
         novato: 5-15%
         intermedio: 2-7%
@@ -253,6 +261,12 @@ def calcular_kcal_bulk(
     Returns:
         (kcal_avg_bulk, surplus_pct)
     """
+    # Validar maintenance_kcal (CRÍTICO: nunca debe ser 0 o negativo)
+    if not isinstance(maintenance_kcal, (int, float)):
+        raise ValueError(f"maintenance_kcal debe ser número, recibido: {type(maintenance_kcal).__name__}")
+    if maintenance_kcal <= 0:
+        raise ValueError(f"maintenance_kcal debe ser > 0, recibido: {maintenance_kcal}")
+    
     # Rangos por nivel
     rangos = {
         "novato": (5, 15),
@@ -308,9 +322,17 @@ def calcular_pbm(weight_kg: float, bf_operational: float, sexo: str) -> Tuple[fl
     Si BF ≤ umbral: PBM = peso total
     Si BF > umbral: PBM = FFM / (1 - umbral)
     
+    NOTA: Valida weight_kg > 0 para evitar FFM inválido (CRÍTICO).
+    
     Returns:
         (pbm_kg, base_usada)
     """
+    # Validar weight_kg (CRÍTICO: nunca debe ser ≤ 0)
+    if not isinstance(weight_kg, (int, float)):
+        raise ValueError(f"weight_kg debe ser número, recibido: {type(weight_kg).__name__}")
+    if weight_kg <= 0:
+        raise ValueError(f"weight_kg debe ser > 0, recibido: {weight_kg}")
+    
     bf_decimal = bf_operational / 100
     ffm = weight_kg * (1 - bf_decimal)
     

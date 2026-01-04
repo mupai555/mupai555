@@ -10071,18 +10071,24 @@ except (TypeError, ValueError):
 if not nivel_estres_valor or not isinstance(nivel_estres_valor, str):
     nivel_estres_valor = 'moderado'
 
-# Calcular plan completo con nueva lógica
+# Calcular plan completo con nueva lógica (CRÍTICO: validar tipos de variables locales)
+geaf_usado = geaf if 'geaf' in locals() and isinstance(geaf, (int, float)) and geaf > 0 else 1.55
+eta_usado = eta if 'eta' in locals() and isinstance(eta, (int, float)) and eta > 0 else 1.10
+gee_usado = gee_prom_dia if 'gee_prom_dia' in locals() and isinstance(gee_prom_dia, (int, float)) and gee_prom_dia >= 0 else 0
+nivel_entrena_usado = nivel_entrena if 'nivel_entrena' in locals() and isinstance(nivel_entrena, str) else 'intermedio'
+dias_entrena_usado = dias_entrenamiento if 'dias_entrenamiento' in locals() and isinstance(dias_entrenamiento, int) and dias_entrenamiento > 0 else 4
+
 plan_nuevo = calcular_plan_con_sistema_actual(
     peso=peso,
     grasa_corregida=grasa_corregida,
     sexo=sexo,
     mlg=mlg,
     tmb=tmb,
-    geaf=geaf if 'geaf' in locals() else 1.55,
-    eta=eta if 'eta' in locals() else 1.10,
-    gee_promedio_dia=gee_prom_dia if 'gee_prom_dia' in locals() else 0,
-    nivel_entrenamiento=nivel_entrena if 'nivel_entrena' in locals() else 'intermedio',
-    dias_fuerza=dias_entrenamiento if 'dias_entrenamiento' in locals() else 4,
+    geaf=geaf_usado,
+    eta=eta_usado,
+    gee_promedio_dia=gee_usado,
+    nivel_entrenamiento=nivel_entrena_usado,
+    dias_fuerza=dias_entrena_usado,
     calidad_suenyo=calidad_suenyo_valor,
     nivel_estres=nivel_estres_valor,
     activar_ciclaje_4_3=True
