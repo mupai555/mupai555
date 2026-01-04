@@ -10147,6 +10147,20 @@ print(f"   • Categoría: {categoria_bf}")
 print(f"   • Déficit: {deficit_pct_aplicado:.1f}%")
 print(f"   • Ciclaje: {'Sí' if tiene_ciclaje else 'No'}")
 
+# Definir ffmi_para_email con valor por defecto (CRÍTICO para prevenir NameError)
+if 'ffmi_para_email' not in locals():
+    ffmi_para_email = calcular_ffmi(mlg, estatura) if mlg > 0 and estatura > 0 else None
+
+# Definir otras variables de email con defaults (CRÍTICO)
+if 'masa_muscular_aparato' not in locals():
+    masa_muscular_aparato = st.session_state.get('masa_muscular', 0)
+
+if 'masa_muscular_estimada_email' not in locals():
+    masa_muscular_estimada_email = estimar_masa_muscular_desde_mlg(mlg, sexo) if mlg > 0 else None
+
+if 'wthr' not in locals():
+    wthr = circunferencia_cintura / estatura if 'circunferencia_cintura' in locals() and circunferencia_cintura and estatura > 0 else None
+
 # ==================== EMAIL: COMPARATIVA DE PLANES ====================
 tabla_resumen += f"""
 
