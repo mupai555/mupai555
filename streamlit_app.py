@@ -10092,6 +10092,7 @@ if NUEVA_LOGICA_DISPONIBLE:
         plan_tradicional_calorias = macros_fase['kcal']
         base_proteina_nombre_email = macros_fase.get('base_proteina', 'pbm_ajustado')
         deficit_pct_aplicado = macros_fase.get('deficit_pct', 30)
+        deficit_warning = macros_fase.get('warning', '')
         
         # PBM si está disponible
         pbm_kg = plan_nuevo.get('pbm', mlg)
@@ -10180,13 +10181,22 @@ SECCIÓN 6: PLAN NUTRICIONAL
 
 # Agregar información de nueva lógica si está disponible
 if USANDO_NUEVA_LOGICA and categoria_bf:
+    deficit_info = f"{deficit_pct_aplicado:.1f}% (interpolado según BF"
+    if deficit_warning:
+        deficit_info += f" + guardrails aplicados)"
+    else:
+        deficit_info += ")"
+    
     tabla_resumen += f"""
    
    📊 ANÁLISIS DE COMPOSICIÓN CORPORAL (Nueva Metodología):
    • BF Operacional: {bf_operacional:.1f}%
    • Categoría: {categoria_bf_cliente} ({categoria_bf})
    • Fases disponibles: {', '.join(fases_disponibles).upper()}
-   • Déficit aplicado: {deficit_pct_aplicado:.1f}% (interpolado según BF)"""
+   • Déficit aplicado: {deficit_info}"""
+    
+    if deficit_warning:
+        tabla_resumen += f"\n   ⚠️ {deficit_warning}"
 
 # Título de sección según metodología
 titulo_plan = "PLAN CON NUEVA METODOLOGÍA" if USANDO_NUEVA_LOGICA else "PLAN TRADICIONAL (Déficit/Superávit Moderado)"
