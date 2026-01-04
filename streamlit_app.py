@@ -6454,8 +6454,7 @@ def formulario_metas_personales():
             "Resistencia a la insulina",
             "Enfermedad cardiovascular",
             "Embarazo",
-            "Lactancia",
-            "Ninguna de las anteriores"
+            "Lactancia"
         ]
         
         condiciones_seleccionadas = []
@@ -6464,6 +6463,12 @@ def formulario_metas_personales():
             with cols_medicas[idx % 3]:
                 if st.checkbox(opcion, key=f"cond_med_{idx}"):
                     condiciones_seleccionadas.append(opcion)
+        
+        # Opción "Ninguno" al final
+        st.markdown("---")
+        with st.columns(3)[0]:
+            if st.checkbox("Ninguna de las anteriores", key="cond_med_ninguna"):
+                condiciones_seleccionadas.append("Ninguna de las anteriores")
         
         condiciones_otras = st.text_input(
             "¿Otra condición médica o fisiológica no listada?",
@@ -6496,8 +6501,7 @@ def formulario_metas_personales():
             "Lesión de tobillo/pie",
             "Lesión de cadera",
             "Hernia discal",
-            "Escoliosis o desviaciones posturales",
-            "Ninguna lesión o limitación"
+            "Escoliosis o desviaciones posturales"
         ]
         
         lesiones_seleccionadas = []
@@ -6506,6 +6510,12 @@ def formulario_metas_personales():
             with cols_lesiones[idx % 3]:
                 if st.checkbox(opcion, key=f"lesion_{idx}"):
                     lesiones_seleccionadas.append(opcion)
+        
+        # Opción "Ninguno" al final
+        st.markdown("---")
+        with st.columns(3)[0]:
+            if st.checkbox("Ninguna lesión o limitación", key="lesion_ninguna"):
+                lesiones_seleccionadas.append("Ninguna lesión o limitación")
         
         lesiones_otras = st.text_input(
             "¿Otra lesión o limitación no listada?",
@@ -6535,10 +6545,10 @@ def formulario_metas_personales():
                 if st.checkbox(grupo, key=f"facilidad_{idx}"):
                     facilidad_seleccionada.append(grupo)
         
-        # Opción adicional
-        with cols_facilidad[0]:
-            if st.checkbox("Ninguno en particular / No he notado diferencias", key="facilidad_ninguno"):
-                facilidad_seleccionada.append("Ninguno en particular")
+        # Opción adicional al final
+        st.markdown("---")
+        if st.checkbox("Ninguno en particular / No he notado diferencias", key="facilidad_ninguno"):
+            facilidad_seleccionada.append("Ninguno en particular")
         
         st.session_state.metas_facilidad_muscular = facilidad_seleccionada
         
@@ -6560,10 +6570,10 @@ def formulario_metas_personales():
                 if st.checkbox(grupo, key=f"dificultad_{idx}"):
                     dificultad_seleccionada.append(grupo)
         
-        # Opción adicional
-        with cols_dificultad[0]:
-            if st.checkbox("Ninguno en particular / Todos se desarrollan similar", key="dificultad_ninguno"):
-                dificultad_seleccionada.append("Ninguno en particular")
+        # Opción adicional al final
+        st.markdown("---")
+        if st.checkbox("Ninguno en particular / Todos se desarrollan similar", key="dificultad_ninguno"):
+            dificultad_seleccionada.append("Ninguno en particular")
         
         st.session_state.metas_dificultad_muscular = dificultad_seleccionada
         
@@ -6585,10 +6595,10 @@ def formulario_metas_personales():
                 if st.checkbox(grupo, key=f"prioridad_{idx}"):
                     prioridades_seleccionada.append(grupo)
         
-        # Opción adicional
-        with cols_prioridades[0]:
-            if st.checkbox("Desarrollo equilibrado (sin prioridades específicas)", key="prioridad_equilibrado"):
-                prioridades_seleccionada.append("Desarrollo equilibrado")
+        # Opción adicional al final
+        st.markdown("---")
+        if st.checkbox("Desarrollo equilibrado (sin prioridades específicas)", key="prioridad_equilibrado"):
+            prioridades_seleccionada.append("Desarrollo equilibrado")
         
         st.session_state.metas_prioridades_muscular = prioridades_seleccionada
         
@@ -6610,10 +6620,10 @@ def formulario_metas_personales():
                 if st.checkbox(grupo, key=f"limitacion_{idx}"):
                     limitacion_seleccionada.append(grupo)
         
-        # Opción adicional
-        with cols_limitacion[0]:
-            if st.checkbox("Ninguno (quiero desarrollar todos por igual)", key="limitacion_ninguno"):
-                limitacion_seleccionada.append("Ninguno")
+        # Opción adicional al final
+        st.markdown("---")
+        if st.checkbox("Ninguno (quiero desarrollar todos por igual)", key="limitacion_ninguno"):
+            limitacion_seleccionada.append("Ninguno")
         
         st.session_state.metas_limitacion_muscular = limitacion_seleccionada
         
