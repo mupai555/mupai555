@@ -9126,10 +9126,13 @@ if USER_VIEW:
             st.success(f"**Objetivo seleccionado:** {fase}")
         
         else:
-            # Usar lógica automática para usuarios fuera del rango óptimo
-            fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
-
-        fbeo = 1 + porcentaje / 100  # Cambio de signo para reflejar nueva convención
+            # ⚠️ NOTA: La lógica automática se calcula con nueva lógica (FLUJO C/D)
+            # No se usa FLUJO B para emails. Estos valores son solo para UI display.
+            fase = "Déficit calculado por nueva lógica"  # Fallback
+            porcentaje = 0  # Se sobrescribe por guardrails en FLUJO D
+            
+        # ⚠️ NOTA: fbeo se calcula pero NO se usa en emails (emails usan ingesta_calorica_capeada)
+        fbeo = 1 + porcentaje / 100  # Solo para UI display
 
         # Perfil del usuario
         st.markdown("### 📋 Tu perfil nutricional")
@@ -9157,7 +9160,10 @@ if USER_VIEW:
 
         # Cálculo del gasto energético
         GE = tmb * geaf * eta + gee_prom_dia
-        ingesta_calorica_tradicional = GE * fbeo
+        
+        # ⚠️ NOTA: ingesta_calorica_tradicional es SOLO para UI display
+        # EMAILS usan ingesta_calorica_capeada (calculada con NUEVA LÓGICA + GUARDRAILS)
+        ingesta_calorica_tradicional = GE * fbeo  # Fallback para UI si SHOW_TECH_DETAILS=True
 
         # COMPARATIVA PSMF si aplica
         # UI Display: Only show plan selection if MOSTRAR_PSMF_AL_USUARIO is True
@@ -9419,18 +9425,24 @@ else:
         en_rango_optimo = True
     
     # Use automatic phase determination (no user selection when USER_VIEW=False)
+    # ⚠️ NOTA: Estos valores son SOLO fallback. EMAILS usan NUEVA LÓGICA + GUARDRAILS
     fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
     fbeo = 1 + porcentaje / 100
     
     # Calculate energy expenditure
     GE = tmb * geaf * eta + gee_prom_dia
+    # ⚠️ NOTA: ingesta_calorica_tradicional NO se usa en emails (solo fallback)
     ingesta_calorica_tradicional = GE * fbeo
+    
+    # ⚠️ NOTA: Los siguientes cálculos de macros tradicionales NO se usan en emails
+    # (emails usan plan_nuevo con nueva lógica + guardrails)
+    # Se mantienen solo como fallback/legacy
     
     # Default plan selection
     plan_elegido = "Tradicional"
     grasa_psmf_seleccionada = 40.0
     
-    # Calculate macros for traditional plan using centralized function
+    # Calculate macros for traditional plan using centralized function (NOT USED IN EMAILS)
     ingesta_calorica = ingesta_calorica_tradicional
     macros_tradicional = calcular_macros_tradicional(
         ingesta_calorica_tradicional, tmb, sexo, grasa_corregida, peso, mlg
