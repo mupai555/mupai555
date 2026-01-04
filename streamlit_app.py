@@ -4395,10 +4395,10 @@ administracion@muscleupgym.fitness
 </html>
 """
         
-        # Adjuntar versión HTML (preferida)
-        msg.attach(MIMEText(contenido_html, 'html', 'utf-8'))
-        # Adjuntar versión texto plano como fallback
+        # IMPORTANTE: Para Gmail, el orden correcto es texto plano PRIMERO, luego HTML
+        # Gmail renderiza el último formato que entiende (HTML), pero necesita ambos en orden correcto
         msg.attach(MIMEText(contenido, 'plain', 'utf-8'))
+        msg.attach(MIMEText(contenido_html, 'html', 'utf-8'))
         
         # Adjuntar fotos de progreso si están disponibles
         if progress_photos:
@@ -10583,7 +10583,7 @@ if not st.session_state.get("correo_enviado", False):
                 # Definir variables opcionales para evitar errores de Pylance
                 wthr = None
                 GEAF = None
-                proyecciones = None
+                proyecciones = []  # Inicializar como lista vacía en lugar de None
                 
                 # Calcular wthr si tenemos circunferencia_cintura
                 if 'circunferencia_cintura' in locals() and circunferencia_cintura and circunferencia_cintura > 0 and estatura > 0:
@@ -10731,9 +10731,9 @@ if not st.session_state.get("correo_enviado", False):
                             'tier': psmf_recs.get('tier', None) if 'psmf_recs' in locals() else None
                         },
                         'proyecciones': {
-                            '1_mes': proyecciones[0] if 'proyecciones' in locals() and len(proyecciones) > 0 else None,
-                            '2_meses': proyecciones[1] if 'proyecciones' in locals() and len(proyecciones) > 1 else None,
-                            '3_meses': proyecciones[2] if 'proyecciones' in locals() and len(proyecciones) > 2 else None
+                            '1_mes': proyecciones[0] if 'proyecciones' in locals() and proyecciones and isinstance(proyecciones, list) and len(proyecciones) > 0 else None,
+                            '2_meses': proyecciones[1] if 'proyecciones' in locals() and proyecciones and isinstance(proyecciones, list) and len(proyecciones) > 1 else None,
+                            '3_meses': proyecciones[2] if 'proyecciones' in locals() and proyecciones and isinstance(proyecciones, list) and len(proyecciones) > 2 else None
                         },
                         'recuperacion': {
                             'suenyo_estres_completado': st.session_state.get('suenyo_estres_completado', False),
@@ -10917,9 +10917,9 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                         'tier': psmf_recs.get('tier', None) if 'psmf_recs' in locals() else None
                     },
                     'proyecciones': {
-                        '1_mes': proyecciones[0] if 'proyecciones' in locals() and len(proyecciones) > 0 else None,
-                        '2_meses': proyecciones[1] if 'proyecciones' in locals() and len(proyecciones) > 1 else None,
-                        '3_meses': proyecciones[2] if 'proyecciones' in locals() and len(proyecciones) > 2 else None
+                        '1_mes': proyecciones[0] if 'proyecciones' in locals() and proyecciones and isinstance(proyecciones, list) and len(proyecciones) > 0 else None,
+                        '2_meses': proyecciones[1] if 'proyecciones' in locals() and proyecciones and isinstance(proyecciones, list) and len(proyecciones) > 1 else None,
+                        '3_meses': proyecciones[2] if 'proyecciones' in locals() and proyecciones and isinstance(proyecciones, list) and len(proyecciones) > 2 else None
                     },
                     'recuperacion': {
                         'suenyo_estres_completado': st.session_state.get('suenyo_estres_completado', False),
