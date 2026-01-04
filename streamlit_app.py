@@ -10214,15 +10214,15 @@ if tiene_ciclaje:
    ├─────────────────────────────────────────────────────────────────┤
    │ 📉 DÍAS LOW ({ciclaje_low_days} días/semana - Entrenamiento Fuerza):          │
    │   • Calorías: {ciclaje_low_kcal:.0f} kcal/día                                  │
-   │   • Proteína: {low_macros.get('protein', 0):.1f}g                                              │
-   │   • Grasas: {low_macros.get('fat', 0):.1f}g                                                │
-   │   • Carbos: {low_macros.get('carb', 0):.1f}g (REDUCIDOS para oxidación grasa)          │
+   │   • Proteína: {low_macros.get('protein_g', 0):.1f}g                                              │
+   │   • Grasas: {low_macros.get('fat_g', 0):.1f}g                                                │
+   │   • Carbos: {low_macros.get('carb_g', 0):.1f}g (REDUCIDOS para oxidación grasa)          │
    │                                                                │
    │ 📈 DÍAS HIGH ({ciclaje_high_days} días/semana - Descanso/Cardio):               │
    │   • Calorías: {ciclaje_high_kcal:.0f} kcal/día                                 │
-   │   • Proteína: {high_macros.get('protein', 0):.1f}g (constante)                                 │
-   │   • Grasas: {high_macros.get('fat', 0):.1f}g (constante)                                   │
-   │   • Carbos: {high_macros.get('carb', 0):.1f}g (AUMENTADOS +{high_macros.get('carb', 0) - low_macros.get('carb', 0):.0f}g)                 │
+   │   • Proteína: {high_macros.get('protein_g', 0):.1f}g (constante)                                 │
+   │   • Grasas: {high_macros.get('fat_g', 0):.1f}g (constante)                                   │
+   │   • Carbos: {high_macros.get('carb_g', 0):.1f}g (AUMENTADOS +{high_macros.get('carb_g', 0) - low_macros.get('carb_g', 0):.0f}g)                 │
    ├─────────────────────────────────────────────────────────────────┤
    │ 📊 PROMEDIO SEMANAL: {plan_tradicional_calorias:.0f} kcal/día                           │
    │                                                                │
@@ -10744,14 +10744,14 @@ if not st.session_state.get("correo_enviado", False):
                             'low_days': int(ciclaje_low_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
                             'high_days': int(ciclaje_high_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
                             'low_macros': {
-                                'protein': float(low_macros.get('protein', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
-                                'fat': float(low_macros.get('fat', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
-                                'carb': float(low_macros.get('carb', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None
+                                'protein': float(low_macros.get('protein_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
+                                'fat': float(low_macros.get('fat_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
+                                'carb': float(low_macros.get('carb_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None
                             } if 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
                             'high_macros': {
-                                'protein': float(high_macros.get('protein', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
-                                'fat': float(high_macros.get('fat', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
-                                'carb': float(high_macros.get('carb', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None
+                                'protein': float(high_macros.get('protein_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
+                                'fat': float(high_macros.get('fat_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
+                                'carb': float(high_macros.get('carb_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None
                             } if 'tiene_ciclaje' in locals() and tiene_ciclaje else None
                         },
                         'plan_psmf': {
@@ -10940,14 +10940,14 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                         'low_days': int(ciclaje_low_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
                         'high_days': int(ciclaje_high_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
                         'low_macros': {
-                            'protein': float(low_macros.get('protein', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
-                            'fat': float(low_macros.get('fat', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
-                            'carb': float(low_macros.get('carb', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None
+                            'protein': float(low_macros.get('protein_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
+                            'fat': float(low_macros.get('fat_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None,
+                            'carb': float(low_macros.get('carb_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'low_macros' in locals() else None
                         } if 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
                         'high_macros': {
-                            'protein': float(high_macros.get('protein', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
-                            'fat': float(high_macros.get('fat', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
-                            'carb': float(high_macros.get('carb', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None
+                            'protein': float(high_macros.get('protein_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
+                            'fat': float(high_macros.get('fat_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None,
+                            'carb': float(high_macros.get('carb_g', 0)) if 'tiene_ciclaje' in locals() and tiene_ciclaje and 'high_macros' in locals() else None
                         } if 'tiene_ciclaje' in locals() and tiene_ciclaje else None
                     },
                     'plan_psmf': {
