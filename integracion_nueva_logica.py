@@ -124,12 +124,22 @@ def estimar_ir_se_basico(calidad_suenyo: float, nivel_estres: str) -> float:
         <50: Recuperación baja
     
     Args:
-        calidad_suenyo: Horas de sueño promedio
+        calidad_suenyo: Horas de sueño promedio (debe ser numérico)
         nivel_estres: "bajo", "moderado", "alto"
     
     Returns:
         IR-SE score (0-100)
     """
+    # Validar calidad_suenyo es numérico
+    try:
+        calidad_suenyo = float(calidad_suenyo) if calidad_suenyo is not None else 7.0
+    except (TypeError, ValueError):
+        calidad_suenyo = 7.0  # Default si hay error de conversión
+    
+    # Validar nivel_estres
+    if not nivel_estres or not isinstance(nivel_estres, str):
+        nivel_estres = "moderado"  # Default
+    
     # Base por sueño (0-60 puntos)
     if calidad_suenyo >= 8:
         puntos_suenyo = 60

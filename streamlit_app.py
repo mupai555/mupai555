@@ -10057,6 +10057,20 @@ if not NUEVA_LOGICA_DISPONIBLE:
     st.error("❌ ERROR CRÍTICO: Nueva lógica de macros no disponible. Contacte soporte técnico.")
     st.stop()
 
+# Extraer datos de sueño/estrés con validación
+suenyo_estres_data = st.session_state.get('suenyo_estres_data', {})
+calidad_suenyo_valor = suenyo_estres_data.get('horas_sueno', 7.0)
+nivel_estres_valor = suenyo_estres_data.get('nivel_estres_percibido', 'moderado')
+
+# Validar tipos
+try:
+    calidad_suenyo_valor = float(calidad_suenyo_valor) if calidad_suenyo_valor is not None else 7.0
+except (TypeError, ValueError):
+    calidad_suenyo_valor = 7.0
+
+if not nivel_estres_valor or not isinstance(nivel_estres_valor, str):
+    nivel_estres_valor = 'moderado'
+
 # Calcular plan completo con nueva lógica
 plan_nuevo = calcular_plan_con_sistema_actual(
     peso=peso,
@@ -10069,8 +10083,8 @@ plan_nuevo = calcular_plan_con_sistema_actual(
     gee_promedio_dia=gee_prom_dia if 'gee_prom_dia' in locals() else 0,
     nivel_entrenamiento=nivel_entrena if 'nivel_entrena' in locals() else 'intermedio',
     dias_fuerza=dias_entrenamiento if 'dias_entrenamiento' in locals() else 4,
-    calidad_suenyo=st.session_state.get('suenyo_estres_data', {}).get('horas_sueno', 7.0),
-    nivel_estres=st.session_state.get('suenyo_estres_data', {}).get('nivel_estres_percibido', 'moderado'),
+    calidad_suenyo=calidad_suenyo_valor,
+    nivel_estres=nivel_estres_valor,
     activar_ciclaje_4_3=True
 )
 
