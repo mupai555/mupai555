@@ -14,6 +14,43 @@ from nueva_logica_macros import (
     formatear_resultado_fase
 )
 
+def extraer_horas_sueno_de_rango(calidad_suenyo_str: str) -> float:
+    """
+    Convierte un rango de horas de sueño (string) a número representativo.
+    
+    Ejemplos:
+        "≥8 horas" → 8.5
+        "7-7.9 horas" → 7.45
+        "6-6.9 horas" → 6.45
+        "5-5.9 horas" → 5.45 ← Caso de Erick
+        "<5 horas" → 4.5
+    
+    Args:
+        calidad_suenyo_str: String del formulario
+    
+    Returns:
+        float representativo en el rango
+    """
+    if isinstance(calidad_suenyo_str, (int, float)):
+        return float(calidad_suenyo_str)  # Ya es número
+    
+    if not isinstance(calidad_suenyo_str, str):
+        return 7.0  # Default
+    
+    lower = calidad_suenyo_str.lower()
+    
+    if "≥8" in lower or ">8" in lower or "8+" in lower:
+        return 8.5
+    elif "7-7.9" in lower or "7-8" in lower:
+        return 7.45
+    elif "6-6.9" in lower or "6-7" in lower:
+        return 6.45
+    elif "5-5.9" in lower or "5-6" in lower:
+        return 5.45  # ← Caso Erick
+    elif "<5" in lower:
+        return 4.5
+    else:
+        return 7.0  # Default seguro
 
 # ============================================================================
 # FUNCIONES DE INTEGRACIÓN CON SISTEMA ACTUAL
@@ -79,11 +116,17 @@ def preparar_datos_desde_sistema_actual(
     maintenance_kcal = calcular_ge_total(tmb, geaf, eta, gee_promedio_dia)
     
     # 2. Estimar IR-SE si no lo tienes (CRÍTICO: garantizar que nunca sea None)
+    # IMPORTANTE: Convertir calidad_suenyo de STRING a número primero
+    calidad_suenyo_numerica = extraer_horas_sueno_de_rango(calidad_suenyo)
+    
     if ir_se_score is None:
-        if calidad_suenyo is not None and nivel_estres is not None:
-            ir_se_score = estimar_ir_se_basico(calidad_suenyo, nivel_estres)
+        if calidad_suenyo_numerica is not None and nivel_estres is not None:
+            ir_se_score = estimar_ir_se_basico(calidad_suenyo_numerica, nivel_estres)
         else:
             ir_se_score = 60.0  # Default: recuperación moderada si falta info de sueño/estrés
+    
+    # Retornar el valor numérico de sueño (no el string del formulario)
+    sleep_hours_numerico = calidad_suenyo_numerica
     
     # 3. Normalizar nivel entrenamiento
     nivel_map = {
@@ -103,7 +146,7 @@ def preparar_datos_desde_sistema_actual(
         'maintenance_kcal': maintenance_kcal,
         'training_level': training_level,
         'ir_se_score': ir_se_score,
-        'sleep_hours': calidad_suenyo,
+        'sleep_hours': sleep_hours_numerico,  # Usar el valor numérico, NO el string del formulario
         
         # Metadata para tracking
         '_metadata': {
