@@ -10108,7 +10108,11 @@ ir_se_valor = suenyo_estres_data.get('ir_se', 60.0)  # IR-SE para guardrails
 
 # Validar tipos
 try:
-    calidad_suenyo_valor = float(calidad_suenyo_valor) if calidad_suenyo_valor is not None else 7.0
+    # Si es un rango tipo "5-5.9", extraer el valor mínimo
+    if isinstance(calidad_suenyo_valor, str) and '-' in calidad_suenyo_valor:
+        calidad_suenyo_valor = float(calidad_suenyo_valor.split('-')[0])
+    else:
+        calidad_suenyo_valor = float(calidad_suenyo_valor) if calidad_suenyo_valor is not None else 7.0
 except (TypeError, ValueError):
     calidad_suenyo_valor = 7.0
 
