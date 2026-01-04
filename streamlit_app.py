@@ -13,6 +13,24 @@ import re
 import random
 import string
 
+# Importar nueva lógica de cálculo de macros
+try:
+    from nueva_logica_macros import (
+        calcular_bf_operacional,
+        clasificar_bf,
+        obtener_nombre_cliente,
+        calcular_plan_nutricional_completo
+    )
+    from integracion_nueva_logica import (
+        calcular_plan_con_sistema_actual,
+        formatear_plan_para_ui,
+        estimar_ir_se_basico
+    )
+    NUEVA_LOGICA_DISPONIBLE = True
+except ImportError:
+    NUEVA_LOGICA_DISPONIBLE = False
+    print("⚠️ Nueva lógica de macros no disponible. Usando lógica tradicional.")
+
 # ==================== CONSTANTES ====================
 
 # Global flag to control visibility of technical details in UI
@@ -10032,28 +10050,104 @@ SECCIÓN 5: GASTO ENERGÉTICO (MOTOR METABÓLICO)
    ║  ══► GE TOTAL: {GE:.0f} kcal/día                               ║
    ╚════════════════════════════════════════════════════════════════╝"""
 
-# Calcular macros del plan tradicional para el resumen del email usando función centralizada
-macros_tradicional_email = calcular_macros_tradicional(
-    plan_tradicional_calorias, tmb, sexo, grasa_corregida, peso, mlg
-)
+# ==================== CALCULAR PLAN NUTRICIONAL CON NUEVA LÓGICA ====================
 
-# Extraer valores
-proteina_g_tradicional = macros_tradicional_email['proteina_g']
-proteina_kcal_tradicional = macros_tradicional_email['proteina_kcal']
-grasa_g_tradicional = macros_tradicional_email['grasa_g']
-grasa_kcal_tradicional = macros_tradicional_email['grasa_kcal']
-carbo_g_tradicional = macros_tradicional_email['carbo_g']
-carbo_kcal_tradicional = macros_tradicional_email['carbo_kcal']
-base_proteina_nombre_email = macros_tradicional_email['base_proteina']
-factor_proteina_tradicional_email = macros_tradicional_email['factor_proteina']
+# Intentar usar nueva lógica si está disponible
+if NUEVA_LOGICA_DISPONIBLE:
+    try:
+        # Calcular plan completo con nueva lógica
+        plan_nuevo = calcular_plan_con_sistema_actual(
+            peso=peso,
+            grasa_corregida=grasa_corregida,
+            sexo=sexo,
+            mlg=mlg,
+            tmb=tmb,
+            geaf=geaf if 'geaf' in locals() else 1.55,
+            eta=eta if 'eta' in locals() else 1.10,
+            gee_promedio_dia=gee_prom_dia if 'gee_prom_dia' in locals() else 0,
+            nivel_entrenamiento=nivel_entrena if 'nivel_entrena' in locals() else 'intermedio',
+            dias_fuerza=dias_entrenamiento if 'dias_entrenamiento' in locals() else 4,
+            calidad_suenyo=st.session_state.get('suenyo_estres_data', {}).get('horas_sueno', 7.0),
+            nivel_estres=st.session_state.get('suenyo_estres_data', {}).get('nivel_estres_percibido', 'moderado'),
+            activar_ciclaje_4_3=True
+        )
+        
+        # Extraer datos del plan nuevo
+        bf_operacional = plan_nuevo['bf_operacional']
+        categoria_bf = plan_nuevo['categoria_bf']
+        categoria_bf_cliente = obtener_nombre_cliente(categoria_bf, sexo)
+        fases_disponibles = plan_nuevo['fases_disponibles']
+        
+        # Usar fase CUT por defecto para el email (o la primera disponible)
+        fase_activa = 'cut' if 'cut' in plan_nuevo['fases'] else list(plan_nuevo['fases'].keys())[0]
+        macros_fase = plan_nuevo['fases'][fase_activa]
+        
+        # Extraer macros de la nueva lógica
+        proteina_g_tradicional = macros_fase['macros']['protein_g']
+        proteina_kcal_tradicional = proteina_g_tradicional * 4
+        grasa_g_tradicional = macros_fase['macros']['fat_g']
+        grasa_kcal_tradicional = grasa_g_tradicional * 9
+        carbo_g_tradicional = macros_fase['macros']['carb_g']
+        carbo_kcal_tradicional = carbo_g_tradicional * 4
+        plan_tradicional_calorias = macros_fase['kcal']
+        base_proteina_nombre_email = macros_fase['base_proteina']
+        factor_proteina_tradicional_email = macros_fase['protein_mult']
+        deficit_pct_aplicado = macros_fase.get('deficit_pct', 0)
+        
+        # Ciclaje si está disponible
+        tiene_ciclaje = 'ciclaje' in plan_nuevo
+        if tiene_ciclaje:
+            ciclaje_low_kcal = plan_nuevo['ciclaje']['low_day_kcal']
+            ciclaje_high_kcal = plan_nuevo['ciclaje']['high_day_kcal']
+            ciclaje_low_days = plan_nuevo['ciclaje']['low_days']
+            ciclaje_high_days = plan_nuevo['ciclaje']['high_days']
+        
+        # Nota sobre base de proteína
+        usar_mlg_para_proteina_email = (base_proteina_nombre_email.upper() == "PBM_AJUSTADO")
+        base_proteina_kg_email = plan_nuevo.get('pbm', mlg if usar_mlg_para_proteina_email else peso)
+        
+        nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
+        if usar_mlg_para_proteina_email:
+            nota_mlg_email += "\n     ℹ️ Usa PBM (Protein Base Mass) para evitar inflar proteína en alta adiposidad"
+        
+        USANDO_NUEVA_LOGICA = True
+        
+    except Exception as e:
+        print(f"⚠️ Error al usar nueva lógica: {e}. Fallback a lógica tradicional.")
+        USANDO_NUEVA_LOGICA = False
+else:
+    USANDO_NUEVA_LOGICA = False
 
-# Calcular base proteína kg para la nota
-usar_mlg_para_proteina_email = (base_proteina_nombre_email == "MLG")
-base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
+# Fallback a lógica tradicional si nueva lógica no disponible o falló
+if not USANDO_NUEVA_LOGICA:
+    # Calcular macros del plan tradicional para el resumen del email usando función centralizada
+    macros_tradicional_email = calcular_macros_tradicional(
+        plan_tradicional_calorias, tmb, sexo, grasa_corregida, peso, mlg
+    )
 
-nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
-if usar_mlg_para_proteina_email:
-    nota_mlg_email += "\n     ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
+    # Extraer valores
+    proteina_g_tradicional = macros_tradicional_email['proteina_g']
+    proteina_kcal_tradicional = macros_tradicional_email['proteina_kcal']
+    grasa_g_tradicional = macros_tradicional_email['grasa_g']
+    grasa_kcal_tradicional = macros_tradicional_email['grasa_kcal']
+    carbo_g_tradicional = macros_tradicional_email['carbo_g']
+    carbo_kcal_tradicional = macros_tradicional_email['carbo_kcal']
+    base_proteina_nombre_email = macros_tradicional_email['base_proteina']
+    factor_proteina_tradicional_email = macros_tradicional_email['factor_proteina']
+
+    # Calcular base proteína kg para la nota
+    usar_mlg_para_proteina_email = (base_proteina_nombre_email == "MLG")
+    base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
+
+    nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
+    if usar_mlg_para_proteina_email:
+        nota_mlg_email += "\n     ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
+    
+    # Variables para compatibilidad
+    categoria_bf = None
+    categoria_bf_cliente = None
+    deficit_pct_aplicado = None
+    tiene_ciclaje = False
 
 # ==================== EMAIL: COMPARATIVA DE PLANES ====================
 tabla_resumen += f"""
@@ -10068,7 +10162,19 @@ SECCIÓN 6: PLAN NUTRICIONAL
    • Fase recomendada: {fase}
    • Factor FBEO: {fbeo:.2f}
    • Ingesta calórica objetivo: {ingesta_calorica:.0f} kcal/día
-   • Ratio kcal/kg: {ratio_kcal_kg:.1f}
+   • Ratio kcal/kg: {ratio_kcal_kg:.1f}"""
+
+# Agregar información de nueva lógica si está disponible
+if USANDO_NUEVA_LOGICA and categoria_bf:
+    tabla_resumen += f"""
+   
+   📊 ANÁLISIS DE COMPOSICIÓN CORPORAL (Nueva Metodología):
+   • BF Operacional: {bf_operacional:.1f}%
+   • Categoría: {categoria_bf_cliente} ({categoria_bf})
+   • Fases disponibles: {', '.join(fases_disponibles).upper()}
+   • Déficit aplicado: {deficit_pct_aplicado:.1f}% (interpolado según BF)"""
+
+tabla_resumen += f"""
 
 📊 6.2 PLAN TRADICIONAL (Déficit/Superávit Moderado):
 
@@ -10084,6 +10190,25 @@ SECCIÓN 6: PLAN NUTRICIONAL
    │ • Sostenibilidad: ALTA                                         │
    │ • Cambio esperado: 0.3-0.7% peso corporal/semana               │
    │ • Duración: Indefinida con ajustes periódicos                  │
+   └─────────────────────────────────────────────────────────────────┘"""
+
+# Agregar ciclaje 4-3 si está disponible
+if USANDO_NUEVA_LOGICA and tiene_ciclaje:
+    tabla_resumen += f"""
+
+🔄 6.3 CICLAJE CALÓRICO 4-3 (Optimización Metabólica):
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ DÍAS BAJOS ({ciclaje_low_days} días/semana):                                       │
+   │ • Calorías: {ciclaje_low_kcal:.0f} kcal/día                                      │
+   │ • Propósito: Maximizar déficit, promover oxidación de grasa   │
+   │                                                                │
+   │ DÍAS ALTOS ({ciclaje_high_days} días/semana):                                       │
+   │ • Calorías: {ciclaje_high_kcal:.0f} kcal/día                                     │
+   │ • Propósito: Resíntesis glucógeno, soporte hormonal           │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ • Beneficios: Adherencia mejorada, minimiza adaptación        │
+   │ • Estrategia: Días bajos en descanso, altos en entrenamiento  │
    └─────────────────────────────────────────────────────────────────┘"""
 
 if plan_psmf_disponible:
@@ -10536,7 +10661,8 @@ if not st.session_state.get("correo_enviado", False):
                             'fecha_evaluacion': fecha_llenado,
                             'sistema': 'MUPAI v2.0',
                             'version': '2.0.0',
-                            'tipo_reporte': 'Evaluacion_Completa'
+                            'tipo_reporte': 'Evaluacion_Completa',
+                            'nueva_logica_activa': USANDO_NUEVA_LOGICA if 'USANDO_NUEVA_LOGICA' in locals() else False
                         },
                         'datos_personales': {
                             'nombre_cliente': nombre,
@@ -10556,6 +10682,10 @@ if not st.session_state.get("correo_enviado", False):
                             'circunferencia_cintura_cm': float(circunferencia_cintura) if 'circunferencia_cintura' in locals() and circunferencia_cintura else None,
                             'masa_muscular_omron_kg': float(masa_muscular_aparato) if masa_muscular_aparato > 0 else None,
                             'masa_muscular_estimada_kg': float(masa_muscular_estimada_email),
+                            # Datos de nueva lógica
+                            'bf_operacional': float(bf_operacional) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'bf_operacional' in locals() else None,
+                            'categoria_bf': categoria_bf if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'categoria_bf' in locals() else None,
+                            'categoria_bf_cliente': categoria_bf_cliente if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'categoria_bf_cliente' in locals() else None
                         },
                         'indices_corporales': {
                             'ffmi': float(ffmi_para_email) if ffmi_para_email else None,
@@ -10567,18 +10697,30 @@ if not st.session_state.get("correo_enviado", False):
                         'metabolismo': {
                             'tmb_kcal': float(tmb) if 'tmb' in locals() else None,
                             'ge_kcal': float(GE) if 'GE' in locals() else None,
-                            'geaf': float(geaf) if 'geaf' in locals() and geaf else None
+                            'geaf': float(geaf) if 'geaf' in locals() and geaf else None,
+                            'eta': float(eta) if 'eta' in locals() and eta else None,
+                            'gee_promedio_dia': float(gee_prom_dia) if 'gee_prom_dia' in locals() and gee_prom_dia else None
                         },
                         'macronutrientes_tradicionales': {
-                            'proteina_g': float(proteina_g) if 'proteina_g' in locals() else None,
-                            'proteina_kcal': float(proteina_kcal) if 'proteina_kcal' in locals() else None,
-                            'grasa_g': float(grasa_g) if 'grasa_g' in locals() else None,
-                            'grasa_kcal': float(grasa_kcal) if 'grasa_kcal' in locals() else None,
-                            'carbohidratos_g': float(carbo_g) if 'carbo_g' in locals() else None,
-                            'carbohidratos_kcal': float(carbo_kcal) if 'carbo_kcal' in locals() else None,
-                            'calorias_totales': float(ingesta_calorica) if 'ingesta_calorica' in locals() else None,
-                            'base_proteina': base_proteina_nombre if 'base_proteina_nombre' in locals() else None,
-                            'factor_proteina': float(factor_proteina) if 'factor_proteina' in locals() else None
+                            'proteina_g': float(proteina_g_tradicional) if 'proteina_g_tradicional' in locals() else None,
+                            'proteina_kcal': float(proteina_kcal_tradicional) if 'proteina_kcal_tradicional' in locals() else None,
+                            'grasa_g': float(grasa_g_tradicional) if 'grasa_g_tradicional' in locals() else None,
+                            'grasa_kcal': float(grasa_kcal_tradicional) if 'grasa_kcal_tradicional' in locals() else None,
+                            'carbohidratos_g': float(carbo_g_tradicional) if 'carbo_g_tradicional' in locals() else None,
+                            'carbohidratos_kcal': float(carbo_kcal_tradicional) if 'carbo_kcal_tradicional' in locals() else None,
+                            'calorias_totales': float(plan_tradicional_calorias) if 'plan_tradicional_calorias' in locals() else None,
+                            'base_proteina': base_proteina_nombre_email if 'base_proteina_nombre_email' in locals() else None,
+                            'factor_proteina': float(factor_proteina_tradicional_email) if 'factor_proteina_tradicional_email' in locals() else None,
+                            # Datos adicionales de nueva lógica
+                            'deficit_pct_aplicado': float(deficit_pct_aplicado) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'deficit_pct_aplicado' in locals() else None,
+                            'pbm_kg': float(base_proteina_kg_email) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'base_proteina_kg_email' in locals() else None
+                        },
+                        'ciclaje_4_3': {
+                            'disponible': tiene_ciclaje if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() else False,
+                            'low_day_kcal': float(ciclaje_low_kcal) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
+                            'high_day_kcal': float(ciclaje_high_kcal) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
+                            'low_days': int(ciclaje_low_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
+                            'high_days': int(ciclaje_high_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None
                         },
                         'plan_psmf': {
                             'aplicable': psmf_recs.get('psmf_aplicable', False) if 'psmf_recs' in locals() else False,
@@ -10705,7 +10847,8 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                         'fecha_evaluacion': fecha_llenado,
                         'sistema': 'MUPAI v2.0',
                         'version': '2.0.0',
-                        'tipo_reporte': 'Evaluacion_Completa_Reenvio'
+                        'tipo_reporte': 'Evaluacion_Completa_Reenvio',
+                        'nueva_logica_activa': USANDO_NUEVA_LOGICA if 'USANDO_NUEVA_LOGICA' in locals() else False
                     },
                     'datos_personales': {
                         'nombre_cliente': nombre,
@@ -10725,6 +10868,10 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                         'circunferencia_cintura_cm': float(circunferencia_cintura) if 'circunferencia_cintura' in locals() and circunferencia_cintura else None,
                         'masa_muscular_omron_kg': float(masa_muscular_aparato) if masa_muscular_aparato > 0 else None,
                         'masa_muscular_estimada_kg': float(masa_muscular_estimada_email),
+                        # Datos de nueva lógica
+                        'bf_operacional': float(bf_operacional) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'bf_operacional' in locals() else None,
+                        'categoria_bf': categoria_bf if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'categoria_bf' in locals() else None,
+                        'categoria_bf_cliente': categoria_bf_cliente if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'categoria_bf_cliente' in locals() else None
                     },
                     'indices_corporales': {
                         'ffmi': float(ffmi_para_email) if ffmi_para_email else None,
@@ -10736,18 +10883,30 @@ if st.button("📧 Reenviar Email", key="reenviar_email", disabled=button_reenvi
                     'metabolismo': {
                         'tmb_kcal': float(tmb) if 'tmb' in locals() else None,
                         'ge_kcal': float(GE) if 'GE' in locals() else None,
-                        'geaf': float(geaf) if 'geaf' in locals() and geaf else None
+                        'geaf': float(geaf) if 'geaf' in locals() and geaf else None,
+                        'eta': float(eta) if 'eta' in locals() and eta else None,
+                        'gee_promedio_dia': float(gee_prom_dia) if 'gee_prom_dia' in locals() and gee_prom_dia else None
                     },
                     'macronutrientes_tradicionales': {
-                        'proteina_g': float(proteina_g) if 'proteina_g' in locals() else None,
-                        'proteina_kcal': float(proteina_kcal) if 'proteina_kcal' in locals() else None,
-                        'grasa_g': float(grasa_g) if 'grasa_g' in locals() else None,
-                        'grasa_kcal': float(grasa_kcal) if 'grasa_kcal' in locals() else None,
-                        'carbohidratos_g': float(carbo_g) if 'carbo_g' in locals() else None,
-                        'carbohidratos_kcal': float(carbo_kcal) if 'carbo_kcal' in locals() else None,
-                        'calorias_totales': float(ingesta_calorica) if 'ingesta_calorica' in locals() else None,
-                        'base_proteina': base_proteina_nombre if 'base_proteina_nombre' in locals() else None,
-                        'factor_proteina': float(factor_proteina) if 'factor_proteina' in locals() else None
+                        'proteina_g': float(proteina_g_tradicional) if 'proteina_g_tradicional' in locals() else None,
+                        'proteina_kcal': float(proteina_kcal_tradicional) if 'proteina_kcal_tradicional' in locals() else None,
+                        'grasa_g': float(grasa_g_tradicional) if 'grasa_g_tradicional' in locals() else None,
+                        'grasa_kcal': float(grasa_kcal_tradicional) if 'grasa_kcal_tradicional' in locals() else None,
+                        'carbohidratos_g': float(carbo_g_tradicional) if 'carbo_g_tradicional' in locals() else None,
+                        'carbohidratos_kcal': float(carbo_kcal_tradicional) if 'carbo_kcal_tradicional' in locals() else None,
+                        'calorias_totales': float(plan_tradicional_calorias) if 'plan_tradicional_calorias' in locals() else None,
+                        'base_proteina': base_proteina_nombre_email if 'base_proteina_nombre_email' in locals() else None,
+                        'factor_proteina': float(factor_proteina_tradicional_email) if 'factor_proteina_tradicional_email' in locals() else None,
+                        # Datos adicionales de nueva lógica
+                        'deficit_pct_aplicado': float(deficit_pct_aplicado) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'deficit_pct_aplicado' in locals() else None,
+                        'pbm_kg': float(base_proteina_kg_email) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'base_proteina_kg_email' in locals() else None
+                    },
+                    'ciclaje_4_3': {
+                        'disponible': tiene_ciclaje if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() else False,
+                        'low_day_kcal': float(ciclaje_low_kcal) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
+                        'high_day_kcal': float(ciclaje_high_kcal) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
+                        'low_days': int(ciclaje_low_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None,
+                        'high_days': int(ciclaje_high_days) if 'USANDO_NUEVA_LOGICA' in locals() and USANDO_NUEVA_LOGICA and 'tiene_ciclaje' in locals() and tiene_ciclaje else None
                     },
                     'plan_psmf': {
                         'aplicable': psmf_recs.get('psmf_aplicable', False) if 'psmf_recs' in locals() else False,
