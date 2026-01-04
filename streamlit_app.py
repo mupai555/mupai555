@@ -10103,13 +10103,14 @@ if NUEVA_LOGICA_DISPONIBLE:
         # Calcular factor de proteína manualmente si no está
         factor_proteina_tradicional_email = macros_fase.get('protein_mult', proteina_g_tradicional / base_proteina_kg_email)
         
-        # Ciclaje si está disponible
-        tiene_ciclaje = 'ciclaje' in plan_nuevo
+        # Ciclaje si está disponible (dentro de la fase activa)
+        tiene_ciclaje = 'ciclaje_4_3' in macros_fase
         if tiene_ciclaje:
-            ciclaje_low_kcal = plan_nuevo['ciclaje']['low_day_kcal']
-            ciclaje_high_kcal = plan_nuevo['ciclaje']['high_day_kcal']
-            ciclaje_low_days = plan_nuevo['ciclaje']['low_days']
-            ciclaje_high_days = plan_nuevo['ciclaje']['high_days']
+            ciclaje_info = macros_fase['ciclaje_4_3']
+            ciclaje_low_kcal = ciclaje_info['low_days']['kcal']
+            ciclaje_high_kcal = ciclaje_info['high_days']['kcal']
+            ciclaje_low_days = 4  # Por definición del ciclaje 4-3
+            ciclaje_high_days = 3
         
         # Nota sobre base de proteína
         nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
@@ -10210,10 +10211,10 @@ tabla_resumen += f"""
 
 # Agregar ciclaje 4-3 si está disponible
 if USANDO_NUEVA_LOGICA and tiene_ciclaje:
-    # Extraer macros de ciclaje
-    ciclaje_info = plan_nuevo.get('ciclaje', {})
-    low_macros = ciclaje_info.get('low_day_macros', {})
-    high_macros = ciclaje_info.get('high_day_macros', {})
+    # Extraer macros de ciclaje (están dentro de la fase activa)
+    ciclaje_info = macros_fase.get('ciclaje_4_3', {})
+    low_macros = ciclaje_info.get('low_days', {})
+    high_macros = ciclaje_info.get('high_days', {})
     
     tabla_resumen += f"""
 
@@ -10224,15 +10225,15 @@ if USANDO_NUEVA_LOGICA and tiene_ciclaje:
    ├─────────────────────────────────────────────────────────────────┤
    │ 📉 DÍAS LOW ({ciclaje_low_days} días/semana - Entrenamiento Fuerza):          │
    │   • Calorías: {ciclaje_low_kcal:.0f} kcal/día                                  │
-   │   • Proteína: {low_macros.get('protein_g', 0):.1f}g                                              │
-   │   • Grasas: {low_macros.get('fat_g', 0):.1f}g                                                │
-   │   • Carbos: {low_macros.get('carb_g', 0):.1f}g (REDUCIDOS para oxidación grasa)          │
+   │   • Proteína: {low_macros.get('protein', 0):.1f}g                                              │
+   │   • Grasas: {low_macros.get('fat', 0):.1f}g                                                │
+   │   • Carbos: {low_macros.get('carb', 0):.1f}g (REDUCIDOS para oxidación grasa)          │
    │                                                                │
    │ 📈 DÍAS HIGH ({ciclaje_high_days} días/semana - Descanso/Cardio):               │
    │   • Calorías: {ciclaje_high_kcal:.0f} kcal/día                                 │
-   │   • Proteína: {high_macros.get('protein_g', 0):.1f}g (constante)                                 │
-   │   • Grasas: {high_macros.get('fat_g', 0):.1f}g (constante)                                   │
-   │   • Carbos: {high_macros.get('carb_g', 0):.1f}g (AUMENTADOS +{high_macros.get('carb_g', 0) - low_macros.get('carb_g', 0):.0f}g)                 │
+   │   • Proteína: {high_macros.get('protein', 0):.1f}g (constante)                                 │
+   │   • Grasas: {high_macros.get('fat', 0):.1f}g (constante)                                   │
+   │   • Carbos: {high_macros.get('carb', 0):.1f}g (AUMENTADOS +{high_macros.get('carb', 0) - low_macros.get('carb', 0):.0f}g)                 │
    ├─────────────────────────────────────────────────────────────────┤
    │ 📊 PROMEDIO SEMANAL: {plan_tradicional_calorias:.0f} kcal/día                           │
    │                                                                │
