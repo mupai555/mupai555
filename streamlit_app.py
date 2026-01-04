@@ -10052,117 +10052,80 @@ SECCIÓN 5: GASTO ENERGÉTICO (MOTOR METABÓLICO)
 
 # ==================== CALCULAR PLAN NUTRICIONAL CON NUEVA LÓGICA ====================
 
-# Intentar usar nueva lógica si está disponible
-if NUEVA_LOGICA_DISPONIBLE:
-    try:
-        # Calcular plan completo con nueva lógica
-        plan_nuevo = calcular_plan_con_sistema_actual(
-            peso=peso,
-            grasa_corregida=grasa_corregida,
-            sexo=sexo,
-            mlg=mlg,
-            tmb=tmb,
-            geaf=geaf if 'geaf' in locals() else 1.55,
-            eta=eta if 'eta' in locals() else 1.10,
-            gee_promedio_dia=gee_prom_dia if 'gee_prom_dia' in locals() else 0,
-            nivel_entrenamiento=nivel_entrena if 'nivel_entrena' in locals() else 'intermedio',
-            dias_fuerza=dias_entrenamiento if 'dias_entrenamiento' in locals() else 4,
-            calidad_suenyo=st.session_state.get('suenyo_estres_data', {}).get('horas_sueno', 7.0),
-            nivel_estres=st.session_state.get('suenyo_estres_data', {}).get('nivel_estres_percibido', 'moderado'),
-            activar_ciclaje_4_3=True
-        )
-        
-        # Calcular bf_operacional y categoría manualmente (no vienen en plan_nuevo)
-        bf_operacional, _ = calcular_bf_operacional(bf_corr_pct=grasa_corregida)
-        categoria_bf = clasificar_bf(bf_operacional, sexo)
-        categoria_bf_cliente = obtener_nombre_cliente(categoria_bf, sexo)
-        fases_disponibles = list(plan_nuevo['fases'].keys())
-        
-        # Usar fase CUT por defecto para el email (o la primera disponible)
-        fase_activa = 'cut' if 'cut' in plan_nuevo['fases'] else list(plan_nuevo['fases'].keys())[0]
-        macros_fase = plan_nuevo['fases'][fase_activa]
-        
-        # Extraer macros de la nueva lógica
-        proteina_g_tradicional = macros_fase['macros']['protein_g']
-        proteina_kcal_tradicional = proteina_g_tradicional * 4
-        grasa_g_tradicional = macros_fase['macros']['fat_g']
-        grasa_kcal_tradicional = grasa_g_tradicional * 9
-        carbo_g_tradicional = macros_fase['macros']['carb_g']
-        carbo_kcal_tradicional = carbo_g_tradicional * 4
-        plan_tradicional_calorias = macros_fase['kcal']
-        base_proteina_nombre_email = macros_fase.get('base_proteina', 'pbm_ajustado')
-        deficit_pct_aplicado = macros_fase.get('deficit_pct', 30)
-        deficit_warning = macros_fase.get('warning', '')
-        
-        # PBM si está disponible
-        pbm_kg = plan_nuevo.get('pbm', mlg)
-        
-        # Determinar si usa MLG/PBM para base de proteína
-        usar_mlg_para_proteina_email = (base_proteina_nombre_email.lower() in ['pbm', 'pbm_ajustado', 'mlg'])
-        base_proteina_kg_email = pbm_kg if usar_mlg_para_proteina_email else peso
-        
-        # Calcular factor de proteína manualmente si no está
-        factor_proteina_tradicional_email = macros_fase.get('protein_mult', proteina_g_tradicional / base_proteina_kg_email)
-        
-        # Ciclaje si está disponible (dentro de la fase activa)
-        tiene_ciclaje = 'ciclaje_4_3' in macros_fase
-        if tiene_ciclaje:
-            ciclaje_info = macros_fase['ciclaje_4_3']
-            ciclaje_low_kcal = ciclaje_info['low_days']['kcal']
-            ciclaje_high_kcal = ciclaje_info['high_days']['kcal']
-            ciclaje_low_days = 4  # Por definición del ciclaje 4-3
-            ciclaje_high_days = 3
-        
-        # Nota sobre base de proteína
-        nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
-        if usar_mlg_para_proteina_email:
-            nota_mlg_email += "\n     ℹ️ Usa PBM (Protein Base Mass) para evitar inflar proteína en alta adiposidad"
-        
-        USANDO_NUEVA_LOGICA = True
-        print(f"✅ Nueva lógica activada correctamente")
-        print(f"   • BF Operacional: {bf_operacional:.1f}%")
-        print(f"   • Categoría: {categoria_bf}")
-        print(f"   • Déficit: {deficit_pct_aplicado:.1f}%")
-        print(f"   • Ciclaje: {'Sí' if tiene_ciclaje else 'No'}")
-        
-    except Exception as e:
-        import traceback
-        print(f"❌ Error al usar nueva lógica: {e}")
-        print(f"   Traceback: {traceback.format_exc()}")
-        USANDO_NUEVA_LOGICA = False
-else:
-    USANDO_NUEVA_LOGICA = False
+# SOLO usar nueva lógica (sin fallback a tradicional)
+if not NUEVA_LOGICA_DISPONIBLE:
+    st.error("❌ ERROR CRÍTICO: Nueva lógica de macros no disponible. Contacte soporte técnico.")
+    st.stop()
 
-# Fallback a lógica tradicional si nueva lógica no disponible o falló
-if not USANDO_NUEVA_LOGICA:
-    # Calcular macros del plan tradicional para el resumen del email usando función centralizada
-    macros_tradicional_email = calcular_macros_tradicional(
-        plan_tradicional_calorias, tmb, sexo, grasa_corregida, peso, mlg
-    )
+# Calcular plan completo con nueva lógica
+plan_nuevo = calcular_plan_con_sistema_actual(
+    peso=peso,
+    grasa_corregida=grasa_corregida,
+    sexo=sexo,
+    mlg=mlg,
+    tmb=tmb,
+    geaf=geaf if 'geaf' in locals() else 1.55,
+    eta=eta if 'eta' in locals() else 1.10,
+    gee_promedio_dia=gee_prom_dia if 'gee_prom_dia' in locals() else 0,
+    nivel_entrenamiento=nivel_entrena if 'nivel_entrena' in locals() else 'intermedio',
+    dias_fuerza=dias_entrenamiento if 'dias_entrenamiento' in locals() else 4,
+    calidad_suenyo=st.session_state.get('suenyo_estres_data', {}).get('horas_sueno', 7.0),
+    nivel_estres=st.session_state.get('suenyo_estres_data', {}).get('nivel_estres_percibido', 'moderado'),
+    activar_ciclaje_4_3=True
+)
 
-    # Extraer valores
-    proteina_g_tradicional = macros_tradicional_email['proteina_g']
-    proteina_kcal_tradicional = macros_tradicional_email['proteina_kcal']
-    grasa_g_tradicional = macros_tradicional_email['grasa_g']
-    grasa_kcal_tradicional = macros_tradicional_email['grasa_kcal']
-    carbo_g_tradicional = macros_tradicional_email['carbo_g']
-    carbo_kcal_tradicional = macros_tradicional_email['carbo_kcal']
-    base_proteina_nombre_email = macros_tradicional_email['base_proteina']
-    factor_proteina_tradicional_email = macros_tradicional_email['factor_proteina']
+# Calcular bf_operacional y categoría manualmente (no vienen en plan_nuevo)
+bf_operacional, _ = calcular_bf_operacional(bf_corr_pct=grasa_corregida)
+categoria_bf = clasificar_bf(bf_operacional, sexo)
+categoria_bf_cliente = obtener_nombre_cliente(categoria_bf, sexo)
+fases_disponibles = list(plan_nuevo['fases'].keys())
 
-    # Calcular base proteína kg para la nota
-    usar_mlg_para_proteina_email = (base_proteina_nombre_email == "MLG")
-    base_proteina_kg_email = mlg if usar_mlg_para_proteina_email else peso
+# Usar fase CUT por defecto para el email (o la primera disponible)
+fase_activa = 'cut' if 'cut' in plan_nuevo['fases'] else list(plan_nuevo['fases'].keys())[0]
+macros_fase = plan_nuevo['fases'][fase_activa]
 
-    nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)" if usar_mlg_para_proteina_email else ""
-    if usar_mlg_para_proteina_email:
-        nota_mlg_email += "\n     ℹ️ En alta adiposidad, usar peso total infla proteína; por eso se usa MLG"
-    
-    # Variables para compatibilidad
-    categoria_bf = None
-    categoria_bf_cliente = None
-    deficit_pct_aplicado = None
-    tiene_ciclaje = False
+# Extraer macros de la nueva lógica
+proteina_g_tradicional = macros_fase['macros']['protein_g']
+proteina_kcal_tradicional = proteina_g_tradicional * 4
+grasa_g_tradicional = macros_fase['macros']['fat_g']
+grasa_kcal_tradicional = grasa_g_tradicional * 9
+carbo_g_tradicional = macros_fase['macros']['carb_g']
+carbo_kcal_tradicional = carbo_g_tradicional * 4
+plan_tradicional_calorias = macros_fase['kcal']
+base_proteina_nombre_email = macros_fase.get('base_proteina', 'pbm_ajustado')
+deficit_pct_aplicado = macros_fase.get('deficit_pct', 30)
+deficit_warning = macros_fase.get('warning', '')
+
+# PBM si está disponible
+pbm_kg = plan_nuevo.get('pbm', mlg)
+
+# Determinar si usa MLG/PBM para base de proteína
+usar_mlg_para_proteina_email = (base_proteina_nombre_email.lower() in ['pbm', 'pbm_ajustado', 'mlg'])
+base_proteina_kg_email = pbm_kg if usar_mlg_para_proteina_email else peso
+
+# Calcular factor de proteína manualmente si no está
+factor_proteina_tradicional_email = macros_fase.get('protein_mult', proteina_g_tradicional / base_proteina_kg_email)
+
+# Ciclaje si está disponible (dentro de la fase activa)
+tiene_ciclaje = 'ciclaje_4_3' in macros_fase
+if tiene_ciclaje:
+    ciclaje_info = macros_fase['ciclaje_4_3']
+    ciclaje_low_kcal = ciclaje_info['low_days']['kcal']
+    ciclaje_high_kcal = ciclaje_info['high_days']['kcal']
+    ciclaje_low_days = 4  # Por definición del ciclaje 4-3
+    ciclaje_high_days = 3
+
+# Nota sobre base de proteína
+nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
+if usar_mlg_para_proteina_email:
+    nota_mlg_email += "\n     ℹ️ Usa PBM (Protein Base Mass) para evitar inflar proteína en alta adiposidad"
+
+USANDO_NUEVA_LOGICA = True
+print(f"✅ Nueva lógica activada correctamente")
+print(f"   • BF Operacional: {bf_operacional:.1f}%")
+print(f"   • Categoría: {categoria_bf}")
+print(f"   • Déficit: {deficit_pct_aplicado:.1f}%")
+print(f"   • Ciclaje: {'Sí' if tiene_ciclaje else 'No'}")
 
 # ==================== EMAIL: COMPARATIVA DE PLANES ====================
 tabla_resumen += f"""
@@ -10179,31 +10142,27 @@ SECCIÓN 6: PLAN NUTRICIONAL
    • Ingesta calórica objetivo: {ingesta_calorica:.0f} kcal/día
    • Ratio kcal/kg: {ratio_kcal_kg:.1f}"""
 
-# Agregar información de nueva lógica si está disponible
-if USANDO_NUEVA_LOGICA and categoria_bf:
-    deficit_info = f"{deficit_pct_aplicado:.1f}% (interpolado según BF"
-    if deficit_warning:
-        deficit_info += f" + guardrails aplicados)"
-    else:
-        deficit_info += ")"
-    
-    tabla_resumen += f"""
+# Agregar información de nueva lógica (siempre disponible)
+deficit_info = f"{deficit_pct_aplicado:.1f}% (interpolado según BF"
+if deficit_warning:
+    deficit_info += f" + guardrails aplicados)"
+else:
+    deficit_info += ")"
+
+tabla_resumen += f"""
    
    📊 ANÁLISIS DE COMPOSICIÓN CORPORAL (Nueva Metodología):
    • BF Operacional: {bf_operacional:.1f}%
    • Categoría: {categoria_bf_cliente} ({categoria_bf})
    • Fases disponibles: {', '.join(fases_disponibles).upper()}
    • Déficit aplicado: {deficit_info}"""
-    
-    if deficit_warning:
-        tabla_resumen += f"\n   ⚠️ {deficit_warning}"
 
-# Título de sección según metodología
-titulo_plan = "PLAN CON NUEVA METODOLOGÍA" if USANDO_NUEVA_LOGICA else "PLAN TRADICIONAL (Déficit/Superávit Moderado)"
+if deficit_warning:
+    tabla_resumen += f"\n   ⚠️ {deficit_warning}"
 
 tabla_resumen += f"""
 
-📊 6.2 {titulo_plan}:
+📊 6.2 PLAN NUTRICIONAL (Nueva Metodología Científica):
 
    ┌─────────────────────────────────────────────────────────────────┐
    │ CALORÍAS: {plan_tradicional_calorias:.0f} kcal/día                                   │
@@ -10219,8 +10178,8 @@ tabla_resumen += f"""
    │ • Duración: Indefinida con ajustes periódicos                  │
    └─────────────────────────────────────────────────────────────────┘"""
 
-# Agregar ciclaje 4-3 si está disponible
-if USANDO_NUEVA_LOGICA and tiene_ciclaje:
+# Agregar ciclaje 4-3 si está disponible (siempre con nueva lógica)
+if tiene_ciclaje:
     # Extraer macros de ciclaje (están dentro de la fase activa)
     ciclaje_info = macros_fase.get('ciclaje_4_3', {})
     low_macros = ciclaje_info.get('low_days', {})
