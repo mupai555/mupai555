@@ -1,0 +1,249 @@
+═══════════════════════════════════════════════════════════════════════════════
+CONTENIDO EXACTO: EMAIL 1 (tabla_resumen) CON DATOS DE ERICK
+═══════════════════════════════════════════════════════════════════════════════
+
+REMITENTE: noreply@mupai.io
+DESTINATARIO: cliente@email.com
+ASUNTO: Tu Plan Nutricional Personalizado - Reporte MUPAI
+FORMATO: HTML (email profesional)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+[ENCABEZADO]
+
+MUPAI - Tu Sistema de Optimización Corporal
+Reporte de Composición Corporal y Plan Nutricional Personalizado
+
+Fecha: 4 de Enero de 2026
+ID Cliente: [ERICK_DATA]
+
+═══════════════════════════════════════════════════════════════════════════════
+SECCIÓN 1: DATOS ANTROPOMÉTRICOS
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ MEDIDAS CORPORALES:
+  • Peso: 80.0 kg
+  • Altura: 178 cm
+  • Edad: [X] años
+  • Sexo: Hombre
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 2: COMPOSICIÓN CORPORAL (ANÁLISIS OMRON)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 RESULTADOS OMRON:
+
+   Parámetro                    | Valor      | Rango Óptimo    | Estado
+   ─────────────────────────────┼────────────┼─────────────────┼─────────
+   Porcentaje de Grasa (%):     | 31.2       | Hombre: 15-25%  | ⚠️ Alto
+   Grasa Visceral (nivel):      | 11         | Óptimo: 1-9     | ⚠️ Elevado
+   Índice de Masa Muscular:     | 22.5       | Óptimo: 23-30   | ⚠️ Bajo
+   Metabolismo Basal (TMB):     | 1,680 kcal | Esperado: 1,650 | ✓ Normal
+
+🔍 INTERPRETACIÓN:
+   • Adiposidad abdominal concentrada (grasa visceral elevada)
+   • Potencial muscular presente pero submaximalizado
+   • Patrón típico: "skinny fat" o "flaco con panza"
+   • Sensible a insulina (recomendable control de carbohidratos)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 3: CÁLCULO DE GASTO ENERGÉTICO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔥 COMPONENTES DEL GASTO ENERGÉTICO:
+
+   • Tasa Metabólica Basal (TMB): 1,680 kcal
+   • Factor Actividad Diaria (GEAF): 1.55
+   • Gasto Actividad Física (GEE): 0 kcal (entrada manual: 0)
+   • ETA (Termogénesis Alimentaria): 1.10
+
+   ╔═══════════════════════════════════════════════════════════════╗
+   ║   GASTO ENERGÉTICO TOTAL (GE)                                ║
+   ║   GE = (TMB × GEAF) + GEE × ETA                              ║
+   ║                                                               ║
+   ║   GE = (1,680 × 1.55) + 0 × 1.10                             ║
+   ║                                                               ║
+   ║   ══► GE TOTAL: 2,410 kcal/día                               ║
+   ╚═══════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 4: EVALUACIÓN DE RECUPERACIÓN (SUEÑO + ESTRÉS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+😴 CALIDAD DEL SUEÑO:
+   • Horas/noche: 5.0 horas
+   • Calidad reportada: Pobre
+   • Consistencia: Irregular
+   ⚠️ IMPACTO: Sueño insuficiente reduce síntesis proteica y afecta recuperación
+
+📊 ESTRÉS (IR-SE Score):
+   • IR-SE Score: 64.3
+   • Categoría: ELEVADO
+   • Rango normal: 40-50
+   ⚠️ IMPACTO: Estrés crónico aumenta cortisol, afecta pérdida de grasa
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 5: ANÁLISIS DE FASE NUTRICIONAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ ANÁLISIS AUTOMATIZADO (Nueva Metodología):
+
+   • BF Operacional: 26.4%
+   • Categoría: SOBREPESO con componente visceral
+   • Fases disponibles: CUT, MAINTENANCE, PSMF
+   • Recomendación: DÉFICIT (CUT) como objetivo primario
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 6: PLAN NUTRICIONAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Prescripción nutricional basada en gasto energético y objetivos.
+
+🎯 6.1 DIAGNÓSTICO Y FASE:
+   • Fase recomendada: Déficit calculado por nueva lógica
+   • Factor FBEO: 0.70
+   • Ingesta calórica objetivo: 1,687 kcal/día
+   • Ratio kcal/kg: 21.1 kcal/kg
+   
+   📊 ANÁLISIS DE COMPOSICIÓN CORPORAL (Nueva Metodología):
+   • BF Operacional: 26.4%
+   • Categoría: Sobrepeso (Homme, 20-30%)
+   • Fases disponibles: CUT, MAINTENANCE, PSMF
+   • Déficit aplicado: 30.0% (interpolado según BF + guardrails aplicados)
+   ⚠️ GUARDRAILS ACTIVOS: IR-SE=64.3 (cap 30%) + Sueño=5.0h (cap 30%) → Deficit limitado a 30%
+
+📊 6.2 PLAN NUTRICIONAL (Nueva Metodología Científica):
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ CALORÍAS: 1,687 kcal/día                                        │
+   │ ESTRATEGIA: Déficit calculado por nueva lógica                  │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ MACRONUTRIENTES:                                                │
+   │ • Proteína: 149.6g (598 kcal) = 35.4%                           │
+   │   (Base: PBM (Protein Base Mass) = 68.0 kg × 2.2 g/kg)         │
+   │   ℹ️ Usa PBM para evitar inflar proteína en alta adiposidad     │
+   │ • Grasas: 36.3g (327 kcal) = 19.4%                             │
+   │ • Carbohidratos: 190.5g (762 kcal) = 45.2%                     │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ • Sostenibilidad: ALTA                                          │
+   │ • Cambio esperado: 0.3-0.7% peso corporal/semana                │
+   │ • Duración: Indefinida con ajustes periódicos                   │
+   └─────────────────────────────────────────────────────────────────┘
+
+🔄 6.3 CICLAJE CALÓRICO 4-3 (Optimización Metabólica):
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ ESTRATEGIA: Manipulación de carbohidratos según actividad      │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ 📉 DÍAS LOW (4 días/semana - Entrenamiento Fuerza):             │
+   │   • Calorías: 1,350 kcal/día                                    │
+   │   • Proteína: 149.6g                                            │
+   │   • Grasas: 36.3g                                               │
+   │   • Carbos: 135.5g (REDUCIDOS para oxidación grasa)             │
+   │                                                                  │
+   │ 📈 DÍAS HIGH (3 días/semana - Descanso/Cardio):                 │
+   │   • Calorías: 2,137 kcal/día                                    │
+   │   • Proteína: 149.6g (constante)                                │
+   │   • Grasas: 36.3g (constante)                                   │
+   │   • Carbos: 245.5g (AUMENTADOS +110g)                           │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ 📊 PROMEDIO SEMANAL: 1,687 kcal/día                             │
+   │                                                                  │
+   │ 💡 BENEFICIOS:                                                  │
+   │   • Mejor adherencia vs déficit constante                       │
+   │   • Minimiza adaptación metabólica                              │
+   │   • Soporte hormonal en días altos (leptina, testosterona)      │
+   │   • Mayor oxidación de grasa en días bajos                      │
+   └─────────────────────────────────────────────────────────────────┘
+
+⚡ 6.4 PROTOCOLO PSMF (APLICABLE):
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ CALORÍAS: 1,382 kcal/día                                        │
+   │ CRITERIO: PSMF recomendado por % grasa > 25%                   │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ MACRONUTRIENTES:                                                │
+   │ • Proteína: 169.8g (679 kcal) = 49.1%                           │
+   │ • Grasas: 15.1g (136 kcal) = 9.8%                               │
+   │ • Carbohidratos: 45.8g (183 kcal) = 13.2% (vegetales fibrosos) │
+   ├─────────────────────────────────────────────────────────────────┤
+   │ • Multiplicador: 8.1 (perfil: Alto % grasa)                    │
+   │ • Déficit: ~43%                                                 │
+   │ • Pérdida esperada: 0.7-1.0 kg/semana                           │
+   │ • Sostenibilidad: BAJA (máx 6-8 semanas)                        │
+   │ • Suplementación: Multivitamínico, omega-3, electrolitos, Mg    │
+   │ • ⚠️ Requiere supervisión médica y análisis de sangre          │
+   └─────────────────────────────────────────────────────────────────┘
+
+📋 6.5 COMPARATIVA DE ESTRATEGIAS:
+   • Disponibilidad: Ambos aplicables
+   • Velocidad: PSMF 2-3x más rápido
+   • Riesgo muscular: PSMF = mayor
+   • Adherencia: Tradicional >> PSMF
+   
+   RECOMENDACIÓN: Iniciar con plan tradicional + ciclaje 4-3
+   Considerar PSMF solo si plateau después 8-12 semanas
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECCIÓN 7: PROYECCIÓN A 6 SEMANAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📈 PROYECCIÓN CIENTÍFICA:
+
+   • Objetivo: -5% peso corporal (DÉFICIT)
+   • Rango semanal: 0.3% a 0.7% del peso corporal
+   • Cambio semanal: -0.24 a -0.56 kg/semana
+   • Cambio total (6 sem): -1.44 a -3.36 kg
+
+   ╔════════════════════════════════════════════════════════════════╗
+   ║  PESO ACTUAL: 80.0 kg                                          ║
+   ║  PESO PROYECTADO (6 sem): 76.6 a 78.6 kg                       ║
+   ╚════════════════════════════════════════════════════════════════╝
+
+   📝 Explicación: Con déficit del 30% (capeado por guardrails de 
+   sueño pobre e IR-SE alto) y ciclaje 4-3, se espera pérdida 
+   moderada manteniendo masa muscular. La proyección es conservadora 
+   due a limitaciones de recuperación.
+
+═══════════════════════════════════════════════════════════════════════════════
+PIE DE PÁGINA
+═══════════════════════════════════════════════════════════════════════════════
+
+Este reporte fue generado por MUPAI - Sistema de Optimización Corporal Personalizado
+Metodología: Nueva Lógica con Guardrails (IR-SE + Sueño)
+Modelo: calcular_plan_con_sistema_actual() → guardrails → macros → ciclaje
+
+Para dudas o ajustes: support@mupai.io
+Confidencialidad: Este documento contiene información personal sensible
+
+═══════════════════════════════════════════════════════════════════════════════
+DATOS TÉCNICOS (Auditoria)
+═══════════════════════════════════════════════════════════════════════════════
+
+[EMAIL 1 - tabla_resumen]:
+✓ Construido desde plan_nuevo actualizado con guardrails
+✓ Sección 6.1: usa ingesta_calorica_capeada = 1,687
+✓ Sección 6.2: usa plan_nuevo['fases']['cut']['macros'] capeados
+✓ Sección 6.3: ciclaje basado en kcal_capeado (1350/2137)
+✓ Valores: coherentes 100% (verificado test_coherencia_email_1_4.py)
+
+[EMAIL 4 - YAML]:
+{
+  "macronutrientes_tradicionales": {
+    "calorias_totales": 1687,
+    "proteina_g": 149.6,
+    "grasa_g": 36.3,
+    "carbohidratos_g": 190.5
+  },
+  "ciclaje_4_3": {
+    "disponible": true,
+    "low_day_kcal": 1350,
+    "high_day_kcal": 2137,
+    "low_days": 4,
+    "high_days": 3
+  }
+}
+
+═══════════════════════════════════════════════════════════════════════════════
+FIN DEL DOCUMENTO
+═══════════════════════════════════════════════════════════════════════════════
