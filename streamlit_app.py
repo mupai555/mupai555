@@ -9807,6 +9807,39 @@ categoria_grasa_corporal = (
     else "Alto"
 )
 
+# ✅ INICIALIZAR VARIABLES GLOBALES DE EMAIL (CRÍTICO: prevenir NameError en reenvío)
+# Esto es crucial porque estas variables se usan en enviar_email_parte2()
+# incluso cuando el usuario sólo hace click en "Reenviar Email" sin pasar por el flujo completo
+if 'ffmi' in locals():
+    ffmi_para_email = calcular_ffmi(mlg, estatura) if mlg > 0 and estatura > 0 else None
+else:
+    ffmi_para_email = calcular_ffmi(mlg, estatura) if mlg > 0 and estatura > 0 else None
+
+if 'masa_muscular' in st.session_state:
+    masa_muscular_aparato = st.session_state.get('masa_muscular', 0)
+else:
+    masa_muscular_aparato = 0
+
+if 'circunferencia_cintura' in locals() and circunferencia_cintura:
+    wthr = circunferencia_cintura / estatura if estatura > 0 else None
+else:
+    wthr = None
+
+if 'masa_muscular' in st.session_state:
+    masa_muscular_estimada_email = estimar_masa_muscular_desde_mlg(mlg, sexo) if mlg > 0 else None
+else:
+    masa_muscular_estimada_email = estimar_masa_muscular_desde_mlg(mlg, sexo) if mlg > 0 else None
+
+# Variables que podrían no estar definidas si el usuario solo hace click en "Reenviar"
+if 'nivel_entrenamiento' not in locals():
+    nivel_entrenamiento = None
+    
+if 'grasa_visceral' not in locals():
+    grasa_visceral = None
+    
+if 'edad_metabolica' not in locals():
+    edad_metabolica = None
+
 tabla_resumen = f"""
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║              EVALUACIÓN MUPAI - INFORME CIENTÍFICO COMPLETO                   ║
@@ -10146,20 +10179,6 @@ print(f"   • BF Operacional: {bf_operacional:.1f}%")
 print(f"   • Categoría: {categoria_bf}")
 print(f"   • Déficit: {deficit_pct_aplicado:.1f}%")
 print(f"   • Ciclaje: {'Sí' if tiene_ciclaje else 'No'}")
-
-# Definir ffmi_para_email con valor por defecto (CRÍTICO para prevenir NameError)
-if 'ffmi_para_email' not in locals():
-    ffmi_para_email = calcular_ffmi(mlg, estatura) if mlg > 0 and estatura > 0 else None
-
-# Definir otras variables de email con defaults (CRÍTICO)
-if 'masa_muscular_aparato' not in locals():
-    masa_muscular_aparato = st.session_state.get('masa_muscular', 0)
-
-if 'masa_muscular_estimada_email' not in locals():
-    masa_muscular_estimada_email = estimar_masa_muscular_desde_mlg(mlg, sexo) if mlg > 0 else None
-
-if 'wthr' not in locals():
-    wthr = circunferencia_cintura / estatura if 'circunferencia_cintura' in locals() and circunferencia_cintura and estatura > 0 else None
 
 # ==================== EMAIL: COMPARATIVA DE PLANES ====================
 tabla_resumen += f"""
