@@ -10295,6 +10295,17 @@ bf_operacional, _ = calcular_bf_operacional(bf_corr_pct=grasa_corregida)
 categoria_bf = clasificar_bf(bf_operacional, sexo)
 categoria_bf_cliente = obtener_nombre_cliente(categoria_bf, sexo)
 
+# Definir fases disponibles según la categoría BF
+fases_disponibles = []
+if grasa_corregida < 12 if sexo == "Hombre" else grasa_corregida < 17:
+    fases_disponibles = ["cut", "maintenance", "bulk"]
+elif grasa_corregida < 18 if sexo == "Hombre" else grasa_corregida < 23:
+    fases_disponibles = ["cut", "maintenance", "bulk"]
+else:
+    fases_disponibles = ["cut", "maintenance"]
+    if grasa_corregida < 30 if sexo == "Hombre" else grasa_corregida < 35:
+        fases_disponibles.append("psmf")
+
 # Nota sobre base de proteína
 nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
 
