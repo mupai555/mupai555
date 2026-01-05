@@ -10317,8 +10317,8 @@ SECCIÓN 6: PLAN NUTRICIONAL
 🎯 6.1 DIAGNÓSTICO Y FASE:
    • Fase recomendada: {fase}
    • Factor FBEO: {fbeo:.2f}
-   • Ingesta calórica objetivo: {ingesta_calorica_capeada:.0f} kcal/día
-   • Ratio kcal/kg: {ingesta_calorica_capeada/peso if peso > 0 else 0:.1f}"""
+   • Ingesta calórica objetivo: {plan_tradicional_calorias:.0f} kcal/día
+   • Ratio kcal/kg: {plan_tradicional_calorias/peso if peso > 0 else 0:.1f}"""
 
 # Agregar información de nueva lógica (siempre disponible)
 deficit_info = f"{deficit_pct_aplicado:.1f}% (interpolado según BF"
