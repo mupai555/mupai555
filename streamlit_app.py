@@ -10253,8 +10253,8 @@ except (TypeError, ValueError):
 # ==================== CALCULAR PLAN NUTRICIONAL - LÓGICA TRADICIONAL ====================
 # USAR LÓGICA TRADICIONAL (calcular_macros_tradicional) con TMB corregido
 
-# Calcular ingesta con déficit
-ingesta_calorica_tradicional = ge * (1 - 0.30 / 100) if 'ge' in locals() and ge > 0 else 0
+# Calcular ingesta con déficit (30% deficit)
+ingesta_calorica_tradicional = ge * (1 - 30 / 100) if 'ge' in locals() and ge > 0 else 0
 
 # Calcular macros con la lógica tradicional
 if ingesta_calorica_tradicional > 0:
@@ -10306,7 +10306,8 @@ else:
 # Calcular bf_operacional y categoría manualmente
 bf_operacional, _ = calcular_bf_operacional(bf_corr_pct=grasa_corregida)
 categoria_bf = clasificar_bf(bf_operacional, sexo)
-categoria_bf_cliente = obtener_nombre_cliente(categoria_bf, sexo)
+categoria_bf_cliente_dict = obtener_nombre_cliente(categoria_bf, sexo)
+categoria_bf_cliente = categoria_bf_cliente_dict.get('nombre_corto', 'Saludable')
 
 # Definir fases disponibles según la categoría BF
 fases_disponibles = []
