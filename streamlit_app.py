@@ -10200,12 +10200,9 @@ SECCIÓN 5: GASTO ENERGÉTICO (MOTOR METABÓLICO)
    ║  ══► GE TOTAL: {GE:.0f} kcal/día                               ║
    ╚════════════════════════════════════════════════════════════════╝"""
 
-# ==================== CALCULAR PLAN NUTRICIONAL CON NUEVA LÓGICA ====================
+# ==================== CALCULAR PLAN NUTRICIONAL - LÓGICA TRADICIONAL ====================
 
-# SOLO usar nueva lógica (sin fallback a tradicional)
-if not NUEVA_LOGICA_DISPONIBLE:
-    st.error("❌ ERROR CRÍTICO: Nueva lógica de macros no disponible. Contacte soporte técnico.")
-    st.stop()
+# Usar lógica TRADICIONAL (calcular_macros_tradicional con TMB correcto)
 
 # Extraer datos de sueño/estrés con validación
 suenyo_estres_data = st.session_state.get('suenyo_estres_data', {})
