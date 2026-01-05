@@ -9965,6 +9965,19 @@ if 'grasa_visceral' not in locals():
 if 'edad_metabolica' not in locals():
     edad_metabolica = None
 
+# Inicializar variables personales de session_state si no existen localmente
+if 'nombre' not in locals():
+    nombre = st.session_state.get('nombre', 'Cliente')
+    
+if 'email_cliente' not in locals():
+    email_cliente = st.session_state.get('email_cliente', 'no-disponible@email.com')
+    
+if 'telefono' not in locals():
+    telefono = st.session_state.get('telefono', 'No proporcionado')
+    
+if 'fecha_llenado' not in locals():
+    fecha_llenado = st.session_state.get('fecha_llenado', datetime.now().strftime("%Y-%m-%d"))
+
 tabla_resumen = f"""
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║              EVALUACIÓN MUPAI - INFORME CIENTÍFICO COMPLETO                   ║
@@ -10308,6 +10321,13 @@ else:
 
 # Nota sobre base de proteína
 nota_mlg_email = f"\n     (Base: {base_proteina_nombre_email} = {base_proteina_kg_email:.1f} kg × {factor_proteina_tradicional_email:.1f} g/kg)"
+
+# Inicializar variables de ciclaje (por defecto no hay ciclaje en lógica tradicional)
+macros_fase = {}
+ciclaje_low_days = 4
+ciclaje_low_kcal = plan_tradicional_calorias * 0.8 if plan_tradicional_calorias > 0 else 0
+ciclaje_high_days = 3
+ciclaje_high_kcal = plan_tradicional_calorias * 1.2 if plan_tradicional_calorias > 0 else 0
 
 USANDO_NUEVA_LOGICA = False
 print(f"✅ Nueva lógica activada correctamente")
