@@ -8261,8 +8261,9 @@ step3_title = f"😴 **Paso 3: Estado de Recuperación (Sueño + Estrés)** {ste
 with st.expander(step3_title, expanded=True):
     st.markdown(f'<p style="color: {step3_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step3_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Evalúa tu calidad de sueño y nivel de estrés</p>', unsafe_allow_html=True)
-    progress.progress(25)
-    progress_text.text("Paso 3 de 7: Evaluación de recuperación")
+    if 'progress' in locals():
+        progress.progress(25)
+        progress_text.text("Paso 3 de 7: Evaluación de recuperación")
     resultado_suenyo_estres = formulario_suenyo_estres()
 
 # ========== CUESTIONARIO CICLO MENSTRUAL (SOLO MUJERES) ==========
@@ -8276,8 +8277,9 @@ step4_title = f"💪 **Paso 4: Evaluación Funcional y Nivel de Entrenamiento** 
 with st.expander(step4_title, expanded=True):
     st.markdown(f'<p style="color: {step4_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step4_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Evalúa tu capacidad funcional y experiencia de entrenamiento</p>', unsafe_allow_html=True)
-    progress.progress(40)
-    progress_text.text("Paso 4 de 7: Evaluación funcional")
+    if 'progress' in locals():
+        progress.progress(40)
+        progress_text.text("Paso 4 de 7: Evaluación funcional")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -8907,8 +8909,9 @@ step5_title = f"🚶 **Paso 5: Nivel de Actividad Física Diaria** {step5_icon}"
 with st.expander(step5_title, expanded=True):
     st.markdown(f'<p style="color: {step5_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step5_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Indica tu nivel de actividad física en el día a día</p>', unsafe_allow_html=True)
-    progress.progress(55)
-    progress_text.text("Paso 5 de 7: Actividad física diaria")
+    if 'progress' in locals():
+        progress.progress(55)
+        progress_text.text("Paso 5 de 7: Actividad física diaria")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 📊 Evalúa tu actividad física fuera del ejercicio planificado")
@@ -9021,8 +9024,9 @@ if MOSTRAR_ETA_AL_USUARIO:
     step6_title = f"⚡ **Paso 6: Análisis Metabólico Personalizado** {step6_icon}"
     with st.expander(step6_title, expanded=True):
         st.markdown(f'<p style="color: {step6_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step6_status}</p>', unsafe_allow_html=True)
-        progress.progress(70)
-        progress_text.text("Paso 6 de 7: Cálculo del efecto térmico")
+        if 'progress' in locals():
+            progress.progress(70)
+            progress_text.text("Paso 6 de 7: Cálculo del efecto térmico")
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -9052,8 +9056,9 @@ else:
     step6_title = f"⚡ **Paso 6: Análisis Metabólico Personalizado** {step6_icon}"
     with st.expander(step6_title, expanded=False):
         st.markdown(f'<p style="color: {step6_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step6_status}</p>', unsafe_allow_html=True)
-        progress.progress(70)
-        progress_text.text("Paso 6 de 7: Procesamiento automático")
+        if 'progress' in locals():
+            progress.progress(70)
+            progress_text.text("Paso 6 de 7: Procesamiento automático")
         
         st.info("""
         ℹ️ **Este paso se calcula automáticamente en función de los datos que has proporcionado.**
@@ -9068,8 +9073,9 @@ step7_title = f"🏋️ **Paso 7: Gasto Energético del Ejercicio (GEE)** {step7
 with st.expander(step7_title, expanded=True):
     st.markdown(f'<p style="color: {step7_color}; font-size: 0.9rem; margin-bottom: 1rem; font-weight: bold;">Estado: {step7_status}</p>', unsafe_allow_html=True)
     st.markdown('<p style="color: #F4C430; font-size: 0.9rem; margin-bottom: 1rem;">✓ Proporciona información sobre tu rutina de entrenamiento</p>', unsafe_allow_html=True)
-    progress.progress(80)
-    progress_text.text("Paso 7 de 7: Cálculo del gasto por ejercicio")
+    if 'progress' in locals():
+        progress.progress(80)
+        progress_text.text("Paso 7 de 7: Cálculo del gasto por ejercicio")
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown("### 💪 Frecuencia de entrenamiento de fuerza")
@@ -9143,8 +9149,9 @@ with st.expander(step7_title, expanded=True):
 # Note: All calculations always run; only display is conditional
 if USER_VIEW:
     with st.expander("📈 **RESULTADO FINAL: Tu Plan Nutricional Personalizado**", expanded=True):
-        progress.progress(100)
-        progress_text.text("Paso final: Calculando tu plan nutricional personalizado")
+        if 'progress' in locals():
+            progress.progress(100)
+            progress_text.text("Paso final: Calculando tu plan nutricional personalizado")
 
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
 
@@ -9509,8 +9516,9 @@ if USER_VIEW:
 else:
     # When USER_VIEW=False: Run essential calculations without UI display
     # This ensures email generation has all required variables
-    progress.progress(100)
-    progress_text.text("Procesando datos...")
+    if 'progress' in locals():
+        progress.progress(100)
+        progress_text.text("Procesando datos...")
     
     # Determinar si el usuario está en el rango óptimo
     en_rango_optimo = False
