@@ -10253,14 +10253,8 @@ except (TypeError, ValueError):
 # ==================== CALCULAR PLAN NUTRICIONAL - LÓGICA TRADICIONAL ====================
 # USAR LÓGICA TRADICIONAL (calcular_macros_tradicional) con TMB corregido
 
-# ==================== CALCULAR PLAN NUTRICIONAL - LÓGICA TRADICIONAL ====================
-# USAR LÓGICA TRADICIONAL (calcular_macros_tradicional) con TMB corregido
-
-# Determinar fase y déficit según % grasa corporal
-fase_determinada, porcentaje_determinado = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
-
-# Calcular ingesta con déficit/superávit determinado dinámicamente
-ingesta_calorica_tradicional = ge * (1 + porcentaje_determinado / 100) if 'ge' in locals() and ge > 0 else 0
+# Calcular ingesta con déficit fijo del 30%
+ingesta_calorica_tradicional = ge * (1 - 30 / 100) if 'ge' in locals() and ge > 0 else 0
 
 # Calcular macros con la lógica tradicional
 if ingesta_calorica_tradicional > 0:
@@ -10287,7 +10281,7 @@ if macros_tradicional:
     carbo_kcal_tradicional = carbo_g_tradicional * 4
     plan_tradicional_calorias = ingesta_calorica_tradicional
     base_proteina_nombre_email = macros_tradicional.get('base_proteina', 'peso')
-    deficit_pct_aplicado = abs(porcentaje_determinado)  # Usar déficit determinado dinámicamente
+    deficit_pct_aplicado = 30  # Déficit fijo en lógica tradicional
     deficit_warning = ""
     factor_proteina_tradicional_email = macros_tradicional.get('protein_mult', 1.6)
     usar_mlg_para_proteina_email = False  # La lógica tradicional no usa MLG por defecto
@@ -10302,7 +10296,7 @@ else:
     carbo_kcal_tradicional = 0
     plan_tradicional_calorias = 0
     base_proteina_nombre_email = 'peso'
-    deficit_pct_aplicado = abs(porcentaje_determinado)  # Usar déficit determinado dinámicamente
+    deficit_pct_aplicado = 30  # Déficit fijo en lógica tradicional
     deficit_warning = ""
     factor_proteina_tradicional_email = 1.6
     usar_mlg_para_proteina_email = False
@@ -10353,17 +10347,13 @@ SECCIÓN 6: PLAN NUTRICIONAL
    Prescripción nutricional basada en gasto energético y objetivos.
 
 🎯 6.1 DIAGNÓSTICO Y FASE:
-   • Fase recomendada: {fase_determinada}
-   • Factor FBEO: {1 + porcentaje_determinado / 100:.2f}
+   • Fase recomendada: {fase}
+   • Factor FBEO: 0.70 (déficit del 30%)
    • Ingesta calórica objetivo: {plan_tradicional_calorias:.0f} kcal/día
    • Ratio kcal/kg: {plan_tradicional_calorias/peso if peso > 0 else 0:.1f}"""
 
-# Agregar información de nueva lógica (siempre disponible)
-deficit_info = f"{deficit_pct_aplicado:.1f}% (interpolado según BF"
-if deficit_warning:
-    deficit_info += f" + guardrails aplicados)"
-else:
-    deficit_info += ")"
+# Agregar información de déficit tradicional
+deficit_info = "30% (déficit estándar)"
 
 tabla_resumen += f"""
    
@@ -10382,7 +10372,7 @@ tabla_resumen += f"""
 
    ┌─────────────────────────────────────────────────────────────────┐
    │ CALORÍAS: {plan_tradicional_calorias:.0f} kcal/día                                   │
-   │ ESTRATEGIA: {fase_determinada}                                      │
+   │ ESTRATEGIA: {fase}                                      │
    ├─────────────────────────────────────────────────────────────────┤
    │ MACRONUTRIENTES:                                               │
    │ • Proteína: {proteina_g_tradicional:.1f}g ({proteina_kcal_tradicional:.0f} kcal) = {proteina_kcal_tradicional/plan_tradicional_calorias*100 if plan_tradicional_calorias > 0 else 0:.1f}%{nota_mlg_email}                │
