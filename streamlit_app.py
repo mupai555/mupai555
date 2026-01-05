@@ -10249,12 +10249,24 @@ try:
 except (TypeError, ValueError):
     ir_se_valor = 60.0
 
+# Inicializar variables de fase y porcentaje
+if 'fase' not in locals():
+    fase = "Mantenimiento"
+if 'porcentaje' not in locals():
+    porcentaje = 0
+if 'fbeo' not in locals():
+    fbeo = 1.0
+
 # Calcular plan completo con nueva lógica (CRÍTICO: validar tipos de variables locales)
 # ==================== CALCULAR PLAN NUTRICIONAL - LÓGICA TRADICIONAL ====================
 # USAR LÓGICA TRADICIONAL (calcular_macros_tradicional) con TMB corregido
 
-# Calcular ingesta con déficit fijo del 30%
-ingesta_calorica_tradicional = ge * (1 - 30 / 100) if 'ge' in locals() and ge > 0 else 0
+# Determinar fase y porcentaje según % grasa corporal (lógica automática)
+fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
+fbeo = 1 + porcentaje / 100  # Factor de balance energético
+
+# Calcular ingesta con déficit/superávit determinado automáticamente
+ingesta_calorica_tradicional = ge * fbeo if 'ge' in locals() and ge > 0 else 0
 
 # Calcular macros con la lógica tradicional
 if ingesta_calorica_tradicional > 0:
@@ -10281,7 +10293,7 @@ if macros_tradicional:
     carbo_kcal_tradicional = carbo_g_tradicional * 4
     plan_tradicional_calorias = ingesta_calorica_tradicional
     base_proteina_nombre_email = macros_tradicional.get('base_proteina', 'peso')
-    deficit_pct_aplicado = 30  # Déficit fijo en lógica tradicional
+    deficit_pct_aplicado = abs(porcentaje)  # Déficit/superávit determinado automáticamente
     deficit_warning = ""
     factor_proteina_tradicional_email = macros_tradicional.get('protein_mult', 1.6)
     usar_mlg_para_proteina_email = False  # La lógica tradicional no usa MLG por defecto
@@ -10296,7 +10308,7 @@ else:
     carbo_kcal_tradicional = 0
     plan_tradicional_calorias = 0
     base_proteina_nombre_email = 'peso'
-    deficit_pct_aplicado = 30  # Déficit fijo en lógica tradicional
+    deficit_pct_aplicado = abs(porcentaje) if 'porcentaje' in locals() else 0  # Déficit/superávit determinado automáticamente
     deficit_warning = ""
     factor_proteina_tradicional_email = 1.6
     usar_mlg_para_proteina_email = False
@@ -10348,12 +10360,17 @@ SECCIÓN 6: PLAN NUTRICIONAL
 
 🎯 6.1 DIAGNÓSTICO Y FASE:
    • Fase recomendada: {fase}
-   • Factor FBEO: 0.70 (déficit del 30%)
+   • Factor FBEO: {fbeo:.2f}
    • Ingesta calórica objetivo: {plan_tradicional_calorias:.0f} kcal/día
    • Ratio kcal/kg: {plan_tradicional_calorias/peso if peso > 0 else 0:.1f}"""
 
-# Agregar información de déficit tradicional
-deficit_info = "30% (déficit estándar)"
+# Agregar información de déficit/superávit determinado automáticamente
+if porcentaje < 0:
+    deficit_info = f"{abs(porcentaje):.1f}% (déficit según BF%)"
+elif porcentaje > 0:
+    deficit_info = f"{porcentaje:.1f}% (superávit según BF%)"
+else:
+    deficit_info = "0% (mantenimiento)"
 
 tabla_resumen += f"""
    
