@@ -2118,12 +2118,12 @@ def safe_int(value, default=0):
         return int(default)
 
 def calcular_tmb_cunningham(mlg):
-    """Calcula el TMB usando la fórmula de Cunningham."""
+    """Calcula el TMB usando la fórmula de Katch-McArdle."""
     try:
         mlg = float(mlg)
     except (TypeError, ValueError):
         mlg = 0.0
-    return 500 + (22 * mlg)
+    return 370 + (21.6 * mlg)
 
 def calcular_mlg(peso, porcentaje_grasa):
     """Calcula la Masa Libre de Grasa."""
@@ -10245,8 +10245,8 @@ SECCIÓN 5: GASTO ENERGÉTICO (MOTOR METABÓLICO)
    Cálculo del gasto energético total mediante componentes aditivos.
 
 🔥 5.1 TASA METABÓLICA BASAL (TMB):
-   • Ecuación: Cunningham (basada en MLG)
-   • TMB = 500 + (22 × MLG)
+   • Ecuación: Katch-McArdle (basada en MLG)
+   • TMB = 370 + (21.6 × MLG)
    • Resultado: {tmb:.0f} kcal/día
    • Edad metabólica estimada: {edad_metabolica} años (vs cronológica: {edad} años)
 
