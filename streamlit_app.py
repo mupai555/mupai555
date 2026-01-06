@@ -9317,7 +9317,7 @@ if USER_VIEW:
                 st.write("• **Objetivo:** –")
 
         # Cálculo del gasto energético
-        GE = (tmb * geaf + gee_prom_dia) * eta
+        GE = tmb * geaf * eta + gee_prom_dia
         
         # ⚠️ NOTA: ingesta_calorica_tradicional es SOLO para UI display
         # EMAILS usan ingesta_calorica_capeada (calculada con NUEVA LÓGICA + GUARDRAILS)
@@ -9589,7 +9589,7 @@ else:
     fbeo = 1 + porcentaje / 100
     
     # Calculate energy expenditure
-    GE = (tmb * geaf + gee_prom_dia) * eta
+    GE = tmb * geaf * eta + gee_prom_dia
     # ⚠️ NOTA: ingesta_calorica_tradicional NO se usa en emails (solo fallback)
     ingesta_calorica_tradicional = GE * fbeo
     
@@ -10270,9 +10270,9 @@ SECCIÓN 5: GASTO ENERGÉTICO (MOTOR METABÓLICO)
 
    ╔════════════════════════════════════════════════════════════════╗
    ║  GASTO ENERGÉTICO TOTAL (GE)                                   ║
-   ║  GE = (TMB × GEAF + GEE) × ETA                                 ║
+   ║  GE = (TMB × GEAF) + GEE × ETA                                 ║
    ║                                                                ║
-   ║  GE = ({tmb:.0f} × {geaf if 'geaf' in locals() else 1.0} + {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f}) × {eta if 'eta' in locals() else 1.1}                             ║
+   ║  GE = ({tmb:.0f} × {geaf if 'geaf' in locals() else 1.0}) + {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f} × {eta if 'eta' in locals() else 1.1}                             ║
    ║                                                                ║
    ║  ══► GE TOTAL: {GE:.0f} kcal/día                               ║
    ╚════════════════════════════════════════════════════════════════╝"""
