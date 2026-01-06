@@ -3328,10 +3328,10 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
                 • 25-30%: Sobrepeso (considerar reducir)<br>
                 • 30%+: Obesidad (riesgo metabólico alto)
                 """
-            else:
-                categoria_grasa = "Alto"
+            elif grasa_corregida < 30:
+                categoria_grasa = "Sobrepeso"
                 emoji_grasa = "⚠️"
-                feedback_grasa = "Nivel elevado. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
+                feedback_grasa = "Nivel de sobrepeso. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
                 rango_saludable = "Rango fitness: 12-18%"
                 rangos_detallados = """
                 <strong>Rangos de referencia (Hombres):</strong><br>
@@ -3341,6 +3341,20 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
                 • 18-25%: Promedio aceptable<br>
                 • <strong>25-30%: Sobrepeso (considerar reducir) ← Tú estás aquí</strong><br>
                 • 30%+: Obesidad (riesgo metabólico alto)
+                """
+            else:
+                categoria_grasa = "Obesidad"
+                emoji_grasa = "🚨"
+                feedback_grasa = "Nivel de obesidad. Alto riesgo metabólico. Urgente reducir con asesoría médica y nutricional."
+                rango_saludable = "Rango fitness: 12-18%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Hombres):</strong><br>
+                • 3-6%: Esencial (mínimo para sobrevivir)<br>
+                • 6-12%: Atlético/Competición (muy definido)<br>
+                • 12-18%: Fitness (saludable, estético)<br>
+                • 18-25%: Promedio aceptable<br>
+                • 25-30%: Sobrepeso (considerar reducir)<br>
+                • <strong>30%+: Obesidad (riesgo metabólico alto) ← Tú estás aquí</strong>
                 """
         else:  # Mujer
             if grasa_corregida < 12:
@@ -3399,10 +3413,10 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
                 • 30-35%: Sobrepeso (considerar reducir)<br>
                 • 35%+: Obesidad (riesgo metabólico alto)
                 """
-            else:
-                categoria_grasa = "Alto"
+            elif grasa_corregida < 35:
+                categoria_grasa = "Sobrepeso"
                 emoji_grasa = "⚠️"
-                feedback_grasa = "Nivel elevado. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
+                feedback_grasa = "Nivel de sobrepeso. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
                 rango_saludable = "Rango fitness: 17-23%"
                 rangos_detallados = """
                 <strong>Rangos de referencia (Mujeres):</strong><br>
@@ -3412,6 +3426,20 @@ def enviar_email_cliente(nombre_cliente, email_cliente, fecha, edad, sexo, peso,
                 • 23-30%: Promedio aceptable<br>
                 • <strong>30-35%: Sobrepeso (considerar reducir) ← Tú estás aquí</strong><br>
                 • 35%+: Obesidad (riesgo metabólico alto)
+                """
+            else:
+                categoria_grasa = "Obesidad"
+                emoji_grasa = "🚨"
+                feedback_grasa = "Nivel de obesidad. Alto riesgo metabólico. Urgente reducir con asesoría médica y nutricional."
+                rango_saludable = "Rango fitness: 17-23%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Mujeres):</strong><br>
+                • 10-12%: Esencial (mínimo, puede afectar fertilidad)<br>
+                • 12-17%: Atlético/Competición (muy definido)<br>
+                • 17-23%: Fitness (saludable, estético)<br>
+                • 23-30%: Promedio aceptable<br>
+                • 30-35%: Sobrepeso (considerar reducir)<br>
+                • <strong>35%+: Obesidad (riesgo metabólico alto) ← Tú estás aquí</strong>
                 """
         
         # Feedback para FFMI si está disponible
@@ -4810,10 +4838,10 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
                 • 25-30%: Sobrepeso (considerar reducir)<br>
                 • 30%+: Obesidad (riesgo metabólico alto)
                 """
-            else:
-                categoria_grasa = "Alto"
+            elif grasa_corregida < 30:
+                categoria_grasa = "Sobrepeso"
                 emoji_grasa = "⚠️"
-                feedback_grasa = "Nivel elevado. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
+                feedback_grasa = "Nivel de sobrepeso. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
                 rango_saludable = "Rango fitness: 12-18%"
                 rangos_detallados = """
                 <strong>Rangos de referencia (Hombres):</strong><br>
@@ -4823,6 +4851,20 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
                 • 18-25%: Promedio aceptable<br>
                 • <strong>25-30%: Sobrepeso (considerar reducir) ← Tú estás aquí</strong><br>
                 • 30%+: Obesidad (riesgo metabólico alto)
+                """
+            else:
+                categoria_grasa = "Obesidad"
+                emoji_grasa = "🚨"
+                feedback_grasa = "Nivel de obesidad. Alto riesgo metabólico. Urgente reducir con asesoría médica y nutricional."
+                rango_saludable = "Rango fitness: 12-18%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Hombres):</strong><br>
+                • 3-6%: Esencial (mínimo para sobrevivir)<br>
+                • 6-12%: Atlético/Competición (muy definido)<br>
+                • 12-18%: Fitness (saludable, estético)<br>
+                • 18-25%: Promedio aceptable<br>
+                • 25-30%: Sobrepeso (considerar reducir)<br>
+                • <strong>30%+: Obesidad (riesgo metabólico alto) ← Tú estás aquí</strong>
                 """
         else:  # Mujer
             if grasa_corregida < 12:
@@ -4881,10 +4923,10 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
                 • 30-35%: Sobrepeso (considerar reducir)<br>
                 • 35%+: Obesidad (riesgo metabólico alto)
                 """
-            else:
-                categoria_grasa = "Alto"
+            elif grasa_corregida < 35:
+                categoria_grasa = "Sobrepeso"
                 emoji_grasa = "⚠️"
-                feedback_grasa = "Nivel elevado. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
+                feedback_grasa = "Nivel de sobrepeso. Recomendable reducir para mejorar salud metabólica y reducir riesgos."
                 rango_saludable = "Rango fitness: 17-23%"
                 rangos_detallados = """
                 <strong>Rangos de referencia (Mujeres):</strong><br>
@@ -4894,6 +4936,20 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
                 • 23-30%: Promedio aceptable<br>
                 • <strong>30-35%: Sobrepeso (considerar reducir) ← Tú estás aquí</strong><br>
                 • 35%+: Obesidad (riesgo metabólico alto)
+                """
+            else:
+                categoria_grasa = "Obesidad"
+                emoji_grasa = "🚨"
+                feedback_grasa = "Nivel de obesidad. Alto riesgo metabólico. Urgente reducir con asesoría médica y nutricional."
+                rango_saludable = "Rango fitness: 17-23%"
+                rangos_detallados = """
+                <strong>Rangos de referencia (Mujeres):</strong><br>
+                • 10-12%: Esencial (mínimo, puede afectar fertilidad)<br>
+                • 12-17%: Atlético/Competición (muy definido)<br>
+                • 17-23%: Fitness (saludable, estético)<br>
+                • 23-30%: Promedio aceptable<br>
+                • 30-35%: Sobrepeso (considerar reducir)<br>
+                • <strong>35%+: Obesidad (riesgo metabólico alto) ← Tú estás aquí</strong>
                 """
         
         # Feedback para FFMI si está disponible
