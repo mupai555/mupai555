@@ -10697,9 +10697,12 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
         elif grasa_corregida < 25:
             categoria_grasa = "Promedio"
             color_categoria = "#3498DB"
+        elif grasa_corregida < 30:
+            categoria_grasa = "Sobrepeso"
+            color_categoria = "#E67E22"
         else:
-            categoria_grasa = "Alto"
-            color_categoria = "#E74C3C"
+            categoria_grasa = "Obesidad"
+            color_categoria = "#C0392B"
     else:  # Mujer
         if grasa_corregida < 12:
             categoria_grasa = "Muy bajo (Competición)"
@@ -10713,9 +10716,12 @@ if st.session_state.datos_completos and 'peso' in locals() and peso > 0:
         elif grasa_corregida < 30:
             categoria_grasa = "Promedio"
             color_categoria = "#3498DB"
+        elif grasa_corregida < 35:
+            categoria_grasa = "Sobrepeso"
+            color_categoria = "#E67E22"
         else:
-            categoria_grasa = "Alto"
-            color_categoria = "#E74C3C"
+            categoria_grasa = "Obesidad"
+            color_categoria = "#C0392B"
     
     # Usar proyección científica realista
     peso_actual = peso if peso > 0 else 70  # Fallback si no hay peso
