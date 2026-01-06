@@ -3054,7 +3054,7 @@ def calcular_macros_tradicional(ingesta_calorica_tradicional, tmb, sexo, grasa_c
     Función centralizada para calcular macronutrientes del plan tradicional.
     Garantiza consistencia en todos los cálculos (UI, email, reportes).
     
-    Lógica de cálculo:
+    Lógica de cálculo TRADICIONAL ADAPTABLE:
     1. PROTEÍNA: Usar MLG si aplica regla 35/42, sino usar peso total
        - Factor varía según % grasa: 1.6-2.2 g/kg
     2. GRASA: SIEMPRE 40% del TMB (con restricciones 20-40% TEI)
@@ -10341,9 +10341,9 @@ else:
 # ✅ USAR MACROS DE LÓGICA TRADICIONAL
 # Extraer macros de calcular_macros_tradicional
 if macros_tradicional:
-    proteina_g_tradicional = macros_tradicional.get('protein_g', 0)
-    grasa_g_tradicional = macros_tradicional.get('fat_g', 0)
-    carbo_g_tradicional = macros_tradicional.get('carb_g', 0)
+    proteina_g_tradicional = macros_tradicional.get('proteina_g', 0)
+    grasa_g_tradicional = macros_tradicional.get('grasa_g', 0)
+    carbo_g_tradicional = macros_tradicional.get('carbo_g', 0)
     proteina_kcal_tradicional = proteina_g_tradicional * 4
     grasa_kcal_tradicional = grasa_g_tradicional * 9
     carbo_kcal_tradicional = carbo_g_tradicional * 4
@@ -10351,7 +10351,7 @@ if macros_tradicional:
     base_proteina_nombre_email = macros_tradicional.get('base_proteina', 'peso')
     deficit_pct_aplicado = abs(porcentaje)  # Déficit/superávit determinado automáticamente
     deficit_warning = ""
-    factor_proteina_tradicional_email = macros_tradicional.get('protein_mult', 1.6)
+    factor_proteina_tradicional_email = macros_tradicional.get('factor_proteina', 1.6)
     usar_mlg_para_proteina_email = False  # La lógica tradicional no usa MLG por defecto
     base_proteina_kg_email = peso
     tiene_ciclaje = False  # No hay ciclaje en lógica tradicional
