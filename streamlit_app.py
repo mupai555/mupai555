@@ -10322,7 +10322,7 @@ fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
 fbeo = 1 + porcentaje / 100  # Factor de balance energético
 
 # Calcular ingesta con déficit/superávit determinado automáticamente
-ingesta_calorica_tradicional = ge * fbeo if 'ge' in locals() and ge > 0 else 0
+ingesta_calorica_tradicional = GE * fbeo if 'GE' in locals() and GE > 0 else 0
 
 # Calcular macros con la lógica tradicional
 if ingesta_calorica_tradicional > 0:
