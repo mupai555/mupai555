@@ -9316,8 +9316,13 @@ if USER_VIEW:
             except Exception:
                 st.write("• **Objetivo:** –")
 
-        # Cálculo del gasto energético
-        GE = (tmb * geaf + gee_prom_dia) * eta
+        # Cálculo del gasto energético (promedio ponderado semanal)
+        # GE_reposo = (TMB × GEAF) × ETA
+        # GE_entreno = (TMB × GEAF + GEE_sesión) × ETA
+        # Mantenimiento = [d × GE_entreno + (7-d) × GE_reposo] / 7
+        GE_reposo = (tmb * geaf) * eta
+        GE_entreno = (tmb * geaf + kcal_sesion) * eta
+        GE = (dias_fuerza * GE_entreno + (7 - dias_fuerza) * GE_reposo) / 7
         
         # ⚠️ NOTA: ingesta_calorica_tradicional es SOLO para UI display
         # EMAILS usan ingesta_calorica_capeada (calculada con NUEVA LÓGICA + GUARDRAILS)
@@ -9588,8 +9593,13 @@ else:
     fase, porcentaje = determinar_fase_nutricional_refinada(grasa_corregida, sexo)
     fbeo = 1 + porcentaje / 100
     
-    # Calculate energy expenditure
-    GE = (tmb * geaf + gee_prom_dia) * eta
+    # Calculate energy expenditure (promedio ponderado semanal)
+    # GE_reposo = (TMB × GEAF) × ETA
+    # GE_entreno = (TMB × GEAF + GEE_sesión) × ETA
+    # Mantenimiento = [d × GE_entreno + (7-d) × GE_reposo] / 7
+    GE_reposo = (tmb * geaf) * eta
+    GE_entreno = (tmb * geaf + kcal_sesion) * eta
+    GE = (dias_fuerza * GE_entreno + (7 - dias_fuerza) * GE_reposo) / 7
     # ⚠️ NOTA: ingesta_calorica_tradicional NO se usa en emails (solo fallback)
     ingesta_calorica_tradicional = GE * fbeo
     
@@ -10269,12 +10279,17 @@ SECCIÓN 5: GASTO ENERGÉTICO (MOTOR METABÓLICO)
    • Justificación: % grasa ({grasa_corregida:.1f}%) y sexo ({sexo})
 
    ╔════════════════════════════════════════════════════════════════╗
-   ║  GASTO ENERGÉTICO TOTAL (GE)                                   ║
-   ║  GE = (TMB × GEAF + GEE) × ETA                                 ║
+   ║  GASTO ENERGÉTICO TOTAL (GE) - PROMEDIO SEMANAL                ║
    ║                                                                ║
-   ║  GE = ({tmb:.0f} × {geaf if 'geaf' in locals() else 1.0} + {gee_prom_dia if 'gee_prom_dia' in locals() else 0:.0f}) × {eta if 'eta' in locals() else 1.1}                             ║
+   ║  GE_reposo = (TMB × GEAF) × ETA                                ║
+   ║  GE_entreno = (TMB × GEAF + GEE_sesión) × ETA                  ║
+   ║  GE = [d × GE_entreno + (7-d) × GE_reposo] / 7                 ║
    ║                                                                ║
-   ║  ══► GE TOTAL: {GE:.0f} kcal/día                               ║
+   ║  Donde d = {dias_fuerza if 'dias_fuerza' in locals() else 0} días/semana de entrenamiento              ║
+   ║  GE_reposo = ({tmb:.0f} × {geaf if 'geaf' in locals() else 1.0}) × {eta if 'eta' in locals() else 1.1} = {(tmb * geaf * eta) if 'tmb' in locals() and 'geaf' in locals() and 'eta' in locals() else 0:.0f} kcal  ║
+   ║  GE_entreno = ({tmb:.0f} × {geaf if 'geaf' in locals() else 1.0} + {kcal_sesion if 'kcal_sesion' in locals() else 0:.0f}) × {eta if 'eta' in locals() else 1.1} = {((tmb * geaf + kcal_sesion) * eta) if all(v in locals() for v in ['tmb','geaf','kcal_sesion','eta']) else 0:.0f} kcal║
+   ║                                                                ║
+   ║  ══► GE TOTAL: {GE:.0f} kcal/día (promedio)                    ║
    ╚════════════════════════════════════════════════════════════════╝"""
 
 # ==================== CALCULAR PLAN NUTRICIONAL - LÓGICA TRADICIONAL ====================
