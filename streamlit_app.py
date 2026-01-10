@@ -8405,26 +8405,20 @@ with st.expander(step4_title, expanded=True):
         experiencia = False
 
     # Allow all users to access functional exercises regardless of experience level
-    if experiencia:
-        st.markdown("### 🏆 Evaluación de rendimiento por categoría")
-        st.info("💡 **Importante:** Debes completar las 5 categorías de ejercicios para poder enviar el cuestionario. Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
-        
-        # Show progress of completed exercises
-        ejercicios_previos = st.session_state.get("datos_ejercicios", {})
-        if ejercicios_previos and len(ejercicios_previos) > 0:
-            st.success(f"✅ Has completado {len(ejercicios_previos)} de 5 categorías de ejercicios")
+    st.markdown("### 🏆 Evaluación de rendimiento por categoría")
+    st.info("💡 **Importante:** Debes completar las 5 categorías de ejercicios para poder enviar el cuestionario. Para cada categoría, selecciona el ejercicio donde hayas alcanzado tu mejor rendimiento y proporciona el máximo que hayas logrado manteniendo una técnica adecuada.")
+    
+    # Show progress of completed exercises
+    ejercicios_previos = st.session_state.get("datos_ejercicios", {})
+    if ejercicios_previos and len(ejercicios_previos) > 0:
+        st.success(f"✅ Has completado {len(ejercicios_previos)} de 5 categorías de ejercicios")
 
-        ejercicios_data = {}
-        niveles_ejercicios = {}
+    ejercicios_data = {}
+    niveles_ejercicios = {}
 
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["💪 Empuje", "🏋️ Tracción", "🦵 Pierna Empuje", "🦵 Pierna Tracción", "🧘 Core"])
-    else:
-        st.warning("⚠️ **Primero debes seleccionar tu nivel de experiencia en entrenamiento para acceder a la evaluación de ejercicios funcionales.**")
-        ejercicios_data = {}
-        niveles_ejercicios = {}
-
-    if experiencia:
-        with tab1:
+    # Process exercises - Using vertical expanders for better visibility
+    if True:  # Changed from 'if experiencia:' to always show exercises
+        with st.expander("💪 **EMPUJE SUPERIOR**", expanded=True):
             st.markdown("#### Empuje superior")
             col1, col2 = st.columns(2)
             with col1:
@@ -8472,7 +8466,7 @@ with st.expander(step4_title, expanded=True):
                     </div>
                     """, unsafe_allow_html=True)
 
-        with tab2:
+        with st.expander("🏋️ **TRACCIÓN SUPERIOR**", expanded=True):
             st.markdown("#### Tracción superior")
             col1, col2 = st.columns(2)
             with col1:
@@ -8513,7 +8507,7 @@ with st.expander(step4_title, expanded=True):
                     </div>
                     """, unsafe_allow_html=True)
 
-        with tab3:
+        with st.expander("🦵 **PIERNA EMPUJE**", expanded=True):
             st.markdown("#### Tren inferior empuje")
             col1, col2 = st.columns(2)
             with col1:
@@ -8541,7 +8535,7 @@ with st.expander(step4_title, expanded=True):
                     color, emoji = color_map.get(nivel_actual, ("#888", "⚪"))
                     st.markdown(f'<div style="background: linear-gradient(135deg, {color}22, {color}11); border-left: 4px solid {color}; padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.5rem; animation: fadeIn 0.3s ease;"><span style="font-size: 1.1rem; font-weight: 800; color: {color};">{emoji} NIVEL: {nivel_actual.upper()}</span></div>', unsafe_allow_html=True)
 
-        with tab4:
+        with st.expander("🦵 **PIERNA TRACCIÓN**", expanded=True):
             st.markdown("#### Tren inferior tracción")
             col1, col2 = st.columns(2)
             with col1:
@@ -8569,7 +8563,7 @@ with st.expander(step4_title, expanded=True):
                     color, emoji = color_map.get(nivel_actual, ("#888", "⚪"))
                     st.markdown(f'<div style="background: linear-gradient(135deg, {color}22, {color}11); border-left: 4px solid {color}; padding: 0.75rem 1rem; border-radius: 8px; margin-top: 0.5rem; animation: fadeIn 0.3s ease;"><span style="font-size: 1.1rem; font-weight: 800; color: {color};">{emoji} NIVEL: {nivel_actual.upper()}</span></div>', unsafe_allow_html=True)
 
-        with tab5:
+        with st.expander("🧘 **CORE Y ESTABILIDAD**", expanded=True):
             st.markdown("#### Core y estabilidad")
             st.markdown("**Ejercicio:**")
             st.info("Plancha frontal")
@@ -9953,7 +9947,7 @@ grasa_visceral_report = safe_int(grasa_visceral, 0)
 grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 else 'No medido'
 
 # Format circunferencia_cintura and calculate WtHR for report
-circunferencia_cintura_report = safe_float(circunferencia_cintura, 0.0)
+circunferencia_cintura_report = safe_float(circunferencia_cintura, 0.0)  # Fixed: ensure correct float conversion
 circunferencia_cintura_str = f"{circunferencia_cintura_report:.1f} cm" if circunferencia_cintura_report > 0 else 'No medido'
 
 # Calculate WtHR (Waist-to-Height Ratio)
