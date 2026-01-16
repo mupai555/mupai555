@@ -7955,6 +7955,9 @@ if datos_personales_completos and st.session_state.datos_completos:
     grasa_corporal = st.session_state.grasa_corporal
     masa_muscular = st.session_state.get("masa_muscular", 0.0)
     grasa_visceral = st.session_state.get("grasa_visceral", 0)
+    circunferencia_cintura = st.session_state.get("circunferencia_cintura", 0.0)
+    circunferencia_cuello = st.session_state.get("circunferencia_cuello", 0.0)
+    circunferencia_cadera = st.session_state.get("circunferencia_cadera", 0.0)
 
     grasa_corregida = corregir_porcentaje_grasa(grasa_corporal, metodo_grasa, sexo)
     mlg = calcular_mlg(peso, grasa_corregida)
@@ -8271,6 +8274,12 @@ if 'masa_muscular' not in locals():
     masa_muscular = st.session_state.get("masa_muscular", 0.0)
 if 'grasa_visceral' not in locals():
     grasa_visceral = st.session_state.get("grasa_visceral", 0)
+if 'circunferencia_cintura' not in locals():
+    circunferencia_cintura = st.session_state.get("circunferencia_cintura", 0.0)
+if 'circunferencia_cuello' not in locals():
+    circunferencia_cuello = st.session_state.get("circunferencia_cuello", 0.0)
+if 'circunferencia_cadera' not in locals():
+    circunferencia_cadera = st.session_state.get("circunferencia_cadera", 0.0)
 if 'grasa_corregida' not in locals():
     grasa_corregida = 20.0
 if 'mlg' not in locals():
