@@ -592,7 +592,8 @@ button[kind="header"] {
 */
 
 /* ========== MENSAJE VISIBLE PARA USUARIOS ========== */
-/* Ocultar botones específicos */
+/* TEMPORALMENTE COMENTADO - Permitir acceso completo al menú */
+/*
 [data-testid="stToolbar"] {
     display: none !important;
 }
@@ -601,15 +602,14 @@ button[kind="header"] {
     display: none !important;
 }
 
-/* Ocultar botón de Deploy */
 .stDeployButton {
     display: none !important;
 }
 
-/* Ocultar cualquier link a GitHub */
 a[href*="github.com"] {
     display: none !important;
 }
+*/
 
 /* Ajustar padding superior para compensar */
 .block-container {
