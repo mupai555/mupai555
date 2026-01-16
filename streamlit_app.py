@@ -1813,6 +1813,36 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ==================== BOTÓN DE EMERGENCIA: LIMPIAR CACHE ====================
+# Solución temporal para permitir a usuarios limpiar cache sin acceso al menú
+st.markdown("""
+<style>
+.emergency-button-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 999999;
+    background: #FF5252;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Crear columnas para posicionar el botón
+col_emergency1, col_emergency2, col_emergency3 = st.columns([6, 2, 1])
+with col_emergency3:
+    if st.button("🔄 Limpiar Cache", help="Si ves errores, haz clic aquí para limpiar el cache", type="primary"):
+        # Limpiar TODOS los campos numéricos problemáticos
+        campos_a_limpiar = ['masa_muscular', 'grasa_visceral', 'circunferencia_cintura', 
+                           'circunferencia_cuello', 'circunferencia_cadera']
+        for campo in campos_a_limpiar:
+            if campo in st.session_state:
+                del st.session_state[campo]
+        st.success("✅ Cache limpiado! Recargando...")
+        st.rerun()
+
 # --- Inicialización de estado de sesión robusta (solo una vez)
 defaults = {
     "datos_completos": False,
