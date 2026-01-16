@@ -7833,71 +7833,110 @@ if datos_personales_completos and st.session_state.datos_completos:
     )
 
     # Campo opcional - % Masa muscular (no afecta cálculos)
-    masa_muscular_default = st.session_state.get("masa_muscular", 0.0)
-    masa_muscular_safe = safe_float(masa_muscular_default, 0.0)
-    # Ensure value is within bounds
-    if masa_muscular_safe < 0.0:
-        masa_muscular_safe = 0.0
-    elif masa_muscular_safe > 100.0:
-        masa_muscular_safe = 0.0
+    # Clean corrupted session state if exists
+    if "masa_muscular" in st.session_state:
+        masa_muscular_raw = st.session_state["masa_muscular"]
+        masa_muscular_clean = safe_float(masa_muscular_raw, 0.0)
+        # If value is outside bounds, remove it from session state to force reset
+        if masa_muscular_clean < 0.0 or masa_muscular_clean > 100.0:
+            del st.session_state["masa_muscular"]
+            masa_muscular_clean = 0.0
+    else:
+        masa_muscular_clean = 0.0
     
     masa_muscular = st.number_input(
         "💪 % Masa muscular (medición Omron, opcional)",
         min_value=0.0,
         max_value=100.0,
-        value=masa_muscular_safe,
+        value=masa_muscular_clean,
         step=0.1,
         key="masa_muscular",
         help="Introduce el % de masa muscular según tu báscula Omron. Se comparará con el valor estimado científico en el reporte. Si no lo conoces, déjalo en 0."
     )
 
     # Campo opcional - Grasa visceral (no afecta cálculos)
-    grasa_visceral_default = st.session_state.get("grasa_visceral", 0)
-    grasa_visceral_safe = safe_int(grasa_visceral_default, 0)
+    # Clean corrupted session state if exists
+    if "grasa_visceral" in st.session_state:
+        grasa_visceral_raw = st.session_state["grasa_visceral"]
+        grasa_visceral_clean = safe_int(grasa_visceral_raw, 1)
+        # If value is outside bounds, remove it from session state to force reset
+        if grasa_visceral_clean < 1 or grasa_visceral_clean > 59:
+            del st.session_state["grasa_visceral"]
+            grasa_visceral_clean = 1
+    else:
+        grasa_visceral_clean = 1
+    
     grasa_visceral = st.number_input(
         "🫀 Grasa visceral (nivel, opcional)",
         min_value=1,
         max_value=59,
-        value=grasa_visceral_safe if grasa_visceral_safe >= 1 else 1,
+        value=grasa_visceral_clean,
         step=1,
         key="grasa_visceral",
         help="La grasa visceral es la grasa que rodea los órganos internos. Valores saludables: 1-12. Valores altos (≥13) indican mayor riesgo de enfermedades metabólicas. Este dato se guarda y se incluye en el reporte, pero no afecta los cálculos."
     )
 
     # Campo opcional - Circunferencia de cintura (no afecta cálculos)
-    circunferencia_cintura_default = st.session_state.get("circunferencia_cintura", 0.0)
-    circunferencia_cintura_safe = safe_float(circunferencia_cintura_default, 0.0)
+    # Clean corrupted session state if exists
+    if "circunferencia_cintura" in st.session_state:
+        circunferencia_cintura_raw = st.session_state["circunferencia_cintura"]
+        circunferencia_cintura_clean = safe_float(circunferencia_cintura_raw, 0.0)
+        # If value is outside bounds, remove it from session state to force reset
+        if circunferencia_cintura_clean < 0.0 or circunferencia_cintura_clean > 200.0:
+            del st.session_state["circunferencia_cintura"]
+            circunferencia_cintura_clean = 0.0
+    else:
+        circunferencia_cintura_clean = 0.0
+    
     circunferencia_cintura = st.number_input(
         "📏 Circunferencia de cintura (cm, opcional)",
         min_value=0.0,
         max_value=200.0,
-        value=circunferencia_cintura_safe if circunferencia_cintura_safe > 0 else 0.0,
+        value=circunferencia_cintura_clean,
         step=0.1,
         key="circunferencia_cintura",
         help="Medida de la circunferencia de la cintura a la altura del ombligo. Este dato se incluye en el reporte junto con el ratio cintura-altura (WtHR). Valores saludables WtHR: <0.5 (hombres y mujeres)."
     )
 
     # Campo opcional - Circunferencia de cuello (no afecta cálculos)
-    circunferencia_cuello_default = st.session_state.get("circunferencia_cuello", 0.0)
-    circunferencia_cuello_safe = safe_float(circunferencia_cuello_default, 0.0)
+    # Clean corrupted session state if exists
+    if "circunferencia_cuello" in st.session_state:
+        circunferencia_cuello_raw = st.session_state["circunferencia_cuello"]
+        circunferencia_cuello_clean = safe_float(circunferencia_cuello_raw, 0.0)
+        # If value is outside bounds, remove it from session state to force reset
+        if circunferencia_cuello_clean < 0.0 or circunferencia_cuello_clean > 100.0:
+            del st.session_state["circunferencia_cuello"]
+            circunferencia_cuello_clean = 0.0
+    else:
+        circunferencia_cuello_clean = 0.0
+    
     circunferencia_cuello = st.number_input(
         "📏 Circunferencia de cuello (cm, opcional)",
         min_value=0.0,
         max_value=100.0,
-        value=circunferencia_cuello_safe if circunferencia_cuello_safe > 0 else 0.0,
+        value=circunferencia_cuello_clean,
         step=0.1,
         key="circunferencia_cuello",
         help="Medida de la circunferencia del cuello. Este dato se incluye en el reporte. Si no lo conoces, déjalo en 0."
     )
 
     # Campo opcional - Circunferencia de cadera (no afecta cálculos, opcional para hombres)
-    circunferencia_cadera_default = st.session_state.get("circunferencia_cadera", 0.0)
-    circunferencia_cadera_safe = safe_float(circunferencia_cadera_default, 0.0)
+    # Clean corrupted session state if exists
+    if "circunferencia_cadera" in st.session_state:
+        circunferencia_cadera_raw = st.session_state["circunferencia_cadera"]
+        circunferencia_cadera_clean = safe_float(circunferencia_cadera_raw, 0.0)
+        # If value is outside bounds, remove it from session state to force reset
+        if circunferencia_cadera_clean < 0.0 or circunferencia_cadera_clean > 200.0:
+            del st.session_state["circunferencia_cadera"]
+            circunferencia_cadera_clean = 0.0
+    else:
+        circunferencia_cadera_clean = 0.0
+    
     circunferencia_cadera = st.number_input(
         "📏 Circunferencia de cadera (cm, opcional)",
         min_value=0.0,
         max_value=200.0,
-        value=circunferencia_cadera_safe if circunferencia_cadera_safe > 0 else 0.0,
+        value=circunferencia_cadera_clean,
         step=0.1,
         key="circunferencia_cadera",
         help="Medida de la circunferencia de la cadera en su parte más ancha. Este dato se incluye en el reporte. Opcional para hombres. Si no lo conoces, déjalo en 0."
