@@ -4774,6 +4774,8 @@ def enviar_email_parte2(nombre_cliente, fecha, edad, sexo, peso, estatura, imc, 
         
         # Variables para compatibilidad con contenido texto plano (legacy)
         circunferencia_cintura_val = circunferencia_cintura if circunferencia_cintura is not None else 0
+        circunferencia_cuello_val = circunferencia_cuello if circunferencia_cuello is not None else 0
+        circunferencia_cadera_val = circunferencia_cadera if circunferencia_cadera is not None else 0
         masa_muscular_val = masa_muscular if masa_muscular is not None else 0
         grasa_visceral_val = grasa_visceral if grasa_visceral is not None else 0
         clasificacion_wthr = wthr_clasificacion.replace(' - ', '').replace('🟢 ', '').replace('🟡 ', '').replace('🔴 ', '')
@@ -5534,6 +5536,8 @@ COMPOSICIÓN CORPORAL — LÍNEA BASE
    • Estatura: {estatura:.1f} cm ({estatura/100:.2f} m)
    • IMC: {imc:.1f} kg/m²
    • Circunferencia de cintura: {f"{circunferencia_cintura_val:.1f} cm" if circunferencia_cintura_val > 0 else "[____]"}
+   • Circunferencia de cuello: {f"{circunferencia_cuello_val:.1f} cm" if circunferencia_cuello_val > 0 else "[____]"}
+   • Circunferencia de cadera: {f"{circunferencia_cadera_val:.1f} cm" if circunferencia_cadera_val > 0 else "[____]"}
    • Ratio Cintura-Altura (WtHR): {f"{wthr:.3f}" if wthr > 0 else "[____]"}
      {f"→ Clasificación: {clasificacion_wthr}" if wthr > 0 else ""}
 
@@ -7830,11 +7834,18 @@ if datos_personales_completos and st.session_state.datos_completos:
 
     # Campo opcional - % Masa muscular (no afecta cálculos)
     masa_muscular_default = st.session_state.get("masa_muscular", 0.0)
+    masa_muscular_safe = safe_float(masa_muscular_default, 0.0)
+    # Ensure value is within bounds
+    if masa_muscular_safe < 0.0:
+        masa_muscular_safe = 0.0
+    elif masa_muscular_safe > 100.0:
+        masa_muscular_safe = 0.0
+    
     masa_muscular = st.number_input(
         "💪 % Masa muscular (medición Omron, opcional)",
         min_value=0.0,
         max_value=100.0,
-        value=safe_float(masa_muscular_default, 0.0),
+        value=masa_muscular_safe,
         step=0.1,
         key="masa_muscular",
         help="Introduce el % de masa muscular según tu báscula Omron. Se comparará con el valor estimado científico en el reporte. Si no lo conoces, déjalo en 0."
@@ -7864,6 +7875,32 @@ if datos_personales_completos and st.session_state.datos_completos:
         step=0.1,
         key="circunferencia_cintura",
         help="Medida de la circunferencia de la cintura a la altura del ombligo. Este dato se incluye en el reporte junto con el ratio cintura-altura (WtHR). Valores saludables WtHR: <0.5 (hombres y mujeres)."
+    )
+
+    # Campo opcional - Circunferencia de cuello (no afecta cálculos)
+    circunferencia_cuello_default = st.session_state.get("circunferencia_cuello", 0.0)
+    circunferencia_cuello_safe = safe_float(circunferencia_cuello_default, 0.0)
+    circunferencia_cuello = st.number_input(
+        "📏 Circunferencia de cuello (cm, opcional)",
+        min_value=0.0,
+        max_value=100.0,
+        value=circunferencia_cuello_safe if circunferencia_cuello_safe > 0 else 0.0,
+        step=0.1,
+        key="circunferencia_cuello",
+        help="Medida de la circunferencia del cuello. Este dato se incluye en el reporte. Si no lo conoces, déjalo en 0."
+    )
+
+    # Campo opcional - Circunferencia de cadera (no afecta cálculos, opcional para hombres)
+    circunferencia_cadera_default = st.session_state.get("circunferencia_cadera", 0.0)
+    circunferencia_cadera_safe = safe_float(circunferencia_cadera_default, 0.0)
+    circunferencia_cadera = st.number_input(
+        "📏 Circunferencia de cadera (cm, opcional)",
+        min_value=0.0,
+        max_value=200.0,
+        value=circunferencia_cadera_safe if circunferencia_cadera_safe > 0 else 0.0,
+        step=0.1,
+        key="circunferencia_cadera",
+        help="Medida de la circunferencia de la cadera en su parte más ancha. Este dato se incluye en el reporte. Opcional para hombres. Si no lo conoces, déjalo en 0."
     )
 
     st.markdown('</div>', unsafe_allow_html=True)
@@ -9950,6 +9987,14 @@ grasa_visceral_str = str(grasa_visceral_report) if grasa_visceral_report >= 1 el
 circunferencia_cintura_report = safe_float(circunferencia_cintura, 0.0)  # Fixed: ensure correct float conversion
 circunferencia_cintura_str = f"{circunferencia_cintura_report:.1f} cm" if circunferencia_cintura_report > 0 else 'No medido'
 
+# Format circunferencia_cuello for report
+circunferencia_cuello_report = safe_float(circunferencia_cuello, 0.0)
+circunferencia_cuello_str = f"{circunferencia_cuello_report:.1f} cm" if circunferencia_cuello_report > 0 else 'No medido'
+
+# Format circunferencia_cadera for report
+circunferencia_cadera_report = safe_float(circunferencia_cadera, 0.0)
+circunferencia_cadera_str = f"{circunferencia_cadera_report:.1f} cm" if circunferencia_cadera_report > 0 else 'No medido'
+
 # Calculate WtHR (Waist-to-Height Ratio)
 wthr_report = 0.0
 wthr_str = 'No medido'
@@ -10068,6 +10113,8 @@ SECCIÓN 2: COMPOSICIÓN CORPORAL COMPLETA
    • Estatura: {estatura:.1f} cm ({estatura/100:.2f} m)
    • IMC: {imc:.1f} kg/m²
    • Circunferencia de cintura: {circunferencia_cintura_str}
+   • Circunferencia de cuello: {circunferencia_cuello_str}
+   • Circunferencia de cadera: {circunferencia_cadera_str}
    • Ratio Cintura-Altura (WtHR): {wthr_str}{wthr_clasificacion_str}
 
 📊 2.2 ANÁLISIS DE TEJIDOS:
