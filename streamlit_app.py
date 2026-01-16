@@ -10270,7 +10270,7 @@ SECCIÓN 2: COMPOSICIÓN CORPORAL COMPLETA
    
    CÁLCULO:
    • MLG: {mlg:.1f} kg
-   • FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f if estatura > 0 else 0.0}
+   • FFMI Base = MLG / Altura²: {(mlg / ((estatura/100)**2) if estatura > 0 else 0.0):.2f}
    • FFMI Normalizado (a 1.80m): {ffmi:.2f}
      Fórmula: FFMI_base + 6.3 × (1.8 - altura_m)
    
