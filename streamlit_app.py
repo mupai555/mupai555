@@ -575,19 +575,23 @@ limpiar_session_state_corrupto()
 
 st.markdown("""
 <style>
-/* ========== OCULTAR BARRA SUPERIOR Y BOTONES DE STREAMLIT ========== */
-/* Ocultar toolbar completo (Share, GitHub, etc) */
+/* ========== TEMPORALMENTE VISIBLE - PERMITIR CLEAR CACHE ========== */
+/* NOTA: Comentado temporalmente para permitir a usuarios limpiar cache corrupto */
+/* Una vez que los usuarios activos limpien su cache, descomentar estas líneas */
+
+/*
 header[data-testid="stHeader"] {
     display: none !important;
     visibility: hidden !important;
     height: 0px !important;
 }
 
-/* Ocultar menú hamburger */
 button[kind="header"] {
     display: none !important;
 }
+*/
 
+/* ========== MENSAJE VISIBLE PARA USUARIOS ========== */
 /* Ocultar botones específicos */
 [data-testid="stToolbar"] {
     display: none !important;
@@ -7798,6 +7802,18 @@ if not st.session_state.datos_completos:
 datos_personales_completos = all([nombre, telefono, email_cliente]) and acepto_terminos and st.session_state.get("acepto_descargo", False)
 
 if datos_personales_completos and st.session_state.datos_completos:
+    
+    # ⚠️ BANNER TEMPORAL: Instrucción para limpiar cache
+    st.warning("""
+    ⚠️ **¿Ves un error en esta página?** 
+    
+    Si la aplicación muestra un error (TypeError), por favor:
+    1. Haz clic en el menú **☰** en la esquina superior derecha
+    2. Selecciona **"Clear cache"**
+    3. Luego selecciona **"Rerun"**
+    
+    Esto limpiará datos antiguos y la app funcionará correctamente. ¡Gracias! 🙏
+    """)
     
     # Progress bar general
     progress = st.progress(0)
