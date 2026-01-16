@@ -1584,7 +1584,8 @@ html {
 
 /* Divider mejorado */
 
-/* ULTIMATE GITHUB/FORK HIDING - Hide any possible GitHub elements */
+/* TEMPORALMENTE DESHABILITADO - Permitir acceso al menú para Clear Cache */
+/*
 [data-testid="stAppViewContainer"] header {display: none !important;}
 [data-testid="stHeader"] {display: none !important;}
 .css-18e3th9 {display: none !important;}
@@ -1592,7 +1593,6 @@ html {
 .main-header {margin-top: 0rem !important;}
 .block-container {padding-top: 1rem !important;}
 
-/* Hide any share or deploy buttons that might link to GitHub */
 button:contains("Share") {display: none !important;}
 button:contains("Deploy") {display: none !important;}
 button:contains("GitHub") {display: none !important;}
@@ -1600,10 +1600,10 @@ button:contains("Fork") {display: none !important;}
 a:contains("GitHub") {display: none !important;}
 a:contains("Fork") {display: none !important;}
 
-/* Hide Streamlit branding that might include GitHub links */
 .css-1rs6os {display: none !important;}
 .css-17eq0hr {display: none !important;}
 .css-1fv8s86 {display: none !important;}
+*/
 
 </style>
 """, unsafe_allow_html=True)
@@ -1641,11 +1641,12 @@ function expandNextExpander(currentIndex) {
 st.markdown(navigation_js, unsafe_allow_html=True)
 
 # JavaScript para ocultar elementos de GitHub/Fork que puedan aparecer dinámicamente
+# TEMPORALMENTE DESHABILITADO para permitir acceso al menú
 github_hide_js = """
 <script>
-// Function to hide GitHub/Fork related elements
+/*
+// TEMPORALMENTE COMENTADO - Permitir acceso al menú Clear Cache
 function hideGitHubElements() {
-    // Hide elements by text content
     const elementsToHide = [
         'a[href*="github"]',
         'a[href*="fork"]', 
@@ -1673,7 +1674,6 @@ function hideGitHubElements() {
         }
     });
     
-    // Hide elements by text content (more aggressive)
     const allElements = document.querySelectorAll('*');
     allElements.forEach(el => {
         if (el.textContent && (
@@ -1682,7 +1682,6 @@ function hideGitHubElements() {
             el.textContent.toLowerCase().includes('deploy') ||
             el.textContent.toLowerCase().includes('share')
         )) {
-            // Only hide if it's a button or link
             if (el.tagName === 'BUTTON' || el.tagName === 'A') {
                 el.style.display = 'none !important';
             }
@@ -1690,10 +1689,8 @@ function hideGitHubElements() {
     });
 }
 
-// Run immediately and also on DOM changes
 hideGitHubElements();
 
-// Observer for dynamic content
 const observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(mutation) {
         if (mutation.addedNodes.length > 0) {
@@ -1706,6 +1703,9 @@ observer.observe(document.body, {
     childList: true,
     subtree: true
 });
+*/
+console.log('GitHub hiding temporarily disabled for cache clearing');
+
 
 // Run again after page load
 window.addEventListener('load', hideGitHubElements);
