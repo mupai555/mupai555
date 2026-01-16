@@ -8261,7 +8261,10 @@ else:
 if 'peso' not in locals():
     peso = 70.0
 if 'estatura' not in locals():
-    estatura = 170
+    estatura = 170.0
+# Validar que estatura no sea 0 o negativa
+if 'estatura' in locals() and (estatura <= 0 or estatura is None):
+    estatura = 170.0
 if 'grasa_corporal' not in locals():
     grasa_corporal = 20.0
 if 'sexo' not in locals():
@@ -10188,7 +10191,7 @@ SECCIÓN 2: COMPOSICIÓN CORPORAL COMPLETA
    
    CÁLCULO:
    • MLG: {mlg:.1f} kg
-   • FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f}
+   • FFMI Base = MLG / Altura²: {mlg / ((estatura/100)**2):.2f if estatura > 0 else 0.0}
    • FFMI Normalizado (a 1.80m): {ffmi:.2f}
      Fórmula: FFMI_base + 6.3 × (1.8 - altura_m)
    
