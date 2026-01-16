@@ -540,6 +540,39 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ==================== LIMPIEZA DE SESSION STATE CORRUPTO ====================
+# Esta sección limpia valores corruptos que pueden causar TypeError en number_input
+# Se ejecuta al inicio de cada sesión para prevenir errores
+def limpiar_session_state_corrupto():
+    """Limpia valores corruptos del session_state que pueden causar errores"""
+    campos_numericos = {
+        'masa_muscular': (0.0, 100.0, 0.0),  # (min, max, default)
+        'grasa_visceral': (1, 59, 1),
+        'circunferencia_cintura': (0.0, 200.0, 0.0),
+        'circunferencia_cuello': (0.0, 100.0, 0.0),
+        'circunferencia_cadera': (0.0, 200.0, 0.0),
+    }
+    
+    for campo, (min_val, max_val, default_val) in campos_numericos.items():
+        if campo in st.session_state:
+            try:
+                valor = st.session_state[campo]
+                # Verificar que sea un número válido
+                if valor is None or valor == '' or not isinstance(valor, (int, float)):
+                    del st.session_state[campo]
+                    continue
+                # Convertir a float/int según corresponda
+                valor_num = float(valor) if isinstance(default_val, float) else int(valor)
+                # Verificar límites
+                if valor_num < min_val or valor_num > max_val:
+                    del st.session_state[campo]
+            except (ValueError, TypeError, AttributeError):
+                # Si hay cualquier error al procesar, eliminar el valor
+                del st.session_state[campo]
+
+# Ejecutar limpieza al inicio
+limpiar_session_state_corrupto()
+
 st.markdown("""
 <style>
 /* ========== OCULTAR BARRA SUPERIOR Y BOTONES DE STREAMLIT ========== */
